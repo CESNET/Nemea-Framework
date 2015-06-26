@@ -1,0 +1,9 @@
+language: c
+compiler:
+  - gcc
+  - clang
+os:
+  - linux
+
+script: ./bootstrap.sh && ./configure && make
+
