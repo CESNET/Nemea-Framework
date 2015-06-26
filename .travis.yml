@@ -5,6 +5,12 @@ compiler:
 os:
   - linux
 
+
+branches:
+  only:
+    - master
+    - coverity
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -19,7 +25,7 @@ addons:
     notification_email: cejkat@cesnet.cz
     build_command_prepend: "./bootstrap.sh; ./configure; make clean"
     build_command:   "make -j 4"
-    branch_pattern: coverity_scan
+    branch_pattern: coverity
 
 script: ./bootstrap.sh && ./configure && make
 
