@@ -5,5 +5,21 @@ compiler:
 os:
   - linux
 
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "s9Citu1B2etyIaZypuLrFCdU+oLCfiC8T1o6DiaanHsp+GDHrzINSlFld9yJNTGzHVLe1k1JmQjc4e59aKaNPjNA85Pr+Zce5ITgF4/saUnZYNaSSQWwpbTM617Q58UsaEDOjl1aAViikz9Krf4yklgXAUVuhWt/FD49VGwZ8xFzDwEgiyEC/MzWvaPBx4hmyCeWJ1eCAWBJ2kKm1RJCbnIdyZczYKQoQEKweuncylOqx5Vrzzw0GAsgYSwPHzuePaF/UaeiLCoDRSryuwFen3jFc3DJTwnx3dvDQPxeXrLm9lBKRwd6/uFiRhmCDwh/NXTT/3c4MAgvoMM2gfiX74fV318aqz04YM4m4ACzgBR7JBhiy0AwTmNJcT8JwSZ/pWUwIO25y5DkqGpKd0vcRSYDiAndSy7B33euuv1Oudqn722tJ/Hf0mfBYQOQ5LkTEy7BlYviLlmZRugBf93Rvg0p/8qAWGyviPwzPFP2mLbb7zs/NlT9K8FX9Zx8bNN3LAWWBlaP2r9ilvkwFjmZyNtJCo695BsY+eS7iaUV2+tO1D1tBpo7+kzGkq2X92xtytjHj3WaQH6eM22gG6TqR1ZOFSZEqvtVS9IJjKgulhd4KHWSjjK2czdgS2ODGwpmwlZWLvtIkznYN12oOd8SMgIolF1FHvIme/tfyQUIhog="
+
+addons:
+  coverity_scan:
+    project:
+      name: "cejkato2/Nemea-Framework"
+      description: "Build submitted via Travis CI"
+    notification_email: cejkat@cesnet.cz
+    build_command_prepend: "./bootstrap.sh; ./configure; make clean"
+    build_command:   "make -j 4"
+    branch_pattern: coverity_scan
+
 script: ./bootstrap.sh && ./configure && make
 
