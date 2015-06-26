@@ -1,0 +1,38 @@
+Summary: Development package for Unirec message format handling.
+Name: unirec
+Version: @PACKAGE_VERSION@
+Release: @RELEASE@
+URL: http://www.liberouter.org/
+Source: https://www.liberouter.org/repo/SOURCES/%{name}-%{version}-%{release}.tar.gz
+Group: Liberouter
+License: BSD
+Vendor: CESNET, z.s.p.o.
+Packager: @USERNAME@ <@USERMAIL@>
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
+
+BuildRequires: gcc make doxygen pkgconfig 
+Provides: unirec
+
+%description
+This package contains header files for Unirec library. Install this package
+if you want to develop programs that use Unirec message format.
+
+%prep
+%setup
+
+%build
+./configure --prefix=%{_prefix} --libdir=%{_libdir}
+make
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%post
+ldconfig
+
+%files
+%{_libdir}/pkgconfig/unirec.pc
+%{_libdir}/libunirec.a
+%{_libdir}/libunirec.la
+%{_prefix}/include/unirec/*
+

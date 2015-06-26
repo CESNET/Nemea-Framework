@@ -1,0 +1,39 @@
+Version 0.7.0:
+   * added new tests
+   * documentation improved and revisited
+      - 2 levels of documentation: internal (libtrap developers) and public (Nemea developers)
+   * Nemea module parameters API - helpers
+   * non-blocking connect
+   * removed unused shmem IFC
+   * extended IFC API:
+      - get_client_count
+      - create dump of configuration and buffer for development purposes
+   * experimental support of file IFC (integrated trap{dump,replay}
+   * bugfixes
+   * added new tests
+   * JSON output of module's parameters
+Varsion 0.6.0:
+   * added new tests
+   * extended internal counters
+   * bugfixes:
+      - deadlocks during termination, disconnection
+      - revision blocking and non-blocking mode of IFCs
+      - service IFC
+Version 0.5.3:
+   * trap_send() & trap_recv()
+   * force flush of output IFCs on finalize
+   * PAGER for help (use e.g. export PAGER=less)
+   * bugfixes:
+      - init and finalize
+      - removed recovery limit
+      - delete of old unix socket
+      - service thread close
+Version 0.5.0:
+   * context libtrap API
+   * service interface for supervisor
+   * function for buffer flush
+   * constant text string with libtrap version
+Version 0.4.4:
+   * max number of clients is optional IFC parameter (in -i)
+   * using autools
+   * autoflush

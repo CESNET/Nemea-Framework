@@ -1,0 +1,12 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+includedir = @includedir@
+libdir =  @libdir@
+datarootdir = @datarootdir@
+datadir = @datadir@
+
+Name: libunirec
+Version: @PACKAGE_VERSION@
+Description: Library contains modules of interface for UNIREC messages processing and creation.
+Libs: -lunirec
+Cflags: -I${includedir}

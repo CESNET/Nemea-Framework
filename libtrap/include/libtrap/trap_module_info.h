@@ -1,0 +1,300 @@
+/**
+ * \file trap_module_info.h
+ * \brief Structures containing information about Nemea modules and macros for initialization and release of these structures.
+ * \author Marek Svepes <svepemar@fit.cvut.cz>
+ * \date 2015
+ */
+/*
+ * Copyright (C) 2015 CESNET
+ *
+ * LICENSE TERMS
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name of the Company nor the names of its contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * ALTERNATIVELY, provided that this notice is retained in full, this
+ * product may be distributed under the terms of the GNU General Public
+ * License (GPL) version 2 or later, in which case the provisions
+ * of the GPL apply INSTEAD OF those given above.
+ *
+ * This software is provided ``as is'', and any express or implied
+ * warranties, including, but not limited to, the implied warranties of
+ * merchantability and fitness for a particular purpose are disclaimed.
+ * In no event shall the company or contributors be liable for any
+ * direct, indirect, incidental, special, exemplary, or consequential
+ * damages (including, but not limited to, procurement of substitute
+ * goods or services; loss of use, data, or profits; or business
+ * interruption) however caused and on any theory of liability, whether
+ * in contract, strict liability, or tort (including negligence or
+ * otherwise) arising in any way out of the use of this software, even
+ * if advised of the possibility of such damage.
+ *
+ */
+
+/**
+ * \addtogroup commonapi
+ * @{
+ */
+/**
+ * \defgroup module_parameters Parameters of modules
+ *
+ * This section contains a set of macros that should be used for definition
+ * of parameters for a module.  Usage of these macros helps to generate
+ * machine readable information about module that can be read e.g. by
+ * supervisor.
+ *
+ * \section example-module-parameters Example of usage of module's parameters
+ *
+ * This example show the usage of macros defined in this section.
+ *
+ * \code{.c}
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <inttypes.h>
+#include <getopt.h>
+
+#include "module_info_test.h"
+
+module_info_test_t * module_info = NULL;
+
+
+// Definition of basic module information - module name, module description,
+// number of input and output interfaces
+#define MODULE_BASIC_INFO(BASIC) \
+  BASIC("name", "description", 1, 1)
+
+// Definition of module parameters - every parameter has short_opt, long_opt,
+// description, flag whether argument is required or it is optional
+// and argument type which is NULL in case the parameter does not need argument
+#define MODULE_PARAMS(PARAM) \
+  PARAM('s', "long_opt", "description", 0, NULL) \
+  PARAM('b', "long_opt2", "description2", 1, "argument_type") \
+  PARAM('d', "long_opt3", "description3", 1, "argument_type") \
+  PARAM('u', "long_opt4", "description4", 0, NULL) \
+  PARAM('i', "long_opt5", "description5", 1, "argument_type") \
+  PARAM('c', "long_opt6", "description6", 1, "argument_type")
+
+
+int main()
+{
+   uint x = 0;
+
+   // Allocate and initialize module_info structure and all its members
+   // according to the MODULE_BASIC_INFO and MODULE_PARAMS definitions
+   INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS);
+
+   printf("--- Module_info structure after initialization ---\n");
+   printf("Basic info: %s %s %d %d\nParams:\n", module_info->name,
+          module_info->description, module_info->num_in_ifc,
+          module_info->num_out_ifc);
+
+   for (x = 0; x < trap_module_params_cnt; x++) {
+      printf("-%c --%s %s %d %s\n", module_info->params[x].short_opt,
+             module_info->params[x].long_opt,
+             module_info->params[x].description,
+             module_info->params[x].param_required_argument,
+             module_info->params[x].argument_type);
+   }
+
+   // Generate long_options array of structures for getopt_long function
+   GEN_LONG_OPT_STRUCT(MODULE_PARAMS);
+
+   x = 0;
+   printf("\n--- Long_options structure after initialization ---\n");
+   while (long_options[x].name != 0) {
+      printf("{%s, %d, 0, %c}\n", long_options[x].name,
+             long_options[x].has_arg, (char)long_options[x].val);
+      x++;
+   }
+
+   // Release allocated memory for module_info structure
+   FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS);
+   return 0;
+}
+
+ * \endcode
+ *
+ * @{
+ */
+/** Structure with information about one module parameter
+ *  Every parameter contains short_opt, long_opt, description,
+ *  flag whether the parameter requires argument and argument type.
+ */
+typedef struct trap_module_info_parameter_s {
+   char   short_opt;
+   char  *long_opt;
+   char  *description;
+   int param_required_argument;
+   char  *argument_type;
+} trap_module_info_parameter_t;
+
+/** Structure with information about module
+ *  This struct contains basic information about the module, such as module's
+ *  name, number of interfaces etc. It's supposed to be filled with static data
+ *  and passed to trap_init function.
+ */
+typedef struct trap_module_info_s {
+   char *name;           ///< Name of the module (short string)
+   char *description;    /**< Detialed description of the module, can be a long
+                              string with several lines or even paragraphs. */
+   int num_ifc_in;  ///< Number of input interfaces
+   int num_ifc_out; ///< Number of output interfaces
+   // TODO more ... (e.g. UniRec specifiers)
+   trap_module_info_parameter_t **params;
+} trap_module_info_t;
+
+/** Macro generating one line of long_options field for getopt_long function
+ */
+#define GEN_LONG_OPT_STRUCT_LINE(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) {p_long_opt, p_required_argument, 0, p_short_opt},
+
+/** Macro generating long_options field for getopt_long function according to given macro with parameters
+ */
+#define GEN_LONG_OPT_STRUCT(PARAMS) \
+   static struct option long_options[] = { \
+      PARAMS(GEN_LONG_OPT_STRUCT_LINE) \
+      {0, 0, 0, 0} \
+   };
+
+/** Macro for allocation and initialization of module basic information (name, description and number of input/output interfaces) in global variable module_info
+ */
+#define ALLOCATE_BASIC_INFO(p_name, p_description, p_input, p_output) \
+   if (p_name != NULL) { \
+      module_info->name = strdup(p_name); \
+   } else { \
+      module_info->name = NULL; \
+   } \
+   if (p_description != NULL) { \
+      module_info->description = strdup(p_description); \
+   } else { \
+      module_info->description = NULL; \
+   } \
+   module_info->num_ifc_in = p_input; \
+   module_info->num_ifc_out = p_output;
+
+/** Macro for allocation and initialization of module parameters information (short_opt, long_opt, description etc.) in global variable module_info
+ */
+#define ALLOCATE_PARAM_ITEMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+   if (module_info->params[trap_info_cnt] == NULL) { \
+      module_info->params[trap_info_cnt] = (trap_module_info_parameter_t *) calloc (1, sizeof(trap_module_info_parameter_t)); \
+   } \
+   if (module_info->params[trap_info_cnt] != NULL) { \
+      if (p_short_opt != 0) { \
+         module_info->params[trap_info_cnt]->short_opt = p_short_opt; \
+      } else { \
+         module_info->params[trap_info_cnt]->short_opt = 0; \
+      } \
+      if (p_long_opt != NULL) { \
+         module_info->params[trap_info_cnt]->long_opt = strdup(p_long_opt); \
+      } else { \
+         module_info->params[trap_info_cnt]->long_opt = NULL; \
+      } \
+      if (p_description != NULL) { \
+         module_info->params[trap_info_cnt]->description = strdup(p_description); \
+      } else { \
+         module_info->params[trap_info_cnt]->description = NULL; \
+      } \
+      if (p_required_argument == 1) { \
+         module_info->params[trap_info_cnt]->param_required_argument = p_required_argument; \
+      } else { \
+         module_info->params[trap_info_cnt]->param_required_argument = 0; \
+      } \
+      if (p_argument_type != NULL) { \
+         module_info->params[trap_info_cnt]->argument_type = strdup(p_argument_type); \
+      } else { \
+         module_info->params[trap_info_cnt]->argument_type = NULL; \
+      } \
+      trap_info_cnt++; \
+   }
+
+/** Macro releasing memory allocated for module basic information in global variable module_info
+ */
+#define FREE_BASIC_INFO(p_name, p_description, p_input, p_output) \
+   if (module_info->name != NULL) { \
+      free(module_info->name); \
+      module_info->name = NULL; \
+   } \
+   if (module_info->description != NULL) { \
+      free(module_info->description); \
+      module_info->description = NULL; \
+   }
+
+/** Macro releasing memory allocated for module parameters information in global variable module_info
+  */
+#define FREE_PARAM_ITEMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+   if (module_info->params[trap_info_cnt] != NULL) { \
+      if (module_info->params[trap_info_cnt]->long_opt != NULL) { \
+         free(module_info->params[trap_info_cnt]->long_opt); \
+         module_info->params[trap_info_cnt]->long_opt= NULL; \
+      } \
+      if (module_info->params[trap_info_cnt]->description != NULL) { \
+         free(module_info->params[trap_info_cnt]->description); \
+         module_info->params[trap_info_cnt]->description= NULL; \
+      } \
+      if (module_info->params[trap_info_cnt]->argument_type != NULL) { \
+         free(module_info->params[trap_info_cnt]->argument_type); \
+         module_info->params[trap_info_cnt]->argument_type= NULL; \
+      } \
+      if (module_info->params[trap_info_cnt] != NULL) { \
+         free(module_info->params[trap_info_cnt]); \
+      } \
+      trap_info_cnt++; \
+   }
+
+/** Macro counting number of module parameters - memory allocation purpose
+ */
+#define COUNT_MODULE_PARAMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) trap_module_params_cnt++;
+
+/** Macro initializing whole module_info structure in global variable module_info
+ *  First argument is macro defining module basic information (name, description, number of input/output interfaces)
+ *  Second argument is macro defining all module parameters and their values
+ *  Last pointer of module info parameters array is NULL to detect end of the array without any counter
+ */
+#define INIT_MODULE_INFO_STRUCT(BASIC, PARAMS) \
+   int trap_info_cnt = 0; \
+   int trap_module_params_cnt = 0; \
+   module_info = (trap_module_info_t *) calloc (1, sizeof(trap_module_info_t)); \
+   if (module_info != NULL) { \
+      BASIC(ALLOCATE_BASIC_INFO) \
+      PARAMS(COUNT_MODULE_PARAMS) \
+      module_info->params = (trap_module_info_parameter_t **) calloc (trap_module_params_cnt + 1, sizeof(trap_module_info_parameter_t *)); \
+      if (module_info->params != NULL) { \
+         PARAMS(ALLOCATE_PARAM_ITEMS) \
+      } \
+   }
+
+/** Macro releasing whole module_info structure allocated in global variable module_info
+ *  First argument is macro defining module basic information (name, description, number of input/output interfaces)
+ *  Second argument is macro defining all module parameters and their values
+*/
+#define FREE_MODULE_INFO_STRUCT(BASIC, PARAMS) \
+   if (module_info != NULL) { \
+      trap_info_cnt = 0; \
+      BASIC(FREE_BASIC_INFO) \
+      if (module_info->params != NULL) { \
+         PARAMS(FREE_PARAM_ITEMS) \
+         free(module_info->params); \
+         module_info->params = NULL; \
+      } \
+      free(module_info); \
+      module_info = NULL; \
+   }
+
+
+/**
+ * @}
+ */
+/**
+ * @}
+ */
+

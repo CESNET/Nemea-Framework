@@ -1,0 +1,13 @@
+/**
+\page news News
+@{
+\include NEWS
+@}
+*/
+
+/**
+\page changelog ChangeLog
+@{
+\include ChangeLog
+@}
+*/

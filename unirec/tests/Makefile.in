@@ -1,0 +1,31 @@
+CFLAGS=-std=c99
+LDFLAGS=
+
+.PHONY: all unirec clean
+
+all: unirec test test_creation test_speed test_speed_o test_speed_ur test_speed_uro 
+
+unirec:
+	make -C ..
+
+test: test.c ../unirec.o
+	gcc ${CFLAGS} -O2 test.c ../unirec.o ${LDFLAGS} -o $@
+
+test_speed: test_speed.c ../unirec.o
+	gcc ${CFLAGS} test_speed.c ../unirec.o ${LDFLAGS} -o $@
+
+test_speed_o: test_speed.c ../unirec.o
+	gcc ${CFLAGS} -O2 test_speed.c ../unirec.o ${LDFLAGS} -o $@
+
+test_speed_ur: test_speed.c ../unirec.o
+	gcc ${CFLAGS} -DUNIREC test_speed.c ../unirec.o ${LDFLAGS} -o $@
+
+test_speed_uro: test_speed.c ../unirec.o
+	gcc ${CFLAGS} -DUNIREC -O2 test_speed.c ../unirec.o ${LDFLAGS} -o $@
+
+test_creation: test_creation.c ../unirec.o
+	gcc ${CFLAGS} -O2 test_creation.c ../unirec.o ${LDFLAGS} -o $@
+
+
+clean:
+	rm -f test test_speed test_speed_o test_speed_ur test_speed_uro test_creation

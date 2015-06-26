@@ -1,0 +1,51 @@
+/**
+\mainpage Libtrap
+TRAP is represented by a shared object called libtrap. It is dynamically
+linked with every Nemea module. This library implements the communication
+interfaces used by all Nemea modules to exchange data.
+There are different types of interfaces using various underlying methods of
+communication (TCP/IP, Unix domain socket, shared memory) and each interface
+has several parameters. However, libtrap abstracts a module from the
+underlying interface and its specifics.
+The main features of libtrap are:
+<ul>
+<li>Blocking or non-blocking mode of transmission based on configuration parameters</li>
+<li>Buffering for throughput increase</li>
+<li>Automatic reconnection after failure</li>
+<li>Local or remote machine communication</li>
+</ul>
+The interface type and behaviour is fully configurable by module and is
+usually set by user when module starts.
+Because some interface types support communication over a network, the system
+may be easily distributed on several hosts.
+
+Libtrap supplies \ref simpleapi and \ref contextapi, both using \ref commonapi.
+For writing new Nemea modules, \ref modulemacros can be useful.
+
+The example of usage in pseudocode:
+\code{C}
+trap_ctx_t *ctx = NULL;
+int res;
+ctx = trap_ctx_init(...);
+if (ctx != NULL) {
+   trap_ctx_ifcctl(ctx, TRAPIFC_OUTPUT /* direction */,
+       0 /* ifc index */, TRAPCTL_SETTIMEOUT,
+       TRAP_HALFWAIT);
+   res = trap_ctx_recv(ctx, 0 /* in ifc idx */, &d, &ds);
+   if (res != TRAP_E_OK) {
+     /* recv failed */
+   }
+   res = trap_ctx_send(ctx, 0 /* out ifc idx */, d, ds);
+   if (res != TRAP_E_OK) {
+     /* send failed */
+   }
+   trap_ctx_finalize(&ctx);
+}
+\endcode
+
+To initialize libtrap, module_info and ifc_spec must be provided.
+The trap_parse_params() function can be used to prepare ifc_spec from process arguments.
+
+The \ref trap_module_info_s parameter is usually defined in the beginning of Nemea modules. It contains
+module's name and description.
+*/

@@ -1,0 +1,289 @@
+#Field ID       Data type       Description
+SRC_IP          ip_addr_t       Source address of a flow
+DST_IP          ip_addr_t       Destination address of a flow
+SRC_PORT        uint16_t        Source transport-layer port
+DST_PORT        uint16_t        Destination transport-layer port
+PROTOCOL        uint8_t         L4 protocol (TCP, UDP, ICMP, etc.)
+TCP_FLAGS       uint8_t         TCP flags of a flow (logical OR over TCP flags field of all packets)
+.TCP_FIN        0x1               Finish bit flag
+.TCP_SYN        0x2               Synchronize bit flag
+.TCP_RST        0x4               Reset bit flag
+.TCP_PSH        0x8               Push bit flag
+.TCP_ACK        0x10              Acknowledgement bit flag
+.TCP_URG        0x20              Urgent bit flag
+PACKETS         uint32_t        Number of packets in a flow or in an interval
+BYTES           uint64_t        Number of bytes in a flow or in an interval
+TIME_FIRST      ur_time_t       Timestamp of the first packet of a flow
+TIME_LAST       ur_time_t       Timestamp of the last packet of a flow
+TTL             uint8_t         IP time to live
+TOS             uint8_t         IP type of service
+
+LINK_BIT_FIELD  uint64_t        Bit field where each bit marks whether a flow was captured on corresponding link
+DIR_BIT_FIELD   uint8_t         Bit field used for detemining incomming/outgoing flow
+.DIR_IN         1
+.DIR_OUT        0
+DIRECTION_FLAGS uint8_t         Bit field for identification of flow direction
+.DIR_FLAG_REQ   0x8               Request
+.DIR_FLAG_RSP   0x4               Response
+.DIR_FLAG_SF    0x2               Single flow
+.DIR_FLAG_NRC   0x1               Not recognized
+
+IPV6_TUN_TYPE   uint8_t         IPv6 tunnel type
+.IPV6_TUN_NATIVE   0              Native IPv6
+.IPV6_TUN_TEREDO   1              Teredo
+.IPV6_TUN_ISATAP   2              ISATAP
+.IPV6_TUN_6TO4     4              6to4
+.IPV6_TUN_AYIYA    8              AYIYA
+.IPV6_TUN_OTHER   16              Other protocol 41
+.IPV6_TUN_6OVER4  32              6over4
+
+#Spoofing filter type
+SPOOF_TYPE      uint8_t         Identifier of the spoofing filter that reported the source IP address of the flow 
+.SPOOF_BOGONS   0x1               Bogon filter
+.SPOOF_SYMETRIC 0x2               Symetric filter
+.SPOOF_NEWIP    0x4               New IP filter
+.SPOOF_TCPHIST  0x8               TCP history filter
+
+#Blacklist items
+SRC_BLACKLIST   uint64_t         Bit field of blacklists IDs which contains the source address of the flow
+DST_BLACKLIST   uint64_t         Bit field of blacklists IDs which contains the destination address of the flow
+URL_BLACKLIST   uint8_t         ID of blacklist which contains recieved URL
+DNS_BLACKLIST   uint8_t         ID of blacklist which contains suspicious domain name
+BLACKLIST_TYPE  uint8_t         Type of the used blacklist (spam, C&C, malware, etc.)
+# TODO constants for the types
+
+TIMESLOT        uint32_t        Start time of a timeslot in which an event was detected (Unix timestamp)
+EVENT_ID        uint32_t        Identification number of reported event
+DETECTION_TIME  ur_time_t       Timestamp of the detection of some event
+
+# Alias for a basic flow (you can use "<BASIC_FLOW>" in ifc-spec and it will be replaced by the following fields)
+@BASIC_FLOW=SRC_IP,DST_IP,SRC_PORT,DST_PORT,PROTOCOL,PACKETS,BYTES,TIME_FIRST,TIME_LAST,TCP_FLAGS
+
+# Flow records coming from UniRec plugin for ipfixcol
+@COLLECTOR_FLOW=<BASIC_FLOW>,LINK_BIT_FIELD,DIR_BIT_FIELD,TOS,TTL
+
+# Astute detection
+ASTUTE_5T       float           ASTUTE field 5-tuple
+ASTUTE_IP       float           ASTUTE field src/dst
+ASTUTE_SRCIP    float           ASTUTE field src IP
+ASTUTE_DSTIP    float           ASTUTE field dst IP
+ASTUTE_SRCPORT  float           ASTUTE field src port
+ASTUTE_DSTPORT  float           ASTUTE field dst port
+@ASTUTE=ASTUTE_5T,ASTUTE_IP,ASTUTE_SRCIP,ASTUTE_DSTIP,ASTUTE_SRCPORT,ASTUTE_DSTPORT
+
+# PCA detection
+FLOWS             uint64_t      Number of flows in an interval
+ENTROPY_SRCIP     float         Source ip address entropy in an interval
+ENTROPY_DSTIP     float         Destination ip address entropy in an interval
+ENTROPY_SRCPORT   float         Source port entropy in an interval
+ENTROPY_DSTPORT   float         Destination port entropy in an interval
+ENTROPY_SRCIPDSTIP   float         Source ip address destination ip entropy
+ENTROPY_SRCIPSRCPORT   float         Source ip address source port entropy
+ENTROPY_SRCIPDSTPORT   float         Source ip destination port entropy
+ENTROPY_DSTIPSRCPORT   float         Destination ip source port entropy
+ENTROPY_DSTIPDSTPORT   float         Destination ip destination port entropy
+ENTROPY_SRCIPDSTIPDSTPORT   float         Source ip destination ip destination port entropy
+ENTROPY_SRCIPDSTIPSRCPORT   float         Source ip destination ip source port entropy
+PCA_ANOMALY_FIELD 	uint64_t       Bit field where one bit is set for dimension (metric) in which was an anomaly detected
+# Volume metrics
+@VOLUME=FLOWS,PACKETS,BYTES
+# Basic entropy values (for source/destination IP adderss and source/destination Port)
+@BASIC_ENTROPY=ENTROPY_SRCIP,ENTROPY_DSTIP,ENTROPY_SRCPORT,ENTROPY_DSTPORT
+# Output format of PCA basic detection module (this is how an anomaly detection message from PCA module loos like)
+@PCA_DETECTION=TIMESLOT,LINK_BIT_FIELD,PCA_ANOMALY_FIELD
+
+# Detectors
+EVENT_TYPE     uint8_t         Type of detected event
+.EVT_T_PORTSCAN    1             Portscan (unspecified type)
+.EVT_T_PORTSCAN_H  2             Horizontal portscan (one or a few ports, many addresses)
+.EVT_T_PORTSCAN_V  3             Vertical portscan (one address, many ports)
+.EVT_T_DOS        10             Denial of service attack (unspecified type)
+.EVT_T_SYNFLOOD   11             TCP SYN flood
+.EVT_T_DNSAMP     15             DNS Amplification attack
+.EVT_T_BRUTEFORCE 30             Bruteforce password guessing
+
+EVENT_SCALE    uint32_t        Attack intensity
+NOTE           char*           Generic string note
+
+# P2Pdetector
+P2P_TYPE       uint8_t         skype/bittorrent(1-SKYPE, 2-BITTORRENT)
+@P2P_FLOW=<COLLECTOR_FLOW>,P2P_TYPE
+
+# SMTP
+SMTP_FLAGS    			uint8_t         SMTP flags   # deprecated
+SMTP_COMMAND_FLAGS              uint32_t	SMTP command flags
+SMTP_MAIL_CMD_COUNT             uint32_t	SMTP MAIL command count
+SMTP_RCPT_CMD_COUNT             uint32_t	SMTP RCPT command count
+SMTP_FIRST_SENDER               char*		SMTP first sender
+SMTP_FIRST_RECIPIENT            char*		SMTP first recipient
+SMTP_STAT_CODE_FLAGS            uint32_t	SMTP status code flags
+SMTP_2XX_STAT_CODE_COUNT        uint32_t	SMTP 2XX status code count
+SMTP_3XX_STAT_CODE_COUNT        uint32_t	SMTP 3XX status code count
+SMTP_4XX_STAT_CODE_COUNT        uint32_t	SMTP 4XX status code count
+SMTP_5XX_STAT_CODE_COUNT        uint32_t	SMTP 5XX status code count
+SMTP_DOMAIN			char*		SMTP domain
+@SMTP=SMTP_2XX_STAT_CODE_COUNT,SMTP_3XX_STAT_CODE_COUNT,SMTP_4XX_STAT_CODE_COUNT,SMTP_5XX_STAT_CODE_COUNT,SMTP_COMMAND_FLAGS,SMTP_MAIL_CMD_COUNT,SMTP_RCPT_CMD_COUNT,SMTP_STAT_CODE_FLAGS,SMTP_DOMAIN,SMTP_FIRST_RECIPIENT,SMTP_FIRST_SENDER
+
+
+
+
+# SIP
+SIP_CALL_ID	char*		SIP call id
+SIP_CONTROL	uint16_t	SIP response/command code
+SIP_FROM	char*		SIP from address
+SIP_MSG_TYPE	uint16_t	SIP message type
+SIP_TO		char*		SIP to address
+@SIP=SIP_CALL_ID,SIP_CONTROL,SIP_MSG_TYPE,SIP_FROM,SIP_TO
+
+# DNS
+DNS_ID		uint16_t	DNS transaction ID
+DNS_ANSWERS	uint16_t	DNS answers
+DNS_RCODE	uint8_t		DNS rcode
+DNS_NAME	char*		DNS name
+DNS_QTYPE	uint16_t	DNS qtype
+DNS_CLASS	uint16_t	DNS class
+DNS_RR_TTL	uint32_t	DNS RR TTL
+DNS_RLENGTH	uint16_t	DNS rlength
+DNS_RDATA	char*		DNS rdata
+DNS_PSIZE	uint16_t	DNS payload size
+DNS_DO		uint8_t		DNSSEC OK bit
+@DNS=DNS_ID,DNS_ANSWERS,DNS_RCODE,DNS_NAME,DNS_QTYPE,DNS_CLASS,DNS_RR_TTL,DNS_RLENGTH,DNS_RDATA,DNS_PSIZE,DNS_DO
+
+# HTTP
+HTTP_REQUEST_METHOD_ID		uint32_t	HTTP request method id
+HTTP_REQUEST_HOST		char*		HTTP request host
+HTTP_REQUEST_URL		char*		HTTP request url
+HTTP_REQUEST_AGENT_ID		uint32_t	HTTP request agent id
+HTTP_REQUEST_AGENT		char*		HTTP request agent
+HTTP_REQUEST_REFERER		char*		HTTP request referer
+HTTP_RESPONSE_STATUS_CODE	uint32_t	HTTP response status code
+HTTP_RESPONSE_CONTENT_TYPE	char*		HTTP response content type
+@HTTP=HTTP_REQUEST_METHOD_ID,HTTP_REQUEST_HOST,HTTP_REQUEST_URL,HTTP_REQUEST_AGENT_ID,HTTP_REQUEST_AGENT,HTTP_REQUEST_REFERER,HTTP_RESPONSE_STATUS_CODE,HTTP_RESPONSE_CONTENT_TYPE
+
+#Botnet detection
+BOTNET_CC_IP    ip_addr_t       IP address of detected Command & Control server
+BOTNET_BOT_IP   ip_addr_t       IP address of detected bot
+BOTNET_PROBABILITY  float       Probability of reported address being bot <0,1>
+
+@BOTNET=BOTNET_CC_IP,BOTNET_BOT_IP,BOTNET_PROBABILITY
+
+#Amplification
+REQ_FLOWS             uint32_t      Number of flows in an interval (requests)
+REQ_PACKETS         uint32_t        Number of packets in a flow or in an interval (requests)
+REQ_BYTES           uint64_t        Number of bytes in a flow or in an interval (requests)
+RSP_FLOWS             uint32_t      Number of flows in an interval (responses)
+RSP_PACKETS         uint32_t        Number of packets in a flow or in an interval (responses)
+RSP_BYTES           uint64_t        Number of bytes in a flow or in an interval (responses)
+
+@AMPLIFICATION_ALERT=SRC_IP,DST_IP,SRC_PORT,REQ_FLOWS,REQ_PACKETS,REQ_BYTES,RSP_FLOWS,RSP_PACKETS,RSP_BYTES,TIME_FIRST,TIME_LAST,EVENT_ID
+
+#DNS tunnel
+TUNNEL_PER_NEW_DOMAIN	float 		Percent of new domains (searched just ones)
+TUNNEL_PER_SUBDOMAIN	float		Percent of subdomains in the most used domain for tunnel type, for another anomaly it is percent of different domains.
+TUNNEL_TYPE				uint8_t		Type of anomaly
+TUNNEL_DOMAIN 			char*		Anomaly domain name
+TUNNEL_CNT_PACKET		uint32_t	Number of packets which were recorded recognized like anomaly
+
+@DNS_TUNNEL_ALERT=SRC_IP,TUNNEL_PER_NEW_DOMAIN,TUNNEL_PER_SUBDOMAIN,TUNNEL_TYPE,TUNNEL_DOMAIN,TUNNEL_CNT_PACKET
+
+# Generic email reporting
+EMAIL_SUBJECT   char*   Subject of email message
+EMAIL_BODY      char*   Body of enail message
+
+# Heartbleed detection
+HB_TYPE		uint8_t		TLS content type
+.HB_HEARTBEAT  24       Type of message is heartbeat message
+
+HB_DIR		uint8_t		Heartbeat direction
+.HB_UNKNOWN		0     Unknow direction - if message is encrypted
+.HB_REQUEST		1     Heartbeat request
+.HB_RESPONSE	2     Heartbeat response
+
+HB_SIZE_MSG	uint16_t	Heartbeat message size
+HB_SIZE_PAYLOAD	uint16_t	Heartbeat payload size
+
+HB_ALERT_TYPE_FIELD  uint16_t  Type of broken detection condition
+.HB_AT_MIN_SIZE   	1  Request smaller then minimal request size
+.HB_AT_DIFF_SIZE  	2  Payload size is greater then real message size
+.HB_AT_DIFF_REQ_RESP 4  Difference of request and response size is too big
+.HB_AVG_RESP 			8  Average response size is suspicious (only if do not have requests)
+
+HB_REQ_CNT     uint32_t
+HB_REQ_SUM     uint64_t
+HB_RESP_CNT    uint32_t
+HB_RESP_SUM    uint64_t
+HB_PL_REQ_SUM  uint64_t Payload size sum (request)
+HB_PL_RESP_SUM uint64_t Payload size sum (response)
+HB_ATTACK_SCORE uint16_t
+
+@HEARTBEAT_FIELDS=HB_DIR,HB_SIZE_MSG,HB_SIZE_PAYLOAD
+@HEARTBLEED_ALERT=SRC_IP,DST_IP,DETECTION_TIME,HB_REQ_CNT,HB_RESP_CNT,HB_REQ_SUM,HB_RESP_SUM,HB_PL_REQ_SUM,HB_PL_RESP_SUM,HB_ATTACK_SCORE,HB_ALERT_TYPE_FIELD
+
+WARDEN_TYPE     uint8_t         Type of event (see Warden README for more information)
+.WT_PORTSCAN        1
+.WT_BRUTEFORCE      2
+.WT_PROBE           3
+.WT_SPAM            4
+.WT_PHISHING        5
+.WT_BOTNET_C_C      6
+.WT_DOS             7
+.WT_MALWARE         8
+.WT_COPYRIGHT       9
+.WT_WEBATTACK      10
+.WT_VULNERABILITY  11
+.WT_TEST           12
+.WT_OTHER          13
+@WARDEN_REPORT=DETECTION_TIME,WARDEN_TYPE,SRC_IP,PROTOCOL,DST_PORT,EVENT_SCALE,NOTE
+
+# Testing and example fields
+FOO             uint32_t        Generic field containing 32bit unsigned integer (used for testing and example purposes)
+BAR             uint32_t        Generic field containing 32bit unsigned integer (used for testing and example purposes)
+BAZ             uint32_t        Generic field containing 32bit unsigned integer (used for testing and example purposes)
+
+RAW_DATA        uint8_t*        Generic field for unstructured data
+
+# HTTP SDM
+HTTP_SDM_REQUEST_METHOD_ID	uint32_t
+.HTTP_SDM_METHOD_GET		1		Constants taken from http-sdm.h in sources of http-sdm exporter plugin
+.HTTP_SDM_METHOD_POST		2
+.HTTP_SDM_METHOD_HEAD		4
+.HTTP_SDM_METHOD_PUT		5
+.HTTP_SDM_METHOD_OPTIONS	6
+.HTTP_SDM_METHOD_DELETE		7
+.HTTP_SDM_METHOD_TRACE		8
+.HTTP_SDM_METHOD_CONNECT	9
+HTTP_SDM_REQUEST_HOST           char*
+HTTP_SDM_REQUEST_URL            char*
+HTTP_SDM_REQUEST_REFERER        char*
+HTTP_SDM_REQUEST_AGENT          char*
+HTTP_SDM_RESPONSE_STATUS_CODE   uint32_t
+HTTP_SDM_RESPONSE_CONTENT_TYPE  char*
+HTTP_SDM_RESPONSE_TIME          uint64_t
+@HTTP_SDM=HTTP_SDM_RESPONSE_TIME,HTTP_SDM_REQUEST_METHOD_ID,HTTP_SDM_RESPONSE_STATUS_CODE,HTTP_SDM_RESPONSE_CONTENT_TYPE,HTTP_SDM_REQUEST_AGENT,HTTP_SDM_REQUEST_HOST,HTTP_SDM_REQUEST_REFERER,HTTP_SDM_REQUEST_URL
+
+# VOIP-INVEA
+INVEA_VOIP_PACKET_TYPE          uint8_t        VOIP packet type
+INVEA_SIP_CALL_ID               char*          SIP call ID
+INVEA_SIP_CALLING_PARTY         char*          SIP calling party
+INVEA_SIP_CALLED_PARTY          char*          SIP called party
+INVEA_SIP_VIA                   char*          SIP VIA
+INVEA_SIP_INVITE_RINGING_TIME   uint64_t       SIP INVITE ringing time
+INVEA_SIP_OK_TIME               uint64_t       SIP OK time
+INVEA_SIP_BYE_TIME              uint64_t       SIP BYE time
+INVEA_SIP_RTP_IP4               ip_addr_t      SIP RTP IPv4
+INVEA_SIP_RTP_IP6               ip_addr_t      SIP RTP IPv6
+INVEA_SIP_RTP_AUDIO             uint16_t       SIP RTP audio
+INVEA_SIP_RTP_VIDEO             uint16_t       SIP RTP video
+INVEA_SIP_STATS                 uint64_t       SIP stats
+INVEA_RTP_CODEC                 uint8_t        RTP codec
+INVEA_RTP_JITTER                uint32_t       RTP jitter
+INVEA_RTCP_LOST                 uint32_t       RTCP lost
+INVEA_RTCP_PACKETS              uint64_t       RTCP packets
+INVEA_RTCP_OCTETS               uint64_t       RTCP octets
+INVEA_RTCP_SOURCE_COUNT         uint8_t        RTCP source count
+@VOIP=INVEA_VOIP_PACKET_TYPE,INVEA_SIP_CALL_ID,INVEA_SIP_CALLING_PARTY,INVEA_SIP_CALLED_PARTY,INVEA_SIP_VIA,INVEA_SIP_INVITE_RINGING_TIME,INVEA_SIP_OK_TIME,INVEA_SIP_BYE_TIME,INVEA_SIP_RTP_IP4,INVEA_SIP_RTP_IP6,INVEA_SIP_RTP_AUDIO,INVEA_SIP_RTP_VIDEO,INVEA_SIP_STATS,INVEA_RTP_CODEC,INVEA_RTP_JITTER,INVEA_RTCP_LOST,INVEA_RTCP_PACKETS,INVEA_RTCP_OCTETS,INVEA_RTCP_SOURCE_COUNT
+
+# SDM controller
+SDM_CAPTURE_FILE_ID     char*       ID of file for sdmcap
+TIMEOUT                 uint32_t    length of capturing of data to file
+@SDM_CAPTURE_REQUEST=SRC_IP,TIMEOUT,PACKETS,SDM_CAPTURE_FILE_ID

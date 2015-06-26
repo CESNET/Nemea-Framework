@@ -1,0 +1,52 @@
+Summary: Library contains modules of communication interface between TRAP modules.
+Name: libtrap
+Version: @PACKAGE_VERSION@
+Release: @RELEASE@
+URL: http://www.liberouter.org/
+Source: https://www.liberouter.org/repo/SOURCES/%{name}-%{version}-%{release}.tar.gz
+Group: Liberouter
+License: BSD
+Vendor: CESNET, z.s.p.o.
+Packager: @USERNAME@ <@USERMAIL@>
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
+
+BuildRequires: gcc make doxygen pkgconfig 
+Provides: libtrap
+
+%description
+
+%package devel
+Summary: Libtrap development package
+Group: Liberouter
+Requires: libtrap = %{version}-%{release}
+Provides: libtrap-devel
+
+%description devel
+This package contains header files for libtrap library. Install this package
+if you want to develop your own TRAP module.
+
+%prep
+%setup
+
+%build
+./configure --prefix=%{_prefix} --libdir=%{_libdir} --disable-doxygen-pdf --disable-doxygen-ps --enable-silent-rules -q;
+make
+make doc
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%post
+ldconfig
+
+%files
+%{_libdir}/libtrap.so.*
+
+%files devel
+%{_libdir}/pkgconfig/libtrap.pc
+%{_libdir}/libtrap.so
+%{_libdir}/libtrap.a
+%{_libdir}/libtrap.la
+%{_prefix}/include/libtrap/*
+%{_prefix}/share/doc/libtrap/*
+

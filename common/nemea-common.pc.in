@@ -1,0 +1,13 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+includedir = @pkgincludedir@
+libdir =  @libdir@
+datarootdir = @datarootdir@
+datadir = @datadir@
+
+Name: libnemea-common
+Version: @PACKAGE_VERSION@
+Description: Common functions and utilities for NEMEA project.
+Libs: -lnemea-common
+Cflags: -I${includedir}
+

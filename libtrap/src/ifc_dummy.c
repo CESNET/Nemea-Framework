@@ -1,0 +1,168 @@
+/**
+ * \file ifc_dummy.c
+ * \brief TRAP dummy interfaces (generator and blackhole)
+ * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
+ * \date 2013
+ * \date 2014
+ */
+/*
+ * Copyright (C) 2013,2014 CESNET
+ *
+ * LICENSE TERMS
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name of the Company nor the names of its contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * ALTERNATIVELY, provided that this notice is retained in full, this
+ * product may be distributed under the terms of the GNU General Public
+ * License (GPL) version 2 or later, in which case the provisions
+ * of the GPL apply INSTEAD OF those given above.
+ *
+ * This software is provided ``as is'', and any express or implied
+ * warranties, including, but not limited to, the implied warranties of
+ * merchantability and fitness for a particular purpose are disclaimed.
+ * In no event shall the company or contributors be liable for any
+ * direct, indirect, incidental, special, exemplary, or consequential
+ * damages (including, but not limited to, procurement of substitute
+ * goods or services; loss of use, data, or profits; or business
+ * interruption) however caused and on any theory of liability, whether
+ * in contract, strict liability, or tort (including negligence or
+ * otherwise) arising in any way out of the use of this software, even
+ * if advised of the possibility of such damage.
+ *
+ */
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
+
+#include "../include/libtrap/trap.h"
+#include "trap_ifc.h"
+#include "trap_error.h"
+
+/***** Generator *****/
+
+typedef struct generator_private_s {
+   trap_ctx_priv_t *ctx;
+   char *data_to_send;
+   int data_size;
+   char is_terminated;
+} generator_private_t;
+
+static void create_dump(void *priv, uint32_t idx, const char *path)
+{
+   VERBOSE(CL_ERROR, "Unimplemented. (%s:%d)", __FILE__, __LINE__);
+   return;
+}
+
+int generator_recv(void *priv, void *data, uint32_t *size, int timeout)
+{
+   generator_private_t* config = (generator_private_t*) priv;
+   if (config->is_terminated) {
+      return trap_error(config->ctx, TRAP_E_TERMINATED);
+   }
+   data = config->data_to_send;
+   *size = config->data_size;
+   return TRAP_E_OK;   
+}
+
+void generator_terminate(void *priv)
+{
+   if (priv) {
+      ((generator_private_t*)priv)->is_terminated = 1;
+   }
+}
+
+
+void generator_destroy(void *priv)
+{
+   // Free private data
+   if (priv) {
+      free(((generator_private_t*)priv)->data_to_send);
+      free(priv);
+   }
+}
+
+int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc)
+{
+   // Check parameter
+   if (params == NULL)
+      return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
+   unsigned char n = params[0];
+   if (n == 0)
+      return trap_errorf(ctx, TRAP_E_BADPARAMS, "zero-length data");
+   
+   // Create structure to store private data
+   generator_private_t *priv = calloc(1, sizeof(generator_private_t));
+   if (!priv) {
+      return trap_error(ctx, TRAP_E_MEMORY);
+   }
+   
+   // Store data to send (param) into private data
+   priv->ctx = ctx;
+   priv->data_size = n;
+   priv->data_to_send = malloc(n);
+   if (!priv->data_to_send)
+      return free(priv), trap_error(ctx, TRAP_E_MEMORY);
+   memcpy(priv->data_to_send, params+1, n);
+   
+   priv->is_terminated = 0;
+   
+   // Fill struct defining the interface
+   ifc->recv = generator_recv;
+   ifc->terminate = generator_terminate;
+   ifc->destroy = generator_destroy;
+   ifc->create_dump = create_dump;
+   ifc->priv = priv;
+   
+   return TRAP_E_OK;
+}
+
+
+
+/***** Blackhole *****/
+// Everything sent to blackhole is dropped
+
+int blackhole_send(void *priv, const void *data, uint32_t size, int timeout)
+{
+   return TRAP_E_OK;
+}
+
+void blackhole_terminate(void *priv)
+{
+   return;
+}
+
+
+void blackhole_destroy(void *priv)
+{
+   return;
+}
+
+int32_t blackhole_get_client_count(void *priv)
+{
+   /* this interface does not support multiple clients */
+   return 1;
+}
+
+int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *ifc)
+{
+   ifc->send = blackhole_send;
+   ifc->terminate = blackhole_terminate;
+   ifc->destroy = blackhole_destroy;
+   ifc->get_client_count = blackhole_get_client_count;
+   ifc->create_dump = create_dump;
+   ifc->priv = NULL;
+   return TRAP_E_OK;
+}
+

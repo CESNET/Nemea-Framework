@@ -1,0 +1,16 @@
+Blacklist Downloader README
+
+   Blacklist Downloader is set of functions used to download website content
+using GNU wget utility. It is initialized by array of url addresses, array of file names
+and create child process. This new process then stores each websites content to its
+coresponding file and then it sends signal SIGUSR1 to its parent process to signalize
+that update is done.
+
+Usage:
+   Modul which want to use Blacklist Downloader will first call function:
+      bl_down_init(page, file, count);
+   Where page  is array of url addresses
+         file  is array of file names
+         count is count of url addresses/file names
+   Function will then return ID of child process if succeed, otherwise it returns -1.
+   If succeed, parent process will periodically receive signal SIGUSR1 from child process.

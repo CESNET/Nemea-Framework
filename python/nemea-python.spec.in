@@ -1,0 +1,40 @@
+Summary: Python wrapper of the Nemea framework.
+Name: nemea-python
+Version: @PACKAGE_VERSION@
+Release: @RELEASE@
+URL: http://www.liberouter.org/
+Source: https://www.liberouter.org/repo/SOURCES/%{name}-%{version}-%{release}.tar.gz
+Group: Liberouter
+License: BSD
+Vendor: CESNET, z.s.p.o.
+Packager: @USERNAME@ <@USERMAIL@>
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
+
+Requires: python libtrap
+BuildRequires: python
+Provides: nemea-python
+
+%description
+Python wrapper of the Nemea libraries (libtrap, UniRec) allows for easier development of Nemea modules in the python language.
+
+%prep
+%setup
+
+%build
+./configure --prefix=%{_prefix} --libdir=%{_libdir} --with-unirec-path="@UNIREC_PATH@" --enable-silent-rules -q;
+make
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%post
+cd "%{_datadir}/nemea-python/"; python setup.py install --record "%{_datadir}/nemea-python/installed-files"
+
+%postun
+cat "%{_datadir}/nemea-python/installed-files" | xargs rm -f
+rm -rf "%{_datadir}/nemea-python/"
+
+%files
+%{_datadir}/nemea-python/*.py*
+%{_datadir}/nemea-python/unirec/*.py*
+
