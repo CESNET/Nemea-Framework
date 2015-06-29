@@ -2216,3 +2216,89 @@ int trap_ctx_get_client_count(trap_ctx_t *ctx, uint32_t ifcidx)
  * @}
  */
 
+/**
+ * \addtogroup trap_mess_fmt
+ * @{
+ */
+/**
+ * \addtogroup simpleapi
+ * @{
+ */
+int trap_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...)
+{
+   va_list ap;
+   int res;
+   va_start(ap, data_type);
+   res = trap_ctx_vset_format(trap_glob_ctx, out_ifc_idx, data_type, ap);
+   va_end(ap);
+   return res;
+}
+
+int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...)
+{
+   va_list ap;
+   int res;
+   va_start(ap, data_type);
+   res = trap_ctx_vset_required_format(trap_glob_ctx, type, ifcidx, request, ap);
+   va_end(ap);
+   return res;
+}
+
+int trap_get_data_fmt(uint32_t in_ifc_idx, uint8_t *data_type, const void **spec)
+{
+   return trap_ctx_get_data_format(trap_glob_ctx, in_ifc_idx, data_type, spec);
+}
+/**
+ * @}
+ */
+
+/**
+ * \addtogroup contextapi
+ * @{
+ */
+int trap_ctx_set_data_fmt(trap_ctx_priv_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, ...)
+{
+   va_list ap;
+   int res;
+   va_start(ap, data_type);
+   res = trap_ctx_vset_format(ctx, out_ifc_idx, data_type, ap);
+   va_end(ap);
+   return res;
+}
+
+int trap_ctx_set_required_fmt(trap_ctx_priv_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...)
+{
+   va_list ap;
+   int res;
+   va_start(ap, data_type);
+   res = trap_ctx_vset_required_format(ctx, in_ifc_idx, data_type, ap);
+   va_end(ap);
+   return res;
+}
+
+int trap_ctx_get_data_fmt(trap_ctx_priv_t *ctx, uint32_t in_ifc_idx, uint8_t *data_type, const void **spec)
+{
+   /* TODO implement: read from structure, value that was set (out) or that was received (in) */
+   return TRAP_E_OK;
+}
+
+int trap_ctx_vset_data_fmt(trap_ctx_priv_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap)
+{
+   /* TODO implement: store into out_ifc_list structure */
+
+   return TRAP_E_OK;
+}
+
+int trap_ctx_vset_required_fmt(trap_ctx_priv_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap)
+{
+   /* TODO implement: store into in_ifc_list structure */
+
+   return TRAP_E_OK;
+}
+/**
+ * @}
+ */
+/**
+ * @}
+ *//* trap_mess_fmt */
+

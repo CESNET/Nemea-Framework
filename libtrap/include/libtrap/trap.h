@@ -182,6 +182,115 @@ typedef struct trap_ifc_spec_s {
    char **params;
 } trap_ifc_spec_t;
 
+/**
+ * \defgroup trap_mess_fmt Message format
+ * @{
+ */
+/**
+ * Type of messages that are sent via IFC
+ */
+typedef enum {
+   /**
+    * Raw data, no format specified
+    */
+   TRAP_FMT_RAW = 0,
+   /**
+    * UniRec records
+    */
+   TRAP_FMT_UNIREC = 1,
+   /**
+    * Structured data serialized using JSON
+    */
+   TRAP_FMT_JSON = 2
+} trap_data_format_t;
+
+/**
+ * \addtogroup simpleapi
+ */
+/**
+ * Set format of messages on output IFC.
+ *
+ * \param[in] out_ifc_idx   index of output IFC
+ * \param[in] data_type     format of messages defined by #trap_data_format_t
+ * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template is expected
+ * \return TRAP_E_OK on success
+ */
+int trap_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...);
+
+/**
+ * Set format of messages expected on input IFC.
+ *
+ * \param[in] out_ifc_idx   index of input IFC
+ * \param[in] data_type     format of messages defined by #trap_data_format_t
+ * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template is expected
+ * \return TRAP_E_OK on success
+ */
+int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...);
+
+/**
+ * Get message format and template that is set on IFC.
+ *
+ * On output IFC it should return the values that were set.  On input IFC
+ * it should return format and template that was received.
+ *
+ * \param[in] out_ifc_idx   index of input IFC
+ * \param[in] data_type     format of messages defined by #trap_data_format_t
+ * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template is expected
+ * \return TRAP_E_OK on success
+ */
+int trap_get_data_fmt(uint32_t in_ifc_idx, uint8_t *data_type, const void **spec);
+/**
+ * @}
+ */
+
+/**
+ * \addtogroup contextapi
+ * @{
+ */
+/**
+ * Set format of messages on output IFC.
+ *
+ * \param[in] out_ifc_idx   index of output IFC
+ * \param[in] data_type     format of messages defined by #trap_data_format_t
+ * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template is expected
+ * \return TRAP_E_OK on success
+ */
+int trap_ctx_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...);
+
+/**
+ * Set format of messages expected on input IFC.
+ *
+ * \param[in] out_ifc_idx   index of input IFC
+ * \param[in] data_type     format of messages defined by #trap_data_format_t
+ * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template is expected
+ * \return TRAP_E_OK on success
+ */
+int trap_ctx_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...);
+
+/**
+ * Get message format and template that is set on IFC.
+ *
+ * On output IFC it should return the values that were set.  On input IFC
+ * it should return format and template that was received.
+ *
+ * \param[in] out_ifc_idx   index of input IFC
+ * \param[in] data_type     format of messages defined by #trap_data_format_t
+ * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template is expected
+ * \return TRAP_E_OK on success
+ */
+int trap_ctx_get_data_fmt(uint32_t in_ifc_idx, uint8_t *data_type, const void **spec);
+/**
+ * @}
+ */
+/**
+ * @}
+ *//* trap_mess_fmt */
 
 /** Parse command-line arguments.
  * Extract agruments needed by TRAP to set up interfaces (-i params) and return
