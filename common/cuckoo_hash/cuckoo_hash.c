@@ -2,11 +2,13 @@
  * \file cuckoo_hash.c
  * \brief Generic hash table with Cuckoo hashing support.
  * \author Roman Vrana, xvrana20@stud.fit.vutbr.cz
+ * \author Tomas Cejka, cejkat@cesnet.cz
  * \date 2013
  * \date 2014
+ * \date 2015
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -61,13 +63,17 @@
  * @param rehash Enable/disable rehash feature.
  * @return -1 if the table wasn't created, 0 otherwise.
  */
-int ht_init(cc_hash_table_t* new_table, unsigned int table_size, unsigned int data_size, unsigned int key_length, int rehash)
+int ht_init(cc_hash_table_t *new_table, unsigned int table_size, unsigned int data_size, unsigned int key_length, int rehash)
 {
+    if (new_table == NULL) {
+        fprintf(stderr, "ERROR: Bad parameter, initialization failed.\n");
+        return -1;
+    }
     // allocate the table itself
     new_table->table = (cc_item_t*) calloc(table_size, sizeof(cc_item_t));
 
     // test if the memory was allocated
-    if (new_table == NULL) {
+    if (new_table->table == NULL) {
         fprintf(stderr, "ERROR: Hash table couldn't be initialized.\n");
         return -1;
     }

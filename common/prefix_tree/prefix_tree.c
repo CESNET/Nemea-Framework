@@ -2,10 +2,12 @@
  * \file prefix_tree.c
  * \brief Prefix tree data structure for saving informaticons about domains.
  * \author Zdenek Rosa <rosazden@fit.cvut.cz>
+ * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2014
+ * \date 2015
  */
 /*
- * Copyright (C) 2014 CESNET
+ * Copyright (C) 2014-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -57,57 +59,73 @@ int prefix_tree_map_character_to_number(unsigned  char  letter)
 
 prefix_tree_t * prefix_tree_initialize(unsigned char prefix_suffix, unsigned int size_of_value, int domain_separator, int domain_extension, relaxation_after_delete relaxation)
 {
-	prefix_tree_t * tree;
-	tree = (prefix_tree_t *) calloc(sizeof(prefix_tree_t),1);
+	prefix_tree_t *tree = NULL;
+	tree = (prefix_tree_t *) calloc(sizeof(prefix_tree_t), 1);
 	if (tree == NULL){
-		return (NULL);
+		goto failure;
 	}
 	tree->size_of_value = size_of_value;
 	tree->prefix_suffix = prefix_suffix;
 	tree->domain_separator = domain_separator;
 	tree->relaxation = relaxation;
-	tree->root = (prefix_tree_inner_node_t *) calloc(sizeof(prefix_tree_inner_node_t),1);
+	tree->root = (prefix_tree_inner_node_t *) calloc(sizeof(prefix_tree_inner_node_t), 1);
 	if (tree->root == NULL){
-		return (NULL);
+		goto failure;
 	}
-	tree->root->domain = (prefix_tree_domain_t *) calloc(sizeof(prefix_tree_domain_t),1);
+	tree->root->domain = (prefix_tree_domain_t *) calloc(sizeof(prefix_tree_domain_t), 1);
 	if (tree->root->domain == NULL){
-		return (NULL);
+		goto failure;
 	}
 	tree->root->domain->count_of_insert = 1;
 	if(domain_extension == DOMAIN_EXTENSION_YES){
-		tree->root->domain->domain_extension = (node_domain_extension_t*)calloc(1,sizeof(node_domain_extension_t));
-		tree->domain_extension = (tree_domain_extension_t*) calloc (1, sizeof(tree_domain_extension_t));
+		tree->root->domain->domain_extension = (node_domain_extension_t *) calloc(1, sizeof(node_domain_extension_t));
+		tree->domain_extension = (tree_domain_extension_t *) calloc(1, sizeof(tree_domain_extension_t));
 		if (tree->domain_extension == NULL){
-			return (NULL);
+			goto failure;
 		}
-		tree->domain_extension->list_of_most_subdomains = (prefix_tree_domain_t**) calloc(sizeof(prefix_tree_domain_t*), MAX_SIZE_OF_DEEGRE);
+		tree->domain_extension->list_of_most_subdomains = (prefix_tree_domain_t **) calloc(sizeof(prefix_tree_domain_t *), MAX_SIZE_OF_DEEGRE);
 		if (tree->domain_extension->list_of_most_subdomains == NULL){
-			return (NULL);
+			goto failure;
 		}
-		tree->domain_extension->list_of_most_subdomains_end = (prefix_tree_domain_t**) calloc(sizeof(prefix_tree_domain_t*), MAX_SIZE_OF_DEEGRE);
+		tree->domain_extension->list_of_most_subdomains_end = (prefix_tree_domain_t **) calloc(sizeof(prefix_tree_domain_t *), MAX_SIZE_OF_DEEGRE);
 		if (tree->domain_extension->list_of_most_subdomains_end == NULL){
-			return (NULL);
+			goto failure;
 		}
 	}
 	else{
 		tree->domain_extension=NULL;
 	}
 	return tree;
+failure:
+        if (tree != NULL) {
+                if (tree->root != NULL) {
+                        if (tree->root->domain != NULL) {
+                                free(tree->root->domain->domain_extension);
+                                free(tree->root->domain);
+                        }
+                        free(tree->root);
+                }
+                if (tree->domain_extension != NULL) {
+                        free(tree->domain_extension->list_of_most_subdomains);
+                        free(tree->domain_extension);
+                }
+        }
+        return NULL; 
 }
 
 
 
 int prefix_tree_destroy_recursive(prefix_tree_t * tree, prefix_tree_inner_node_t *  node)
 {
-	int deleted_domains=0;
+	int deleted_domains = 0;
+        int i, index;
+
 	//for all nodes
-	if(node != NULL){
+	if (node != NULL) {
 		//for all children in node
-		if(node->child != NULL){
-			int i;
-			for(i=0; i<COUNT_OF_LETTERS_IN_DOMAIN;i++){
-				if(node->child[i] != NULL){
+		if (node->child != NULL) {
+			for (i=0; i<COUNT_OF_LETTERS_IN_DOMAIN;i++) {
+				if (node->child[i] != NULL) {
 					deleted_domains = prefix_tree_destroy_recursive(tree, node->child[i]);
 					node->count_of_children--;
 				}
@@ -115,44 +133,43 @@ int prefix_tree_destroy_recursive(prefix_tree_t * tree, prefix_tree_inner_node_t
 			free(node->child);
 		}
 		//for domain and domain's child
-		if(node->domain != NULL){
-			int index;
-			if(node->domain->child != NULL){
+		if (node->domain != NULL) {
+			if (node->domain->child != NULL) {
 				deleted_domains = prefix_tree_destroy_recursive(tree, node->domain->child);
 			}
-			if(node->domain->value != NULL){
+			if (node->domain->value != NULL) {
 				free(node->domain->value);
 			}
-			if (tree->domain_extension != NULL){
-				if(node->domain->domain_extension->most_subdomains_more){
+			if (tree->domain_extension != NULL) {
+				if (node->domain->domain_extension->most_subdomains_more) {
 					node->domain->domain_extension->most_subdomains_more->domain_extension->most_subdomains_less = node->domain->domain_extension->most_subdomains_less;
 				}
-				if(node->domain->domain_extension->most_subdomains_less){
+				if (node->domain->domain_extension->most_subdomains_less) {
 					node->domain->domain_extension->most_subdomains_less->domain_extension->most_subdomains_more = node->domain->domain_extension->most_subdomains_more;
 				}
-				if(node->domain->domain_extension->most_used_domain_more){
+				if (node->domain->domain_extension->most_used_domain_more) {
 					node->domain->domain_extension->most_used_domain_more->domain_extension->most_used_domain_less = node->domain->domain_extension->most_used_domain_less;
 				}
-				if(node->domain->domain_extension->most_used_domain_less){
+				if (node->domain->domain_extension->most_used_domain_less) {
 					node->domain->domain_extension->most_used_domain_less->domain_extension->most_used_domain_more = node->domain->domain_extension->most_used_domain_more;
 				}
-				if(node->domain == tree->domain_extension->list_of_most_used_domains){
+				if (node->domain == tree->domain_extension->list_of_most_used_domains) {
 					tree->domain_extension->list_of_most_used_domains = node->domain->domain_extension->most_used_domain_less;
 				}
-				if(node->domain == tree->domain_extension->list_of_most_used_domains_end){
+				if (node->domain == tree->domain_extension->list_of_most_used_domains_end) {
 					tree->domain_extension->list_of_most_used_domains_end = node->domain->domain_extension->most_used_domain_more;
 				}
-				if(node->domain == tree->domain_extension->list_of_most_unused_domains){
+				if (node->domain == tree->domain_extension->list_of_most_unused_domains) {
 					tree->domain_extension->list_of_most_unused_domains = node->domain->domain_extension->most_used_domain_less;
 				}
 				index = node->domain->degree;
-				if(index >= MAX_SIZE_OF_DEEGRE){
+				if (index >= MAX_SIZE_OF_DEEGRE) {
 					index=MAX_SIZE_OF_DEEGRE-1;
 				}
-				if(node->domain == tree->domain_extension->list_of_most_subdomains[index]){
+				if (node->domain == tree->domain_extension->list_of_most_subdomains[index]) {
 					tree->domain_extension->list_of_most_subdomains[index] = node->domain->domain_extension->most_subdomains_less;
 				}
-				if(node->domain == tree->domain_extension->list_of_most_subdomains_end[index]){
+				if (node->domain == tree->domain_extension->list_of_most_subdomains_end[index]) {
 					tree->domain_extension->list_of_most_subdomains_end[index] = node->domain->domain_extension->most_subdomains_more;
 				}
 				free(node->domain->domain_extension);
@@ -161,16 +178,17 @@ int prefix_tree_destroy_recursive(prefix_tree_t * tree, prefix_tree_inner_node_t
 			free(node->domain);
 			deleted_domains++;
 		}
-		if(node->value != NULL){
+		if (node->value != NULL) {
 			free(node->value);
 		}
 		//node string
-		if(node->string != NULL){
+		if (node->string != NULL) {
 			free(node->string);
 		}
 		free(node);
 		return deleted_domains;
 	}
+	return 0;
 }
 
 void prefix_tree_destroy(prefix_tree_t * tree)
@@ -374,21 +392,21 @@ void prefix_tree_recursive_plus_node(prefix_tree_domain_t * domain, prefix_tree_
 	}
 }
 
-char * prefix_tree_read_inner_node(prefix_tree_t * tree, prefix_tree_inner_node_t * node, char * string)
+char *prefix_tree_read_inner_node(prefix_tree_t *tree, prefix_tree_inner_node_t *node, char *string)
 {
 	int i;
-	if(tree->prefix_suffix == PREFIX){
-		for(i = 0; i < node->length; i++){
-				string[i] = node->string[i];
+	if (tree->prefix_suffix == PREFIX) {
+		for (i = 0; i < node->length; i++) {
+			string[i] = node->string[i];
 		}
-		string[i]=0;
-	}
-	else{
-		string[node->length]=0;
-		for(i = 0; i < node->length; i++){
-			string[i] = node->string[node->length-1-i];
+		string[i] = 0;
+	} else {
+		string[node->length] = 0;
+		for (i = 0; i < node->length; i++) {
+			string[i] = node->string[node->length - 1 - i];
 		}
 	}
+	return NULL;
 }
 
 prefix_tree_inner_node_t * prefix_tree_most_substring(prefix_tree_inner_node_t * node){

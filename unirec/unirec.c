@@ -529,7 +529,7 @@ ur_links_t *ur_create_links(const char* mask)
 	}
 
 	// Try to convert passed mask in string to uint64_t.
-	if (sscanf(mask, "%llx", &lm->link_mask) < 1){
+	if (sscanf(mask, "%"SCNx64, &lm->link_mask) < 1) {
 		free(lm);
 		return NULL;
 	}
