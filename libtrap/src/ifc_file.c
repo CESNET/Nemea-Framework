@@ -101,7 +101,7 @@ void file_terminate(void *priv)
 }
 
 /**
- * \brief Create file dump with current configuration.
+ * \brief Create file dump with current configuration (for debugging)
  * \param[in] priv   pointer to module private data
  * \param[in] idx    number of interface
  * \param[in] path   path where dump file will be created
@@ -128,6 +128,7 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
 
    fprintf(fd, "Filename: %s\nMode: %s\nTerminated status: %c\n", cf->filename, cf->mode, cf->is_terminated);
    fclose(fd);
+   free(config_file);
 }
 
 /***** Receiver *****/
@@ -143,7 +144,7 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
  * \param[out] data  pointer to a memory block in which data is to be stored
  * \param[out] size  pointer to a memory block in which size of read data is to be stored
  * \param[in] timeout   NOT USED IN THIS INTERFACE
- * \return 0 on success (TRAP_E_OK), TTRAP_E_IO_ERROR if error occurs during reading, TRAP_E_TERMINATED if interface was terminated.
+ * \return 0 on success (TRAP_E_OK), TRAP_E_IO_ERROR if error occurs during reading, TRAP_E_TERMINATED if interface was terminated.
  */
 int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
@@ -190,11 +191,13 @@ int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc)
 {
    file_private_t *priv;
-   size_t name_length = strlen(params);
+   size_t name_length;
 
    if (params == NULL) {
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
    }
+
+   name_length = strlen(params);
 
    /* Create structure to store private data */
    priv = calloc(1, sizeof(file_private_t));
@@ -205,12 +208,11 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    priv->ctx = ctx;
    priv->filename = (char *) calloc(name_length + 1, sizeof(char));
    if (!priv->filename) {
-      free(priv->filename);
       free(priv);
       return trap_error(ctx, TRAP_E_MEMORY);
    }
 
-   /* Stets mode and filename */
+   /* Sets mode and filename */
    priv->mode[0] = 'r';
    priv->mode[1] = 'b';
    priv->mode[2] = '\0';
@@ -219,9 +221,9 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    /* Attempts to open the file */
    priv->fd = fopen(priv->filename, priv->mode);
    if (priv->fd == NULL) {
+      VERBOSE(CL_ERROR, "CREATE INPUT FILE IFC: unable to open file \"%s\". Possible reasons: non-existing file, bad permission.", priv->filename);
       free(priv->filename);
       free(priv);
-      VERBOSE(CL_ERROR, "CREATE INPUT FILE IFC: unable to open file --%s--. Possible reasons: non-existing file, bad permission.", priv->filename);
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "unable to open file");
    }
 
@@ -340,6 +342,14 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
          return trap_error(ctx, TRAP_E_MEMORY);
       }
 
+      if (dest[0] != 'a' && dest[0] != 'w') {
+         VERBOSE(CL_ERROR, "OUTPUT FILE IFC: bad mode: %c", dest[0]);
+         free(priv->filename);
+         free(priv);
+         free(dest);
+         return trap_errorf(ctx, TRAP_E_BADPARAMS, "OUTPUT FILE IFC: bad mode");
+      }
+
       priv->mode[0] = dest[0];
    }
 
@@ -351,9 +361,9 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    /* Attempts to open the file */
    priv->fd = fopen(priv->filename, priv->mode);
    if (priv->fd == NULL) {
+      VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC : unable to open file \"%s\". Possible reasons: non-existing file, bad permission.", priv->filename);
       free(priv->filename);
       free(priv);
-      VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC : unable to open file --%s--. Possible reasons: non-existing file, bad permission.", priv->filename);
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "unable to open file");
    }
 

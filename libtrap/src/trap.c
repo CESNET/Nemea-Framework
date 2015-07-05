@@ -973,7 +973,7 @@ void trap_convert_module_info_to_json(const trap_module_info_t * info)
  */
 void trap_print_help(const trap_module_info_t *module_info)
 {
-   char *pager = NULL, *output_format = NULL;
+   char *pager = NULL, *output_format = NULL, *env_str = NULL;
    int pager_fds[2];
    pid_t p;
 
@@ -986,7 +986,10 @@ void trap_print_help(const trap_module_info_t *module_info)
       }
    }
 
-   pager = getenv("PAGER");
+   env_str = getenv("PAGER");
+   if (env_str != NULL) {
+      pager = strdup(env_str);
+   }
    if (pager == NULL) {
       goto output;
    }
@@ -1043,6 +1046,7 @@ output:
    printf("  -vv          Be more verbose.\n");
    printf("  -vvv         Be even more verbose.\n");
    printf("\n");
+   free(pager);
    trap_print_ifc_spec_help();
 }
 

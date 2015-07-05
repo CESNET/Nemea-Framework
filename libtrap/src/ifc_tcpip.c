@@ -767,7 +767,9 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
          }
          options = fcntl(sockfd, F_GETFL);
          if (options != -1) {
-            fcntl(sockfd, F_SETFL, O_NONBLOCK | options);
+            if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
+               VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
+            }
          }
          if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             if (errno != EINPROGRESS && errno != EAGAIN) {
