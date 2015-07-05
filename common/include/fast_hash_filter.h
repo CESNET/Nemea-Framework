@@ -53,6 +53,13 @@ extern "C" {
 #endif
 
 /**
+ * Needed for some C++ modules
+ */
+#ifndef UINT64_MAX
+#define UINT64_MAX -1ULL
+#endif
+
+/**
  * Number of columns in the hash table.
  */
 #define FHF_TABLE_COLS 8

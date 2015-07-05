@@ -14,9 +14,8 @@ libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
 			   b_plus_tree/b_plus_tree.h \
 			   prefix_tree/prefix_tree.c \
 			   prefix_tree/prefix_tree.h \
-                           super_fast_hash/super_fast_hash.c \
-                           blacklist_downloader/blacklist_downloader.c
-libnemea_common_la_LDFLAGS = -version-info 2:1:1
+			   super_fast_hash/super_fast_hash.c
+libnemea_common_la_LDFLAGS = -version-info 2:0:1
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = nemea-common.pc
@@ -28,8 +27,7 @@ EXTRA_DIST= README \
 	    super_fast_hash/README \
 	    cuckoo_hash_v2/README \
 	    b_plus_tree/README \
-	    cuckoo_hash/README \
-            blacklist_downloader/README
+	    cuckoo_hash/README
 
 ACLOCAL_AMFLAGS=-I m4
 

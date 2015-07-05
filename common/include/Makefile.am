@@ -8,5 +8,4 @@ pkginclude_HEADERS=nemea-common.h \
 		   progress_printer.h \
 		   b_plus_tree.h \
 		   prefix_tree.h \
-                   blacklist_downloader.h \
                    real_time_sending.h

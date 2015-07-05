@@ -50,7 +50,7 @@
 #include "cuckoo_hash.h"
 #include "cuckoo_hash_v2.h"
 #include "fast_hash_table.h"
-#include "blacklist_downloader.h"
+#include "fast_hash_filter.h"
 #include "progress_printer.h"
 
 #endif
