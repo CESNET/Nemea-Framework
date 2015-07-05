@@ -292,11 +292,11 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
     * TRAP_HALFWAIT is not valid value */
    assert(timeout > TRAP_HALFWAIT);
 
-   (*size) = 0;
-
    if ((config == NULL) || (data == NULL) || (size == NULL)) {
       return TRAP_E_BAD_FPARAMS;
    }
+
+   (*size) = 0;
 
    DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv trap_recv() was called"));
 
@@ -474,7 +474,6 @@ void tcpip_receiver_terminate(void *priv)
       config->is_terminated = 1;
    } else {
       VERBOSE(CL_ERROR, "Bad parameter of tcpip_receiver_terminate()!");
-      trap_error(config->ctx, TRAP_E_BAD_FPARAMS);
    }
    return;
 }
@@ -486,25 +485,23 @@ void tcpip_receiver_terminate(void *priv)
  */
 void tcpip_receiver_destroy(void *priv)
 {
+#define X(p) if (p != NULL) { \
+free(p); \
+p = NULL; \
+}
    tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
    if (config != NULL) {
       if (config->connected == 1) {
          close(config->sd);
       }
-      if (config->dest_addr != NULL) {
-         free(config->dest_addr);
-         config->dest_addr = NULL;
-      }
-      if (config->dest_port != NULL) {
-         free(config->dest_port);
-         config->dest_addr = NULL;
-      }
-      free(config);
-      config = NULL;
+      X(config->dest_addr);
+      X(config->dest_port);
+      X(config);
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
    }
    return;
+#undef X
 }
 
 static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *path)
@@ -517,7 +514,7 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
    /* config file trap-i<number>-buffer.dat */
    char *buf_file = NULL;
    FILE *f = NULL;
-   trap_buffer_header_t aux;
+   trap_buffer_header_t aux = { 0 };
    aux.data_length = htonl(c->ext_buffer_size);
 
    r = asprintf(&conf_file, "%s/trap-i%02"PRIu32"-config.txt", path, idx);
@@ -525,11 +522,6 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
       VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
       conf_file = NULL;
       goto exit;
-   }
-   r = asprintf(&buf_file, "%s/trap-i%02"PRIu32"-buffer.dat", path, idx);
-   if (r == -1) {
-      buf_file = NULL;
-      VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
    }
    f = fopen(conf_file, "w");
    fprintf(f, "Dest addr: %s\nDest port: %s\nConnected: %d\n"
@@ -543,6 +535,14 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
            c->ctx->in_ifc_list[idx].datatimeout,
            TRAP_TIMEOUT_STR(c->ctx->in_ifc_list[idx].datatimeout));
    fclose(f);
+   f = NULL;
+
+   r = asprintf(&buf_file, "%s/trap-i%02"PRIu32"-buffer.dat", path, idx);
+   if (r == -1) {
+      buf_file = NULL;
+      VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
+      goto exit;
+   }
    f = fopen(buf_file, "w");
    if (fwrite(&aux, sizeof(c->ext_buffer_size), 1, f) != 1) {
       VERBOSE(CL_ERROR, "Writing buffer header failed. (%s:%d)", __FILE__, __LINE__);
@@ -553,7 +553,9 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
       goto exit;
    }
 exit:
-   fclose(f);
+   if (f != NULL) {
+      fclose(f);
+   }
    free(conf_file);
    free(buf_file);
    return;
@@ -573,21 +575,27 @@ exit:
  */
 int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, enum tcpip_ifc_sockettype type)
 {
-   int retval = 0;
+#define X(pointer) free(pointer); \
+   pointer = NULL;
+
+   int retval = 0, result = TRAP_E_OK;
    char *param_iterator = NULL;
    char *dest_addr = NULL;
    char *dest_port = NULL;
-
-   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) calloc(1, sizeof(tcpip_receiver_private_t));
-   if (config == NULL) {
-      return trap_error(ctx, TRAP_E_MEMORY);
-   }
-   config->ctx = ctx;
+   struct timeval tv = {5, 0};
+   tcpip_receiver_private_t *config = NULL;
 
    if (params == NULL) {
-      return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "No parameters found.");
+      VERBOSE(CL_ERROR, "No parameters found for input IFC.");
+      return TRAP_E_BADPARAMS;
    }
 
+   config = (tcpip_receiver_private_t *) calloc(1, sizeof(tcpip_receiver_private_t));
+   if (config == NULL) {
+      VERBOSE(CL_ERROR, "Failed to allocate internal memory for input IFC.");
+      return TRAP_E_MEMORY;
+   }
+   config->ctx = ctx;
    config->is_terminated = 0;
    config->socket_type = type;
 
@@ -596,14 +604,15 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    if (param_iterator == NULL) {
       /* error! we expect 2 parameters */
       if ((dest_addr == NULL) || (strlen(dest_addr) == 0)) {
-         free(dest_addr);
          VERBOSE(CL_ERROR, "Missing 'destination address' for TCPIP IFC.");
-         return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "Not enough params for TCPIP IFC.");
+         result = TRAP_E_BADPARAMS;
+         goto failsafe_cleanup;
       }
    }
    param_iterator = trap_get_param_by_delimiter(param_iterator, &dest_port, TCPIP_IFC_PARAMS_DELIMITER);
    if ((dest_port == NULL) || (strlen(dest_port) == 0)) {
       /* if 2nd param is missing, use localhost as addr and 1st param as "port" */
+      free(dest_port);
       dest_port = dest_addr;
       dest_addr = strdup("localhost");
       VERBOSE(CL_VERBOSE_BASIC, "Using the only parameter as 'destination port' and \"localhost\" as 'destination address' for TCPIP IFC.");
@@ -618,21 +627,27 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
 
    if ((config->dest_addr == NULL) || (config->dest_port == NULL)) {
       /* no delimiter found even if we expect two parameters */
-      return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "Malformed params for TCPIP IFC.");
+      VERBOSE(CL_ERROR, "Malformed params for input IFC, missing destination address and port.");
+      result = TRAP_E_BADPARAMS;
+      goto failsafe_cleanup;
    }
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\ndest_addr=\"%s\"\ndest_port=\"%s\"\n"
-      "TDU size: %u\n",
-      config->dest_addr, config->dest_port, config->int_mess_header.data_length);
+           "TDU size: %u\n", config->dest_addr, config->dest_port,
+           config->int_mess_header.data_length);
 
    /*
     * In constructor, we do not know timeout yet.
     * Use 5 seconds to wait for connection to output interface.
     */
-   struct timeval tv = {5, 0};
    retval = client_socket_connect((void *) config, config->dest_addr, config->dest_port, &config->sd, &tv);
    if (retval != TRAP_E_OK) {
       config->connected = 0;
+      if ((retval == TRAP_E_BAD_FPARAMS) || (retval == TRAP_E_IO_ERROR)) {
+         VERBOSE(CL_VERBOSE_BASIC, "Could not connect to sender due to bad parameters.");
+         result = TRAP_E_BADPARAMS;
+         goto failsafe_cleanup;
+      }
    } else {
       config->connected = 1;
    }
@@ -644,14 +659,13 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    ifc->create_dump = tcpip_receiver_create_dump;
    ifc->priv = config;
 
-   if (config->connected == 0) {
-      VERBOSE(CL_VERBOSE_BASIC, "Could not connect to sender.");
-      if ((retval == TRAP_E_BAD_FPARAMS) || (retval == TRAP_E_IO_ERROR)) {
-        return trap_error(config->ctx, retval);
-      }
-   }
-
-   return trap_error(config->ctx, TRAP_E_OK);
+   return TRAP_E_OK;
+failsafe_cleanup:
+   X(dest_addr);
+   X(dest_port);
+   X(config);
+   return result;
+#undef X
 }
 
 /**
@@ -711,7 +725,7 @@ static int wait_for_connection(int sock, struct timeval *tv)
 static int client_socket_connect(void *priv, const char *dest_addr, const char *dest_port, int *socket_descriptor, struct timeval *tv)
 {
    tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
-   int sockfd = -1;
+   int sockfd = -1, options;
    union tcpip_socket_addr addr;
    struct addrinfo *servinfo, *p = NULL;
    int rv, addr_count = 0;
@@ -751,8 +765,10 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
          if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             continue;
          }
-         int options = fcntl(sockfd, F_GETFL);
-         fcntl(sockfd, F_SETFL, O_NONBLOCK | options);
+         options = fcntl(sockfd, F_GETFL);
+         if (options != -1) {
+            fcntl(sockfd, F_SETFL, O_NONBLOCK | options);
+         }
          if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             if (errno != EINPROGRESS && errno != EAGAIN) {
                DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
@@ -789,11 +805,15 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
       addr.unix_addr.sun_family = AF_UNIX;
       snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, UNIX_PATH_FILENAME_FORMAT, dest_port);
       sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-      if (connect(sockfd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) < 0) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "recv UNIX domain socket connect error %d (%s)", errno, strerror(errno));
-         close(sockfd);
+      if (sockfd != -1) {
+         if (connect(sockfd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) < 0) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "recv UNIX domain socket connect error %d (%s)", errno, strerror(errno));
+            close(sockfd);
+         } else {
+            p = (struct addrinfo *) &addr.unix_addr;
+         }
       } else {
-         p = (struct addrinfo *) &addr.unix_addr;
+         return TRAP_E_IO_ERROR;
       }
    }
 
@@ -1237,10 +1257,11 @@ void tcpip_sender_destroy(void *priv)
    // Free private data
    if (c != NULL) {
       if ((c->socket_type == TRAP_IFC_TCPIP_UNIX) || (c->socket_type == TRAP_IFC_TCPIP_SERVICE)) {
-         asprintf(&unix_socket_path, UNIX_PATH_FILENAME_FORMAT, c->server_port);
-         if (unix_socket_path != NULL) {
-            unlink(unix_socket_path);
-            free(unix_socket_path);
+         if (asprintf(&unix_socket_path, UNIX_PATH_FILENAME_FORMAT, c->server_port) != -1) {
+            if (unix_socket_path != NULL) {
+               unlink(unix_socket_path);
+               free(unix_socket_path);
+            }
          }
       }
       if (c->server_port != NULL) {
@@ -1305,7 +1326,7 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
    /* config file trap-i<number>-buffer.dat */
    char *buf_file = NULL;
    FILE *f = NULL;
-   trap_buffer_header_t aux;
+   trap_buffer_header_t aux = { 0 };
    int32_t i;
    struct client_s *cl;
 
@@ -1315,11 +1336,6 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
       VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
       conf_file = NULL;
       goto exit;
-   }
-   r = asprintf(&buf_file, "%s/trap-o%02"PRIu32"-buffer.dat", path, idx);
-   if (r == -1) {
-      buf_file = NULL;
-      VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
    }
    f = fopen(conf_file, "w");
    fprintf(f, "Server port: %s\nServer socket descriptor: %d\n"
@@ -1344,6 +1360,14 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
    }
 
    fclose(f);
+   f = NULL;
+
+   r = asprintf(&buf_file, "%s/trap-o%02"PRIu32"-buffer.dat", path, idx);
+   if (r == -1) {
+      buf_file = NULL;
+      VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
+      goto exit;
+   }
    f = fopen(buf_file, "w");
    aux.data_length = htonl(c->ctx->out_ifc_list[idx].buffer_index);
    if (fwrite(&aux, sizeof(c->int_mess_header), 1, f) != 1) {
@@ -1355,7 +1379,9 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
       goto exit;
    }
 exit:
-   fclose(f);
+   if (f != NULL) {
+      fclose(f);
+   }
    free(conf_file);
    free(buf_file);
    return;
@@ -1377,44 +1403,40 @@ exit:
  */
 int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, enum tcpip_ifc_sockettype type)
 {
-   int ret;
+   int result = TRAP_E_OK;
    char *param_iterator = NULL;
    char *server_port = NULL;
    char *max_clients = NULL;
+   tcpip_sender_private_t *priv = NULL;
    unsigned int max_num_client = 10;
    uint32_t i;
 
-   // Create structure to store private data
-   tcpip_sender_private_t *priv = (tcpip_sender_private_t *) calloc(1, sizeof(tcpip_sender_private_t));
-
-   if (priv == NULL) {
-      return trap_error(ctx, TRAP_E_MEMORY);
-   }
-   priv->ctx = ctx;
+#define X(pointer) free(pointer); \
+   pointer = NULL;
 
    // Check parameter
    if (params == NULL) {
-      VERBOSE(CL_ERROR, "IFC requires a parameter.");
-      return trap_errorf(priv->ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
+      VERBOSE(CL_ERROR, "IFC requires at least one parameter (%s).",
+              type == TRAP_IFC_TYPE_TCPIP ? "TCP port" : "UNIX socket name");
+      return TRAP_E_BADPARAMS;
    }
 
+   // Create structure to store private data
+   priv = (tcpip_sender_private_t *) calloc(1, sizeof(tcpip_sender_private_t));
+   if (priv == NULL) {
+      result = TRAP_E_MEMORY;
+      goto failsafe_cleanup;
+   }
+
+   priv->ctx = ctx;
    priv->socket_type = type;
-
-   // Fill struct defining the interface
-   ifc->send = tcpip_sender_send;
-   ifc->terminate = tcpip_sender_terminate;
-   ifc->destroy = tcpip_sender_destroy;
-   ifc->get_client_count = tcpip_sender_get_client_count;
-   ifc->create_dump = tcpip_sender_create_dump;
-   ifc->priv = priv;
-
 
    /* Parsing params */
    param_iterator = trap_get_param_by_delimiter(params, &server_port, TCPIP_IFC_PARAMS_DELIMITER);
    if ((server_port == NULL) || (strlen(server_port) == 0)) {
-      free(server_port);
-      VERBOSE(CL_ERROR, "Missing 'port' for %s IFC.", (type == TRAP_IFC_TCPIP ? "TCPIP" : "UNIX socket"));
-      return trap_errorf(priv->ctx, TRAP_E_BADPARAMS, "Not enough params for TCPIP IFC.");
+      VERBOSE(CL_ERROR, "Missing %s.", (type == TRAP_IFC_TCPIP ? "TCP port" : "UNIX socket identifier"));
+      result = TRAP_E_BADPARAMS;
+      goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
       /* still having something to parse... */
@@ -1425,8 +1447,8 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       max_num_client = TRAP_IFC_DEFAULT_MAX_CLIENTS;
    } else {
       if (sscanf(max_clients, "%u", &max_num_client) != 1) {
-         VERBOSE(CL_ERROR, "Optional max client number given, but it is probably in wrong format.");
-         return TRAP_E_BADPARAMS;
+         VERBOSE(CL_ERROR, "Malformed optional max client number given, using default value.");
+         max_num_client = TRAP_IFC_DEFAULT_MAX_CLIENTS;
       }
    }
 
@@ -1438,7 +1460,8 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
 
    priv->clients = calloc(max_num_client, sizeof(struct client_s));
    if (priv->clients == NULL) {
-      assert(0);
+      result = TRAP_E_MEMORY;
+      goto failsafe_cleanup;
    }
 
    /* allocate buffer according to TRAP_IFC_MESSAGEQ_SIZE with additional space for message header */
@@ -1468,30 +1491,47 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port=\"%s\"\nmax_clients=\"%s\"\n"
       "TDU size: %u\n(max_clients_num=\"%u\")", priv->server_port, max_clients,
       priv->int_mess_header.data_length, priv->clients_arr_size);
-   free(max_clients);
-
-   ret = server_socket_open(priv);
-   if (ret != TRAP_E_OK) {
-      VERBOSE(CL_ERROR, "Socket could not be opened on given port '%s'.", server_port);
-      goto failsafe_cleanup;
-   }
+   X(max_clients);
 
    if (sem_init(&priv->have_clients, 0, 0) == -1) {
       VERBOSE(CL_ERROR, "Initialization of semaphore failed.");
       goto failsafe_cleanup;
    }
 
-   return TRAP_E_OK;
+   result = server_socket_open(priv);
+   if (result != TRAP_E_OK) {
+      VERBOSE(CL_ERROR, "Socket could not be opened on given port '%s'.", server_port);
+      goto failsafe_cleanup;
+   }
+
+   // Fill struct defining the interface
+   ifc->send = tcpip_sender_send;
+   ifc->terminate = tcpip_sender_terminate;
+   ifc->destroy = tcpip_sender_destroy;
+   ifc->get_client_count = tcpip_sender_get_client_count;
+   ifc->create_dump = tcpip_sender_create_dump;
+   ifc->priv = priv;
+
+   return result;
 
 failsafe_cleanup:
-#define X(pointer) if (pointer != NULL) { \
-   free(pointer); \
-   pointer = NULL; \
-}
-   X(priv->backup_buffer)
+   X(server_port);
+   X(max_clients);
+   if (priv != NULL) {
+      X(priv->backup_buffer);
+      if (priv->clients != NULL) {
+         for (i = 0; i < max_num_client; i++) {
+            X(priv->clients[i].buffer);
+         }
+      }
+      X(priv->clients);
+      pthread_mutex_destroy(&priv->lock);
+      pthread_mutex_destroy(&priv->sending_lock);
+      X(priv);
+   }
 #undef X
 
-   return trap_error(priv->ctx, TRAP_E_NOT_INITIALIZED);
+   return result;
 }
 
 /**
@@ -1614,7 +1654,9 @@ static int server_socket_open(void *priv)
          }
 
          // lose the pesky "address already in use" error message
-         setsockopt(c->server_sd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+         if (setsockopt(c->server_sd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+            VERBOSE(CL_ERROR, "Failed to set socket to reuse address. (%d)", errno);
+         }
 
          if (bind(c->server_sd, p->ai_addr, p->ai_addrlen) < 0) {
             close(c->server_sd);
@@ -1630,11 +1672,18 @@ static int server_socket_open(void *priv)
       /* if socket file exists, it could be hard to create new socket and bind */
       unlink(addr.unix_addr.sun_path); /* error when file does not exist is not a problem */
       c->server_sd = socket(AF_UNIX, SOCK_STREAM, 0);
-      if (bind(c->server_sd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) != -1) {
-         p = (struct addrinfo *) &addr.unix_addr;
-         chmod(addr.unix_addr.sun_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+      if (c->server_sd != -1) {
+         if (bind(c->server_sd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) != -1) {
+            p = (struct addrinfo *) &addr.unix_addr;
+            if (chmod(addr.unix_addr.sun_path, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH) == -1) {
+               VERBOSE(CL_ERROR, "Failed to set permissions to socket (%s).", addr.unix_addr.sun_path);
+            }
+         } else {
+            /* error bind() failed */
+            p = NULL;
+         }
       } else {
-         /* error bind() failed */
+         VERBOSE(CL_ERROR, "Failed to create socket.");
          p = NULL;
       }
    }

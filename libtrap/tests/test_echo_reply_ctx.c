@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 {
    int ret;
 
-   uint16_t read_size;
+   uint16_t read_size = 0;
    uint16_t last_size;
    uint64_t last_value;
    uint64_t *cur_value;
@@ -106,11 +106,11 @@ int main(int argc, char **argv)
    ctx = (trap_ctx_t *) trap_ctx_init(&module_info, ifc_spec);
    if (ctx == NULL) {
       fprintf(stderr, "Trap_ctx_init failed.\n");
-      return 1;
+      goto cleanup;
    }
    if (trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
-      fprintf(stderr, "Trap_ctx_init returned error.\n");
-      return 1;
+      fprintf(stderr, "Trap_ctx_init returned error. %s\n", trap_ctx_get_last_error_msg(ctx));
+      goto cleanup;
    }
 
    signal(SIGTERM, signal_handler);
@@ -161,7 +161,9 @@ int main(int argc, char **argv)
 
    // Do all necessary cleanup before exiting
    // (close interfaces and free allocated memory)
+cleanup:
    trap_ctx_finalize(&ctx);
+   trap_free_ifc_spec(ifc_spec);
 
    return 0;
 }

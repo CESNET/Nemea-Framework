@@ -117,7 +117,7 @@ const char *trap_last_error_msg = NULL;
 static char *get_param_by_delimiter(const char *source, char **dest, const char delimiter);
 static int compare_timeouts(const void *a, const void *b);
 int trap_ctx_get_multi_data(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
-void create_service_thread(trap_ctx_priv_t * ctx, const char * params);
+void create_service_thread(trap_ctx_priv_t *ctx, const char *params);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -663,7 +663,6 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
       trap_last_error = TRAP_E_MEMORY;
       trap_last_error_msg = default_err_msg[TRAP_E_MEMORY];
       return TRAP_E_MEMORY;
-      //return trap_error(TRAP_E_MEMORY);
    }
 
    // Extract all parameter strings
@@ -687,7 +686,6 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
          trap_last_error = TRAP_E_BADPARAMS;
          trap_last_error_msg = default_err_msg[TRAP_E_BADPARAMS];
          return TRAP_E_BADPARAMS;
-         //return trap_errorf(ctx, TRAP_E_BADPARAMS, "Wrong format of interface specifier.");
       }
    }
 
@@ -704,14 +702,12 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
          free(ifc_spec->params);
          ifc_spec->params = NULL;
       }
-      //"Wrong format of interface specifier."
       return TRAP_E_BADPARAMS;
    }
 
    trap_last_error = TRAP_E_OK;
    trap_last_error_msg = default_err_msg[TRAP_E_OK];
    return TRAP_E_OK;
-   //return trap_error(TRAP_E_OK);
 }
 
 /** Destructor of trap_ifc_spec_t structure.
@@ -1207,8 +1203,13 @@ trap_ctx_priv_t *trap_create_ctx_t()
 void trap_free_ctx_t(trap_ctx_priv_t **ctx)
 {
    int i;
-   trap_ctx_priv_t *c = (*ctx);
-   if ((ctx == NULL) || (c == NULL)) {
+   trap_ctx_priv_t *c;
+
+   if (ctx == NULL) {
+      return;
+   }
+   c = (*ctx);
+   if (c == NULL) {
       return;
    }
 
@@ -1785,28 +1786,19 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    ctx->initialized = 1;
    ctx->terminated = 0;
    pthread_rwlock_unlock(&ctx->context_lock);
-//success:
    return ctx;
 
-//freeall_on_failed_thr:
-   if (pthread_rwlock_wrlock(&ctx->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-   }
-   ctx->terminated = 1;
-   pthread_rwlock_unlock(&ctx->context_lock);
-   pthread_join(ctx->timeout_thread, NULL);
-   ctx->timeout_thread_initialized = 0;
 freeall_on_failed:
    for (i=0; i<ctx->num_ifc_out; ++i) {
       pthread_mutex_destroy(&ctx->out_ifc_list[i].ifc_mtx);
-      if (ctx->out_ifc_list[i].destroy != NULL) {
+      if (ctx->out_ifc_list != NULL && ctx->out_ifc_list[i].destroy != NULL) {
          if (ctx->out_ifc_list[i].priv != NULL) {
             ctx->out_ifc_list[i].destroy(ctx->out_ifc_list[i].priv);
          }
-         if (ctx->out_ifc_list[i].buffer_header != NULL) {
-            free(ctx->out_ifc_list[i].buffer_header);
-            ctx->out_ifc_list[i].buffer_header = NULL;
-         }
+      }
+      if (ctx->out_ifc_list[i].buffer_header != NULL) {
+         free(ctx->out_ifc_list[i].buffer_header);
+         ctx->out_ifc_list[i].buffer_header = NULL;
       }
    }
    free(ctx->out_ifc_list);
@@ -1814,7 +1806,7 @@ freeall_on_failed:
 freein_on_failed:
    for (i=0; i<ctx->num_ifc_in; ++i) {
       pthread_mutex_destroy(&ctx->in_ifc_list[i].ifc_mtx);
-      if (ctx->in_ifc_list[i].destroy != NULL) {
+      if (ctx->in_ifc_list != NULL && ctx->in_ifc_list[i].destroy != NULL) {
          if (ctx->in_ifc_list[i].priv != NULL) {
             ctx->in_ifc_list[i].destroy(ctx->in_ifc_list[i].priv);
          }
@@ -1867,6 +1859,11 @@ alloc_counter_failed:
       free(ctx->counter_autoflush);
       ctx->counter_autoflush = NULL;
    }
+   if (ctx->counter_recv_buffer) {
+      free(ctx->counter_recv_buffer);
+      ctx->counter_recv_buffer = NULL;
+   }
+   trap_free_ctx_t(&ctx);
    return ctx;
 }
 

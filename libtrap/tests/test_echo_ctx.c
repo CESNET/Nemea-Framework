@@ -107,11 +107,11 @@ int main(int argc, char **argv)
    ctx = trap_ctx_init(&module_info, ifc_spec);
    if (ctx == NULL) {
       fprintf(stderr, "Trap_ctx_init failed.\n");
-      return 1;
+      goto cleanup;
    }
    if (trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
-      fprintf(stderr, "Trap_ctx_init returned error.\n");
-      return 1;
+      fprintf(stderr, "Trap_ctx_init returned error. %s\n", trap_ctx_get_last_error_msg(ctx));
+      goto cleanup;
    }
 
    signal(SIGTERM, signal_handler);
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
    if (payload == NULL) {
       fprintf(stderr, "Allocation of payload buffer failed.\n");
-      return 1;
+      goto cleanup;
    }
 
    // Read data from input, process them and write to output
@@ -164,9 +164,11 @@ int main(int argc, char **argv)
       (unsigned long long int) counter-1,
       (unsigned long long int) duration);
 
+cleanup:
    // Do all necessary cleanup before exiting
    // (close interfaces and free allocated memory)
    trap_ctx_finalize(&ctx);
+   trap_free_ifc_spec(ifc_spec);
    free(payload);
 
    return 0;
