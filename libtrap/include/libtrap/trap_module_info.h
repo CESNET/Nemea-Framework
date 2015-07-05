@@ -41,6 +41,9 @@
  *
  */
 
+#ifndef _TRAP_MODULE_INFO_H_
+#define _TRAP_MODULE_INFO_H_
+
 /**
  * \addtogroup commonapi
  * @{
@@ -251,6 +254,17 @@ typedef struct trap_module_info_s {
       trap_info_cnt++; \
    }
 
+#define GENERATE_GETOPT_STRING(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+  if (module_getopt_string_size <= (strlen(module_getopt_string) + 2)) { \
+    module_getopt_string_size += module_getopt_string_size/2; \
+    module_getopt_string = realloc(module_getopt_string, module_getopt_string_size * sizeof(char)); \
+    memset(module_getopt_string + (2*module_getopt_string_size)/3, 0, module_getopt_string_size/3); \
+  } \
+  module_getopt_string[strlen(module_getopt_string)] = p_short_opt; \
+  if (p_required_argument == required_argument) { \
+    module_getopt_string[strlen(module_getopt_string)] = ':'; \
+  }
+
 /** Macro counting number of module parameters - memory allocation purpose
  */
 #define COUNT_MODULE_PARAMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) trap_module_params_cnt++;
@@ -263,13 +277,17 @@ typedef struct trap_module_info_s {
 #define INIT_MODULE_INFO_STRUCT(BASIC, PARAMS) \
    int trap_info_cnt = 0; \
    int trap_module_params_cnt = 0; \
-   module_info = (trap_module_info_t *) calloc (1, sizeof(trap_module_info_t)); \
+   int module_getopt_string_size = 50; \
+   char * module_getopt_string = calloc(module_getopt_string_size, sizeof(char)); \
+   module_info = (trap_module_info_t *) calloc(1, sizeof(trap_module_info_t)); \
+   GEN_LONG_OPT_STRUCT(PARAMS); \
    if (module_info != NULL) { \
       BASIC(ALLOCATE_BASIC_INFO) \
       PARAMS(COUNT_MODULE_PARAMS) \
-      module_info->params = (trap_module_info_parameter_t **) calloc (trap_module_params_cnt + 1, sizeof(trap_module_info_parameter_t *)); \
+      module_info->params = (trap_module_info_parameter_t **) calloc(trap_module_params_cnt + 1, sizeof(trap_module_info_parameter_t *)); \
       if (module_info->params != NULL) { \
          PARAMS(ALLOCATE_PARAM_ITEMS) \
+         PARAMS(GENERATE_GETOPT_STRING) \
       } \
    }
 
@@ -288,6 +306,9 @@ typedef struct trap_module_info_s {
       } \
       free(module_info); \
       module_info = NULL; \
+      if (module_getopt_string != NULL) { \
+        free(module_getopt_string); \
+      } \
    }
 
 
@@ -298,3 +319,4 @@ typedef struct trap_module_info_s {
  * @}
  */
 
+#endif

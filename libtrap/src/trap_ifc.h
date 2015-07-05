@@ -143,6 +143,37 @@ typedef struct trap_input_ifc_s {
    uint32_t buffer_full;           ///< Internal used space in message buffer (0 for empty buffer)
    int32_t datatimeout;            ///< Timout for *get_data() calls
    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
+
+   /**
+    * Negotiation state defined as #trap_in_ifc_state_t.
+    */
+   trap_in_ifc_state_t client_state;
+
+   /**
+    * Message format defined by trap_data_format_t.
+    */
+   uint8_t data_type;
+
+   /**
+    * Message format specifier.
+    *
+    * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
+    * data_fmt_spec contains e.g. UniRec template specifier (string representation)
+    */
+   char *data_fmt_spec;
+
+   /**
+    * Required message format defined by trap_data_format_t
+    */
+   uint8_t req_data_type;
+
+   /**
+    * Required message format specifier.
+    *
+    * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
+    * data_fmt_spec contains e.g. UniRec template specifier (string representation)
+    */
+   char *req_data_fmt_spec;
 } trap_input_ifc_t;
 
 /** Struct to hold an instance of some output interface. */
@@ -163,6 +194,19 @@ typedef struct trap_output_ifc_s {
    char bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
    int32_t datatimeout;            ///< Timout for *get_data() calls
    char ifc_type;                  ///< Type of interface
+
+   /**
+    * Message format defined by trap_data_format_t
+    */
+   uint8_t data_type;
+
+   /**
+    * Message format specifier.
+    *
+    * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
+    * data_fmt_spec contains e.g. UniRec template specifier (string representation)
+    */
+   char *data_fmt_spec;
 } trap_output_ifc_t;
 
 

@@ -5,11 +5,13 @@
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \author Jan Neuzil <neuzija1@fit.cvut.cz>
  * \author Marek Svepes <svepemar@fit.cvut.cz>
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
  * \date 2013
  * \date 2014
+ * \date 2015
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -58,6 +60,7 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <assert.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_internal.h"
@@ -66,6 +69,7 @@
 #include "ifc_dummy.h"
 #include "ifc_tcpip.h"
 #include "ifc_tcpip_internal.h"
+#include "ifc_file.h"
 
 /**
  * Version of libtrap
@@ -90,6 +94,7 @@ char trap_ifc_type_supported[] = {
    TRAP_IFC_TYPE_TCPIP,
    TRAP_IFC_TYPE_UNIX,
    TRAP_IFC_TYPE_SERVICE,
+   TRAP_IFC_TYPE_FILE,
    0
 };
 
@@ -1528,6 +1533,12 @@ static inline int trapifc_in_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *if
          goto error;
       }
       break;
+   case TRAP_IFC_TYPE_FILE:
+      if (create_file_recv_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx]) != TRAP_E_OK) {
+         VERBOSE(CL_ERROR, "Initialization of FILE input interface no. %i failed.", idx);
+         goto error;
+      }
+      break;
    default:
       VERBOSE(CL_ERROR, "Unknown input interface type '%c'.", ifc_spec->types[idx]);
       goto error;
@@ -1565,6 +1576,12 @@ static inline int trapifc_out_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *i
       if (create_tcpip_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx],
                                   &ctx->out_ifc_list[idx], TRAP_IFC_TCPIP_UNIX) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of UNIX output interface no. %i failed.", idx);
+         goto error;
+      }
+      break;
+   case TRAP_IFC_TYPE_FILE:
+      if (create_file_send_ifc(ctx, ifc_spec->params[idx], &ctx->out_ifc_list[idx]) != TRAP_E_OK) {
+         VERBOSE(CL_ERROR, "Initialization of BLACKHOLE output interface no. %i failed.", idx);
          goto error;
       }
       break;
@@ -1662,6 +1679,12 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    }
 
    for (i = 0; i < ctx->num_ifc_in; i++) {
+      ctx->in_ifc_list[i].data_type = TRAP_FMT_UNKNOWN;
+      ctx->in_ifc_list[i].data_fmt_spec = NULL;
+
+      ctx->in_ifc_list[i].req_data_type = TRAP_FMT_UNKNOWN;
+      ctx->in_ifc_list[i].req_data_fmt_spec = NULL;
+
       if (pthread_mutex_init(&ctx->in_ifc_list[i].ifc_mtx, NULL) != 0) {
          goto freein_readers;
       }
@@ -1714,6 +1737,9 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    }
 
    for (i = 0; i < ctx->num_ifc_out; i++) {
+      ctx->out_ifc_list[i].data_type = TRAP_FMT_UNKNOWN;
+      ctx->out_ifc_list[i].data_fmt_spec = NULL;
+
       ctx->out_ifc_list[i].buffer_header = (void *) calloc(1, TRAP_IFC_MESSAGEQ_SIZE + sizeof(trap_buffer_header_t) + 1);
       if (ctx->out_ifc_list[i].buffer_header == NULL) {
          trap_errorf(ctx, TRAP_E_MEMORY, "Not enought memory for input ifc buffer.");
@@ -2221,80 +2247,149 @@ int trap_ctx_get_client_count(trap_ctx_t *ctx, uint32_t ifcidx)
  * @{
  */
 /**
- * \addtogroup simpleapi
+ * \addtogroup contextapi
  * @{
  */
-int trap_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...)
+void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap)
+{
+   trap_output_ifc_t *ifc;
+   trap_ctx_priv_t *c = ctx;
+
+   assert(c != NULL);
+   assert(data_type != TRAP_FMT_UNKNOWN);
+   assert(out_ifc_idx < c->num_ifc_out);
+
+   ifc = &c->out_ifc_list[out_ifc_idx];
+   ifc->data_type = data_type;
+   if (data_type |= TRAP_FMT_RAW) {
+      ifc->data_fmt_spec = (char *) va_arg(ap, char *);
+   }
+}
+
+void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, ...)
+{
+   va_list ap;
+
+   assert(ctx != NULL);
+
+   va_start(ap, data_type);
+   trap_ctx_vset_data_fmt(ctx, out_ifc_idx, data_type, ap);
+   va_end(ap);
+}
+
+int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap)
+{
+   trap_input_ifc_t *ifc;
+   trap_ctx_priv_t *c = ctx;
+
+   assert(c != NULL);
+   assert(data_type != TRAP_FMT_UNKNOWN);
+   assert(in_ifc_idx < c->num_ifc_in);
+
+   ifc = &c->in_ifc_list[in_ifc_idx];
+   ifc->req_data_type = data_type;
+   if (data_type |= TRAP_FMT_RAW) {
+      ifc->req_data_fmt_spec = (char *) va_arg(ap, char *);
+   }
+
+   return TRAP_E_OK;
+}
+
+int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...)
 {
    va_list ap;
    int res;
+
+   assert(ctx != NULL);
+
    va_start(ap, data_type);
-   res = trap_ctx_vset_format(trap_glob_ctx, out_ifc_idx, data_type, ap);
+   res = trap_ctx_vset_required_fmt(ctx, in_ifc_idx, data_type, ap);
    va_end(ap);
    return res;
 }
 
-int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...)
+int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec)
 {
-   va_list ap;
-   int res;
-   va_start(ap, data_type);
-   res = trap_ctx_vset_required_format(trap_glob_ctx, type, ifcidx, request, ap);
-   va_end(ap);
-   return res;
-}
+   trap_input_ifc_t *inifc;
+   trap_output_ifc_t *outifc;
+   trap_ctx_priv_t *c = ctx;
 
-int trap_get_data_fmt(uint32_t in_ifc_idx, uint8_t *data_type, const void **spec)
-{
-   return trap_ctx_get_data_format(trap_glob_ctx, in_ifc_idx, data_type, spec);
+   assert(c != NULL);
+
+   if (ifc_dir == TRAPIFC_INPUT) {
+      assert(ifc_idx < c->num_ifc_in);
+
+      inifc = &c->in_ifc_list[ifc_idx];
+
+      assert(inifc->data_type != TRAP_FMT_RAW);
+      if (inifc->client_state == FMT_OK) {
+         (*data_type) = inifc->data_type;
+         if (inifc->data_type != TRAP_FMT_RAW) {
+            (*spec) = inifc->data_fmt_spec;
+         } else {
+            (*spec) = NULL;
+         }
+      } else {
+         return TRAP_E_NOT_INITIALIZED;
+      }
+   } else {
+      /* TRAPIFC_OUTPUT */
+      assert(ifc_idx < c->num_ifc_out);
+
+      outifc = &c->out_ifc_list[ifc_idx];
+
+      assert(outifc->data_type != TRAP_FMT_RAW);
+      (*data_type) = outifc->data_type;
+      if (*data_type != TRAP_FMT_RAW) {
+         (*spec) = outifc->data_fmt_spec;
+      } else {
+         (*spec) = NULL;
+      }
+   }
+   return TRAP_E_OK;
 }
 /**
  * @}
  */
 
 /**
- * \addtogroup contextapi
+ * \addtogroup simpleapi
  * @{
  */
-int trap_ctx_set_data_fmt(trap_ctx_priv_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, ...)
+void trap_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...)
+{
+   va_list ap;
+
+   va_start(ap, data_type);
+   trap_ctx_vset_data_fmt(trap_glob_ctx, out_ifc_idx, data_type, ap);
+   va_end(ap);
+}
+
+int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...)
 {
    va_list ap;
    int res;
+
    va_start(ap, data_type);
-   res = trap_ctx_vset_format(ctx, out_ifc_idx, data_type, ap);
+   res = trap_ctx_vset_required_fmt(trap_glob_ctx, in_ifc_idx, data_type, ap);
    va_end(ap);
+
    return res;
 }
 
-int trap_ctx_set_required_fmt(trap_ctx_priv_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...)
+int trap_get_data_fmt(uint8_t ifc_dir, uint32_t in_ifc_idx, uint8_t *data_type, const char **spec)
 {
-   va_list ap;
-   int res;
-   va_start(ap, data_type);
-   res = trap_ctx_vset_required_format(ctx, in_ifc_idx, data_type, ap);
-   va_end(ap);
-   return res;
+   return trap_ctx_get_data_fmt(trap_glob_ctx, ifc_dir, in_ifc_idx, data_type, spec);
 }
 
-int trap_ctx_get_data_fmt(trap_ctx_priv_t *ctx, uint32_t in_ifc_idx, uint8_t *data_type, const void **spec)
+int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_ifc_data_fmt)
 {
-   /* TODO implement: read from structure, value that was set (out) or that was received (in) */
-   return TRAP_E_OK;
-}
-
-int trap_ctx_vset_data_fmt(trap_ctx_priv_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap)
-{
-   /* TODO implement: store into out_ifc_list structure */
+   /* TODO implement: Compare sender_ifc template and receiver_ifc template
+   and return whether receivers template is subset of the senders template. */
 
    return TRAP_E_OK;
 }
 
-int trap_ctx_vset_required_fmt(trap_ctx_priv_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap)
-{
-   /* TODO implement: store into in_ifc_list structure */
-
-   return TRAP_E_OK;
-}
 /**
  * @}
  */
