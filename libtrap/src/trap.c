@@ -2261,7 +2261,7 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
 
    ifc = &c->out_ifc_list[out_ifc_idx];
    ifc->data_type = data_type;
-   if (data_type |= TRAP_FMT_RAW) {
+   if (data_type != TRAP_FMT_RAW) {
       ifc->data_fmt_spec = (char *) va_arg(ap, char *);
    }
 }
@@ -2288,7 +2288,7 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
 
    ifc = &c->in_ifc_list[in_ifc_idx];
    ifc->req_data_type = data_type;
-   if (data_type |= TRAP_FMT_RAW) {
+   if (data_type != TRAP_FMT_RAW) {
       ifc->req_data_fmt_spec = (char *) va_arg(ap, char *);
    }
 
