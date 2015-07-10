@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <arpa/inet.h>
+#include <wordexp.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
@@ -192,16 +193,25 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
 {
    file_private_t *priv;
    size_t name_length;
+   wordexp_t exp_result;
 
    if (params == NULL) {
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
    }
 
-   name_length = strlen(params);
+   /* Perform shell-like expansion of ~ */
+   if (wordexp(params, &exp_result, 0) != 0) {
+      VERBOSE(CL_ERROR, "CREATE INPUT FILE IFC: unable to perform shell-like expand of: %s", params);
+      wordfree(&exp_result);
+      return trap_errorf(ctx, TRAP_E_BADPARAMS, "CREATE INPUT FILE IFC: unable to perform shell-like expand");
+   }
+
+   name_length = strlen(exp_result.we_wordv[0]);
 
    /* Create structure to store private data */
    priv = calloc(1, sizeof(file_private_t));
    if (!priv) {
+      wordfree(&exp_result);
       return trap_error(ctx, TRAP_E_MEMORY);
    }
 
@@ -209,6 +219,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    priv->filename = (char *) calloc(name_length + 1, sizeof(char));
    if (!priv->filename) {
       free(priv);
+      wordfree(&exp_result);
       return trap_error(ctx, TRAP_E_MEMORY);
    }
 
@@ -216,7 +227,8 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    priv->mode[0] = 'r';
    priv->mode[1] = 'b';
    priv->mode[2] = '\0';
-   strncpy(priv->filename, params, name_length + 1);
+   strncpy(priv->filename, exp_result.we_wordv[0], name_length + 1);
+   wordfree(&exp_result);
 
    /* Attempts to open the file */
    priv->fd = fopen(priv->filename, priv->mode);
@@ -309,7 +321,9 @@ int32_t file_get_client_count(void *priv)
 int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc)
 {
    file_private_t *priv;
-   char *dest, *ret;
+   char *dest, *dest2, *ret;
+   wordexp_t exp_result;
+   size_t name_length;
 
    if (params == NULL) {
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
@@ -323,40 +337,62 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
    priv->ctx = ctx;
 
-
    /* Parses and sets filename and mode */
-   priv->filename = dest = NULL;
-   ret = trap_get_param_by_delimiter(params, &(priv->filename), ':');
+   priv->filename = dest = dest2 = NULL;
+   ret = trap_get_param_by_delimiter(params, &dest, ':');
 
    if (!ret) {
-      if (priv->filename) {
+      if (dest) {
          priv->mode[0] = 'a';
       } else {
          free(priv);
          return trap_error(ctx, TRAP_E_MEMORY);
       }
    } else {
-      trap_get_param_by_delimiter(ret, &dest, ':');
-      if (!dest) {
+      trap_get_param_by_delimiter(ret, &dest2, ':');
+      if (!dest2) {
          free(priv);
+         free(dest);
          return trap_error(ctx, TRAP_E_MEMORY);
       }
 
-      if (dest[0] != 'a' && dest[0] != 'w') {
-         VERBOSE(CL_ERROR, "OUTPUT FILE IFC: bad mode: %c", dest[0]);
-         free(priv->filename);
+      if (dest2[0] != 'a' && dest2[0] != 'w') {
+         VERBOSE(CL_ERROR, "OUTPUT FILE IFC: bad mode: %c", dest2[0]);
          free(priv);
          free(dest);
+         free(dest2);
          return trap_errorf(ctx, TRAP_E_BADPARAMS, "OUTPUT FILE IFC: bad mode");
       }
 
-      priv->mode[0] = dest[0];
+      priv->mode[0] = dest2[0];
    }
 
    priv->mode[1] = 'b';
    priv->mode[2] = '\0';
 
+   free(dest2);
+
+   /* Perform shell-like expansion of ~ */
+   if (wordexp(dest, &exp_result, 0) != 0) {
+      VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC: unable to perform shell-like expand of: %s", dest);
+      free(priv);
+      free(dest);
+      wordfree(&exp_result);
+      return trap_errorf(ctx, TRAP_E_BADPARAMS, "CREATE OUTPUT FILE IFC: unable to perform shell-like expand");
+   }
+
    free(dest);
+   name_length = strlen(exp_result.we_wordv[0]);
+
+   priv->filename = (char *) calloc(name_length + 1, sizeof(char));
+   if (!priv->filename) {
+      free(priv);
+      wordfree(&exp_result);
+      return trap_error(ctx, TRAP_E_MEMORY);
+   }
+
+   strncpy(priv->filename, exp_result.we_wordv[0], name_length + 1);
+   wordfree(&exp_result);
 
    /* Attempts to open the file */
    priv->fd = fopen(priv->filename, priv->mode);
