@@ -93,14 +93,29 @@ PCA_ANOMALY_FIELD 	uint64_t       Bit field where one bit is set for dimension (
 @PCA_DETECTION=TIMESLOT,LINK_BIT_FIELD,PCA_ANOMALY_FIELD
 
 # Detectors
-EVENT_TYPE     uint8_t         Type of detected event
-.EVT_T_PORTSCAN    1             Portscan (unspecified type)
-.EVT_T_PORTSCAN_H  2             Horizontal portscan (one or a few ports, many addresses)
-.EVT_T_PORTSCAN_V  3             Vertical portscan (one address, many ports)
-.EVT_T_DOS        10             Denial of service attack (unspecified type)
-.EVT_T_SYNFLOOD   11             TCP SYN flood
-.EVT_T_DNSAMP     15             DNS Amplification attack
-.EVT_T_BRUTEFORCE 30             Bruteforce password guessing
+EVENT_TYPE                       uint8_t     Type of detected event
+.EVT_T_PORTSCAN                      1         Portscan (unspecified type)
+.EVT_T_PORTSCAN_H                    2         Horizontal portscan (one or a few ports, many addresses)
+.EVT_T_PORTSCAN_V                    3         Vertical portscan (one address, many ports)
+.EVT_T_DOS                          10         Denial of service attack (unspecified type)
+.EVT_T_SYNFLOOD                     11         TCP SYN flood
+.EVT_T_DNSAMP                       15         DNS Amplification attack
+.EVT_T_BRUTEFORCE                   30         Bruteforce password guessing
+.EVT_T_VOIP_PREFIX_GUESS            40         VoIP prefix guessing
+.EVT_T_VOIP_CALL_DIFFERENT_COUNTRY  41         VoIP call to different country
+
+# Tunnel detector - types of anomalies
+TUNNEL_TYPE                uint8_t      Type of detected event
+.TUN_T_REQUEST_TUNNEL        1             Request anomaly - detected tunnel
+.TUN_T_REQUEST_OTHER         2             Request anomaly - detected other anomaly than tunnel
+.TUN_T_REQUEST_MALFORMED_P   3             Request anomaly - malformed packets
+.TUN_T_RESPONSE_TUNNEL_REQ   4             Response anomaly - detected tunnel in request string field
+.TUN_T_RESPONSE_TUNNEL_TXT   5             Response anomaly - detected tunnel in TXT field
+.TUN_T_RESPONSE_TUNNEL_CNAME 6             Response anomaly - detected tunnel in CNAME field
+.TUN_T_RESPONSE_TUNNEL_MX    7             Response anomaly - detected tunnel in MX field
+.TUN_T_RESPONSE_TUNNEL_NS    8             Response anomaly - detected tunnel in NS field
+.TUN_T_RESPONSE_OTHER        9             Response anomaly - detected other anomaly than tunnel
+.TUN_T_RESPONSE_MALFORMED_P  10            Response anomaly - malformed packets
 
 EVENT_SCALE    uint32_t        Attack intensity
 NOTE           char*           Generic string note
@@ -180,11 +195,29 @@ RSP_BYTES           uint64_t        Number of bytes in a flow or in an interval 
 #DNS tunnel
 TUNNEL_PER_NEW_DOMAIN	float 		Percent of new domains (searched just ones)
 TUNNEL_PER_SUBDOMAIN	float		Percent of subdomains in the most used domain for tunnel type, for another anomaly it is percent of different domains.
-TUNNEL_TYPE				uint8_t		Type of anomaly
 TUNNEL_DOMAIN 			char*		Anomaly domain name
 TUNNEL_CNT_PACKET		uint32_t	Number of packets which were recorded recognized like anomaly
 
-@DNS_TUNNEL_ALERT=SRC_IP,TUNNEL_PER_NEW_DOMAIN,TUNNEL_PER_SUBDOMAIN,TUNNEL_TYPE,TUNNEL_DOMAIN,TUNNEL_CNT_PACKET
+@DNS_TUNNEL_ALERT=EVENT_ID,SRC_IP,TUNNEL_PER_NEW_DOMAIN,TUNNEL_PER_SUBDOMAIN,TUNNEL_TYPE,TUNNEL_DOMAIN,TUNNEL_CNT_PACKET,TIME_FIRST,TIME_LAST
+
+#Multopt tree
+MULTOPT_RATE			float 		Rate between received and sent packets
+MULTOPT_SENT			float		EWMA rate of sent packets	
+MULTOPT_RECEIVED		float		EWMA rate of received packets
+
+@MULTOPT_ALERT=EVENT_ID,SRC_IP,MULTOPT_RATE,MULTOPT_SENT,MULTOPT_RECEIVED,TIME_FIRST,TIME_LAST
+
+#VoIP fraud detection
+VOIP_FRAUD_SIP_TO                    char*       SIP TO header
+VOIP_FRAUD_SIP_FROM                  char*       SIP FROM header
+VOIP_FRAUD_USER_AGENT                char*       SIP User-Agent header
+VOIP_FRAUD_PREFIX_LENGTH             uint16_t    Prefix length of VOIP_FRAUD_SIP_TO (in prefix examination attack)
+VOIP_FRAUD_PREFIX_EXAMINATION_COUNT  uint32_t    Number of unique SIP TO that was evaluated as prefix examination attack
+VOIP_FRAUD_SUCCESSFUL_CALL_COUNT     uint32_t    Number of successful calls initiation to unique SIP TO in the context of prefix examination
+VOIP_FRAUD_INVITE_COUNT              uint32_t    Total number of INVITE requests in the context of prefix examination
+VOIP_FRAUD_COUNTRY_CODE              char*       Country identification (ISO 3166, 2 char)
+
+@VOIP_FRAUD_ALERT=EVENT_ID,EVENT_TYPE,SRC_IP,DST_IP,DETECTION_TIME,TIME_FIRST,VOIP_FRAUD_SIP_TO,VOIP_FRAUD_SIP_FROM,VOIP_FRAUD_PREFIX_LENGTH,VOIP_FRAUD_PREFIX_EXAMINATION_COUNT,VOIP_FRAUD_SUCCESSFUL_CALL_COUNT,VOIP_FRAUD_USER_AGENT,VOIP_FRAUD_INVITE_COUNT,VOIP_FRAUD_COUNTRY_CODE
 
 # Generic email reporting
 EMAIL_SUBJECT   char*   Subject of email message
@@ -267,6 +300,8 @@ INVEA_SIP_CALL_ID               char*          SIP call ID
 INVEA_SIP_CALLING_PARTY         char*          SIP calling party
 INVEA_SIP_CALLED_PARTY          char*          SIP called party
 INVEA_SIP_VIA                   char*          SIP VIA
+INVEA_SIP_USER_AGENT            char*          SIP User-Agent
+INVEA_SIP_REQUEST_URI           char*          SIP Request-URI
 INVEA_SIP_INVITE_RINGING_TIME   uint64_t       SIP INVITE ringing time
 INVEA_SIP_OK_TIME               uint64_t       SIP OK time
 INVEA_SIP_BYE_TIME              uint64_t       SIP BYE time
@@ -281,7 +316,7 @@ INVEA_RTCP_LOST                 uint32_t       RTCP lost
 INVEA_RTCP_PACKETS              uint64_t       RTCP packets
 INVEA_RTCP_OCTETS               uint64_t       RTCP octets
 INVEA_RTCP_SOURCE_COUNT         uint8_t        RTCP source count
-@VOIP=INVEA_VOIP_PACKET_TYPE,INVEA_SIP_CALL_ID,INVEA_SIP_CALLING_PARTY,INVEA_SIP_CALLED_PARTY,INVEA_SIP_VIA,INVEA_SIP_INVITE_RINGING_TIME,INVEA_SIP_OK_TIME,INVEA_SIP_BYE_TIME,INVEA_SIP_RTP_IP4,INVEA_SIP_RTP_IP6,INVEA_SIP_RTP_AUDIO,INVEA_SIP_RTP_VIDEO,INVEA_SIP_STATS,INVEA_RTP_CODEC,INVEA_RTP_JITTER,INVEA_RTCP_LOST,INVEA_RTCP_PACKETS,INVEA_RTCP_OCTETS,INVEA_RTCP_SOURCE_COUNT
+@VOIP=INVEA_VOIP_PACKET_TYPE,INVEA_SIP_CALL_ID,INVEA_SIP_CALLING_PARTY,INVEA_SIP_CALLED_PARTY,INVEA_SIP_VIA,INVEA_SIP_USER_AGENT,INVEA_SIP_REQUEST_URI,INVEA_SIP_INVITE_RINGING_TIME,INVEA_SIP_OK_TIME,INVEA_SIP_BYE_TIME,INVEA_SIP_RTP_IP4,INVEA_SIP_RTP_IP6,INVEA_SIP_RTP_AUDIO,INVEA_SIP_RTP_VIDEO,INVEA_SIP_STATS,INVEA_RTP_CODEC,INVEA_RTP_JITTER,INVEA_RTCP_LOST,INVEA_RTCP_PACKETS,INVEA_RTCP_OCTETS,INVEA_RTCP_SOURCE_COUNT
 
 # SDM controller
 SDM_CAPTURE_FILE_ID     char*       ID of file for sdmcap

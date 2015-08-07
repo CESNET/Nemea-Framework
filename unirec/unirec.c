@@ -2,11 +2,13 @@
  * \file unirec.c
  * \brief Definition of UniRec structures and functions
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
+ * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2013
  * \date 2014
+ * \date 2015
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -42,13 +44,14 @@
  *
  */
 
+#define _BSD_SOURCE
+#define _XOPEN_SOURCE
+#define __USE_XOPEN
+#include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
 /* for string to unirec conversion: */
 #include <inttypes.h>
-#define _XOPEN_SOURCE
-#define __USE_XOPEN
-#include <time.h>
 
 #define IP_IMPLEMENT_HERE // put externally-linkable code of inline functions
                           // defined in ip_addr.h into this translation unit
@@ -62,22 +65,23 @@
 #include "links.h"
 
 typedef struct field_spec_s {
-   char* name;
+   char *name;
    int size;
    ur_field_id_t id;
 } field_spec_t;
 
 // Return -1 if f1 should go before f2, 0 if f1 is the same as f2, 1 otherwise
-static int compare_fields(const void* field1, const void* field2)
+static int compare_fields(const void *field1, const void *field2)
 {
    const field_spec_t *f1 = field1;
    const field_spec_t *f2 = field2;
-   if (f1->size > f2->size)
+   if (f1->size > f2->size) {
       return -1;
-   else if (f1->size < f2->size)
+   } else if (f1->size < f2->size) {
       return 1;
-   else
+   } else {
       return strcmp(f1->name, f2->name);
+   }
 }
 
 // Return set of fields (string) which should substitute for given group name
@@ -216,7 +220,7 @@ ur_template_t *ur_create_template(const char *fields_str)
          // Unknown field name
          do {
             free(fields[i].name);
-         } while(i--);
+         } while (i--);
          free(fields);
          free(f_str);
          return NULL;
@@ -395,7 +399,7 @@ ur_field_id_t ur_iter_fields_tmplt(const ur_template_t *tmplt, ur_iter_t *iter)
 }
 
 // Allocate memory for UniRec record
-void* ur_create(ur_template_t *tmplt, uint16_t dyn_size)
+void *ur_create(ur_template_t *tmplt, uint16_t dyn_size)
 {
    unsigned int size = (unsigned int)tmplt->static_size + dyn_size;
    if (size > 0xffff)
@@ -410,7 +414,7 @@ void ur_free(void *record)
 }
 
 // Transfer static data between UniRec records with different templates
-void ur_transfer_static(ur_template_t* tmplt_src, ur_template_t* tmplt_dst, const void* src, void* dst)
+void ur_transfer_static(ur_template_t *tmplt_src, ur_template_t *tmplt_dst, const void *src, void *dst)
 {
    ur_field_id_t id = UR_INVALID_FIELD;
    while ((id = ur_iter_fields(tmplt_src, id)) != UR_INVALID_FIELD) {
@@ -420,9 +424,126 @@ void ur_transfer_static(ur_template_t* tmplt_src, ur_template_t* tmplt_dst, cons
    }
 }
 
-void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v)
+
+// Get dynamic field as C string (allocate, copy and append '\0')
+char *ur_get_dyn_as_str(const ur_template_t *tmplt, const void *data, ur_field_id_t field_id)
+{
+   uint16_t size = ur_get_dyn_size(tmplt, data, field_id);
+   char *str = malloc(size + 1);
+   if (str == NULL)
+      return NULL;
+   if (size > 0) {
+      const char *p = ur_get_dyn(tmplt, data, field_id);
+      memcpy(str, p, size);
+   }
+   str[size] = '\0';
+   return str;
+}
+
+/**
+ * Check if the year is leaping.
+ * \param[in] year  Year to check.
+ * \return 0 if the year is not leap, 1 if the year is leap.
+ * \note This function was taken http://stackoverflow.com/questions/16647819/timegm-cross-platform
+ * and modified.
+ */
+static char is_leap(uint16_t year)
+{
+   if (year % 400 == 0) {
+      return 1;
+   }
+   if (year % 100 == 0) {
+      return 0;
+   }
+   if (year % 4 == 0) {
+      return 1;
+   }
+   return 0;
+}
+
+/**
+ * Get the number of days from the year 0.
+ * \param[in] year  Ending year for computation.
+ * \return Number of days till the year given by parameter.
+ * \note This function was taken http://stackoverflow.com/questions/16647819/timegm-cross-platform
+ * and modified.
+ */
+static uint32_t days_from_0(int16_t year)
+{
+   year--;
+   return 365 * year + (year / 400) - (year / 100) + (year / 4);
+}
+
+/**
+ * Get the number of days from the year 1970.
+ * \param[in] year  Ending year for computation.
+ * \return Number of days from 1970 till the year given by parameter.
+ * \note This function was taken http://stackoverflow.com/questions/16647819/timegm-cross-platform
+ * and modified.
+ */
+static uint32_t days_from_1970(uint16_t year)
+{
+   uint32_t days_from_0_to_1970 = days_from_0(1970);
+   return days_from_0(year) - days_from_0_to_1970;
+}
+
+/**
+ * Get the number of days since the 1st of January.
+ * \param[in] year  Year for computation.
+ * \param[in] month  Month for computation.
+ * \param[in] day  Day for computation.
+ * \return Number of days since the 1st of January till the gived date.
+ * \note This function was taken http://stackoverflow.com/questions/16647819/timegm-cross-platform
+ * and modified.
+ */
+static int16_t days_from_1jan(int16_t year, int16_t month, int16_t day)
+{
+   static const uint16_t days[2][12] = {
+      { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 },
+      { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335 }
+   };
+   return days[(int32_t) is_leap(year)][month - 1] + day - 1;
+}
+
+/**
+ * Convert timestamp into seconds.
+ * \param[in] t  Date and time structure.
+ * \return Converted date and time.
+ * \note This function was taken http://stackoverflow.com/questions/16647819/timegm-cross-platform
+ * and modified.
+ */
+static time_t ur_timegm(const struct tm *t)
+{
+   int day, day_of_year, days_since_epoch;
+   time_t seconds_in_day, result;
+   int years_diff;
+   int year = t->tm_year + 1900;
+   int month = t->tm_mon;
+
+   if (month > 11) {
+      year += month / 12;
+      month %= 12;
+   } else if (month < 0) {
+      years_diff = (-month + 11) / 12;
+      year -= years_diff;
+      month += 12 * years_diff;
+   }
+
+   month++;
+   day = t->tm_mday;
+   day_of_year = days_from_1jan(year, month, day);
+   days_since_epoch = days_from_1970(year) + day_of_year;
+
+   seconds_in_day = 3600 * 24;
+   result = seconds_in_day * days_since_epoch + 3600 * t->tm_hour + 60 * t->tm_min + t->tm_sec;
+
+   return result;
+}
+
+int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v)
 {
    ip_addr_t *addr_p = NULL, addr;
+   int rv = 0;
    struct tm t;
    char *res = NULL;
    time_t sec = -1;
@@ -430,45 +551,70 @@ void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_i
    void *ptr = ur_get_ptr_by_id(tmpl, data, f_id);
 
    if (ur_is_present(tmpl, f_id) == 0) {
-      return;
+      return 1;
    }
    switch (ur_get_type_by_id(f_id)) {
    case UR_TYPE_UINT8:
-      sscanf(v, "%" SCNu8, (uint8_t *) ptr);
+      if (sscanf(v, "%" SCNu8, (uint8_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_UINT16:
-      sscanf(v, "%" SCNu16 , (uint16_t *) ptr);
+      if (sscanf(v, "%" SCNu16 , (uint16_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_UINT32:
-      sscanf(v, "%" SCNu32, (uint32_t *) ptr);
+      if (sscanf(v, "%" SCNu32, (uint32_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_UINT64:
-      sscanf(v, "%" SCNu64, (uint64_t *) ptr);
+      if (sscanf(v, "%" SCNu64, (uint64_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_INT8:
-      sscanf(v, "%" SCNi8, (int8_t *) ptr);
+      if (sscanf(v, "%" SCNi8, (int8_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_INT16:
-      sscanf(v, "%" SCNi16, (int16_t *) ptr);
+      if (sscanf(v, "%" SCNi16, (int16_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_INT32:
-      sscanf(v, "%" SCNi32, (int32_t *) ptr);
+      if (sscanf(v, "%" SCNi32, (int32_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_INT64:
-      sscanf(v, "%" SCNi64, (int64_t *) ptr);
+      if (sscanf(v, "%" SCNi64, (int64_t *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_CHAR:
-      sscanf(v, "%c", (char *) ptr);
+      if (sscanf(v, "%c", (char *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_FLOAT:
-      sscanf(v, "%f", (float *) ptr);
+      if (sscanf(v, "%f", (float *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_DOUBLE:
-      sscanf(v, "%lf", (double *) ptr);
+      if (sscanf(v, "%lf", (double *) ptr) != 1) {
+         rv = 1;
+      }
       break;
    case UR_TYPE_IP:
       // IP address - convert to human-readable format and print
-      ip_from_str(v, &addr);
+      if (ip_from_str(v, &addr) == 0) {
+         rv = 1;
+         break;
+      }
       addr_p = (ip_addr_t *) ptr;
       (*addr_p) = addr;
       break;
@@ -477,8 +623,7 @@ void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_i
       res = strptime(v, "%FT%T", &t);
       /* parsed to sec - msec delimiter */
       if ((res != NULL) && (*res == '.')) {
-         sec = mktime(&t);
-	 sec -= timezone;
+         sec = ur_timegm(&t);
          if (sec != -1) {
             msec = atoi(res + 1);
             (*(ur_time_t *) ptr) = ur_time_from_sec_msec((uint64_t) sec, msec);
@@ -510,72 +655,73 @@ failed_time_parsing:
       fprintf(stderr, "Unsupported UniRec field type, skipping.\n");
       break;
    }
+   return rv;
 }
 
 // *****************************************************************************
 // ** "Links" part - set of functions for handling LINK_BIT_FIELD
 
 // Create and initialize links structure.
-ur_links_t *ur_create_links(const char* mask)
+ur_links_t *ur_create_links(const char *mask)
 {
-	uint64_t checker;
-	unsigned int indexer;
-	ur_links_t *lm;
+   uint64_t checker;
+   unsigned int indexer;
+   ur_links_t *lm;
 
-	// Allocate memory for structure.
-	lm = (ur_links_t *) malloc(sizeof(ur_links_t));
-	if(lm == NULL){
-		return NULL;
-	}
+   // Allocate memory for structure.
+   lm = (ur_links_t *) malloc(sizeof(ur_links_t));
+   if (lm == NULL) {
+      return NULL;
+   }
 
-	// Try to convert passed mask in string to uint64_t.
-	if (sscanf(mask, "%"SCNx64, &lm->link_mask) < 1) {
-		free(lm);
-		return NULL;
-	}
+   // Try to convert passed mask in string to uint64_t.
+   if (sscanf(mask, "%"SCNx64, &lm->link_mask) < 1) {
+      free(lm);
+      return NULL;
+   }
 
-	// Get link count.
-	lm->link_count = 0;
-	checker = 1;
-	for (int i = 0; i < MAX_LINK_COUNT; ++i){
-		if (lm->link_mask & checker){
-			lm->link_count++;
-		}
-		checker <<= 1;
-	}
-	if (lm->link_count == 0){
-		free(lm);
-		return NULL;
-	}
-	// Allocate array for link indexes
-	lm->link_indexes = (uint64_t *) malloc(lm->link_count * sizeof(uint64_t));
-	if(lm->link_indexes == NULL){
-		free(lm);
-		return NULL;
-	}
+   // Get link count.
+   lm->link_count = 0;
+   checker = 1;
+   for (int i = 0; i < MAX_LINK_COUNT; ++i) {
+      if (lm->link_mask & checker) {
+         lm->link_count++;
+      }
+      checker <<= 1;
+   }
+   if (lm->link_count == 0) {
+      free(lm);
+      return NULL;
+   }
+   // Allocate array for link indexes
+   lm->link_indexes = (uint64_t *) malloc(lm->link_count * sizeof(uint64_t));
+   if (lm->link_indexes == NULL) {
+      free(lm);
+      return NULL;
+   }
 
-	// Fill link indexes
-	indexer = 0;
-	checker = 1;
-	for (int i = 0; i < MAX_LINK_COUNT; ++i){
-		if (lm->link_mask & checker){
-			lm->link_indexes[indexer++] = i;
-		}
-		checker <<= 1;
-	}
+   // Fill link indexes
+   indexer = 0;
+   checker = 1;
+   for (int i = 0; i < MAX_LINK_COUNT; ++i) {
+      if (lm->link_mask & checker) {
+         lm->link_indexes[indexer++] = i;
+      }
+      checker <<= 1;
+   }
 
-	return lm;
+   return lm;
 }
 
 // Destroy links structure.
 void ur_free_links(ur_links_t *links)
 {
-	if ((links) != NULL){
-		free(links->link_indexes);
+   if ((links) != NULL) {
+      free(links->link_indexes);
 
-		free(links);
-		links = NULL;
-	}
+      free(links);
+      links = NULL;
+   }
 }
 // Following functions are defined in links.h
 // (their headers are repeated here with INLINE_IMPL to generate externally

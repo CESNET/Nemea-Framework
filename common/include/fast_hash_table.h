@@ -272,7 +272,7 @@ int fht_insert_with_stash_wr(fht_table_t *table, const void *key, const void *da
  * @return          Pointer to data if found.
  *                  NULL if not found.
  */
-inline void * fht_get_data(fht_table_t *table, const void *key)
+static inline void *fht_get_data(fht_table_t *table, const void *key)
 {
    unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
    unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
@@ -341,7 +341,7 @@ inline void * fht_get_data(fht_table_t *table, const void *key)
  * @return          Pointer to data if found.
  *                  NULL if not found.
  */
-inline void * fht_get_data_locked(fht_table_t *table, const void *key, int8_t **lock)
+static inline void *fht_get_data_locked(fht_table_t *table, const void *key, int8_t **lock)
 {
    unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
    unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
@@ -403,7 +403,7 @@ inline void * fht_get_data_locked(fht_table_t *table, const void *key, int8_t **
  * @return          Pointer to data if found.
  *                  NULL if not found.
  */
-inline void * fht_get_data_with_stash(fht_table_t *table, const void *key)
+static inline void *fht_get_data_with_stash(fht_table_t *table, const void *key)
 {
    unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
    unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
@@ -491,7 +491,7 @@ inline void * fht_get_data_with_stash(fht_table_t *table, const void *key)
  * @return          Pointer to data if found.
  *                  NULL if not found.
  */
-inline void * fht_get_data_with_stash_locked(fht_table_t *table, const void *key, int8_t **lock)
+static inline void *fht_get_data_with_stash_locked(fht_table_t *table, const void *key, int8_t **lock)
 {
    unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
    unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
@@ -647,7 +647,7 @@ void fht_destroy(fht_table_t *table);
  *
  * @param lock      Pointer to lock variable.
  */
-inline void fht_unlock_data(int8_t *lock)
+static inline void fht_unlock_data(int8_t *lock)
 {
    __sync_lock_release(lock);
 }

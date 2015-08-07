@@ -1,2 +1,2 @@
 #!/bin/bash
-./test_tcpip.sh 2thr uu\;libtrap-test1\;libtrap-test2 > libtrap_2thr.log.rpt
+./test_tcpip.sh 2thr u:libtrap-test1,u:libtrap-test2 > libtrap_2thr.log.rpt

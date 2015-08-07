@@ -58,13 +58,13 @@ extern const char* default_err_msg[256]; // default messages
  *
  *  @param[in] ctx libtrap context
  *  @param[in] err_num Error number as defined in trap.h
- *  @return err_num 
- */ 
+ *  @return err_num
+ */
 static inline int trap_error(trap_ctx_priv_t *ctx, int err_num)
 {
    if (ctx != NULL) {
       ctx->trap_last_error = err_num;
-      if (err_num >= 0 && 
+      if (err_num >= 0 &&
             err_num < sizeof(default_err_msg)/sizeof(char*) &&
             default_err_msg[err_num] != 0) {
          ctx->trap_last_error_msg = default_err_msg[err_num];
@@ -84,8 +84,8 @@ static inline int trap_error(trap_ctx_priv_t *ctx, int err_num)
  *  @param[in] err_num Error number as defined in trap.h
  *  @param[in] msg Human-readable string describing error, supports printf formatting.
  *  @param[in] ... Additional parameters for printf-like formatting of msg.
- *  @return err_num 
- */ 
+ *  @return err_num
+ */
 static inline int trap_errorf(trap_ctx_priv_t *ctx, int err_num, const char *msg, ...)
 {
    if (pthread_rwlock_wrlock(&ctx->context_lock) != 0) {
@@ -103,17 +103,17 @@ static inline int trap_errorf(trap_ctx_priv_t *ctx, int err_num, const char *msg
 }
 
 /** Prepend given string before current ctx->trap_last_error_msg.
- *  This function is useful when a call of some function fails and you want  
- *  to print a message about it but keep the original message about the error 
+ *  This function is useful when a call of some function fails and you want
+ *  to print a message about it but keep the original message about the error
  *  inside the function.
  *  Expected usage:
  *     return errorp("Call of myFunc failed: ");
- *   
+ *
  *  @param[in] ctx libtrap context
  *  @param[in] msg String to prepend current message
  *  @param[in] ... Additional parameters for printf-like formatting of msg.
  *  @return Current value of ctx->trap_last_error
- */  
+ */
 static inline int trap_errorp(trap_ctx_priv_t *ctx, const char *msg, ...)
 {
    char tmp_str[MAX_ERROR_MSG_BUFF_SIZE];
@@ -128,5 +128,5 @@ static inline int trap_errorp(trap_ctx_priv_t *ctx, const char *msg, ...)
    ctx->trap_last_error_msg = ctx->error_msg_buffer;
    return ctx->trap_last_error;
 }
-  
+
 #endif

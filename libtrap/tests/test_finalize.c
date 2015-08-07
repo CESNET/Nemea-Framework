@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
    // ***** TRAP interface initialization ***** >>>
    // Prepare structure for Trap interface setup
-   char *in_ifc[] = {"test", "-i", "t;localhost,6111"};
+   char *in_ifc[] = {"test", "-i", "t:localhost:6111"};
    int arg_cnt = 3;
 
    in_ctx = NULL;
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
       printf("starting.\n");
       sleep(1);
       // After receiving of command, open output (data) interface
-      char *out_ifc[] = {"test", "-i", "t;61000"};
+      char *out_ifc[] = {"test", "-i", "t:61000"};
       int arg_cnt = 3;
 
       out_ctx = NULL;

@@ -1,7 +1,9 @@
 SUBDIRS=include
 RPMDIR=RPMBUILD
 lib_LTLIBRARIES=libnemea-common.la
-libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
+libnemea_common_la_SOURCES=configurator/configurator.cpp \
+                           configurator/configurator-internal.h \
+                           cuckoo_hash/cuckoo_hash.c \
 			   cuckoo_hash/hashes.h \
 			   cuckoo_hash_v2/cuckoo_hash_v2.c \
 			   cuckoo_hash_v2/hashes_v2.c \
@@ -14,7 +16,7 @@ libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
 			   b_plus_tree/b_plus_tree.h \
 			   prefix_tree/prefix_tree.c \
 			   prefix_tree/prefix_tree.h \
-			   super_fast_hash/super_fast_hash.c
+                           super_fast_hash/super_fast_hash.c
 libnemea_common_la_LDFLAGS = -version-info 2:0:1
 
 pkgconfigdir = $(libdir)/pkgconfig

@@ -1,2 +1,2 @@
 #!/bin/bash
-./basic_test -i "t;localhost,50001"
+./basic_test -i "t:localhost:50001"

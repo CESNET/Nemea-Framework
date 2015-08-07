@@ -1,8 +1,9 @@
 #!/bin/bash
 #
 # \file clean_source_codes.sh
-# \brief Goes through the repository (starting .), cleans source codes
-# and warns about possible complications.
+# \brief Goes through the repository, cleans source codes and warns
+# about possible complications. Base directory is given as a parameter
+# (current directory is used as default).
 # \author Tomas Cejka <cejkat@cesnet.cz>
 # \date 2014
 #
@@ -44,12 +45,17 @@
 COLUMNS=$(stty -a | sed -n 's/.*columns \([0-9][0-9]*\).*/\1/p')
 LINE=$(for ((i=0;i<${COLUMNS};i++)); do echo -n "-"; done)
 
+BASEPATH="."
+if [ "$1" != "" ] ; then
+  BASEPATH=$1
+fi
+
 CLEANSCRIPT=./clean_trailing_white_spaces.sh
 
 SELNAMES='( -name *.c -o -name *.cpp -o -name *.h -o -name *.hpp -o -name *.py -o -name *.sh )'
 set -f
 echo "Find and remove trailing white spaces."
-find . -type f \! -regex ".*alglib.*" \
+find $BASEPATH -type f \! -regex ".*alglib.*" \
   $SELNAMES \
   \! -name "${CLEANSCRIPT/.\//}" \! -name clean_source_codes.sh \
   \! -exec "$CLEANSCRIPT" {} \; -print
@@ -58,7 +64,7 @@ echo $LINE
 echo "Check for copyrights."
 echo $LINE
 CURRENT_YEAR=$(date +%Y)
-find . -type f \! -regex ".*alglib.*" \
+find $BASEPATH -type f \! -regex ".*alglib.*" \
   $SELNAMES \
   \! -name "${CLEANSCRIPT/.\//}" \
   \! -exec grep -q -e "Copyright" {} \; \
@@ -72,7 +78,7 @@ echo $LINE
 echo "Check year in copyrights."
 echo $LINE
 CURRENT_YEAR=$(date +%Y)
-find . -type f \! -regex ".*alglib.*" \
+find $BASEPATH -type f \! -regex ".*alglib.*" \
   $SELNAMES \
   \! -name "${CLEANSCRIPT/.\//}" \
   \! -exec grep -q -e "Copyright.*$CURRENT_YEAR" -e "date.*$CURRENT_YEAR" {} \; \

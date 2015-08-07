@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
    if (payload == NULL) {
       fprintf(stderr, "Allocation of payload buffer failed.\n");
-      goto cleanup;
+      return 1;
    }
 
    // Read data from input, process them and write to output

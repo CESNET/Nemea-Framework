@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #
-# Copyright (C) 2013-2015 CESNET
+# Copyright (C) 2013,2015 CESNET
 #
 # LICENSE TERMS
 #

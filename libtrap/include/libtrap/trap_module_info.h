@@ -69,7 +69,7 @@
 
 #include "module_info_test.h"
 
-module_info_test_t * module_info = NULL;
+module_info_test_t *module_info = NULL;
 
 
 // Definition of basic module information - module name, module description,
@@ -164,7 +164,7 @@ typedef struct trap_module_info_s {
 /** Macro generating long_options field for getopt_long function according to given macro with parameters
  */
 #define GEN_LONG_OPT_STRUCT(PARAMS) \
-   static struct option long_options[] = { \
+   static struct option long_options[] __attribute__((used)) = { \
       PARAMS(GEN_LONG_OPT_STRUCT_LINE) \
       {0, 0, 0, 0} \
    };
@@ -257,7 +257,7 @@ typedef struct trap_module_info_s {
 #define GENERATE_GETOPT_STRING(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
   if (module_getopt_string_size <= (strlen(module_getopt_string) + 2)) { \
     module_getopt_string_size += module_getopt_string_size/2; \
-    module_getopt_string = realloc(module_getopt_string, module_getopt_string_size * sizeof(char)); \
+    module_getopt_string = (char *) realloc(module_getopt_string, module_getopt_string_size * sizeof(char)); \
     memset(module_getopt_string + (2*module_getopt_string_size)/3, 0, module_getopt_string_size/3); \
   } \
   module_getopt_string[strlen(module_getopt_string)] = p_short_opt; \
@@ -277,8 +277,8 @@ typedef struct trap_module_info_s {
 #define INIT_MODULE_INFO_STRUCT(BASIC, PARAMS) \
    int trap_info_cnt = 0; \
    int trap_module_params_cnt = 0; \
-   int module_getopt_string_size = 50; \
-   char * module_getopt_string = calloc(module_getopt_string_size, sizeof(char)); \
+   size_t module_getopt_string_size = 50; \
+   char * module_getopt_string = (char *) calloc(module_getopt_string_size, sizeof(char)); \
    module_info = (trap_module_info_t *) calloc(1, sizeof(trap_module_info_t)); \
    GEN_LONG_OPT_STRUCT(PARAMS); \
    if (module_info != NULL) { \

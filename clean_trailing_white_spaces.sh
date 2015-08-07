@@ -52,11 +52,25 @@ if [ -e "$1" -a -r "$1" ]; then
   else
     SETCHMOD=0
   fi
-  grep -q '\s\s*$' "$1" &&
-    sed 's/\s\s*$//g' "$1" > "$1.tmp" &&
-    mv "$1.tmp" "$1" && { [ $SETCHMOD -eq 1 ] && chmod a+x "$1"; } &&
-    exit 0;
-  exit 1
+  # white spaces at the end of line and replace tabs with 3 spaces
+  egrep -q '\s\s*$|^\t\t*' "$1" &&
+    sed 's/\s\s*$//g; :a; s/^\( *\)\t/\1   /;ta;' "$1" > "$1.tmp" &&
+    mv "$1.tmp" "$1" && { [ $SETCHMOD -eq 1 ] && chmod a+x "$1"; }
+
+  # missing spaces
+  egrep -q 'if\(|for\(|while\(|\){|}else|else{' "$1" && sed '
+s/if(/if (/g;
+s/for(/for (/g;
+s/while(/while (/g;
+s/){/) {/g;
+s/}else/} else/g;
+s/else{/else {/g;' $1 > "$1.tmp" &&
+    mv "$1.tmp" "$1" && { [ $SETCHMOD -eq 1 ] && chmod a+x "$1"; }
+
+  # bad spaces around '*' in definition of pointer
+  grep -q '^\s*[^* /]\+\*\s\+[^* ]\+' "$1" && sed 's/\(^\s*[^* /]\+\)\*\s\+\([^* ]\+\)/\1 *\2/g' "$1" > "$1.tmp" &&
+    mv "$1.tmp" "$1" && { [ $SETCHMOD -eq 1 ] && chmod a+x "$1"; }
+  exit 0
 else
   echo "Cannot open file \"$1\"." >&2
   exit 2

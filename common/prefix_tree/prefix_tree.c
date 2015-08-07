@@ -97,20 +97,20 @@ prefix_tree_t * prefix_tree_initialize(unsigned char prefix_suffix, unsigned int
 	}
 	return tree;
 failure:
-        if (tree != NULL) {
-                if (tree->root != NULL) {
-                        if (tree->root->domain != NULL) {
-                                free(tree->root->domain->domain_extension);
-                                free(tree->root->domain);
-                        }
-                        free(tree->root);
-                }
-                if (tree->domain_extension != NULL) {
-                        free(tree->domain_extension->list_of_most_subdomains);
-                        free(tree->domain_extension);
-                }
-        }
-        return NULL; 
+	if (tree != NULL) {
+		if (tree->root != NULL) {
+			if (tree->root->domain != NULL) {
+				free(tree->root->domain->domain_extension);
+				free(tree->root->domain);
+			}
+			free(tree->root);
+		}
+		if (tree->domain_extension != NULL) {
+			free(tree->domain_extension->list_of_most_subdomains);
+			free(tree->domain_extension);
+		}
+	}
+	return NULL;
 }
 
 
@@ -118,7 +118,7 @@ failure:
 int prefix_tree_destroy_recursive(prefix_tree_t * tree, prefix_tree_inner_node_t *  node)
 {
 	int deleted_domains = 0;
-        int i, index;
+	int i, index;
 
 	//for all nodes
 	if (node != NULL) {

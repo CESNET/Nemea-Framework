@@ -49,6 +49,8 @@
 #define _TRAP_IFC_H_
 
 #include <stdint.h>
+#include <sys/time.h>
+#include <pthread.h>
 #include <semaphore.h>
 
 /** \defgroup trap_ifc TRAP communication module interface
@@ -141,7 +143,15 @@ typedef struct trap_input_ifc_s {
    char *buffer;                   ///< Internal pointer to buffer for messages
    char *buffer_pointer;           ///< Internal pointer to current message in buffer
    uint32_t buffer_full;           ///< Internal used space in message buffer (0 for empty buffer)
-   int32_t datatimeout;            ///< Timout for *get_data() calls
+   int32_t datatimeout;            ///< Timeout for *_recv() calls
+
+   /**
+    * If 1 do not allow to change timeout by module, it is used to force
+    * timeout of IFC by module's parameter.  If 0 - timeout can be changed
+    * by standard way using trap_ctx_ifcctl().
+    */
+   char datatimeout_fixed;
+
    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
 
    /**
@@ -189,10 +199,31 @@ typedef struct trap_output_ifc_s {
    uint32_t buffer_index;          ///< Internal index in buffer for new message
    uint8_t buffer_occupied;        ///< If 0, buffer can be modified, otherwise drop message and don't move with buffer.
    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
-   int64_t timeout;                ///< Internal structure to send partial data after timeout.
+   int64_t timeout;                ///< Internal structure to send partial data after timeout (autoflush).
+
+   /**
+    * If 1 do not allow to change autoflush timeout by module.  If 0 - autoflush can
+    * be changed by standard way using trap_ctx_ifcctl().
+    */
+   char timeout_fixed;
+
    char bufferswitch;              ///< Enable (1) or Disable (0) buffering, default is Enabled (1).
+
+   /**
+    * If 1 do not allow to change bufferswitch by module.  If 0 - bufferswitch can
+    * be changed by standard way using trap_ctx_ifcctl().
+    */
+   char bufferswitch_fixed;
+
    char bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
-   int32_t datatimeout;            ///< Timout for *get_data() calls
+   int32_t datatimeout;            ///< Timeout for *_send() calls
+
+   /**
+    * If 1 do not allow to change timeout by module, it is used to force
+    * timeout of IFC by module's parameter.  If 0 - timeout can be changed
+    * by standard way using trap_ctx_ifcctl().
+    */
+   char datatimeout_fixed;
    char ifc_type;                  ///< Type of interface
 
    /**

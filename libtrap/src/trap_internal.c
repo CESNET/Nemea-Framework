@@ -5,7 +5,7 @@
  * \author Tomas Konir <Tomas.Konir@liberouter.org>
  * \author Milan Kovacik <xkovaci1@fi.muni.cz>
  * \author Vojtech Krmicek <xkrmicek@fi.muni.cz>
- * \author Juraj Blaho <xblaho00@stud.fit.vutbr.cz> 
+ * \author Juraj Blaho <xblaho00@stud.fit.vutbr.cz>
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2006-2011
  * \date 2013
@@ -64,35 +64,35 @@ int trap_verbose = -1;
  */
 static void get_level(int level, char **str_level)
 {
-	static char *error="ERROR";
-	static char *warning="WARNING";
-	static char *notice="NOTICE";
-	static char *verbose="VERBOSE";
-	static char *adv_verbose="ADVANCED VERBOSE";
-	static char *library="LIBRARY VERBOSE";
+   static char *error="ERROR";
+   static char *warning="WARNING";
+   static char *notice="NOTICE";
+   static char *verbose="VERBOSE";
+   static char *adv_verbose="ADVANCED VERBOSE";
+   static char *library="LIBRARY VERBOSE";
 
-	switch (level){
-		case CL_ERROR:
-			*str_level = error;
-			break;
-		case CL_WARNING:
-			*str_level= warning;
-			break;
-		case CL_VERBOSE_OFF:
-			*str_level= notice;
-			break;
-		case CL_VERBOSE_BASIC:
-			*str_level= verbose;
-			break;
-		case CL_VERBOSE_ADVANCED:
-			*str_level= adv_verbose;
-			break;
-		case CL_VERBOSE_LIBRARY:
-			*str_level= library;
-			break;
-		default:
-			*str_level= notice;
-	}
+   switch (level) {
+   case CL_ERROR:
+      *str_level = error;
+      break;
+   case CL_WARNING:
+      *str_level= warning;
+      break;
+   case CL_VERBOSE_OFF:
+      *str_level= notice;
+      break;
+   case CL_VERBOSE_BASIC:
+      *str_level= verbose;
+      break;
+   case CL_VERBOSE_ADVANCED:
+      *str_level= adv_verbose;
+      break;
+   case CL_VERBOSE_LIBRARY:
+      *str_level= library;
+      break;
+   default:
+      *str_level= notice;
+   }
 }
 
 /**
@@ -105,9 +105,9 @@ static void get_level(int level, char **str_level)
  */
 void trap_verbose_msg(int level, char *string)
 {
-	char *strl;
-	get_level(level, &strl);
+   char *strl;
+   get_level(level, &strl);
    fprintf(stderr, "%s: %s\n", strl, string);
    fflush(stderr);
-	string[0] = 0;
+   string[0] = 0;
 }

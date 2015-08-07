@@ -3,11 +3,13 @@
  * \brief Types, macros and function for UniRec timestamp format.
  * \author Erik Sabik <xsabik02@stud.fit.vutbr.cz>
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
+ * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2013
  * \date 2014
+ * \date 2015
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -46,6 +48,11 @@
 #define _UR_TIME_H
 
 #include <stdint.h>
+
+/**
+ * \defgroup ur_time Timestamps API
+ * @{
+ */
 
 /** \brief Type of timestamps used in UniRec
  * Timestamps in UniRec are stored as number of seconds from Unix epoch in
@@ -89,5 +96,9 @@ typedef uint64_t ur_time_t;
    (uint32_t)((((uint64_t)(time) & 0xffffffff) * UR_TIME_FRAC_TO_MSEC) >> 32)
 
 /** \todo Conversion from/to micro- and nano seconds */
+
+/**
+ * @}
+ */
 
 #endif

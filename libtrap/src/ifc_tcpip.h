@@ -51,6 +51,12 @@
  */
 #define TCPIP_IFC_PARAMS_DELIMITER  (',')
 
+#define NEG_RES_CONT 111
+#define NEG_RES_FMT_SUBSET 112
+#define NEG_RES_FMT_MISMATCH 113
+#define NEG_RES_FAILED 114
+#define NEG_RES_FMT_UNKNOWN 115
+
 /**
  * Communication via UNIX socket needs to specify path to socket file.
  * It is currently placed according to this format, where %s is replaced by
@@ -74,7 +80,7 @@ enum tcpip_ifc_sockettype {
  *  \param [in] type select the type of socket (see #tcpip_ifc_sockettype for options)
  *  \return 0 on success (TRAP_E_OK)
  */
-int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, enum tcpip_ifc_sockettype type);
+int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx, enum tcpip_ifc_sockettype type);
 
 
 /** Create TCP/IP input interface.
@@ -84,6 +90,6 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
  *  \param [in] type select the type of socket (see #tcpip_ifc_sockettype for options)
  *  \return 0 on success (TRAP_E_OK)
  */
-int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, enum tcpip_ifc_sockettype type);
+int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, uint32_t itx, enum tcpip_ifc_sockettype type);
 
 #endif

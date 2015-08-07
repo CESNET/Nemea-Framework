@@ -5,6 +5,11 @@
  * \date 2013
  * \date 2014
  *
+ * \defgroup ur_ipaddr IP addresses API
+ * @{
+ *
+ * \page ipaddr
+ * @{
  * Structure and functions to handle generic IP addresses (IPv4 or IPv6).
  * IP addresses are stored on 128 bits. IPv6 addresses are stored directly.
  * IPv4 addresses are converted to 128 bit is this way:
@@ -17,12 +22,16 @@
  * This implementation assumes the platform uses little endian (true for x86
  * architectures).
  *
+ * \code
  * Layout of ip_addr_t union:
  *  MSB                                 LSB
  *  xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx
  * |      i64[0]       |       i64[1]      |
  * | i32[0]  | i32[1]  | i32[2]  | i32[3]  |
  * |bytes[0] ...              ... bytes[15]|
+ * \endcode
+ *
+ * @}
  */
 /*
  * Copyright (C) 2013,2014 CESNET
@@ -74,6 +83,8 @@ extern "C" {
 #include <string.h>
 #ifndef __WIN32
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #else
 #define ntohl(x) ((x & 0x0000000ff) << 24) | ((x & 0x0000ff00) << 8) | \
                  ((x & 0x00ff0000) >> 8) | ((x & 0xff000000) >> 24)
@@ -108,7 +119,7 @@ INLINE uint32_t ip_get_v4_as_int(ip_addr_t *addr)
 }
 
 // Return a pointer to bytes of IPv4 address in big endian (network order)
-INLINE char* ip_get_v4_as_bytes(const ip_addr_t *addr)
+INLINE char *ip_get_v4_as_bytes(const ip_addr_t *addr)
 {
    return (char *) &addr->bytes[8];
 }
@@ -174,7 +185,7 @@ INLINE ip_addr_t ip_from_16_bytes_le(char b[16])
 // Return >0 if addr1 > addr2, <0 if addr1 < addr2 and 0 if addr1 = addr2.
 INLINE int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2)
 {
-   return memcmp((const char*)addr1, (const char*)addr2, 16);
+   return memcmp((const char *)addr1, (const char *)addr2, 16);
 }
 
 #ifndef __WIN32
@@ -227,7 +238,7 @@ INLINE void ip_to_str(const ip_addr_t *addr, char *str)
 INLINE_IMPL int ip_is4(const ip_addr_t *addr);
 INLINE_IMPL int ip_is6(const ip_addr_t *addr);
 INLINE_IMPL uint32_t ip_get_v4_as_int(ip_addr_t *addr);
-INLINE_IMPL char* ip_get_v4_as_bytes(const ip_addr_t *addr);
+INLINE_IMPL char *ip_get_v4_as_bytes(const ip_addr_t *addr);
 INLINE_IMPL ip_addr_t ip_from_int(uint32_t i);
 INLINE_IMPL ip_addr_t ip_from_4_bytes_be(char b[4]);
 INLINE_IMPL ip_addr_t ip_from_4_bytes_le(char b[4]);
@@ -243,3 +254,6 @@ INLINE_IMPL void ip_to_str(const ip_addr_t *addr, char *str);
 #endif
 
 #endif
+/**
+ * @}
+ */

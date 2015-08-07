@@ -54,6 +54,7 @@ extern "C" {
 #include <stdarg.h>
 
 #include "trap_module_info.h"
+#include "jansson.h"
 
 /**
  * \defgroup commonapi Common libtrap API
@@ -85,6 +86,9 @@ extern const char trap_git_version[];
 #define TRAP_E_TERMINATED 15 ///< Interface was terminated during reading/writing
 #define TRAP_E_NOT_SELECTED 16 ///< Interface was not selected reading/writing
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
+#define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
+#define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
+#define TRAP_E_OK_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
 /**@}*/
@@ -126,6 +130,35 @@ extern const char trap_git_version[];
 /**@}*/
 
 /**
+ * \defgroup trapifcspec Specifier of TRAP interfaces
+ * The format of -i parameter of modules sets up TRAP interfaces.
+ * #TRAP_IFC_DELIMITER divides specifier into interfaces.
+ * #TRAP_IFC_PARAM_DELIMITER divides parameters of one interface.
+ *
+ * Each TRAP interface must have the type (\ref ifctypes) as the first parameter.
+ * The following parameters are passed to the interface and they are interface-dependent.
+ *
+ * The format example, let's assume the module has 1 input IFC and 1 output IFC:
+ *
+ *  <BLOCKQUOTE>-i t:localhost:7600,u:my_socket</BLOCKQUOTE>
+ *
+ * This sets the input IFC to TCP type and it will connect to localhost, port 7600.
+ * The output IFC will listen on UNIX socket with identifier my_socket.
+ *
+ * @{
+ */
+
+/**
+ * Delimiter of TRAP interfaces in IFC specifier
+ */
+#define TRAP_IFC_DELIMITER ','
+
+/**
+ * Delimiter of TRAP interface's parameters in IFC specifier
+ */
+#define TRAP_IFC_PARAM_DELIMITER ':'
+
+/**
  * \defgroup ifctypes Types of IFC
  * @{
  */
@@ -133,7 +166,6 @@ extern const char trap_git_version[];
 #define TRAP_IFC_TYPE_BLACKHOLE 'b' ///< trap_ifc_dummy blackhole (output)
 #define TRAP_IFC_TYPE_TCPIP     't' ///< trap_ifc_tcpip (input&output part)
 #define TRAP_IFC_TYPE_UNIX      'u' ///< trap_ifc_tcpip via UNIX socket(input&output part)
-#define TRAP_IFC_TYPE_SHMEM     'm' ///< trap_ifc_shmem (input&output part)
 #define TRAP_IFC_TYPE_SERVICE   's' ///< service ifc
 #define TRAP_IFC_TYPE_FILE      'f' ///< trap_ifc_file (input&output part)
 extern char trap_ifc_type_supported[];
@@ -148,7 +180,10 @@ enum trap_ifc_type {
 
 /**
  * @}
- */
+ *//* ifctypes */
+/**
+ * @}
+ *//* trapifcspec */
 
 /**
  * \name TRAP interface control request
@@ -211,7 +246,10 @@ typedef enum {
    FMT_OK = 1,
 
    /** Negotiation failed, format mismatch */
-   FMT_MISMATCH = 2
+   FMT_MISMATCH = 2,
+
+   /** Negotiation was successful, but receivers (input ifc) template is subset of senders (output ifc) template and missing fields has to be defined */
+   FMT_SUBSET = 3
 } trap_in_ifc_state_t;
 
 /**
@@ -256,6 +294,19 @@ int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, con
  * @}
  *//* trap_mess_fmt */
 
+/**
+ * Parse Fields name and types from string.
+ *
+ * Function parses the source string and sets the given pointers (pointers to source string). Than it sets length of name and type
+ *
+ * \param[in] source Source string to parse.
+ * \param[in] name ouput parameter, where will be set the pointer to name of a field (pointer to source string).
+ * \param[in] type ouput parameter, where will be set the pointer to type of a field (pointer to source string).
+ * \param[in] length_name ouput parameter, where will be set the length of a name.
+ * \param[in] length_type ouput parameter, where will be set the length of a type.
+ * \return pointer to source string, moved to next field
+ */
+const char *trap_get_type_and_name_from_string(const char *source, const char **name, const char **type, int *length_name, int *length_type);
 
 /**
  * Compares sender_ifc template and receiver_ifc template
@@ -263,9 +314,27 @@ int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, con
  *
  * \param[in] sender_ifc_data_fmt   sender_ifc template (char *)
  * \param[in] receiver_ifc_data_fmt   receiver_ifc template (char *)
- * \return TRAP_E_OK on success (receivers template is subset of the senders template)
+ * \return TRAP_E_OK on success (receivers template is subset of the senders template),
+ * TRAP_E_FIELDS_MISMATCH (receivers template has field which is not in senders template).
  */
 int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_ifc_data_fmt);
+
+
+/**
+ * Returns current state of an input interface on specified index.
+ *
+ * \param[in] ifc_idx   Index of the input interface
+ * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
+ *  else TRAP_E_NOT_INITIALIZED.
+ */
+int trap_get_in_ifc_state(uint32_t ifc_idx);
+
+/**
+ * Confirms state of an input interface on specified index (it is set to FMT_OK).
+ *
+ * \param[in] ifc_idx   Index of the input interface
+ */
+void trap_confirm_ifc_state(uint32_t ifc_idx);
 
 /** Parse command-line arguments.
  * Extract agruments needed by TRAP to set up interfaces (-i params) and return
@@ -505,34 +574,64 @@ void trap_send_flush(uint32_t ifc);
 /**
  * Set format of messages on output IFC.
  *
- * \param[in] out_ifc_idx   index of output IFC
- * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] out_ifc_idx   Index of output IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
  */
 void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, ...);
 
+/**
+ * Set format of messages on output IFC.
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] out_ifc_idx   Index of output IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
+ */
 void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap);
+
+/**
+ * Returns current state of an input interface on specified index.
+ *
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc_idx   Index of the input interface
+ * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
+ *  else TRAP_E_NOT_INITIALIZED.
+ */
+int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
+
+/**
+ * Confirms state of an input interface on specified index (it is set to FMT_OK).
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc_idx   Index of the input interface.
+ */
+void trap_ctx_confirm_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
 
 /**
  * Set format of messages expected on input IFC.
  *
- * \param[in] out_ifc_idx   index of input IFC
- * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected
- * \return TRAP_E_OK on success
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] out_ifc_idx   Index of input IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
+ * \return TRAP_E_OK on success.
  */
 int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...);
 
 /**
  * Set format of messages expected on input IFC.
  *
- * \param[in] out_ifc_idx   index of input IFC
- * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] ap   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] out_ifc_idx   Index of input IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
  * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success
+ * \return TRAP_E_OK on success.
  */
 int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap);
 
@@ -542,11 +641,11 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
  * On output IFC it should return the values that were set.  On input IFC
  * it should return format and template that was received.
  *
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
- * \param[in] ifc_idx     index of IFC
- * \param[out] data_type   format of messages defined by #trap_data_format_t
- * \param[out] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected
+ * \param[in] ifc_idx     Index of IFC.
+ * \param[out] data_type   Format of messages defined by #trap_data_format_t.
+ * \param[out] spec   Specifier of data format specifies the template (char *) is expected.
  * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
  */
 int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);

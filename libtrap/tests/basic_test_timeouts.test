@@ -14,6 +14,7 @@ sleep 6
 if pgrep test_timeouts > /dev/null 2> /dev/null; then
    echo "Test is still running."
    pkill -9 test_timeouts
+   rm -f "$tmpfile"
    exit 1;
 fi
 resstring="$(cat $tmpfile)"

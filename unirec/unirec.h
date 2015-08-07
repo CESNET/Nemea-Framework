@@ -2,11 +2,13 @@
  * \file unirec.h
  * \brief Definition of UniRec structures and functions
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
+ * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2013
  * \date 2014
+ * \date 2015
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -42,6 +44,44 @@
  *
  */
 
+/**
+ * \mainpage Brief description of UniRec format and API
+ * @{
+ * \section about About UniRec
+ * UniRec is the name of message format and the name of library that can work with the messages.
+ * One message consists of fields that are of static or dynamic size.
+ * UniRec allows users to set and get values of UniRec fields.
+ *
+ * UniRec API contains various functions for manipulation: \ref unirec_basic, \ref ur_time, \ref ur_ipaddr and \ref ur_links.
+ *
+ * \subsection message_example Example of message --- order of fields
+ *
+ * \code
+ * +-------+-------+-------+-------+
+ * |            DST_IP             |
+ * +-------+-------+-------+-------+
+ * |            SRC_IP             |
+ * +-------+-------+-------+-------+
+ * |             BYTES             |
+ * +-------+-------+-------+-------+
+ * |            PACKETS            |
+ * +-------+-------+-------+-------+
+ * |   DST_PORT    |   SRC_PORT    |
+ * +-------+-------+-------+-------+
+ * | PROTO | TCP_F |    URL (7)    |
+ * +-------+-------+-------+-------+
+ * |    DYN1 (10)  |   DYN2 (11)   |   Static fields (size of part is always the same for the template)
+ * +-------+-------+-------+-------+   -----------------
+ * |              URL              |   Dynamic fields
+ * +-------+-------+-------+-------+
+ * |          URL          | DYN1  |
+ * +-------+-------+-------+-------+
+ * |     DYN1      | DYN2  |
+ * +-------+-------+-------+
+ * \endcode
+ * @}
+ */
+
 #ifndef _UNIREC_H_
 #define _UNIREC_H_
 
@@ -60,6 +100,11 @@ typedef uint16_t ur_field_id_t; ///< Type of UniRec field identifiers
 // Include structures and functions for handling LINK_BIT_FIELD
 #include "links.h"
 
+/**
+ * \defgroup unirec_basic General API
+ * @{
+ */
+
 #define UR_INVALID_OFFSET 0xffff
 #define UR_INVALID_FIELD 0xffff
 
@@ -74,7 +119,7 @@ typedef struct {
 
 /** \brief Constants for all possible types of UniRec fields */
 typedef enum {
-   UR_TYPE_STRING, // dynamic fields (string where only printable characters are expected)
+   UR_TYPE_STRING, // dynamic fields (string where only printable characters are expected; '\0' at the end should NOT be included)
    UR_TYPE_BYTES, // dynamic fields (generic string of bytes)
    UR_TYPE_CHAR,
    UR_TYPE_UINT8,
@@ -195,7 +240,7 @@ ur_field_id_t ur_iter_fields_tmplt(const ur_template_t *tmplt, ur_iter_t *iter);
  *                     to hold the largest possible UniRec record (65535 bytes).
  *                     Set to 0 if there are no dynamic fields in the template.
  */
-void* ur_create(ur_template_t *tmplt, uint16_t dyn_size);
+void *ur_create(ur_template_t *tmplt, uint16_t dyn_size);
 #define UR_MAX_SIZE 0xffff
 
 /** Free UniRec record.
@@ -234,7 +279,7 @@ void ur_free(void *record);
  * \return Value of the field. Data type depends on the type of the field.
  */
 #define ur_get(tmplt, data, field_id) \
-   (*(field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id]))
+   (*(field_id ## _T *)((char *)(data) + (tmplt)->offset[field_id]))
 
 /** \brief Get pointer to UniRec field
  * Get pointer to static UniRec field. For dyamic fields, use ur_get_dyn.
@@ -245,19 +290,19 @@ void ur_free(void *record);
  * \return Pointer to the field. Pointer type depends on the type of the field.
  */
 #define ur_get_ptr(tmplt, data, field_id) \
-   (field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id])
+   (field_id ## _T *)((char *)(data) + (tmplt)->offset[field_id])
 
 /** \brief Get pointer to UniRec field
  * Get pointer to static UniRec field. In contrast to ur_get_ptr, field_id may
  * be a variable (not UR_ constant).
- * Returned pointer is always void*.
+ * Returned pointer is always void *.
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] data Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field
- * \return Pointer to the field (void*).
+ * \return Pointer to the field (void *).
  */
 #define ur_get_ptr_by_id(tmplt, data, field_id) \
-   (void*)((char*)(data) + (tmplt)->offset[(field_id)])
+   (void *)((char *)(data) + (tmplt)->offset[(field_id)])
 
 /** \brief Get size of UniRec field
  * Get size of static UniRec field. For dyamic fields, use ur_get_dyn_size.
@@ -278,7 +323,7 @@ void ur_free(void *record);
  * \return Offset of the start of the dynamic field.
  */
 #define ur_get_dyn_offset_start(tmplt, data, field_id) \
-   ( (field_id == (tmplt)->first_dynamic) ? 0 : *(uint16_t*)((char*)(data) + (tmplt)->offset[field_id] - 2) )
+   ( (field_id == (tmplt)->first_dynamic) ? 0 : *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id] - 2) )
 
 /** \brief Get offset after the last byte of a dynamic field
  * Get offset just after the last byte of a dynamic UniRec field, that is
@@ -290,7 +335,7 @@ void ur_free(void *record);
  * \return Offset after the end of the dynamic field.
  */
 #define ur_get_dyn_offset_end(tmplt, data, field_id) \
-   ( *(uint16_t*)((char*)(data) + (tmplt)->offset[field_id]) )
+   ( *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id]) )
 
 
 /** \brief Get pointer to UniRec field with dynamic size
@@ -299,10 +344,10 @@ void ur_free(void *record);
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] data Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field.
- * \return Pointer (char*) to the beginning of the dynamic field.
+ * \return Pointer (char *) to the beginning of the dynamic field.
  */
 #define ur_get_dyn(tmplt, data, field_id) \
-   ( (char*)(data) + \
+   ( (char *)(data) + \
      (tmplt)->static_size + \
      ur_get_dyn_offset_start((tmplt), (data), (field_id)) \
    )
@@ -315,24 +360,44 @@ void ur_free(void *record);
  * \return Size of the field in bytes.
  */
 #define ur_get_dyn_size(tmplt, data, field_id) \
-   ( *(uint16_t*)((char*)(data) + (tmplt)->offset[field_id]) - \
-      ( (field_id == (tmplt)->first_dynamic) ? 0 : *(uint16_t*)((char*)(data) + (tmplt)->offset[field_id] - 2) ) \
+   ( *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id]) - \
+      ( (field_id == (tmplt)->first_dynamic) ? 0 : *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id] - 2) ) \
    )
+
+
+/** \brief Get dynamic-size UniRec field as a C string
+ * Copy data of a dynamic field from UniRec record and append '\0' character.
+ * The function allocats new memory space for the string, it must be free'd
+ * using free()!
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] data Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return Requested field as a string (char *) or NULL on malloc error. It should be free'd using free().
+ */
+char *ur_get_dyn_as_str(const ur_template_t *tmplt, const void *data, ur_field_id_t field_id);
 
 
 /** \brief Set value of UniRec field
  * Set value of static UniRec field. Dynamic fields must be filled manually.
  * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
+ * \param[out] data Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field. It must be a constant beginning
  *                     with UR_, not its numeric value.
  * \param[in] value The value the field should be set to.
  * \return New value of the field.
  */
 #define ur_set(tmplt, data, field_id, value) \
-   (*(field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id]) = (value))
+   (*(field_id ## _T *)((char *)(data) + (tmplt)->offset[field_id]) = (value))
 
-void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v);
+/** \brief Set value of a UniRec field
+ * \param[in] tmpl Pointer to UniRec template
+ * \param[out] data Pointer to the beginning of a record
+ * \param[in] f_id Identifier of a field. It must be a constant beginning
+ *                     with UR_, not its numeric value.
+ * \param[in] v The value the field should be set to.
+ * \return 0 on success, non-zero otherwise.
+ */
+int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v);
 
 
 /** \brief Set offset of dynamic UniRec field
@@ -345,7 +410,7 @@ void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_i
  * \return The offset.
  */
 #define ur_set_dyn_offset(tmplt, data, field_id, off) \
-   (*(uint16_t*)((char*)(data) + (tmplt)->offset[field_id]) = (off))
+   (*(uint16_t *)((char *)(data) + (tmplt)->offset[field_id]) = (off))
 
 
 /** \brief Set dynamic UniRec field
@@ -363,7 +428,7 @@ void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_i
 
 #define ur_set_dyn(tmplt, data, field_id, value_ptr, size) \
    do { \
-      char* out_ptr = ur_get_dyn((tmplt), (data), (field_id)); \
+      char *out_ptr = ur_get_dyn((tmplt), (data), (field_id)); \
       memcpy(out_ptr, (value_ptr), (size)); \
       int new_offset = ur_get_dyn_offset_start((tmplt), (data), (field_id)) + (size); \
       ur_set_dyn_offset((tmplt), (data), (field_id), new_offset); \
@@ -392,7 +457,7 @@ void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_i
 #define ur_rec_dynamic_size(tmplt, data) \
    (((tmplt)->first_dynamic == UR_INVALID_OFFSET) ? \
     (0) : \
-    (*(uint16_t*)((char*)(data) + (tmplt)->static_size - 2)) )
+    (*(uint16_t *)((char *)(data) + (tmplt)->static_size - 2)) )
 
 
 /** \brief Get total size of UniRec record
@@ -431,7 +496,7 @@ void ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_i
  * \param[in] src Pointer to source data
  * \return Pointer to a new UniRec
  */
-INLINE void* ur_cpy_alloc(ur_template_t *tmplt, const void *src)
+INLINE void *ur_cpy_alloc(ur_template_t *tmplt, const void *src)
 {
     void *copy = ur_create(tmplt, ur_rec_dynamic_size(tmplt, src));
     ur_cpy(tmplt, src, copy);
@@ -448,7 +513,11 @@ INLINE void* ur_cpy_alloc(ur_template_t *tmplt, const void *src)
  * \param[in] src Source UniRec record
  * \param[out] dst Destination UniRec record
  */
-void ur_transfer_static(ur_template_t* tmplt_src, ur_template_t* tmplt_dst, const void* src, void* dst);
+void ur_transfer_static(ur_template_t *tmplt_src, ur_template_t *tmplt_dst, const void *src, void *dst);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 } // extern "C"

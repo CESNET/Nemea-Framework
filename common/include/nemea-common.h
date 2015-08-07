@@ -47,6 +47,7 @@
 // include Super Fast Hash
 #include "super_fast_hash.h"
 
+#include "configurator.h"
 #include "cuckoo_hash.h"
 #include "cuckoo_hash_v2.h"
 #include "fast_hash_table.h"

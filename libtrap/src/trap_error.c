@@ -45,7 +45,7 @@
 
 #include "trap_error.h"
 
-/** Default error message for each error code */ 
+/** Default error message for each error code */
 const char* default_err_msg[256] = {
    "No error",                          // 0 TRAP_E_OK
    "Read or write operation timeout",   // 1 TRAP_E_TIMEOUT
@@ -55,7 +55,7 @@ const char* default_err_msg[256] = {
    "Interface index out of range.",     // 12 TRAP_E_BAD_IFC_INDEX
    "Bad parameters of function",        // 13 TRAP_E_BAD_FPARAMS
    "Input/Output error",                // 14 TRAP_E_IO_ERROR
-   "Interface was terminated during read/write", // 15 TRAP_E_TERMINATED 
+   "Interface was terminated during read/write", // 15 TRAP_E_TERMINATED
    "Interface was not selected for read/write",  // 16 TRAP_E_NOT_SELECTED
    0,0,0,                               // 17-19 unused
    0,0,0,0,0,0,0,0,0,0,                 // 20-29 unused

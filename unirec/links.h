@@ -7,10 +7,12 @@
  * which do not have to fill ones in LINK_BIT_FIELD on positions 1 - 9 necessary
  * but on positions specified by link mask.
  * \author Pavel Krobot <xkrobo01@stud.fit.vutbr.cz>
+ * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2013
+ * \date 2015
  */
  /*
- * Copyright (C) 2013 CESNET
+ * Copyright (C) 2013-2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -48,6 +50,11 @@
 #ifndef _UNIREC_LINKS_H_
 #define _UNIREC_LINKS_H_
 
+/**
+ * \defgroup ur_links Links API
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,14 +81,14 @@ typedef struct {
  * \param[in] mask String with link mask in hexadecimal format.
  * \return Pointer to newly created links structure or NULL on error.
  */
-ur_links_t *ur_create_links(const char* mask);
+ur_links_t *ur_create_links(const char *mask);
 
 /** \brief Destroy links structure.
  * Free all memory allocated for a links structure created previously by
  * ur_create_links.
  * \param[in] links Pointer to the links structure.
  */
-void ur_free_links(ur_links_t* links);
+void ur_free_links(ur_links_t *links);
 
 /** \brief Get index of link (0 - (n-1))
  * Function gets search link_indexes array for value corresponding to passed
@@ -95,12 +102,15 @@ void ur_free_links(ur_links_t* links);
  */
 INLINE int ur_get_link_index(ur_links_t *links, uint64_t link_bit_field)
 {
-	for (int i = 0; i < links->link_count; ++i){//search for corresponding value
-		if ((link_bit_field >> links->link_indexes[i]) & 1L){
-			return i;
-		}
-	}
-	return -1; //ERROR
+   unsigned int i;
+   for (i = 0; i < links->link_count; ++i) {
+      /* search for corresponding value */
+      if ((link_bit_field >> links->link_indexes[i]) & 1L) {
+         return i;
+      }
+   }
+   /* ERROR */
+   return -1;
 }
 
 /** \brief Get position in link_bit_field of link.
@@ -113,12 +123,12 @@ INLINE int ur_get_link_index(ur_links_t *links, uint64_t link_bit_field)
  */
 INLINE uint64_t ur_get_link_bit_field_position(ur_links_t *links, unsigned int index)
 {
-	if (index < links->link_count){//index have to be from interval 0 - (n-1)
-		return links->link_indexes[index];
-	}else{
-		return 0;//returns 0 on error since no link can possibly have value 1 on
-					//position 0 in LINK_BIT_FIELD
-	}
+   if (index < links->link_count) {//index have to be from interval 0 - (n-1)
+      return links->link_indexes[index];
+   } else {
+      return 0;//returns 0 on error since no link can possibly have value 1 on
+               //position 0 in LINK_BIT_FIELD
+   }
 }
 
 /** \brief Get link mask.
@@ -127,7 +137,7 @@ INLINE uint64_t ur_get_link_bit_field_position(ur_links_t *links, unsigned int i
  */
 INLINE uint64_t ur_get_link_mask(ur_links_t *links)
 {
-	return links->link_mask;
+   return links->link_mask;
 }
 
 /** \brief Get link count.
@@ -136,12 +146,16 @@ INLINE uint64_t ur_get_link_mask(ur_links_t *links)
  */
 INLINE unsigned int ur_get_link_count(ur_links_t *links)
 {
-	return links->link_count;
+   return links->link_count;
 }
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+/**
+ * @}
+ */
 
 #endif
 // END OF links.h

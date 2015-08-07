@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS=-I m4
+
 AM_CFLAGS=-std=c99 -O3
 
 RPMDIR = RPMBUILD
@@ -18,7 +20,7 @@ unirecinclude_HEADERS=fields.h \
 		     unirec.h \
 		     ur_time.h
 
-BUILT_SOURCES = fields.h
+BUILT_SOURCES = fields.h field_func.c
 
 EXTRA_DIST=fields field_func.c process_fields.py
 
@@ -34,6 +36,16 @@ unirec.o: unirec.c unirec.h ipaddr.h fields.h field_func.c
 
 clean-hook:
 	rm -f fields.h field_func.c
+
+include doxygen.am
+
+if DX_COND_doc
+
+doc: doxygen-doc
+
+clean-local: doxygen-clean
+	rm -rf doc/doxygen
+endif
 
 if MAKE_RPMS
 

@@ -1,5 +1,5 @@
-SUBDIRS = src include @ENABLEDTESTS@
-DIST_SUBDIRS = src include tests
+SUBDIRS = src include @ENABLEDTESTS@ @ENABLEDEXAMPLES@
+DIST_SUBDIRS = src include tests examples
 
 RPMDIR = RPMBUILD
 

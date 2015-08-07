@@ -16,7 +16,7 @@ int main(int argc, char **argv)
    }
 
    // Allocate memory for a record
-   void* rec = ur_create(tmplt, 128); // allocates size of static fields + 128 bytes for URL
+   void *rec = ur_create(tmplt, 128); // allocates size of static fields + 128 bytes for URL
 
    ip_addr_t src_addr, dst_addr;
    ip_from_str("1.0.0.0", &src_addr);

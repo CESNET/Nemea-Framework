@@ -65,6 +65,11 @@
  * @{
  */
 
+typedef struct hello_msg_header_s {
+   uint8_t data_type;
+   uint32_t data_fmt_spec_size;
+} hello_msg_header_t;
+
 enum client_send_state {
    CURRENT_IDLE, /**< waiting for a message in current buffer */
    CURRENT_HEAD, /**< timeout in header */
@@ -106,6 +111,7 @@ typedef struct tcpip_sender_private_s {
    pthread_mutex_t  lock;
    pthread_mutex_t  sending_lock;
    pthread_t        accept_thread;
+   uint32_t ifc_idx;
 } tcpip_sender_private_t;
 
 #define TCPIP_SENDER_STATE_STR(st) (st == CURRENT_IDLE ? "CURRENT_IDLE": \
@@ -135,6 +141,7 @@ typedef struct tcpip_receiver_private_s {
    void *ext_buffer; /**< Pointer to buffer that was passed by higher layer - this is the place we write */
    uint32_t ext_buffer_size; /** size of content of the extbuffer */
    trap_buffer_header_t int_mess_header; /**< Internal message header - used for message_buffer payload size \note message_buffer size is sizeof(tcpip_tdu_header_t) + payload size */
+   uint32_t ifc_idx;
 } tcpip_receiver_private_t;
 
 /**

@@ -1,0 +1,382 @@
+Cofigurator README
+------------------
+
+Configurator plugin can configure all modules automatically with informations
+specified in two XML files. First XML file (pattern file) contains info about
+all variables and structures which can be configured. This file is used as
+source pattern in processing, it is necessary to fill it with all configurable
+variables.
+
+Variables are stored inside structure(main_struct). This structure is defined
+by author of module and it is possible to make structure hierarchy (structure
+inside other structure). However be careful with it and do not forget any
+inner variable.
+
+There is also possibility to use arrays with minor limitations. These
+limitations are:
+    1) Array can only store simple elements, such as int, float, string, ...
+    2) Array can not contain another array.
+
+There are two versions of arrays. First containing only single element type
+and second containing structure with simple elements (as stated above).
+
+Each config xml file must start with head and <configuration> tag.
+
+
+Inside it you can define:
+-------------------------
+
+Module name as: <module-name></module-name>
+Module author as: <module-author></module-author>
+Structure as: <struct name="structure_name"></struct>
+   - It is necessary to fill structure name!
+   - Inside each structure you can define variable as element. Attribute type can be [required|optional].
+   - If variable is required, second xml has to have appropriate value of this variable.
+   - Inside each element you can specify:
+     -- Variable name as: <name></name>
+     -- Variable type as: <type></type>
+        --- If you want to use string variable, you have to define size of string with attribute size
+     -- Default value as: <default-value><default-value>
+   - You can also define other structure with <struct name="inner_structure_name"></struct>
+Array with single element as: <array name="array_name"></array>
+   - It is necessary to fill array name!
+   - Inside array tag you can define variable as element
+   - Example specification of array with uint32_t elements:
+      <array name="ID_array">
+         <element>
+            <name>ID</name>
+            <type>uint32_t</type>
+            <default-value>0</default-value>
+         </element>
+      </array>
+   - Example of user specification values for given array:
+      <array name="ID_array">
+         <element>23</element>
+         <element>123456</element>
+      </array>
+Array with structure is similar to array with single element:
+   - This version requires <struct> tag!
+   - Example specification of array with person structures:
+      <array name="person_array">
+         <struct>
+            <element>
+               <name>ID</name>
+               <type>uint32_t</type>
+               <default-value>0</default-value>
+            </element>
+            <element>
+               <name>name</name>
+               <type size="32">string</type>
+               <default-value>unnamed</default-value>
+            </element>
+            <element>
+               <name>balance</name>
+               <type>double</type>
+               <default-value>0.0</default-value>
+            </element>
+         </struct>
+      </array>
+   - Example of user specification values for given array:
+      <array name="person_array">
+         <struct>
+            <element name="ID">23</element>
+            <element name="name">Neo</element>
+            <element name="balance">234.50</element>
+         </struct>
+         <struct>
+            <element name="ID">24</element>
+            <element name="name">Agent Smith</element>
+            <element name="balance">777.99</element>
+         </struct>
+      </array>
+
+
+List of supported variable types:
+-----------------------
+
+int8_t,
+int16_t,
+int32_t,
+int64_t,
+uint8_t,
+uint16_t,
+uint32_t,
+uint64_t,
+float,
+double,
+string
+
+
+Example of configuration file:
+------------------------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <module-name>Example module</module-name>
+    <module-author>John Wayne</module-author>
+    <struct name="main_struct">
+        <element type="required">
+            <name>Variable1</name>
+            <type>uint8_t</type>
+            <default-value>10</default-value>
+        </element>
+        <element type="required">
+            <name>Variable_string</name>
+            <type size="8">string</type>
+            <default-value>osem</default-value>
+        </element>
+        <struct name="first_struct">
+            <element type="required">
+                <name>Struct_variable1</name>
+                <type>uint8_t</type>
+                <default-value>11</default-value>
+            </element>
+            <element type="optional">
+                <name>Struct_optional_variable</name>
+                <type>uint32_t</type>
+                <default-value>21</default-value>
+            </element>
+        </struct>
+    </struct>
+</configuration>
+
+
+Second XML file contains values of variables specified in pattern file. It is
+important to fill this file with correct names of variables. All required
+variables must be filled. If you do not want to specify some of optional
+variables, their value will automatically set up to default value.
+
+
+Example of second file:
+-----------------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <module-name>Example module</module-name>
+    <struct>
+        <element name="Variable1">52</element>
+        <element name="Variable_string">Hello</element>
+        <struct name="first struct">
+            <element name="Struct_variable1">74</element>
+        </struct>
+    </struct>
+</configuration>
+
+
+C application usage
+---------------
+
+To use this configuration in C application a few functions are used and
+a structure created with "special" variables for some elements (mostly array).
+
+List of functions and what they do:
+    1) loadConfiguration(patterFile, userConfigFile, structurePtr) - This
+          function is called at application start to parse specified XML
+          files and store its content to given structure.
+    2) configuratorGetArrElemCount(arrPtr) - This function is used to
+          count elements of given array.
+    3) configuratorFreeUAMBS() - This function free memory allocated for
+          user arrays. It needs to be called when application uses arrays
+          at application termination.
+
+Structure types for (u)INT8/16/32/64, float and double are same as specified
+in patterFile. String type is represented as char array with specified
+maximal length (ex. char str[max_length];).Structure type (structure in
+structure) needs to be specified directly in first structure (no typedef or
+pointer). Array is represented as pointer. This pointer can be any simple
+element pointer (uint32_t*, float*, char*, ...) or even void* if the array
+contains only one type of element. If array contains structure, this pointer
+can point to structure of this type (typedefs are recommended).
+
+WARNING: ALL STRUCTURES MUST BE DECLARED AS (__attribute__ ((__packed__)) !!!
+WARNING: ITEMS IN C STRUCTURE MUST BE DEFINED IN SAME ORDER AS ARE ITEMS
+         IN PATTERNXML FILE !!!
+
+"Complex" example of C structure definition:
+    typedef struct __attribute__ ((__packed__)) {
+        uint32_t id;
+        char name[10];
+    } sub_struct_t;
+
+    typedef struct __attribute__ ((__packed__)) {
+        int64_t Variable1;
+        double Variable2;
+        uint32_t Variable_optional;
+        char Variable_string[8];
+        struct __attribute__ ((__packed__)){
+            uint8_t Struct_variable1;
+            uint32_t Struct_optional_variable;
+        } first_struct;
+        char Last_param[10]; // String with 9 chars and terminating 0
+        sub_struct_t *arr;   // Array of structures
+        int64_t Variable3;
+        char *narr;          // String array
+        int32_t *num_arr;    // int32 array
+    } main_struct_t;
+
+
+Corresponding XML patternFile to this structure:
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <module-name>Example module</module-name>
+        <module-author>Mr. Example</module-author>
+        <struct name="main struct">
+            <element type="required">
+                <name>Variable1</name>
+                <type>int64_t</type>
+                <default-value>10</default-value>
+            </element>
+            <element type="required">
+                <name>Variable2</name>
+                <type>double</type>
+                <default-value>10.0</default-value>
+            </element>
+            <element type="optional">
+                <name>Variable_optional</name>
+                <type>uint32_t</type>
+                <default-value>6421</default-value>
+            </element>
+            <element type="required">
+                <name>Variable_string</name>
+                <type size="8">string</type>
+                <default-value>osem</default-value>
+            </element>
+            <struct name="first struct">
+                <element type="required">
+                    <name>Struct_variable1</name>
+                    <type>uint8_t</type>
+                    <default-value>11</default-value>
+                </element>
+                <element type="optional">
+                    <name>Struct_optional_variable</name>
+                    <type>uint32_t</type>
+                    <default-value>21</default-value>
+                </element>
+            </struct>
+            <element type="required">
+                <name>Last_param</name>
+                <type size="10">string</type>
+                <default-value>desat</default-value>
+            </element>
+            <array name="test_ar">
+                <struct>
+                    <element type="required">
+                        <name>id</name>
+                        <type>uint32_t</type>
+                        <default-value>0</default-value>
+                    </element>
+                    <element type="required">
+                        <name>name</name>
+                        <type size="10">string</type>
+                        <default-value>-</default-value>
+                    </element>
+                </struct>
+            </array>
+            <element type="required">
+                <name>Variable3</name>
+                <type>int64_t</type>
+                <default-value>23</default-value>
+            </element>
+            <array name="name_ar">
+                <element type="required">
+                    <name>name</name>
+                    <type size="10">string</type>
+                    <default-value>unnamed</default-value>
+                </element>
+            </array>
+            <array name="num_ar">
+                <element type="required">
+                    <name>num</name>
+                    <type>int32_t</type>
+                    <default-value>0</default-value>
+                </element>
+            </array>
+        </struct>
+    </configuration>
+
+
+Corresponding XML userConfigFile to this patternFile:
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <module-name>Example module</module-name>
+        <struct>
+            <element name="Variable1">
+                -1
+            </element>
+            <element name="Variable2">
+                11.1
+            </element>
+            <element name="Variable_optional">
+                4567
+            </element>
+            <element name="Variable_string">
+                ahoj
+            </element>
+            <struct name="first struct">
+                <element name="Struct_variable1">
+                    74
+                </element>
+            </struct>
+            <element name="Last_param">
+                Bla bla bla, tento string bude orezany. Hadaj preco?
+            </element>
+            <array name="test_ar">
+                <struct>
+                    <element name="id">
+                        1
+                    </element>
+                    <element name="name">
+                        Johnabcdefghijklmnopqrst
+                    </element>
+                </struct>
+                <struct>
+                    <element name="id">
+                        2
+                    </element>
+                    <element name="name">
+                        Rambo
+                    </element>
+                </struct>
+                <struct>
+                    <element name="id">
+                        3
+                    </element>
+                    <element name="name">
+                        Commando
+                    </element>
+                </struct>
+            </array>
+            <element name="Variable3">
+                -1
+            </element>
+            <array name="name_ar">
+                <element>
+                    Rocky1234567890
+                </element>
+                <element>
+                    Babofka
+                </element>
+            </array>
+            <array name="num_ar">
+                <element>
+                    123
+                </element>
+                <element>
+                    -1
+                </element>
+                <element>
+                    10000000
+                </element>
+                <element>
+                    -23
+                </element>
+                <element>
+                    -6662342
+                </element>
+            </array>
+        </struct>
+    </configuration>
+
+More examples can be find...TODO
+
+And that's all folks!

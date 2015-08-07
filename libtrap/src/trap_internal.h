@@ -5,7 +5,7 @@
  * \author Tomas Konir <Tomas.Konir@liberouter.org>
  * \author Milan Kovacik <xkovaci1@fi.muni.cz>
  * \author Vojtech Krmicek <xkrmicek@fi.muni.cz>
- * \author Juraj Blaho <xblaho00@stud.fit.vutbr.cz> 
+ * \author Juraj Blaho <xblaho00@stud.fit.vutbr.cz>
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2006-2011
  * \date 2013
@@ -58,6 +58,10 @@
 
 #define MAX_ERROR_MSG_BUFF_SIZE 1024
 
+#define SERVICE_GET_COM 10
+#define SERVICE_SET_COM 11
+#define SERVICE_OK_REPLY 12
+
 /** @defgroup debug Macros for verbose and debug listings
  * @{
  */
@@ -94,7 +98,7 @@ typedef enum trap_verbose_level {
 
 #ifdef DEBUG
    /*! \brief Debug message macro if DEBUG macro is defined
-    * 
+    *
     * now 3 known DEBUG LEVELS
     *    - 0 normal debug messages
     *    - 1 extended debug (messages on enter and before exit important functions)
@@ -102,13 +106,13 @@ typedef enum trap_verbose_level {
     *
     * BE VERBOSE AND DEBUG ARE DIFFERENT OPTIONS !!!
    */
-#  define MSG(level,format,args...) if(trap_debug>=level){snprintf(trap_err_msg,4095,format,##args); debug_msg(level,trap_err_msg);}
+#  define MSG(level,format,args...) if (trap_debug >= level) {snprintf(trap_err_msg, 4095, format, ##args); debug_msg(level,trap_err_msg);}
 
    /*! \brief Debug message macro if DEBUG macro is defined - without new
     * line */
-#  define MSG_NONL(level,format,args...) if(trap_debug>=level){snprintf(trap_err_msg,4095,format,##args); debug_msg_nonl(trap_err_msg);}
+#  define MSG_NONL(level,format,args...) if (trap_debug >= level) {snprintf(trap_err_msg, 4095, format, ##args); debug_msg_nonl(trap_err_msg);}
    /*! Prints line in source file if DEBUG macro is defined */
-#  define LINE() {fprintf(stderr,"file: %s ,line: %i\n",__FILE__, __LINE__); fflush(stderr);}
+#  define LINE() {fprintf(stderr, "file: %s, line: %i\n", __FILE__, __LINE__); fflush(stderr);}
 
 #define INLINE
 #else

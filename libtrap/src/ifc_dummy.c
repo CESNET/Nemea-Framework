@@ -67,13 +67,13 @@ static void create_dump(void *priv, uint32_t idx, const char *path)
 
 int generator_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
-   generator_private_t* config = (generator_private_t*) priv;
+   generator_private_t *config = (generator_private_t*) priv;
    if (config->is_terminated) {
       return trap_error(config->ctx, TRAP_E_TERMINATED);
    }
    data = config->data_to_send;
    *size = config->data_size;
-   return TRAP_E_OK;   
+   return TRAP_E_OK;
 }
 
 void generator_terminate(void *priv)
@@ -101,13 +101,13 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    unsigned char n = params[0];
    if (n == 0)
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "zero-length data");
-   
+
    // Create structure to store private data
    generator_private_t *priv = calloc(1, sizeof(generator_private_t));
    if (!priv) {
       return trap_error(ctx, TRAP_E_MEMORY);
    }
-   
+
    // Store data to send (param) into private data
    priv->ctx = ctx;
    priv->data_size = n;
@@ -115,16 +115,16 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    if (!priv->data_to_send)
       return free(priv), trap_error(ctx, TRAP_E_MEMORY);
    memcpy(priv->data_to_send, params+1, n);
-   
+
    priv->is_terminated = 0;
-   
+
    // Fill struct defining the interface
    ifc->recv = generator_recv;
    ifc->terminate = generator_terminate;
    ifc->destroy = generator_destroy;
    ifc->create_dump = create_dump;
    ifc->priv = priv;
-   
+
    return TRAP_E_OK;
 }
 

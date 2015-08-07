@@ -12,11 +12,29 @@ USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
 AC_SUBST(USERMAIL)
-LT_INIT()
 AM_SILENT_RULES([yes])
+
+AC_ARG_ENABLE([debug],
+        AC_HELP_STRING([--enable-debug],
+        [Enable build with debug symbols and without optimizations.]),
+        [if test "$enableval" = "yes"; then
+                CFLAGS="-Wall -g -O0 $CFLAGS"
+                CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
+        fi], [CFLAGS="-Wall -O3 $CFLAGS"
+              CXXFLAGS="-Wall -O3 $CXXFLAGS"])
+AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
+LT_INIT()
+
 pkgincludedir=${includedir}/nemea-common
 AC_SUBST(pkgincludedir)
 
+AC_ARG_ENABLE(repobuild, AS_HELP_STRING([--enable-repobuild],
+		[enable local compilation without system installed Nemea libraries, default: no]),
+[case "${enableval}" in
+	yes) repobuild=true ;;
+	no)  repobuild=false ;;
+	*)   AC_MSG_ERROR([bad value ${enableval} for --enable-repobuild]) ;;
+esac], [repobuild=false])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
@@ -25,6 +43,10 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+
+
+m4_include([m4/ax_libxml2_check.m4])
+AX_LIBXML2_CHECK()
 
 # Checks for libraries.
 

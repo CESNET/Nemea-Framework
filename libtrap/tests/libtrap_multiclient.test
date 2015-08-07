@@ -2,7 +2,7 @@
 
 #set -x
 
-t_arg="u;multitest"
+t_arg="u:multitest"
 clients=10
 
 #start 'clients'

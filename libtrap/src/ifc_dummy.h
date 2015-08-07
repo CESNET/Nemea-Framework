@@ -59,7 +59,7 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
 
 
 /** Create Blackhole interface (output ifc).
- *  Send function of this interface does nothing, so everything sent to 
+ *  Send function of this interface does nothing, so everything sent to
  *  a blackhole is dropped.
  *  @param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  *  @param[in] params Ignored.

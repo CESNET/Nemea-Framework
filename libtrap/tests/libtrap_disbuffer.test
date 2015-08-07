@@ -6,11 +6,11 @@ sock1="rxtxtest1"
 sock2="rxtxtest2"
 
 # start server
-./test_rxtx -i "uu;$sock2;$sock1" -s -n 66&
+./test_rxtx -i "u:$sock2,u:$sock1" -s -n 66&
 p1=$!
 
 #start client
-./test_rxtx -i "uu;$sock1;$sock2" -n 66&
+./test_rxtx -i "u:$sock1,u:$sock2" -n 66&
 p2=$!
 
 echo "Waiting for $p1"
@@ -28,11 +28,11 @@ if [ $error -ne 0 ]; then
 fi
 
 # start server
-./test_rxtx -i "uu;$sock2;$sock1" -s -n 66 -b&
+./test_rxtx -i "u:$sock2,u:$sock1" -s -n 66 -b&
 p1=$!
 
 #start client
-./test_rxtx -i "uu;$sock1;$sock2" -n 66 -b&
+./test_rxtx -i "u:$sock1,u:$sock2" -n 66 -b&
 p2=$!
 
 #sleep 5

@@ -1,4 +1,5 @@
 pkginclude_HEADERS=nemea-common.h \
+                   configurator.h \
 		   cuckoo_hash.h \
 		   cuckoo_hash_v2.h \
 		   super_fast_hash.h \
