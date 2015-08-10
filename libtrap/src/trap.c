@@ -1038,12 +1038,16 @@ static uint16_t get_terminal_width()
 void trap_print_help(const trap_module_info_t *module_info)
 {
    char *pager = NULL, *output_format = NULL;
+   const char *temp_env;
    int pager_fds[2];
    uint32_t i, written = 0, tmp = 0, align1 = 0, cols;
    pid_t p;
 
    /* Decide which format of output will be used according to the enviroment variable */
-   output_format = getenv("LIBTRAP_OUTPUT_FORMAT");
+   temp_env = getenv("LIBTRAP_OUTPUT_FORMAT");
+   if (temp_env != NULL) {
+      output_format = strdup(temp_env);
+   }
    if (output_format != NULL) {
       if (strcmp(output_format, "json") == 0) {
          trap_convert_module_info_to_json(module_info);
@@ -1056,7 +1060,11 @@ void trap_print_help(const trap_module_info_t *module_info)
       cols = 85;
    }
 
-   pager = getenv("PAGER");
+   temp_env = getenv("PAGER");
+   if (temp_env != NULL) {
+      pager = strdup(temp_env);
+   }
+
    if (pager == NULL) {
       goto output;
    }
