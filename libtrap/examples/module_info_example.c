@@ -40,6 +40,7 @@
  * if advised of the possibility of such damage.
  *
  */
+#include <config.h>
 
 #include <stdlib.h>
 #include <stdio.h>

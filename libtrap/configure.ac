@@ -59,7 +59,6 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h stdarg.h string.h sys/socket.h sys/time.h unistd.h pthread.h endian.h locale.h sched.h sys/param.h sys/stat.h sys/types.h getopt.h])
 
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_LONG_LONG_INT
 AC_C_INLINE
@@ -126,6 +125,20 @@ AC_FUNC_MMAP
 AC_FUNC_FORK
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime memset munmap select socket strchr strdup strerror dup2 mkdir])
+AC_CHECK_FUNCS([getopt_long getopt])
+
+# Define TRAP_GETOPT() for example of module_info
+if test "x$ac_cv_func_getopt_long" = xyes; then
+  AC_DEFINE_UNQUOTED([TRAP_GETOPT(argc, argv, optstr, longopts)],
+    [getopt_long(argc, argv, optstr, longopts, NULL)],
+    [Trap getopt macro. Argc and argv are number and values of arguments, optstr is a string containing legitimate option characters, longopts is the array of option structures (unused for on system without getopt_long())])
+elif test "x$ac_cv_func_getopt" = xyes; then
+  AC_DEFINE_UNQUOTED([TRAP_GETOPT(argc, argv, optstr, longopts)],
+  [getopt(argc, argv, optstr)],
+  [Trap getopt macro. Argc and argv are number and values of arguments, optstr is a string containing legitimate option characters, longopts is the array of option structures (unused for on system without getopt_long())])
+else
+  AC_MSG_ERROR([getopt() was not found, module depend on it...])
+fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
@@ -152,13 +165,17 @@ CPPFLAGS="$CPPFLAGS -DTRAP_IFC_MESSAGE_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" "
 
 
 
-AC_ARG_ENABLE([tests], AC_HELP_STRING([--enable-tests],[Compile with testing modules]),[with_tests=yes],[with_tests=no])
-AS_IF([test "x$with_tests" = "xyes"], [ENABLEDTESTS=./tests], [ENABLEDTESTS=""])
-AC_SUBST(ENABLEDTESTS)
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
+        [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_TESTS], [true])])
 
-AC_ARG_ENABLE([examples], AC_HELP_STRING([--enable-examples],[Compile with example modules]),[with_examples=yes],[with_examples=no])
-AS_IF([test "x$with_examples" = "xyes"], [ENABLEDEXAMPLES=./examples], [ENABLEDEXAMPLES=""])
-AC_SUBST(ENABLEDEXAMPLES)
+AC_ARG_ENABLE([long-tests], AC_HELP_STRING([--enable-long-tests], [Run long performance tests (--enable-tests must be used for any effect)]),
+        [AM_CONDITIONAL([ENABLE_LONG_TESTS], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_LONG_TESTS], [false])])
+
+AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-examples],[Compile with example modules]),
+        [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
 
 AC_ARG_ENABLE([debugifc], AC_HELP_STRING([--enable-debugifc],
       [Compile IFC with debug messages]),
@@ -236,6 +253,9 @@ echo "  LDFLAGS..............: $LDFLAGS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"
-echo "Subdirs................: $ENABLEDTESTS $ENABLEDEXAMPLES"
+echo
+echo "Tests..................: `if [[ -z "$ENABLE_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "Long performance tests.: `if [[ -z "$ENABLE_LONG_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "Examples...............: `if [[ -z "$ENABLE_EXAMPLES" ]]; then echo enabled; else echo disabled; fi`"
 echo
 
