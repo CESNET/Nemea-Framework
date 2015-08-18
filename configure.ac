@@ -87,9 +87,9 @@ echo "Installation...........: make install (as root if needed, with 'su' or 'su
 echo "  prefix...............: $prefix"
 echo
 echo "Components:"
-echo "  libtrap................: `if [ -z "$ENABLE_LIBTRAP_TRUE" ]; then echo enabled; else echo disabled; fi`"
-echo "  nemea-common...........: `if [ -z "$ENABLE_NEMEACOMMON_TRUE" ]; then echo enabled; else echo disabled; fi`"
-echo "  python.................: `if [ -z "$ENABLE_PYTHON_TRUE" ]; then echo enabled; else echo disabled; fi`"
-echo "  unirec.................: `if [ -z "$ENABLE_UNIREC_TRUE" ]; then echo enabled; else echo disabled; fi`"
+echo "  libtrap................: `if [[ -z "$ENABLE_LIBTRAP_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  nemea-common...........: `if [[ -z "$ENABLE_NEMEACOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  python.................: `if [[ -z "$ENABLE_PYTHON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  unirec.................: `if [[ -z "$ENABLE_UNIREC_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 
