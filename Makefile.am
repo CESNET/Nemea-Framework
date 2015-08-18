@@ -1,4 +1,17 @@
-SUBDIRS=unirec libtrap python common
+SUBDIRS=
+
+if ENABLE_LIBTRAP
+SUBDIRS+=libtrap
+endif
+if ENABLE_UNIREC
+SUBDIRS+=unirec
+endif
+if ENABLE_NEMEACOMMON
+SUBDIRS+=common
+endif
+if ENABLE_PYTHON
+SUBDIRS+=python
+endif
 
 EXTRA_DIST=README.md
 

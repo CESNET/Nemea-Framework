@@ -6,7 +6,7 @@ AC_INIT([nemea-framework], [1.0.0], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_SILENT_RULES([yes])
 LT_INIT()
 RELEASE=1
@@ -25,21 +25,10 @@ AC_PROG_LIBTOOL
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 
 # Checks for header files.
-AC_CHECK_HEADERS([arpa/inet.h stdint.h stdlib.h string.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_INLINE
-AC_TYPE_SIZE_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_FUNC_ERROR_AT_LINE
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([memset strchr])
 
 pkgdatadir=${datadir}/nemea
 PKGDATADIR=$(eval echo $(eval echo ${pkgdatadir}))
@@ -59,7 +48,23 @@ AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 AC_CONFIG_FILES([Makefile
 		 nemea.spec])
 
-AC_CONFIG_SUBDIRS([common unirec libtrap python])
+AC_ARG_ENABLE([libtrap], AC_HELP_STRING([--disable-libtrap], [Disable libtrap.]),
+        [AM_CONDITIONAL([ENABLE_LIBTRAP], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_LIBTRAP], [true])])
+
+AC_ARG_ENABLE([common], AC_HELP_STRING([--disable-common], [Disable nemea-common.]),
+        [AM_CONDITIONAL([ENABLE_NEMEACOMMON], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_NEMEACOMMON], [true])])
+
+AC_ARG_ENABLE([unirec], AC_HELP_STRING([--disable-unirec], [Disable UniRec.]),
+        [AM_CONDITIONAL([ENABLE_UNIREC], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_UNIREC], [true])])
+
+AC_ARG_ENABLE([python], AC_HELP_STRING([--disable-python], [Disable python wrappers.]),
+        [AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_PYTHON], [true])])
+
+AC_CONFIG_SUBDIRS([libtrap common python unirec])
 AC_OUTPUT
 
 echo
@@ -67,14 +72,10 @@ echo
 echo "------------------------------------------------------------------------"
 echo "$PACKAGE $VERSION"
 echo "------------------------------------------------------------------------"
-echo
-echo
 echo "Configuration Options Summary:"
 echo
 echo "  ASM.(32 bit only)..: $ASM"
 echo "  Static binary......: $static"
-echo
-echo "Documentation..........: ${build_doc}"
 echo
 echo "Compilation............: make (or gmake)"
 echo "  CPPFLAGS.............: $CPPFLAGS"
@@ -84,6 +85,11 @@ echo "  LDFLAGS..............: $LDFLAGS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"
-echo "Subdirs................: $ENABLEDTESTS"
+echo
+echo "Components:"
+echo "  libtrap................: `if [ -z "$ENABLE_LIBTRAP_TRUE" ]; then echo enabled; else echo disabled; fi`"
+echo "  nemea-common...........: `if [ -z "$ENABLE_NEMEACOMMON_TRUE" ]; then echo enabled; else echo disabled; fi`"
+echo "  python.................: `if [ -z "$ENABLE_PYTHON_TRUE" ]; then echo enabled; else echo disabled; fi`"
+echo "  unirec.................: `if [ -z "$ENABLE_UNIREC_TRUE" ]; then echo enabled; else echo disabled; fi`"
 echo
 
