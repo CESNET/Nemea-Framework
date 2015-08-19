@@ -124,16 +124,6 @@ static void *get_in_addr(struct sockaddr *sa)
    return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-static inline void tcpip_prepare_header(trap_buffer_header_t *m)
-{
-#ifdef ENABLE_HEADER_TIMESTAMP
-   struct timespec spec;
-
-   clock_gettime(CLOCK_MONOTONIC, &spec);
-   m->timestamp = spec.tv_sec * 1000000000 + spec.tv_nsec;
-#endif
-}
-
 /**
  * \addtogroup tcpip_receiver
  * @{
@@ -1094,42 +1084,6 @@ typedef enum tcpip_sender_result {
 } tcpip_sender_result_t;
 
 /**
- * check the last send operation
- * \return EVERYBODY_PASSED, EVERYBODY_TIMEOUTED, SOMEBODY_TIMEOUTED
- */
-static inline tcpip_sender_result_t sending_current_buffer_state(tcpip_sender_private_t *c)
-{
-   int succs = 0, timeouts = 0, i;
-   struct client_s *cl;
-
-   for (i = 0; i < c->clients_arr_size; ++i) {
-      cl = &c->clients[i];
-      if ((cl->sd > 0) && (cl->client_state != BACKUP_BUFFER)) {
-         if (cl->sending_pointer == NULL) {
-            succs++; /* successfuly sent */
-         } else {
-            timeouts++; /* timeouted */
-         }
-      }
-   }
-   if (succs == c->connected_clients) {
-      for (i=0; i<c->clients_arr_size; ++i) {
-         cl = &c->clients[i];
-         if ((cl->sd > 0) && (cl->client_state != BACKUP_BUFFER)) {
-            if (cl->sending_pointer == NULL) {
-               cl->client_state = CURRENT_IDLE;
-            }
-         }
-      }
-      return EVERYBODY_PASSED;
-   }
-   if (timeouts == c->connected_clients) {
-      return EVERYBODY_TIMEDOUT;
-   }
-   return SOMEBODY_TIMEDOUT;
-}
-
-/**
  * \brief Check if we have connected clients and wait for them.
  *
  * The function is blocking or non-blocking.
@@ -1576,7 +1530,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    // Check parameter
    if (params == NULL) {
       VERBOSE(CL_ERROR, "IFC requires at least one parameter (%s).",
-              type == TRAP_IFC_TYPE_TCPIP ? "TCP port" : "UNIX socket name");
+              type == TRAP_IFC_TCPIP ? "TCP port" : "UNIX socket name");
       return TRAP_E_BADPARAMS;
    }
 
