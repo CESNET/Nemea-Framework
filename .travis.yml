@@ -1,4 +1,3 @@
-sudo: required
 language: c
 compiler:
   - gcc
@@ -28,6 +27,9 @@ addons:
     build_command:   "make -j 4"
     branch_pattern: coverity
 
+
+before_install:
+   - sudo apt-get -y install gdb
 
 before_script:
    # Set core file pattern to executable.core.pid
