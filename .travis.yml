@@ -27,5 +27,26 @@ addons:
     build_command:   "make -j 4"
     branch_pattern: coverity
 
-script: ./bootstrap.sh && ./configure && make check
+
+before_script:
+   # Set core file pattern to executable.core.pid
+   - sudo sysctl kernel.core_pattern=%e.core.%p
+   # Set the core file limit to unlimited so a core file is generated upon crash
+   - ulimit -c unlimited -S
+
+script:
+  # build with debug symbols and print possible core-dumps
+  - ./bootstrap.sh && ./configure --enable-debug && make clean && make && make check
+  - for i in $(find -name '*.core.*'); do
+    ( cd `dirname "$i"`; c=`basename "$i"`
+    gdb "${c%%.*}" "$c" -ex "thread apply all bt" -ex "set pagination 0" -batch
+    rm "$c";);
+    done;
+  # build without debug symbols and print possible core-dumps
+  - ./configure && make clean && make && make check
+  - for i in $(find -name '*.core.*'); do
+    ( cd `dirname "$i"`; c=`basename "$i"`
+    gdb "${c%%.*}" "$c" -ex "thread apply all bt" -ex "set pagination 0" -batch
+    rm "$c";);
+    done;
 
