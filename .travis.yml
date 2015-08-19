@@ -31,7 +31,7 @@ addons:
 
 before_script:
    # Set core file pattern to executable.core.pid
-   - sudo sysctl kernel.core_pattern=%e.core.%p
+   - cat /proc/sys/kernel/core_pattern; ls -l /proc/sys/kernel/core_pattern; sudo bash -c 'echo %e.core.%p > /proc/sys/kernel/core_pattern'
    # Set the core file limit to unlimited so a core file is generated upon crash
    - ulimit -c unlimited -S
 
