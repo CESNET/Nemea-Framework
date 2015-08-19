@@ -31,23 +31,28 @@ addons:
 
 before_script:
    # Set core file pattern to executable.core.pid
-   - cat /proc/sys/kernel/core_pattern; ls -l /proc/sys/kernel/core_pattern; sudo bash -c 'echo %e.core.%p > /proc/sys/kernel/core_pattern'
+   - cat /proc/sys/kernel/core_pattern
+   # cannot set core_pattern %e.core.%p
    # Set the core file limit to unlimited so a core file is generated upon crash
    - ulimit -c unlimited -S
 
 script:
   # build with debug symbols and print possible core-dumps
   - ./bootstrap.sh && ./configure --enable-debug && make clean && make && make check
-  - for i in $(find -name '*.core.*'); do
+  - for i in $(find -name '*core*'); do
     ( cd `dirname "$i"`; c=`basename "$i"`
-    gdb "${c%%.*}" "$c" -ex "thread apply all bt" -ex "set pagination 0" -batch
-    rm "$c";);
-    done;
+    exe=`file "$c"|grep 'core file'|sed "s/^[^']*'//;s/[   '].*//;"`
+    if [ -n "$exe" ]; then
+    gdb "$exe" "$c" -ex "thread apply all bt" -ex "set pagination 0" -batch
+    rm "$c";
+    fi;);done;
   # build without debug symbols and print possible core-dumps
   - ./configure && make clean && make && make check
-  - for i in $(find -name '*.core.*'); do
+  - for i in $(find -name '*core*'); do
     ( cd `dirname "$i"`; c=`basename "$i"`
-    gdb "${c%%.*}" "$c" -ex "thread apply all bt" -ex "set pagination 0" -batch
-    rm "$c";);
-    done;
+    exe=`file "$c"|grep 'core file'|sed "s/^[^']*'//;s/[   '].*//;"`
+    if [ -n "$exe" ]; then
+    gdb "$exe" "$c" -ex "thread apply all bt" -ex "set pagination 0" -batch
+    rm "$c";
+    fi;);done;
 
