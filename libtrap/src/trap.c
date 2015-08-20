@@ -423,8 +423,17 @@ void *reader_threads_fn(void *arg)
 #endif
 
       ctx->in_ifc_results[thread_id].result_code = retval;
+      pthread_mutex_lock(&ctx->mut_sem_collector);
+      ctx->readers_count--;
+      if (ctx->readers_count == 0) {
+         /* the last reader wakes collector */
+         retval = sem_post(&ctx->sem_collector);
+         if (retval != 0) {
+            VERBOSE(CL_ERROR, "Waking up collector thread of multiread function failed. (%d)", retval);
+         }
+      }
+      pthread_mutex_unlock(&ctx->mut_sem_collector);
       /* inform collector about finished job */
-      sem_post(&ctx->sem_collector);
 
       if (ctx->terminated == 1) {
          break;
@@ -1589,10 +1598,11 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
          }
          sem_post(&c->reader_threads[selected_ifc_arr[counter]].sem);
       }
-      for (counter = 0; counter < selected_ifcs; ++counter) {
-         // wait for all reader-threads
-         sem_wait(&c->sem_collector);
-      }
+      pthread_mutex_lock(&c->mut_sem_collector);
+      c->readers_count = selected_ifcs;
+      pthread_mutex_unlock(&c->mut_sem_collector);
+      sem_wait(&c->sem_collector);
+
       (*data) = c->in_ifc_results;
       (*size) = IN_IFC_RESULTS_SIZE(c);
       return trap_error(c, TRAP_E_OK);
@@ -2013,7 +2023,15 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
             goto freein_results;
          }
       }
-      sem_init(&ctx->sem_collector, SEM_PSHARED, 0);
+      ctx->readers_count = 0;
+      if (sem_init(&ctx->sem_collector, SEM_PSHARED, 0) != 0) {
+         goto freein_readers;
+      }
+      if (pthread_mutex_init(&ctx->mut_sem_collector, NULL) != 0) {
+         sem_destroy(&ctx->sem_collector);
+         goto freein_readers;
+      }
+
    }
 
    for (i = 0; i < ctx->num_ifc_in; i++) {

@@ -258,6 +258,19 @@ struct trap_ctx_priv_s {
    sem_t sem_collector;
 
    /**
+    * Mutex for manipulation with readers_count.
+    */
+   pthread_mutex_t mut_sem_collector;
+
+   /**
+    * Number of reader threads that will read messages during multiread (set
+    * by collector thread).  Every client decreases this value and the last
+    * reader (readers_count equals 0 after decrementation) wakes the collector
+    * thread.
+    */
+   int32_t readers_count;
+
+   /**
     * Thread to handle timeouts on output interfaces.
     */
    pthread_t timeout_thread;
