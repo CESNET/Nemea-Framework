@@ -52,7 +52,7 @@
 #include <libtrap/trap.h>
 
 // Variable containing  module information in a form of trap_module_info_t structure (IMPORTANT - name of the variable must be "module_info" because of libtrap macros)
-trap_module_info_t * module_info = NULL;
+trap_module_info_t *module_info = NULL;
 
 // Definition of basic module information - module name, module description, number of input and output interfaces
 #define MODULE_BASIC_INFO(BASIC) \
