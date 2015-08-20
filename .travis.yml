@@ -26,10 +26,11 @@ addons:
     build_command_prepend: "./bootstrap.sh; ./configure; make clean"
     build_command:   "make -j 4"
     branch_pattern: coverity
-
-
-before_install:
-   - sudo apt-get -y install gdb
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gdb
 
 before_script:
    # Set core file pattern to executable.core.pid
