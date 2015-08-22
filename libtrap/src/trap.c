@@ -2150,13 +2150,6 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    pthread_rwlock_unlock(&ctx->context_lock);
    return ctx;
 
-   if (pthread_rwlock_wrlock(&ctx->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-   }
-   ctx->terminated = 1;
-   pthread_rwlock_unlock(&ctx->context_lock);
-   pthread_join(ctx->timeout_thread, NULL);
-   ctx->timeout_thread_initialized = 0;
 freeall_on_failed:
    for (i=0; i<ctx->num_ifc_out; ++i) {
       pthread_mutex_destroy(&ctx->out_ifc_list[i].ifc_mtx);
