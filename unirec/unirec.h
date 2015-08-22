@@ -1,14 +1,13 @@
 /**
- * \file unirec.h
+ * \file unirec.c
  * \brief Definition of UniRec structures and functions
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
- * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2013
- * \date 2014
+ * \author Zdenek Rosa <rosazden@fit.cvut.cz>
  * \date 2015
  */
 /*
- * Copyright (C) 2013-2015 CESNET
+ * Copyright (C) 2015 CESNET
+
  *
  * LICENSE TERMS
  *
@@ -44,118 +43,673 @@
  *
  */
 
-/**
- * \mainpage Brief description of UniRec format and API
- * @{
- * \section about About UniRec
- * UniRec is the name of message format and the name of library that can work with the messages.
- * One message consists of fields that are of static or dynamic size.
- * UniRec allows users to set and get values of UniRec fields.
- *
- * UniRec API contains various functions for manipulation: \ref unirec_basic, \ref ur_time, \ref ur_ipaddr and \ref ur_links.
- *
- * \subsection message_example Example of message --- order of fields
- *
- * \code
- * +-------+-------+-------+-------+
- * |            DST_IP             |
- * +-------+-------+-------+-------+
- * |            SRC_IP             |
- * +-------+-------+-------+-------+
- * |             BYTES             |
- * +-------+-------+-------+-------+
- * |            PACKETS            |
- * +-------+-------+-------+-------+
- * |   DST_PORT    |   SRC_PORT    |
- * +-------+-------+-------+-------+
- * | PROTO | TCP_F |    URL (7)    |
- * +-------+-------+-------+-------+
- * |    DYN1 (10)  |   DYN2 (11)   |   Static fields (size of part is always the same for the template)
- * +-------+-------+-------+-------+   -----------------
- * |              URL              |   Dynamic fields
- * +-------+-------+-------+-------+
- * |          URL          | DYN1  |
- * +-------+-------+-------+-------+
- * |     DYN1      | DYN2  |
- * +-------+-------+-------+
- * \endcode
- * @}
- */
-
-#ifndef _UNIREC_H_
-#define _UNIREC_H_
+#ifndef _UNIREC2_H_
+#define _UNIREC2_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdint.h>
-#include "inline.h"
 #include "ipaddr.h"
 #include "ur_time.h"
-
-typedef uint16_t ur_field_id_t; ///< Type of UniRec field identifiers
-#include "fields.h" // Automatically generated marcos with field numbers (identifiers) and types
-
-// Include structures and functions for handling LINK_BIT_FIELD
 #include "links.h"
+#include <libtrap/trap.h>
 
-/**
- * \defgroup unirec_basic General API
- * @{
+//General setting
+#define UR_DEFAULT_LENGTH_OF_TEMPLATE 1024 /// Length of string of a template
+#define UR_DEFAULT_LENGTH_OF_FIELD_NAME 128 /// Length of name (string) of a field
+#define UR_DEFAULT_LENGTH_OF_FIELD_TYPE 16 /// Length of type (string) of a field
+#define UR_INITIAL_SIZE_FIELDS_TABLE 5 ///< Initial size of free space in fields tables
+#define UR_FIELD_ID_MAX 65535       ///< Max ID of a field
+#define UR_FIELDS(...)        ///<  Definition of UniRec fields
+//Iteration constants
+#define UR_ITER_BEGIN 0xffff  ///< First value in iterating through the fields
+#define UR_ITER_END 0xffff    ///< Last value in iterating through the fields
+//default values
+#define UR_INVALID_OFFSET 0xffff ///< Default value of all offsets (value is not in the record)
+#define UR_NO_DYNAMIC_VALUES 0xffff    ///< Value of variable "first_dynamic" if no dynamic values are present
+#define UR_INITIALIZED 1            ///< Indicator if the UniRec has been initialized by calling function ur_init.
+#define UR_INVALID_FIELD 0xffff    ///< ID of invalid field
+//return codes
+#define UR_E_INVALID_PARAMETER -6   ///< The given parameter is wrong
+#define UR_E_INVALID_FIELD_ID -5       ///< The field ID is not present in a template.
+#define UR_E_TYPE_MISMATCH -4    ///< The type of a field is different
+#define UR_E_INVALID_NAME -3     ///< The given name is not present in a template.
+#define UR_E_INVALID_TYPE -2     ///< The type of a field is not defined
+#define UR_E_MEMORY -1        ///< Problem during allocating memory
+#define UR_OK 0         ///< No problem
+
+
+/** \brief Constants for all possible types of UniRec fields */
+#define UR_COUNT_OF_TYPES 15 ///< Count of types of UniRec fields
+typedef enum {
+   UR_TYPE_STRING,   ///< var-len fields (string where only printable characters are expected; '\0' at the end should NOT be included)
+   UR_TYPE_BYTES,    ///< var-len fields (generic string of bytes)
+   UR_TYPE_CHAR,  ///< char
+   UR_TYPE_UINT8, ///< unsigned int (8b)
+   UR_TYPE_INT8,  ///< int (8b)
+   UR_TYPE_UINT16,   ///< unsigned int (16b)
+   UR_TYPE_INT16, ///< int (8b)
+   UR_TYPE_UINT32,   ///< unsigned int (32b)
+   UR_TYPE_INT32, ///< int (32b)
+   UR_TYPE_UINT64,   ///< unsigned int (64b)
+   UR_TYPE_INT64, ///< int (64b)
+   UR_TYPE_FLOAT, ///< float (32b)
+   UR_TYPE_DOUBLE,   ///< double (64b)
+   UR_TYPE_IP,    ///< IP address (128b)
+   UR_TYPE_TIME,  ///< time (64b)
+} ur_field_type_t;
+
+typedef enum {
+   UR_TMPLT_DIRECTION_NO,  ///< template is not used for sending data
+   UR_TMPLT_DIRECTION_IN,  ///< input direction
+   UR_TMPLT_DIRECTION_OUT, ///< ouput direction
+   UR_TMPLT_DIRECTION_BI,  ///< bidirection
+} ur_tmplt_direction;
+
+typedef uint16_t ur_field_id_t;  ///< Type of UniRec field identifiers
+typedef ur_field_id_t ur_iter_t; ///< Type for identifying iteration id through all fields
+
+/** \brief Linked list for undefined field ids
+ * Linked list consisting of field ids, which are freed after operation undefine.
  */
+typedef struct ur_field_id_linked_list_s ur_field_id_linked_list_t;
+struct ur_field_id_linked_list_s{
+  ur_field_id_t id;        ///< free id
+  ur_field_id_linked_list_t *next;  ///< Pointer to next item in the linked list
+};
 
-#define UR_INVALID_OFFSET 0xffff
-#define UR_INVALID_FIELD 0xffff
+/** \brief UniRec default field list
+ * It contains all fields which are specified statically in source code of a module.
+ * This structure is passed to ur_init()
+ */
+typedef struct {
+   char **ur_field_names;     ///< Array of names of fields
+   short *ur_field_sizes;     ///< Array of sizes of fields
+   ur_field_type_t *ur_field_types;    ///< Array of types of fields
+   ur_field_id_t ur_last_id;     ///< Last specified ID
+} ur_static_field_specs_t;
+
+/** \brief UniRec fields structure
+ * It contains all fields which are statically defined by UR_FIELDS(...) and run-time generated
+ * fields. This structure can be modified during run-time by generating new fields and erasing
+ * existing fields.
+ */
+typedef struct {
+   char **ur_field_names;        ///< Array of names of fields
+   short *ur_field_sizes;        ///< Array of sizes of fields
+   ur_field_type_t *ur_field_types;    ///< Array of types of fields
+   ur_field_id_t ur_last_statically_defined_id; ///< Last statically defined field by UR_FIELDS(...)
+   ur_field_id_t ur_last_id;        ///< The highest ID of a field + 1
+   /**
+   *Count of fields which is allocated (ur_allocated_fields - ur_last_id = remaining fields count)
+    */
+   ur_field_id_t ur_allocated_fields;
+   ur_field_id_linked_list_t * ur_undefine_fields; ///< linked list of free (undefined) IDs
+   uint8_t intialized;  ///< If the UniRec is initialized by function ur_init variable is set to UR_INITIALIZED, otherwise 0
+} ur_field_specs_t;
+
+/** \brief Sorting fields structure
+ * This structure is used to sort fields by their size and name. The structure
+ * is passed to the sorting algorithm.
+ */
+typedef struct field_spec_s {
+   char *name;    ///< Name of a field
+   int size;      ///< Size of a field
+   ur_field_id_t id; ///< ID of a field
+} field_spec_t;
 
 /** \brief UniRec template.
  * It contains a table mapping a field to its position in an UniRec record.
  */
 typedef struct {
-   uint16_t offset[UR_MAX_FIELD_ID+1]; ///< Table of offsets
-   uint16_t static_size; ///< Size of static part
-   ur_field_id_t first_dynamic; ///< ID of the first dynamic field or UR_INVALID_FIELD if the template doesn't contain dynamic fields
+   uint16_t *offset;       ///< Table of offsets
+   uint16_t offset_size;   ///< size of offset table.
+   uint16_t *ids;    ///< Array of ids in template
+   uint16_t first_dynamic; ///< First dynamic (variable-length) field. Index to the ids array
+   uint16_t count;      ///< Count of fields in template
+   uint16_t static_size;   ///< Size of static part
+   ur_tmplt_direction direction; ///< Direction of data input, output, bidirection, no direction
+   uint32_t ifc_out;   ///< output interface number (stored only if the direction == UR_TMPLT_DIRECTION_BI)
 } ur_template_t;
 
-/** \brief Constants for all possible types of UniRec fields */
-typedef enum {
-   UR_TYPE_STRING, // dynamic fields (string where only printable characters are expected; '\0' at the end should NOT be included)
-   UR_TYPE_BYTES, // dynamic fields (generic string of bytes)
-   UR_TYPE_CHAR,
-   UR_TYPE_UINT8,
-   UR_TYPE_INT8,
-   UR_TYPE_UINT16,
-   UR_TYPE_INT16,
-   UR_TYPE_UINT32,
-   UR_TYPE_INT32,
-   UR_TYPE_UINT64,
-   UR_TYPE_INT64,
-   UR_TYPE_FLOAT,
-   UR_TYPE_DOUBLE,
-   UR_TYPE_IP,
-   UR_TYPE_TIME,
-} ur_field_type_t;
+/** \brief Receive data from interface
+ * Receive data with specified template from libtrap interface. If the receiving template is
+ * subset of sending template, it will define new fields and expand receiving template.
+ * \param[in] ifc_num index of libtrap interface
+ * \param[in] data pointer to memory where the data will be stored
+ * \param[in] data_size size of allocated space for data
+ * \param[in] tmplt pointer to input template
+ * \return return value of trap_recv
+ */
+#define TRAP_RECEIVE(ifc_num, data, data_size, tmplt) \
+ TRAP_CTX_RECEIVE(trap_get_global_ctx(), ifc_num, data, data_size, tmplt);
+
+/** \brief Receive data from interface with given context
+ * Receive data with specified template from libtrap interface with specified context.
+ * If the receiving template is subset of sending template, it will define new fields
+ * and expand receiving template.
+ * \param[in] ctx context
+ * \param[in] ifc_num index of libtrap interface
+ * \param[in] data pointer to memory where the data will be stored
+ * \param[in] data_size size of allocated space for data
+ * \param[in] tmplt pointer to input template
+ * \return return value of trap_ctx_recv
+ */
+#define TRAP_CTX_RECEIVE(ctx, ifc_num, data, data_size, tmplt) \
+({\
+   int ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
+   if (ret == TRAP_E_OK_FORMAT_CHANGED && trap_ctx_get_in_ifc_state(ctx, ifc_num) == FMT_SUBSET) {\
+      const char *spec = NULL;\
+      uint8_t data_fmt;\
+      if (trap_ctx_get_data_fmt(ctx, TRAPIFC_INPUT, ifc_num, &data_fmt, &spec) != TRAP_E_OK) {\
+         fprintf(stderr, "Data format was not loaded.");\
+      } else {\
+         tmplt = ur_define_fields_and_update_template(spec, tmplt);\
+         if (tmplt == NULL) {\
+            fprintf(stderr, "Template could not be edited");\
+         } else {\
+            if (tmplt->direction == UR_TMPLT_DIRECTION_BI) {\
+               char * spec_cpy = ur_cpy_string(spec);\
+               if (spec_cpy == NULL) {\
+                  fprintf(stderr, "Memory allocation problem.");\
+               } else {\
+                  trap_ctx_set_data_fmt(ctx, tmplt->ifc_out, TRAP_FMT_UNIREC, spec_cpy);\
+               }\
+            }\
+            trap_ctx_confirm_ifc_state(ctx, ifc_num);\
+            ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
+         }\
+      }\
+   }\
+   ret;\
+})
+
+/** \brief Receive data from interface with given context
+ * Receive data with specified template from libtrap interface with specified context.
+ * If the receiving template is subset of sending template, it will define new fields
+ * and expand receiving template.
+ * \param[in] ctx context
+ * \param[in] ifc_num index of libtrap interface
+ * \param[in] data pointer to memory where the data will be stored
+ * \param[in] data_size size of allocated space for data
+ * \param[in] tmplt pointer to input template
+ * \return return value of trap_ctx_recv
+ */
+/*#define UNIREC_CTX_CHECK_TEMPLATE (ctx, ret, ifc_num, tmplt, fmt_changed_cmd, fmt_not_compatabile_cmd) \
+({\
+   if (ret == TRAP_E_OK_FORMAT_CHANGED && trap_ctx_get_in_ifc_state(ctx, ifc_num) == FMT_SUBSET) {\
+      const char *spec = NULL;\
+      uint8_t data_fmt;\
+      if (trap_ctx_get_data_fmt(ctx, TRAPIFC_INPUT, ifc_num, &data_fmt, &spec) != TRAP_E_OK) {\
+         fprintf(stderr, "Data format was not loaded.");\
+      } else {\
+         tmplt = ur_define_fields_and_update_template(spec, tmplt);\
+         if (tmplt == NULL) {\
+            fprintf(stderr, "Template could not be edited");\
+         } else {\
+            if (tmplt->direction == UR_TMPLT_DIRECTION_BI) {\
+               char * spec_cpy = ur_cpy_string(spec);\
+               if (spec_cpy == NULL) {\
+                  fprintf(stderr, "Memory allocation problem.");\
+               } else {\
+                  trap_ctx_set_data_fmt(ctx, tmplt->ifc_out, TRAP_FMT_UNIREC, spec_cpy);\
+               }\
+            }\
+            trap_ctx_confirm_ifc_state(ctx, ifc_num);\
+            fmt_changed_cmd;
+         }\
+      }\
+   }\
+   ret;\
+})*/
+/** \brief Get string of a template
+ * Get names and sizes of fields separated by given delimiter. Return string has to be freed by user.
+ * \param[in] tmplt Pointer to UniRec template
+ * \return String
+ */
+char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
+
+/** \brief Get string of a template
+ * Get names and sizes of fields separated by comma. Return string has to be freed by user.
+ * \param[in] tmplt Pointer to UniRec template
+ * \return String
+ */
+#define ur_template_string(tmplt) \
+ ur_template_string_delimiter(tmplt, ',')
+
+/** \brief Get size of UniRec type
+ * Get size of fixed-length UniRec type. For variable-length type return -1.
+ * \param[in] type Enum value of type.
+ * \return Size of the field in bytes.
+ */
+#define ur_size_of(type) \
+   ur_field_type_size[type]
+
+/** \brief Get name of UniRec field
+ * Get name of any UniRec defined field.
+ * \param[in] field_id ID of a field.
+ * \return pointer to name (char*).
+ */
+#define ur_get_name(field_id) \
+   ur_field_specs.ur_field_names[field_id]
+
+/** \brief Get type of UniRec field
+ * Get type of any UniRec defined field.
+ * \param[in] field_id ID of a field.
+ * \return Type of the field (ur_field_type_t).
+ */
+#define ur_get_type(field_id) \
+   ur_field_specs.ur_field_types[field_id]
+
+/** \brief Get size of UniRec field
+ * Get size of a fixed-length UniRec field. When variable-length field is passed,
+ * return -1. To get real length of a variable-length field use ur_get_var_len.
+ * \param[in] field_id ID of a field.
+ * \return Size of the field in bytes or -1 if the field is variable-length.
+ */
+#define ur_get_size(field_id) \
+   ur_field_specs.ur_field_sizes[field_id]
+
+/** \brief Get value of UniRec field
+ * Get value of a fixed-length UniRec field. For variable-length fields, use ur_get_ptr
+ * or ur_get_ptr_by_id.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] data Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field. It must be a token beginning with
+ *                     F_, not a numeric ID.
+ * \return Value of the field. Data type depends on the type of the field.
+ */
+#define ur_get(tmplt, data, field_id) \
+   (*(field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id]))
+
+/** \brief Get pointer to UniRec field
+ * Get pointer to fixed or varible length statically defined UniRec field.
+ * For dynamically defined fields, use ur_get_ptr_by_id.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] data Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field. It must be a token beginning with
+ *                     F_, not a numeric ID.
+ * \return Pointer to the field. Pointer type depends on the type of the field.
+ */
+#define ur_get_ptr(tmplt, data, field_id) \
+   (field_id ## _T*)((char*) (ur_is_static(field_id) ? ((data) + (tmplt)->offset[field_id]) : \
+   data + (tmplt)->static_size + (*((uint16_t*)((data) + (tmplt)->offset[field_id])))))
+
+/** \brief Get pointer to UniRec field
+ * Get pointer to fixed or varible length UniRec field. In contrast to ur_get_ptr, field_id may
+ * be a variable (not only F_ token). Returned pointer is always void*.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] data Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field. Token beginning with F_ or a numeric ID.
+ * \return Pointer to the field (void*).
+ */
+#define ur_get_ptr_by_id(tmplt, data, field_id) \
+   (void*)((char*) (ur_is_static(field_id) ? ((data) + (tmplt)->offset[field_id]) : \
+      data + (tmplt)->static_size + (*((uint16_t*)((data) + (tmplt)->offset[field_id])))))
+
+/** \brief Set value of UniRec (static) field
+ * Set value of a fixed-length UniRec field. For variable-length fields, use ur_set_var.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] data Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field. It must be a token beginning with
+ *                     F_, not a numeric ID.
+ * \param[in] value The value the field should be set to.
+ */
+#define ur_set(tmplt, data, field_id, value) \
+   (*(field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id]) = (value))
+
+/** \brief Get offset of variable-length field in the record.
+ * Get offset of a specified variable-length field in the record. Given field has to be part of the record.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return Offset of the field in the record relative to the beginning of the record.
+ */
+#define ur_get_var_offset(tmplt, rec, field_id) \
+   *((uint16_t*)(rec + tmplt->offset[field_id]))
+
+/** \brief Get size of a variable sized field in the record.
+ * Get size of a variable-length field in the record. Given field has to be part of the record.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return Length of the field in the record in bytes.
+ */
+#define ur_get_var_len(tmplt, rec, field_id) \
+   *((uint16_t*)(rec + tmplt->offset[field_id] + 2))
+
+/** \brief Set size of variable-length field in the record.
+ * Set size of specified variable-length field in the record. Field has to be part of the record. It does
+ * not move other variable sized records. It just sets given value to the right position in the record.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] len The value the length should be set to.
+ */
+#define ur_set_var_len(tmplt, rec, field_id, len) \
+   *((uint16_t*)(rec + tmplt->offset[field_id] + 2)) = (uint16_t)len
+
+/** \brief Set offset of variable-length field in the record.
+ * Set offset of specified variable-length field in the record. Field has to be part of the record. It does
+ * not move other variable sized records. It just sets given value to the right position in the record.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] offset_val The value the offset should be set to.
+ */
+#define ur_set_var_offset(tmplt, rec, field_id, offset_val) \
+   *((uint16_t*)((char*)rec + tmplt->offset[field_id])) = (uint16_t)offset_val
+
+/** \brief Get length of UniRec field
+ * Get actual length of fixed or variable-length UniRec field.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return Length of the field in bytes.
+ */
+#define ur_get_len(tmplt, rec, field) \
+   ur_is_static(field) ? ur_get_size(field) : ur_get_var_len(tmplt, rec, field)
+
+/** \brief Set variable-length field to given string.
+ * Set contents of a variable-length field in the record. Field has to be part of the record.
+ * It copies string terminated with \0 and safely moves other variable-length records.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] str String terminated with \0, which will be copied
+ */
+#define ur_set_string(tmplt, rec, field_id, str) \
+   ur_set_var(tmplt, rec, field_id, str, strlen(str))
+
+/** \brief Is given field present in given template?
+ * Return true (non-zero value) if given template contains field with given ID.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] field_id Identifier of a field.
+ * \return non-zero if field is present, zero otherwise
+ */
+#define ur_is_present(tmplt, field_id) \
+   ((tmplt)->offset_size > (field_id) && (tmplt)->offset[(field_id)] != UR_INVALID_OFFSET)
+
+/** \brief Is given field variable-length?
+ * Return true (non-zero value) if given ID refers to a field with variable length.
+ * \param[in] field_id Identifier of a field.
+ * \return non-zero if field is variable-length, zero otherwise
+ */
+#define ur_is_varlen(field_id) \
+   (ur_field_specs.ur_field_sizes[field_id] == -1)
+
+/** \brief Alias for ur_is_varlen (for backwards compatibility only) */
+#define ur_is_dynamic(field_id) \
+   ur_is_varlen(field_id)
+
+/** \brief Is given field fixed-length?
+ * Return true (non-zero value) if given ID refers to a field with fixed length.
+ * \param[in] field_id Identifier of a field.
+ * \return non-zero if field is fixed-length, zero otherwise
+ */
+#define ur_is_fixlen(field_id) \
+   (ur_field_specs.ur_field_sizes[field_id] != -1)
+
+/** \brief Alias for ur_is_fixlen (for backwards compatibility only) */
+#define ur_is_static(field_id) \
+   ur_is_fixlen(field_id)
 
 
-/** \brief Create new UniRec template
+/** \brief Get size of fixed-length part of UniRec record
+ * Get total size of UniRec record except variable-length fields.
+ * \param[in] tmplt Pointer to UniRec template
+ * \return Size of the static part of UniRec record.
+ */
+#define ur_rec_fixlen_size(tmplt) \
+   ((tmplt)->static_size)
+
+/** \brief Get size of UniRec record (static and variable length)
+ * Get total size of whole UniRec record.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \return Size of the UniRec record.
+ */
+#define ur_rec_size(tmplt, rec) \
+   (ur_rec_fixlen_size(tmplt) + ur_rec_varlen_size(tmplt, rec))
+
+/** \brief Initialize UniRec structures
+ * Initialize UniRec structures. Function is called during defining first own field.
+ * \param[in] field_specs_static Structure of statically-known UniRec fields.
+ * \return UR_E_MEMORY if there is an allocation problem, UR_OK otherwise.
+ */
+int ur_init(ur_static_field_specs_t field_specs_static);
+
+/** \brief Return first empty id for new UniRec field
+ * Return first empty id for new UniRec field. If there is no space in the UniRec
+ * structures, it will increase space in the existing structures.
+ * \return ID for new field. UR_E_MEMORY (negative value) if there is an allocation problem.
+ */
+int ur_get_empty_id();
+
+/** \brief Define new UniRec field
+ * Define new UniRec field at run-time. It adds new field into existing structures.
+ * If the field already exists (name and type are equal) it only returns its ID.
+ * \param[in] name String with name of field.
+ * \param[in] type Type of field (specified by UR_TYPE_*).
+ * \return ID of created or existing field.
+ * UR_E_MEMORY if there is an allocation problem.
+ * UR_E_INVALID_NAME if the name value is empty.
+ * UR_E_TYPE_MISMATCH if the name already exists, but the type is different.
+ */
+int ur_define_field(const char *name, ur_field_type_t type);
+
+/** \brief Define set of new UniRec fields
+ * Define new UniRec fields at run-time. It adds new fields into existing structures.
+ * If the field already exists and type is equal nothing will happen. If the type is not equal
+ * an error will be returned.
+ * Example ifc_data_fmt: "uint32 FOO,uint8 BAR,float FOO2"
+ * \param[in] ifc_data_fmt String containing types and names of fields delimited by comma.
+ * \return UR_OK on success
+ * UR_E_MEMORY if there is an allocation problem.
+ * UR_E_INVALID_NAME if the name value is empty.
+ * UR_E_INVALID_TYPE if the type does not exist.
+ * UR_E_TYPE_MISMATCH if the name already exists, but the type is different.
+ */
+int ur_define_set_of_fields(const char *ifc_data_fmt);
+
+/** \brief Undefine UniRec field by its id
+ * Undefine UniRec field created at run-time. It erases given field from UniRec structures
+ * and the field ID can be used for another field.
+ * By undefining field, all templates which were using the undefined field, has to be recreated.
+ * \param[in] field_id Identifier of a field.
+ * \return UR_E_MEMORY if there is an allocation problem.
+ * UR_E_INVALID_PARAMETER if the field was not created at run-time or the field_id does not exist.
+ */
+int ur_undefine_field_by_id(ur_field_id_t field_id);
+
+/** \brief Undefine UniRec field by its name
+ * Undefine UniRec field created at run-time. It erases given field from UniRec structures
+ * and the field ID can be used for another field.
+ * By undefining field, all templates which were using the undefined field, has to be recreated.
+ * \param[in] name Name of a field.
+ * \return UR_E_MEMORY if there is an allocation problem.
+ * UR_E_INVALID_PARAMETER if the field was not created at run-time or the field_id does not exist.
+ */
+int ur_undefine_field(const char *name);
+
+/** \brief Deallocate UniRec structures
+ * Deallocate UniRec structures at the end of a program.
+ * This function SHOULD be called after all UniRec functions and macros
+ * invocations, typically during a cleanup phase before the program's end.
+ * This function has to be called if some fields are defined
+ * during run-time, otherwise this function is needless.
+ */
+void ur_finalize();
+
+/** \brief Get ID of a field by its name
+ * Get ID of a field by its name.
+ * \param[in] name String with name of a field.
+ * \return ID of a field. UR_E_INVALID_NAME (negative value) if the name is not known.
+ */
+int ur_get_id_by_name(const char *name);
+
+/** \brief Compare fields
+ * Compare two fields. This function is for sorting the fields in the right order.
+ * First by sizes (larger first) and then by names.
+ * \param[in] field1 Pointer to first field (field_spec_t)
+ * \param[in] field2 Pointer to second field (field_spec_t)
+ * \return -1 if f1 should go before f2, 0 if f1 is the same as f2, 1 otherwise
+ */
+int compare_fields(const void* field1, const void* field2);
+
+/** \brief Create UniRec template
  * Create new UniRec template specified by a string containing names of its
- * fields separated by semicolons. Example spec-string:
- *   "SRC_IP;DST_IP;SRC_PORT;DST_PORT;PROTOCOL;PACKETS"
+ * fields separated by commas. Example spec-string:
+ *   "SRC_IP,DST_IP,SRC_PORT,DST_PORT,PROTOCOL,PACKETS"
  * Order of fields is not important (templates with the same set of fields are
  * equivalent).
  * Template created by this function should be destroyed by ur_free_template.
- * \param[in] fields String with names of UniRec fields.
- * \return Pointer to newly created template or NULL on error.
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
  */
-ur_template_t *ur_create_template(const char *fields);
+ur_template_t *ur_create_template(const char* fields, char **errstr);
 
-/** \brief Print UniRec template
- * Print static size, first dynamic and table of offsets.
- * In case template does not contain any dynamic fields, prints - instead.
- * param[in] tmplt pointer to the template.
+/** \brief Create UniRec template and set it to input interface
+ * Creates UniRec template (same like ur_create_template) and set this template
+ * to input interface of a module.
+ * \param[in] ifc interface number
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
  */
+#define ur_create_input_template(ifc, fields, errstr) \
+   ur_ctx_create_input_template(trap_get_global_ctx(), ifc, fields, errstr);
 
-void ur_print_template(ur_template_t *tmplt);
+/** \brief Create UniRec template and set it to output interface
+ * Creates UniRec template (same like ur_create_template) and set this template
+ * to ouput interface of a module.
+ * \param[in] ifc interface number
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
+ */
+#define ur_create_output_template(ifc, fields, errstr) \
+   ur_ctx_create_output_template(trap_get_global_ctx(), ifc, fields, errstr);
+
+/** \brief Create UniRec template and set it to output interface on specified context
+ * Creates UniRec template, same like ur_create_output_template, but context is specified.
+ * \param[in] ctx specified context
+ * \param[in] ifc interface number
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
+ */
+ur_template_t *ur_ctx_create_output_template(trap_ctx_t *ctx, int ifc, const char* fields, char **errstr);
+
+/** \brief Create UniRec template and set it to input interface on specified context
+ * Creates UniRec template, same like ur_create_input_template, but context is specified.
+ * \param[in] ctx specified context
+ * \param[in] ifc interface number
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
+ */
+ur_template_t *ur_ctx_create_input_template(trap_ctx_t *ctx, int ifc, const char* fields, char **errstr);
+
+
+/** \brief Set UniRec template to ouput interface on specified context
+ * \param[in] ctx specified context
+ * \param[in] ifc interface number
+ * \param[in] tmplt pointer to a template
+ * \return UR_OK if there is no problem. UR_E_MEMORY if the ID is not in the template.
+ */
+int ur_ctx_set_output_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt);
+
+/** \brief Set UniRec template to ouput interface
+ * \param[in] ifc interface number
+ * \param[in] tmplt pointer to a template
+ * \return UR_OK if there is no problem. UR_E_MEMORY if the ID is not in the template.
+ */
+#define  ur_set_output_template(ifc, tmplt) \
+   ur_ctx_set_output_template(trap_get_global_ctx(), ifc, tmplt)
+
+/** \brief Set UniRec template to input interface on specified context
+ * \param[in] ctx specified context
+ * \param[in] ifc interface number
+ * \param[in] tmplt pointer to a template
+ * \return UR_OK if there is no problem. UR_E_MEMORY if the ID is not in the template.
+ */
+int ur_ctx_set_input_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt);
+
+/** \brief Set UniRec template to input interface
+ * \param[in] ifc interface number
+ * \param[in] tmplt pointer to a template
+ * \return UR_OK if there is no problem. UR_E_MEMORY if the ID is not in the template.
+ */
+#define  ur_set_input_template(ifc, tmplt) \
+   ur_ctx_set_input_template(trap_get_global_ctx(), ifc, tmplt)
+
+/** \brief Create UniRec template and set it to input and output interface on specified context
+ * Creates UniRec template, same like ur_create_bidirectional_template, but context is specified.
+ * \param[in] ctx specified context
+ * \param[in] ifc_in input interface number
+ * \param[in] ifc_out output interface number
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
+ */
+ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in, int ifc_out, const char* fields, char **errstr);
+
+/** \brief Create UniRec template and set it to input and output interface
+ * Creates UniRec template (same like ur_create_template) and set this template
+ * to input and ouput interface of a module.
+ * \param[in] ifc_in input interface number
+ * \param[in] ifc_out output interface number
+ * \param[in] fields String with names of fields delimited by comma
+ * \param[in] errstr Pointer to char* string where the error message will be
+ * allocated and written in case of error. NULL if you don't need error message.
+ * In case of error, function will allocate string, which has to be freed by user.
+ * \return Pointer to newly created template or NULL in case of error.
+ */
+#define ur_create_bidirectional_template(ifc_in, ifc_out, fields, errstr) \
+   ur_ctx_create_bidirectional_template(trap_get_global_ctx(), ifc_in, ifc_out, fields, errstr);
+
+/** \brief Expand UniRec template
+ * Expand existing UniRec template by a string containing types and names of its
+ * fields separated by commas. Example ifc_data_fmt:
+ *   "uint32 FOO,uint8 BAR,float FOO2"
+ * Order of fields is not important (templates with the same set of fields are
+ * equivalent).
+ * In case of success the given template will be destroyed and new template will be returned.
+ * \param[in] ifc_data_fmt String with types and names of fields delimited by commas
+ * \param[in] tmplt Pointer to an existing template.
+ * \return Pointer to the extended template or NULL in case of error.
+ */
+ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t * tmplt);
+
+/** \brief Defined new fields and expand an UniRec template
+ * Define new fields (function ur_define_set_of_fields) and create new UniRec
+ * template (function ur_expand_template).
+ * The string describing fields contain types and names of fields separated by commas.
+ * Example ifc_data_fmt: "uint32 FOO,uint8 BAR,float FOO2"
+ * Order of fields is not important (templates with the same set of fields are
+ * equivalent).
+ * In case of success the given template will be destroyed and new template will be returned.
+ * \param[in] ifc_data_fmt String with types and names of fields delimited by commas
+ * \param[in] tmplt Pointer to an existing template.
+ * \return Pointer to the extended template or NULL in case of error.
+ */
+ur_template_t *ur_define_fields_and_update_template(const char *ifc_data_fmt, ur_template_t *tmplt);
 
 /** \brief Destroy UniRec template
  * Free all memory allocated for a template created previously by
@@ -164,83 +718,58 @@ void ur_print_template(ur_template_t *tmplt);
  */
 void ur_free_template(ur_template_t *tmplt);
 
-/** \brief Create new UniRec template as a union of given templates
- * Create new UniRec template whose set of fields is union of all fields
- * of given templates.
- * \param[in] templates Array of pointers to templates to union.
- * \param[in] n Number of templates in the array.
- * \return Pointer to newly created template or NULL on error.
+/** \brief Print UniRec template
+ * Print static_size, first_dynamic and table of offsets to stdout (for debugging).
+ * If template does not contain any dynamic fields, print '-' instead.
+ * param[in] tmplt pointer to the template.
  */
-ur_template_t *ur_union_templates(ur_template_t **templates, int n);
+void ur_print_template(ur_template_t *tmplt);
 
-extern const char *UR_FIELD_NAMES[]; ///< Table with field names indexed by field ID
-extern const short UR_FIELD_SIZES[]; ///< Table with field sizes indexed by field ID
-extern const ur_field_type_t UR_FIELD_TYPES[]; ///< Table with field types indexed by field ID
-#define ur_get_name_by_id(id) UR_FIELD_NAMES[(id)] ///< Return the name of a given field
-#define ur_get_size_by_id(id) UR_FIELD_SIZES[(id)] ///< Return the size of a given field (in bytes)
-#define ur_get_type_by_id(id) UR_FIELD_TYPES[(id)] ///< Return the type of a given field
-
-ur_field_id_t ur_get_id_by_name(const char *name);
-
-/** \brief Iterate over fields of a template
- * This function can be used to iterate over all fields of a given template.
- * It returns ID of the next field present in the template after a given ID.
- * If ID is set to UR_INVALID_FIELD, it returns the first fields. If no more
- * fields are present, UR_INVALID_FIELD is returned.
- * Example usage:
- *   ur_field_id_t id = UR_INVALID_FIELD;
- *   while ((id = ur_iter_fields(&tmplt, id)) != UR_INVALID_FIELD) {
- *      ...
- *   }
- * The order of fields is given by their order in "fields" file.
- * \param[in] tmplt Template to iterate over.
- * \param[in] id Field ID returned in last iteration or UR_INVALID_FIELD to
- *               start new cycle.
- * \return ID of the next field or UR_INVALID_FIELD if no more fields are
- *         present.
+/** \brief Set content of variable-length UniRec field
+ * Copy given data into variable-length UniRec field, set its offset and length in a record and
+ * move data which are behind this field. For better performance use function ur_clear_varlen,
+ * before setting all variable fields in record.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record.
+ * \param[in] field_id Identifier of a field.
+ * \param[in] val_ptr Pointer to data which should be copied into the record.
+ * \param[in] val_len Length of the copied data in bytes.
+ * \return UR_OK if there is no problem. UR_E_INVALID_FIELD_ID if the ID is not in the template.
  */
-ur_field_id_t ur_iter_fields(const ur_template_t *tmplt, ur_field_id_t id);
+int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void *val_ptr, int val_len);
 
-
-/** \brief Iterator used by ur_iter_fields_tmplt. */
-typedef unsigned int ur_iter_t;
-
-#define UR_ITER_BEGIN 0
-
-/** \brief Iterate over fields of a template
- * This function can be used to iterate over all fields of a given template
- * in the same order as they are stored in a record.
- * At the first call, iter should be initialized to UR_ITER_BEGIN. The same
- * iter should be passed to each subsequent call.
- * Upon each call the function returns ID of the next field present in the
- * template. If no more fields are present, UR_INVALID_FIELD is returned.
- * Example usage:
- *   ur_field_id_t id;
- *   ur_iter_t iter = UR_ITER_BEGIN;
- *   while ((id = ur_iter_fields_tmplt(&tmplt, &iter)) != UR_INVALID_FIELD) {
- *      ...
- *   }
- *
- * \param[in] tmplt Template to iterate over.
- * \param[in] iter An iterator. It should be initialized to UR_ITER_BEGIN before
- *                 first call of the function.
- * \return ID of the next field or UR_INVALID_FIELD if no more fields are
- *         present.
+/** \brief Clear variable-length part of a record.
+ * For better performance of setting content to variable-length fields, use this function
+ * before setting of all the variable-length fields. This function will clear all the variable-length
+ * fields, so they don't have to be moved in memory during setting of them.
+ * \param[in] tmplt Pointer to UniRec template.
+ * \param[in] rec Pointer to the beginning of a record.
  */
-ur_field_id_t ur_iter_fields_tmplt(const ur_template_t *tmplt, ur_iter_t *iter);
+void ur_clear_varlen(const ur_template_t * tmplt, void *rec);
+
+/** \brief Get size of variable sized part of UniRec record
+ * Get total size of all variable-length fields in an UniRec record
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] data Pointer to the beginning of a record
+ * \return Size of the variable part of UniRec record.
+ */
+uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec);
 
 /** Create UniRec record.
  * Allocate memory for a record with given template. It allocates N+M bytes,
  * where N is the size of static part of the record (inferred from template),
- * and M is the size of dynamic part, which must be provided by caller.
+ * and M is the size of variable part (variable-length fields), which must be
+ * provided by caller.
+ * No more than 65535 bytes is allocated (even if N+M is greater), since this is
+ * the maximal possible size of UniRec record.
  * \param[in] tmplt Pointer to UniRec template.
- * \param[in] dyn_size Size of dynamic part, i.e. sum of lengths of all dynamic
- *                     fields. If it is not known at the time of record
- *                     creation, use UR_MAX_SIZE, which allocates enough memory
- *                     to hold the largest possible UniRec record (65535 bytes).
- *                     Set to 0 if there are no dynamic fields in the template.
+ * \param[in] max_var_size Size of variable-length part, i.e. sum of lengths of all
+ *                     variable-length fields. If it is not known at the time of
+ *                     record creation, use UR_MAX_SIZE, which allocates enough
+ *                     memory to hold the largest possible UniRec record (65535 bytes).
+ *                     Set to 0 if there are no variable-length fields in the template.
  */
-void *ur_create(ur_template_t *tmplt, uint16_t dyn_size);
+void *ur_create_record(const ur_template_t *tmplt, uint16_t max_var_size);
 #define UR_MAX_SIZE 0xffff
 
 /** Free UniRec record.
@@ -248,235 +777,38 @@ void *ur_create(ur_template_t *tmplt, uint16_t dyn_size);
  * record as well, this function is there just for completeness.
  * \param[in] record Pointer to the record to free.
  */
-void ur_free(void *record);
+void ur_free_record(void *record);
 
-
-/** \brief Is given field present in given template?
- * Return true (non-zero value) if given template contains field with given ID.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] field_id Identifier of a field
- * \return non-zero if field is present, zero otherwise
- */
-#define ur_is_present(tmplt, field_id) \
-   ((tmplt)->offset[(field_id)] != UR_INVALID_OFFSET)
-
-/** \brief Is given field dynamic?
- * Return true (non-zero value) if given ID refers to a field with dynamic
- * length.
- * \param[in] field_id Identifier of a field
- * \return non-zero if field is dynamic, zero otherwise
- */
-#define ur_is_dynamic(field_id) \
-   (ur_get_size_by_id((field_id)) == -1)
-
-
-/** \brief Get value of UniRec field
- * Get value of static UniRec field. For dyamic fields, use ur_get_dyn.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field. It must be a constant beginning
- *                     with UR_, not its numeric value.
- * \return Value of the field. Data type depends on the type of the field.
- */
-#define ur_get(tmplt, data, field_id) \
-   (*(field_id ## _T *)((char *)(data) + (tmplt)->offset[field_id]))
-
-/** \brief Get pointer to UniRec field
- * Get pointer to static UniRec field. For dyamic fields, use ur_get_dyn.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field. It must be a constant beginning
- *                     with UR_, not its numeric value.
- * \return Pointer to the field. Pointer type depends on the type of the field.
- */
-#define ur_get_ptr(tmplt, data, field_id) \
-   (field_id ## _T *)((char *)(data) + (tmplt)->offset[field_id])
-
-/** \brief Get pointer to UniRec field
- * Get pointer to static UniRec field. In contrast to ur_get_ptr, field_id may
- * be a variable (not UR_ constant).
- * Returned pointer is always void *.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field
- * \return Pointer to the field (void *).
- */
-#define ur_get_ptr_by_id(tmplt, data, field_id) \
-   (void *)((char *)(data) + (tmplt)->offset[(field_id)])
-
-/** \brief Get size of UniRec field
- * Get size of static UniRec field. For dyamic fields, use ur_get_dyn_size.
- * \param[in] field_id Identifier of a field. It must be a constant beginning
- *                     with UR_, not its numeric value.
- * \return Size of the field in bytes.
- */
-#define ur_get_size(field_id) \
-   sizeof(field_id ## _T)
-
-
-/** \brief Get offset of the first byte of a dynamic field
- * Get offset of the first byte of a dynamic UniRec field. Offset is counted
- * from the end of static part of the record.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
- * \return Offset of the start of the dynamic field.
- */
-#define ur_get_dyn_offset_start(tmplt, data, field_id) \
-   ( (field_id == (tmplt)->first_dynamic) ? 0 : *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id] - 2) )
-
-/** \brief Get offset after the last byte of a dynamic field
- * Get offset just after the last byte of a dynamic UniRec field, that is
- * offset of the first byte of the field plus length of the field.
- * This is the offset set by ur_get_dyn_offset.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
- * \return Offset after the end of the dynamic field.
- */
-#define ur_get_dyn_offset_end(tmplt, data, field_id) \
-   ( *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id]) )
-
-
-/** \brief Get pointer to UniRec field with dynamic size
- * Get pointer to the beginnig of a dynamic UniRec field. For static fields,
- * use ur_get.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
- * \return Pointer (char *) to the beginning of the dynamic field.
- */
-#define ur_get_dyn(tmplt, data, field_id) \
-   ( (char *)(data) + \
-     (tmplt)->static_size + \
-     ur_get_dyn_offset_start((tmplt), (data), (field_id)) \
-   )
-
-/** \brief Get size of UniRec field with dynamic size
- * Get size of dynamic UniRec field. For static fields, use ur_get_size.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
- * \return Size of the field in bytes.
- */
-#define ur_get_dyn_size(tmplt, data, field_id) \
-   ( *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id]) - \
-      ( (field_id == (tmplt)->first_dynamic) ? 0 : *(uint16_t *)((char *)(data) + (tmplt)->offset[field_id] - 2) ) \
-   )
-
-
-/** \brief Get dynamic-size UniRec field as a C string
- * Copy data of a dynamic field from UniRec record and append '\0' character.
- * The function allocats new memory space for the string, it must be free'd
+/** \brief Get variable-length UniRec field as a C string
+ * Copy data of a variable-length field from UniRec record and append '\0' character.
+ * The function allocates new memory space for the string, it must be freed
  * using free()!
  * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
+ * \param[in] rec Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field.
- * \return Requested field as a string (char *) or NULL on malloc error. It should be free'd using free().
+ * \return Requested field as a string (char*) or NULL on malloc error. It should be
+ * freed using free().
  */
-char *ur_get_dyn_as_str(const ur_template_t *tmplt, const void *data, ur_field_id_t field_id);
+char *ur_get_var_as_str(const ur_template_t *tmplt, const void *rec, ur_field_id_t field_id);
 
-
-/** \brief Set value of UniRec field
- * Set value of static UniRec field. Dynamic fields must be filled manually.
- * \param[in] tmplt Pointer to UniRec template
- * \param[out] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field. It must be a constant beginning
- *                     with UR_, not its numeric value.
- * \param[in] value The value the field should be set to.
- * \return New value of the field.
+/**
+ * \brief Copy data from one UniRec record to another.
+ * Copies all fields present in both templates from src to dst. The function
+ * compares src_tmplt and dst_tmplt and for each field present in both
+ * templates it sets the value of field in dst to a corresponding value in src.
+ * "dst" must point to a memory of enough size.
+ * \param[in] dst_tmplt Pointer to destination UniRec template
+ * \param[in] dst Pointer to destination record
+ * \param[in] src_tmplt Pointer to source UniRec template
+ * \param[in] src Pointer to source record
  */
-#define ur_set(tmplt, data, field_id, value) \
-   (*(field_id ## _T *)((char *)(data) + (tmplt)->offset[field_id]) = (value))
-
-/** \brief Set value of a UniRec field
- * \param[in] tmpl Pointer to UniRec template
- * \param[out] data Pointer to the beginning of a record
- * \param[in] f_id Identifier of a field. It must be a constant beginning
- *                     with UR_, not its numeric value.
- * \param[in] v The value the field should be set to.
- * \return 0 on success, non-zero otherwise.
- */
-int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v);
-
-
-/** \brief Set offset of dynamic UniRec field
- * Set offset of the byte right after the end of dynamic UniRec field, i.e.
- * where the next field starts (or would start if it exists).
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
- * \param[in] off Offset of the end of the field.
- * \return The offset.
- */
-#define ur_set_dyn_offset(tmplt, data, field_id, off) \
-   (*(uint16_t *)((char *)(data) + (tmplt)->offset[field_id]) = (off))
-
-
-/** \brief Set dynamic UniRec field
- * Copy given data into dynamic UniRec field and set its offset in a record.
- * WARNING: Dynamic fields MUST be set in the same order as they are stored
- * in the record, that is in alphabetical order by their name.
- * Function ur_iter_field_tmplt may be used for iteration over fields in correct
- * order, for example.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
- * \param[in] value_ptr Pointer to data which should be copied into the record.
- * \param[in] size Length of the copied data in bytes.
- */
-
-#define ur_set_dyn(tmplt, data, field_id, value_ptr, size) \
-   do { \
-      char *out_ptr = ur_get_dyn((tmplt), (data), (field_id)); \
-      memcpy(out_ptr, (value_ptr), (size)); \
-      int new_offset = ur_get_dyn_offset_start((tmplt), (data), (field_id)) + (size); \
-      ur_set_dyn_offset((tmplt), (data), (field_id), new_offset); \
-   } while (0)
-
-
-
-// TODO: check for invalid offset when DEBUG is defined
-
-
-/** \brief Get size of static part of UniRec record
- * Get total size of whole UniRec record except dynamic fields.
- * \param[in] tmplt Pointer to UniRec template
- * \return Size of the dynamic part of UniRec record.
- */
-#define ur_rec_static_size(tmplt) \
-   ((tmplt)->static_size)
-
-
-/** \brief Get size of dynamic part of UniRec record
- * Get total size of all dynamic fields in an UniRec record
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \return Size of the static part of UniRec record.
- */
-#define ur_rec_dynamic_size(tmplt, data) \
-   (((tmplt)->first_dynamic == UR_INVALID_OFFSET) ? \
-    (0) : \
-    (*(uint16_t *)((char *)(data) + (tmplt)->static_size - 2)) )
-
-
-/** \brief Get total size of UniRec record
- * Get total size of given UniRec record including dynamic fields.
- * If you know that the record doesn't contain dynamic fields, use
- * ur_rec_static_size as it is slightly faster.
- * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
- * \return Size of the static part of UniRec record.
- */
-#define ur_rec_size(tmplt, data) \
-   (ur_rec_static_size(tmplt) + ur_rec_dynamic_size(tmplt, data))
-
+void ur_copy_fields(const ur_template_t *dst_tmplt, void* dst, const ur_template_t *src_tmplt, const void* src);
 
 /**
  * \brief Copy data from one UniRec to another.
  * Procedure gets template and void pointer of source and destination.
  * Then it copies the data defined by the given template.
- * The destination pointer must have requiered space allocated.
+ * The destination pointer must have required space allocated.
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] src Pointer to source data
  * \param[out] dst Pointer to destination of copy
@@ -490,35 +822,78 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
 
 /**
  * \brief Create new UniRec and copy the source UniRec into it.
- * Function creates new UniRec record and copies fills it with
- * the data given by parameter.
+ * Function creates new UniRec record and fills it with the data given by
+ * parameter.
  * \param[in] tmplt Pointer to UniRec template
- * \param[in] src Pointer to source data
+ * \param[in] src Pointer to source data (UniRec record of the same template)
  * \return Pointer to a new UniRec
  */
-INLINE void *ur_cpy_alloc(ur_template_t *tmplt, const void *src)
-{
-    void *copy = ur_create(tmplt, ur_rec_dynamic_size(tmplt, src));
-    ur_cpy(tmplt, src, copy);
-    return copy;
-}
+void *ur_clone_record(const ur_template_t *tmplt, const void *src);
 
-/**
- * \brief Transfer data between UniRec records with different templates.
- * Procedure gets templates of both records and their data and transfer
- * data from one to another. Destination data must be allocated beforehand.
- * The Procedure can transfer only static fields.
- * \param[in] tmplt_src Template of the source UniRec
- * \param[in] tmplt_dst Template of the destination UniRec
- * \param[in] src Source UniRec record
- * \param[out] dst Destination UniRec record
+/** \brief Iterate over fields of a template in order of a record
+ * This function can be used to iterate over all fields of a given template.
+ * It returns ID of the next field present in the template after a given ID.
+ * If ID is set to UR_ITER_BEGIN, it returns the first fields. If no more
+ * fields are present, UR_ITER_END is returned.
+ * Example usage:
+ *   ur_field_id_t id = UR_ITER_BEGIN
+ *   while ((id = ur_iter_fields(&tmplt, id)) != UR_ITER_END) {
+ *      ...
+ *   }
+ * The order of fields is given by the order in which they are defined.
+ * \param[in] tmplt Template to iterate over.
+ * \param[in] id Field ID returned in last iteration or UR_ITER_BEGIN to
+ *               get first value.
+ * \return ID of the next field or UR_ITER_END if no more fields are present.
  */
-void ur_transfer_static(ur_template_t *tmplt_src, ur_template_t *tmplt_dst, const void *src, void *dst);
+ur_iter_t ur_iter_fields(const ur_template_t *tmplt, ur_iter_t id);
 
-/**
- * @}
+/** \brief Iterate over fields of a template
+ * This function can be used to iterate over all fields of a given template.
+ * It returns n-th ID of a record specified by index.
+ * If the return value is UR_ITER_END. The index is higher than count of fields
+ * in the template.
+ * Example usage:
+ *   int i = 0;
+ *   while ((id = ur_iter_fields(&tmplt, i++)) != UR_ITER_END) {
+ *      ...
+ *   }
+ * The order of fields is given by the order in the record
+ * \param[in] tmplt Template to iterate over.
+ * \param[in] id Field ID returned in last iteration or UR_ITER_BEGIN to
+ *               get first value.
+ * \return ID of the next field or UR_ITER_END if no more fields are present.
  */
+ur_iter_t ur_iter_fields_record_order(const ur_template_t *tmplt, int index);
 
+
+/** \brief Set value of a UniRec field
+ * \param[in] tmpl Pointer to UniRec template
+ * \param[out] data Pointer to the beginning of a record
+ * \param[in] f_id Identifier of a field. It must be a constant beginning
+ *                     with UR_, not its numeric value.
+ * \param[in] v The value the field should be set to.
+ * \return 0 on success, non-zero otherwise.
+ */
+int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v);
+
+/** \brief Parses field names from data format
+ * Function parses field names from data format and returns
+ * pointer to new allocated string.
+ * Example: "type1 name1,type2 name2" => "name1,name2"
+ * New string has to be freed by user.
+ * \param[in] ifc_data_fmt Pointer to the string containing data format
+ * \return Pointer to string with names of fields
+ */
+char *ur_ifc_data_fmt_to_field_names(const char *ifc_data_fmt);
+
+/** \brief Duplicates given string.
+ * Helper function which returns pointer to duplicated string.
+ * New string has to be freed by user.
+ * \param[in] str Pointer to the string to duplicate
+ * \return Pointer to duplicated string on NULL.
+ */
+char *ur_cpy_string(const char *str);
 #ifdef __cplusplus
 } // extern "C"
 #endif

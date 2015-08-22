@@ -4,6 +4,10 @@ DST_IP          ip_addr_t       Destination address of a flow
 SRC_PORT        uint16_t        Source transport-layer port
 DST_PORT        uint16_t        Destination transport-layer port
 PROTOCOL        uint8_t         L4 protocol (TCP, UDP, ICMP, etc.)
+.PROTOCOL_ICMP  0x1               ICMP protocol number
+.PROTOCOL_TCP   0x6               TCP protocol number
+.PROTOCOL_UDP   0x11              UDP protocol number
+.PROTOCOL_SCTP  0x84              SCTP protocol number
 TCP_FLAGS       uint8_t         TCP flags of a flow (logical OR over TCP flags field of all packets)
 .TCP_FIN        0x1               Finish bit flag
 .TCP_SYN        0x2               Synchronize bit flag

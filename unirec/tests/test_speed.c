@@ -1,9 +1,64 @@
+/**
+ * \file test_basic.c
+ * \brief Test for basic unirec functions
+ * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
+ * \author Zdenek Rosa <rosazden@fit.cvut.cz>
+ * \date 2015
+ */
+/*
+ * Copyright (C) 2015 CESNET
+ *
+ * LICENSE TERMS
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name of the Company nor the names of its contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * ALTERNATIVELY, provided that this notice is retained in full, this
+ * product may be distributed under the terms of the GNU General Public
+ * License (GPL) version 2 or later, in which case the provisions
+ * of the GPL apply INSTEAD OF those given above.
+ *
+ * This software is provided ``as is'', and any express or implied
+ * warranties, including, but not limited to, the implied warranties of
+ * merchantability and fitness for a particular purpose are disclaimed.
+ * In no event shall the company or contributors be liable for any
+ * direct, indirect, incidental, special, exemplary, or consequential
+ * damages (including, but not limited to, procurement of substitute
+ * goods or services; loss of use, data, or profits; or business
+ * interruption) however caused and on any theory of liability, whether
+ * in contract, strict liability, or tort (including negligence or
+ * otherwise) arising in any way out of the use of this software, even
+ * if advised of the possibility of such damage.
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
 
-#include "../unirec.h"
+#include "fields.c"
+
+UR_FIELDS(
+   ipaddr SRC_IP,
+   ipaddr DST_IP,
+   uint16 SRC_PORT,
+   uint16 DST_PORT,
+   uint8 PROTOCOL,
+   uint32 PACKETS,
+   bytes* BYTES,
+   string URL,
+)
 
 struct flow_rec_s {
    ip_addr_t dst_ip;
@@ -22,13 +77,17 @@ typedef struct flow_rec_s flow_rec_t;
 int main(int argc, char **argv)
 {
 #ifdef UNIREC
-   ur_template_t *tmplt = ur_create_template("SRC_IP,DST_IP,SRC_PORT,DST_PORT,PROTOCOL,PACKETS,BYTES,URL");
+   ur_template_t *tmplt = ur_create_template("SRC_IP,DST_IP,SRC_PORT,DST_PORT,PROTOCOL,PACKETS,BYTES,URL", NULL);
    if (tmplt == NULL) {
       fprintf(stderr, "Error when creating UniRec template.\n");
       return 1;
    }
 
-   char *rec =
+   char *rec = ur_create_record(tmplt, 20);
+   if (rec == NULL) {
+      fprintf(stderr, "Error when creating UniRec record.\n");
+      return 1;
+   }
 #else
    flow_rec_t *rec = (flow_rec_t*)
 #endif
@@ -51,16 +110,16 @@ int main(int argc, char **argv)
 
    for (int i = 0; i < 1000000000; i++) {
 #ifdef UNIREC
-      if (ip_is4(ur_get_ptr(tmplt, rec, UR_SRC_IP)))
+      if (ip_is4(ur_get_ptr(tmplt, rec, F_SRC_IP)))
          x += 1;
-      if (ip_is4(ur_get_ptr(tmplt, rec, UR_DST_IP)))
+      if (ip_is4(ur_get_ptr(tmplt, rec, F_DST_IP)))
          x += 1;
-      y += ur_get(tmplt, rec, UR_SRC_PORT);
-      y += ur_get(tmplt, rec, UR_DST_PORT);
-      y += ur_get(tmplt, rec, UR_PROTOCOL);
-      z += ur_get(tmplt, rec, UR_PACKETS);
-      z += ur_get(tmplt, rec, UR_BYTES);
-      memcpy(tmp_str, ur_get_dyn(tmplt, rec, UR_URL), ur_get_dyn_size(tmplt, rec, UR_URL));
+      y += ur_get(tmplt, rec, F_SRC_PORT);
+      y += ur_get(tmplt, rec, F_DST_PORT);
+      y += ur_get(tmplt, rec, F_PROTOCOL);
+      z += ur_get(tmplt, rec, F_PACKETS);
+      z += ur_get(tmplt, rec, F_BYTES);
+      memcpy(tmp_str, ur_get_ptr(tmplt, rec, F_URL), ur_get_var_len(tmplt, rec, F_URL));
 #else
       if (ip_is4(&rec->src_ip))
          x += 1;

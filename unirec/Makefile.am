@@ -1,34 +1,28 @@
 ACLOCAL_AMFLAGS=-I m4
+DIST_SUBDIRS = tests
 
-AM_CFLAGS=-std=c99 -O3
+AM_CFLAGS=-std=c99 -O3 -lunirec
 
 RPMDIR = RPMBUILD
 
 lib_LTLIBRARIES=libunirec.la
-libunirec_la_LDFLAGS=-static
+libunirec_la_LDFLAGS=-static -ltrap
 libunirec_la_SOURCES=unirec.c
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
 
 unirecincludedir=$(includedir)/unirec
-unirecinclude_HEADERS=fields.h \
+unirecinclude_HEADERS=unirec.h \
 		     inline.h \
 		     ipaddr.h \
 		     ipaddr_cpp.h \
 		     links.h  \
-		     unirec.h \
 		     ur_time.h
 
-BUILT_SOURCES = fields.h field_func.c
+EXTRA_DIST=unirec_generate_fields_files.py
 
-EXTRA_DIST=fields field_func.c process_fields.py
-
-
-fields.h field_func.c: fields process_fields.py
-	$(PYTHON) process_fields.py
-
-unirec.o: unirec.c unirec.h ipaddr.h fields.h field_func.c
+unirec.o: unirec.c unirec.h
 	gcc -c ${CFLAGS} unirec.c -o $@
 
 #tests:

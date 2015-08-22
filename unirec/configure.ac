@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([unirec], [2.0.2], [traffic-analysis@cesnet.cz])
+AC_INIT([unirec], [2.0.0], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([-Wall  silent-rules])
@@ -69,12 +69,37 @@ RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
+if test "${repobuild}" = "false" -a -z "$TRAPLIB"; then
+        PKG_CHECK_MODULES([LIBTRAP],[libtrap], [TRAPLIB="yes"], [AC_MSG_WARN([Libtrap was not found by pkg-config])])
+        LDFLAGS="$LIBTRAP_LDFLAGS $LDFLAGS"
+        LIBS="$LIBTRAP_LIBS $LIBS"
+        CFLAGS="$LIBTRAP_CFLAGS $CFLAGS"
+        CXXFLAGS="$LIBTRAP_CFLAGS $CXXFLAGS"
+fi
+if test -z "$TRAPLIB"; then
+        # Check for TRAP toolkit as a superproject.
+        if test -d "$srcdir/../libtrap"; then
+        TRAPINC='$(top_srcdir)/../libtrap/include'
+        TRAPLIB='$(top_builddir)/../libtrap/src/.libs'
+        fi
+        # AC_SUBST command line variables from TRAPLIB and TRAPINC.
+        if test -n "$TRAPLIB"; then
+        AC_SUBST([TRAP_LTLIB], ["$TRAPLIB/libtrap.la"])
+        AC_SUBST([TRAP_INCLUDE], ["-I$TRAPINC"])
+        LDFLAGS="-L$TRAPLIB $LDFLAGS"
+        CFLAGS="-I$TRAPINC $CFLAGS"
+        CXXFLAGS="-I$TRAPINC $CXXFLAGS"
+        fi
+fi
 
 AC_CONFIG_FILES([Makefile
-                 tests/Makefile
 		 unirec.pc
 		 unirec.spec
 		 Doxyfile])
+
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--enable-tests],[Compile with testing modules]),[with_tests=yes],[with_tests=no])
+AS_IF([test "x$with_tests" = "xyes"], [ENABLEDTESTS=./tests], [ENABLEDTESTS=""])
+AC_SUBST(ENABLEDTESTS)
 
 DX_MAN_FEATURE(OFF)
 DX_INIT_DOXYGEN([UniRec], [Doxyfile], [doc/doxygen])
@@ -92,7 +117,7 @@ echo
 echo "  ASM.(32 bit only)..: $ASM"
 echo "  Static binary......: $static"
 echo
-echo "Documentation..........: `if test "x$DX_FLAG_doc" = x1; then echo enabled; else echo disabled; fi`"
+echo "Documentation..........: ${build_doc}"
 echo
 echo "Compilation............: make (or gmake)"
 echo "  CPPFLAGS.............: $CPPFLAGS"
