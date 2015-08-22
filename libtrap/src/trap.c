@@ -1060,9 +1060,12 @@ void trap_print_help(const trap_module_info_t *module_info)
    if (output_format != NULL) {
       if (strcmp(output_format, "json") == 0) {
          trap_convert_module_info_to_json(module_info);
+         free(output_format);
          return;
       }
    }
+   /* output format is useless by now */
+   free(output_format);
 
    cols = get_terminal_width();
    if (cols == 0) {
@@ -1074,7 +1077,7 @@ void trap_print_help(const trap_module_info_t *module_info)
       pager = strdup(temp_env);
    }
 
-   if (pager == NULL) {
+   if ((pager == NULL) || (strcmp(pager, "") == 0)) {
       goto output;
    }
 
@@ -1102,11 +1105,14 @@ void trap_print_help(const trap_module_info_t *module_info)
       dup2(pager_fds[0], STDIN_FILENO);
       close(pager_fds[0]); /* already redirected to stdin */
       execvp(args[0], args);
+      free(pager);
       perror("exec failed");
       exit(EXIT_FAILURE);
    }
    return;
 output:
+   /* pager is useless by now */
+   free(pager);
    printf("TRAP module, libtrap version: %s %s\n", trap_version, trap_git_version);
    puts("===========================================");
    if (trap_help_spec == 0) {
