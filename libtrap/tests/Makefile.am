@@ -1,4 +1,4 @@
-TESTS = basic_test_arg.test basic_test test_finalize basic_test_timeouts.test libtrap_disbuffer.test libtrap_multiclient.test
+TESTS = basic_test_arg.test basic_test test_finalize basic_test_timeouts.test libtrap_disbuffer.test
 
 if ENABLE_LONG_TESTS
 TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test

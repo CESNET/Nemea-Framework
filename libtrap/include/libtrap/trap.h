@@ -948,16 +948,19 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
       if (ret != TRAP_E_OK) {\
          if (ret == TRAP_E_HELP) {\
             trap_print_help(&module_info);\
+            FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS) \
             return 0;\
          }\
          trap_free_ifc_spec(ifc_spec);\
          fprintf(stderr, "ERROR in parsing of parameters for TRAP: %s\n", trap_last_error_msg);\
+         FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS) \
          return 1;\
       }\
       ret = trap_init(&module_info, ifc_spec);\
       if (ret != TRAP_E_OK) {\
          trap_free_ifc_spec(ifc_spec);\
          fprintf(stderr, "ERROR in TRAP initialization: %s\n", trap_last_error_msg);\
+         FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS) \
          return 1;\
       }\
       trap_free_ifc_spec(ifc_spec);\

@@ -282,11 +282,10 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
     * TRAP_HALFWAIT is not valid value */
    assert(timeout > TRAP_HALFWAIT);
 
-   (*size) = 0;
-
    if ((config == NULL) || (data == NULL) || (size == NULL)) {
       return TRAP_E_BAD_FPARAMS;
    }
+   (*size) = 0;
 
    DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv trap_recv() was called"));
 
