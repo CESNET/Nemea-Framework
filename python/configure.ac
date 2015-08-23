@@ -27,8 +27,8 @@ AC_ARG_WITH([unirec-path],
 	]
 )
 
-AC_CHECK_FILE([${UNIREC_PATH}/process_fields.py], [], [
-  AC_CHECK_FILE([${srcdir}/../unirec/process_fields.py],
+AC_CHECK_FILE([${UNIREC_PATH}/unirec_generate_fields_files.py], [], [
+  AC_CHECK_FILE([${srcdir}/../unirec/unirec_generate_fields_files.py],
     [UNIREC_PATH=[${srcdir}/../unirec/]],
     [AC_MSG_ERROR([Path to UniRec not found. It is not possible to obtain fields.py.])])
 ])
