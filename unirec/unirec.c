@@ -247,6 +247,9 @@ int ur_get_empty_id()
 
 int ur_get_field_type_from_str(const char * type)
 {
+	if (type == NULL) {
+		return UR_E_INVALID_TYPE;
+	}
 	for (int i = 0; i < UR_COUNT_OF_TYPES; i++) {
 		if (strcmp(type, ur_field_type_str[i]) == 0)
 			return i;
@@ -446,9 +449,7 @@ int ur_define_set_of_fields(const char *ifc_data_fmt)
 			if (field_name != NULL) {
 				free(field_name);
 			}
-			if (field_type != NULL) {
-				free(field_type);
-			}
+			free(field_type);
 			return field_type_id;
 		}
 		field_id = ur_define_field(field_name, field_type_id);
@@ -456,18 +457,14 @@ int ur_define_set_of_fields(const char *ifc_data_fmt)
 			if (field_name != NULL) {
 				free(field_name);
 			}
-			if (field_type != NULL) {
-				free(field_type);
-			}
+			free(field_type);
 			return field_id;
 		}
 	}
 	if (field_name != NULL) {
 		free(field_name);
 	}
-	if (field_type != NULL) {
-		free(field_type);
-	}
+	free(field_type);
 	return UR_OK;
 }
 
@@ -700,6 +697,7 @@ int ur_ctx_set_output_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt)
 		return UR_E_MEMORY;
 	}
 	trap_ctx_set_data_fmt(ctx, ifc, TRAP_FMT_UNIREC, tmplt_str);
+	free(tmplt_str);
 	return UR_OK;
 }
 
@@ -718,6 +716,7 @@ int ur_ctx_set_input_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt)
 		return UR_E_MEMORY;
 	}
 	trap_ctx_set_required_fmt(ctx, ifc, TRAP_FMT_UNIREC, tmplt_str);
+	free(tmplt_str);
 	return UR_OK;
 }
 
@@ -741,14 +740,8 @@ ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in,
 		return NULL;
 	}
 	trap_ctx_set_required_fmt(ctx, ifc_in, TRAP_FMT_UNIREC, tmplt_str);
-	if (tmplt_str != NULL) {
-		char *tmplt_str2 = ur_cpy_string(tmplt_str);
-		if (tmplt_str2 == NULL) {
-			ur_free_template(tmplt);
-			return NULL;
-		}
-		trap_ctx_set_data_fmt(ctx, ifc_out, TRAP_FMT_UNIREC, tmplt_str2);
-	}
+	trap_ctx_set_data_fmt(ctx, ifc_out, TRAP_FMT_UNIREC, tmplt_str);
+	free(tmplt_str);
 	return tmplt;
 }
 
@@ -962,7 +955,7 @@ void ur_free_template(ur_template_t *tmplt) {
 void ur_print_template(ur_template_t *tmplt)
 {
    printf("static_size: %hu, first_dynamic: ", tmplt->static_size);
-   (tmplt->first_dynamic == -1) ? (printf("-")) : (printf("%d", tmplt->ids[tmplt->first_dynamic]));
+   (tmplt->first_dynamic == UR_NO_DYNAMIC_VALUES) ? (printf("-")) : (printf("%d", tmplt->ids[tmplt->first_dynamic]));
    printf(", offsets:\n"
           "ID\t%-30s\toffset\n","name");
    for (int i = 0; i < tmplt->count; i++) {
