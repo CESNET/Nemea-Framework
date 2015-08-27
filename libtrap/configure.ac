@@ -59,6 +59,7 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h stdarg.h string.h sys/socket.h sys/time.h unistd.h pthread.h endian.h locale.h sched.h sys/param.h sys/stat.h sys/types.h getopt.h])
 
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_LONG_LONG_INT
 AC_C_INLINE
@@ -185,9 +186,12 @@ AC_ARG_ENABLE([debugbuffering], AC_HELP_STRING([--enable-debugbuffering],
       [Compile IFC with debug messages]),
       [AC_DEFINE(TRAP_DEBUG_BUFFERING, [1], [Enable debug messages in buffering.])], [AC_DEFINE([TRAP_DEBUG_BUFFERING], [0])])
 
-AC_ARG_ENABLE([negotiation], AC_HELP_STRING([--enable-negotiation],
+AC_ARG_ENABLE([negotiation], AC_HELP_STRING([--disable-negotiation],
       [Compile interfaces with negotiation]),
-      [AC_DEFINE(ENABLE_NEGOTIATION, [], [Enable negotiation between interfaces.])], [])
+      [if test "$enableval" = "yes"; then
+        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])
+      fi],
+      [AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])])
 
 AC_SUBST(RPMBUILD)
 if test -z "$RPMBUILD"; then

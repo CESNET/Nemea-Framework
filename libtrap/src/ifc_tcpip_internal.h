@@ -65,11 +65,6 @@
  * @{
  */
 
-typedef struct hello_msg_header_s {
-   uint8_t data_type;
-   uint32_t data_fmt_spec_size;
-} hello_msg_header_t;
-
 enum client_send_state {
    CURRENT_IDLE, /**< waiting for a message in current buffer */
    CURRENT_HEAD, /**< timeout in header */

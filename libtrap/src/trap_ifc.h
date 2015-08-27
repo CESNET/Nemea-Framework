@@ -98,6 +98,13 @@ typedef int (*ifc_recv_func_t)(void *p, void *d, uint32_t *s, int t);
 typedef int (*ifc_send_func_t)(void *p, const void *d, uint32_t s, int t);
 
 /**
+ * Disconnect all connected clients to output IFC.
+ *
+ * \param[in] p   pointer to IFC's private memory allocated by constructor
+ */
+typedef void (*ifc_disconn_clients_func_t)(void *p);
+
+/**
  * Terminate IFC - stop sending/receiving.
  *
  * \param[in] p   pointer to IFC's private memory allocated by constructor
@@ -188,6 +195,7 @@ typedef struct trap_input_ifc_s {
 
 /** Struct to hold an instance of some output interface. */
 typedef struct trap_output_ifc_s {
+   ifc_disconn_clients_func_t disconn_clients; ///< Pointer to disconnect_clients function
    ifc_send_func_t send;           ///< Pointer to send function
    ifc_terminate_func_t terminate; ///< Pointer to terminate function
    ifc_destroy_func_t destroy;     ///< Pointer to destructor function

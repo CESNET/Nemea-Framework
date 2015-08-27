@@ -123,6 +123,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "ERROR in TRAP initialization\n");
       return 2;
    }
+   trap_set_data_fmt(0, TRAP_FMT_RAW);
    trap_ifcctl(TRAPIFC_OUTPUT, 0, TRAPCTL_AUTOFLUSH_TIMEOUT, TRAP_NO_AUTO_FLUSH);
    //trap_ifcctl(TRAPIFC_OUTPUT, 0, TRAPCTL_AUTOFLUSH_TIMEOUT, 100);
    trap_ifcctl(TRAPIFC_OUTPUT, 0, TRAPCTL_BUFFERSWITCH, 1);

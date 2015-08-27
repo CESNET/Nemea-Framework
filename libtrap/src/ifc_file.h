@@ -45,6 +45,17 @@
 
 #include "trap_ifc.h"
 
+typedef struct file_private_s {
+   trap_ctx_priv_t *ctx;
+   FILE *fd;
+   char *filename;
+   char mode[3];
+   char is_terminated;
+   uint8_t  neg_initialized;
+   uint32_t  file_cnt;
+   uint32_t ifc_idx;
+} file_private_t;
+
 /** Create file receive interface (input ifc).
  *  Receive function of this interface reads data from defined file.
  *  @param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
@@ -52,7 +63,7 @@
  *  @param[out] ifc Created interface.
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */
-int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc);
+int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc, uint32_t idx);
 
 
 /** Create file send interface (output ifc).
@@ -63,6 +74,6 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
  *  @param[out] ifc Created interface.
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */
-int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc);
+int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx);
 
 #endif

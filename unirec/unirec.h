@@ -54,6 +54,7 @@ extern "C" {
 #include "ipaddr.h"
 #include "ur_time.h"
 #include "links.h"
+#include "values.h"
 #include <libtrap/trap.h>
 
 //General setting
@@ -173,6 +174,16 @@ typedef struct {
    ur_tmplt_direction direction; ///< Direction of data input, output, bidirection, no direction
    uint32_t ifc_out;   ///< output interface number (stored only if the direction == UR_TMPLT_DIRECTION_BI)
 } ur_template_t;
+
+/** \brief Values names and descriptions
+ * It contains a table mapping a value to name and description
+ */
+typedef struct ur_values_s ur_values_t;
+struct ur_values_s{
+  int32_t value;
+  char *name;
+  char *description;
+};
 
 /** \brief Receive data from interface
  * Receive data with specified template from libtrap interface. If the receiving template is
@@ -894,6 +905,49 @@ char *ur_ifc_data_fmt_to_field_names(const char *ifc_data_fmt);
  * \return Pointer to duplicated string on NULL.
  */
 char *ur_cpy_string(const char *str);
+
+/** \brief Returns name of specified value (Helper function)
+ * Helper function for ur_values_get_name. This function returns name of
+ * specified value and field, which is defined in values file. Function
+ * needs start and end index of a field.
+ * \param[in] start Index of first item to search the value in ur_values array
+ * \param[in] end Index of last item to search the value in ur_values array
+ * \param[in] value Value of an item to find.
+ * \return Pointer to string or NULL if the value was not found
+ */
+const char *ur_values_get_name_start_end(uint32_t start, uint32_t end, int32_t value);
+
+/** \brief Returns description of specified value (Helper function)
+ * Helper function for ur_values_get_description. This function returns description of
+ * specified value and field, which is defined in values file. Function
+ * needs start and end index of a field.
+ * \param[in] start Index of first item to search the value in ur_values array
+ * \param[in] end Index of last item to search the value in ur_values array
+ * \param[in] value Value of an item to find
+ * \return Pointer to string or NULL if the value was not found
+ */
+const char *ur_values_get_description_start_end(uint32_t start, uint32_t end, int32_t value);
+
+/** \brief Returns name of specified value
+ * This function returns name of specified value and field, which is defined in 
+ * values file. 
+ * \param[in] field Name of field to search value in
+ * \param[in] value Value of an item to find
+ * \return Pointer to string or NULL if the value was not found
+ */
+#define ur_values_get_name(field, value) \
+   ur_values_get_name_start_end(UR_TYPE_START_ ## field, UR_TYPE_END_ ## field, value)
+
+/** \brief Returns description of specified value 
+ * This function returns description of specified value and field, which is defined in 
+ * values file. 
+ * \param[in] field Name of field to search value in
+ * \param[in] value Value of an item to find
+ * \return Pointer to string or NULL if the value was not found
+ */
+#define ur_values_get_description(field, value) \
+   ur_values_get_description_start_end(UR_TYPE_START_ ## field, UR_TYPE_END_ ## field, value)
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

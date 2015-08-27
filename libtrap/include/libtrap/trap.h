@@ -319,6 +319,12 @@ const char *trap_get_type_and_name_from_string(const char *source, const char **
  */
 int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_ifc_data_fmt);
 
+/**
+ * Returns global context.
+ *
+ * \return pointer to global context.
+ */
+void *trap_get_global_ctx();
 
 /**
  * Returns current state of an input interface on specified index.
@@ -1052,6 +1058,37 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
 /**
  * @}
  *//* modulemacros */
+
+
+
+/**
+ * Function handles output interface negotiation (sends hello message to input interface with its data format
+ * and data specifier). Hello message contains message header (data format and data specifier size) and data specifier.
+ *
+ * \param[in] c  Pointer to output interface private structure.
+ * \param[in] client_sd  Socket descriptor of the connection with the new input interface.
+ *
+ * \return NEG_RES_FAILED if sending the data to input interface fails,
+ *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
+ *             NEG_RES_OK signaling success (hello message successfully sent to input interface).
+ */
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d);
+
+
+/**
+ * Function handles input interface negotiation (receives hello message from output interface with its data format
+ * and data specifier and compares it with its own data format and data specifier).
+ * Hello message contains message header (data format and data specifier size) and data specifier.
+ *
+ * \param[in] priv Pointer to input interface private structure.
+ *
+ * \return NEG_RES_FAILED if receiving the data from output interface fails,
+ *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
+ *             NEG_RES_FMT_SUBSET if the data format of input and output interfaces is the same and data specifier of the input interface is subset of the output interface data specifier,
+ *             NEG_RES_CONT if the data format and data specifier of input and output interface are the same (input interface can receive the data for module right after the negotiation),
+ *             NEG_RES_FMT_MISMATCH if the data format or data specifier of input and output interfaces does not match.
+ */
+int input_ifc_negotiation(void *ifc_priv_data, char ifc_type);
 
 
 #ifdef __cplusplus

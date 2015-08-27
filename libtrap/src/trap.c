@@ -47,6 +47,7 @@
  *
  */
 #include <config.h>
+#include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -1147,8 +1148,12 @@ output:
       i = 0;
       while (module_info->params[i] != NULL) {
          if (HAVE_GETOPT_LONG) {
-            written = printf("  -%c  --%s ", module_info->params[i]->short_opt,
-                             module_info->params[i]->long_opt);
+            if (isprint(module_info->params[i]->short_opt)) {
+               written = printf("  -%c  --%s ", module_info->params[i]->short_opt,
+                                module_info->params[i]->long_opt);
+            } else {
+               written = printf("       --%s ", module_info->params[i]->long_opt);
+            }
          } else {
             written = printf("  -%c ", module_info->params[i]->short_opt);
          }
@@ -1537,6 +1542,8 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
       ret_val = c->in_ifc_list[ifcidx].recv(c->in_ifc_list[ifcidx].priv, c->in_ifc_list[ifcidx].buffer, &newsize, c->in_ifc_list[ifcidx].datatimeout);
       if (ret_val == TRAP_E_OK) {
          c->counter_recv_message[ifcidx]++;
+      } else if (ret_val == TRAP_E_OK_FORMAT_CHANGED) {
+         return ret_val;
       }
       (*size) = newsize;
       (*data) = c->in_ifc_list[ifcidx].buffer;
@@ -1808,7 +1815,7 @@ static inline int trapifc_in_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *if
       }
       break;
    case TRAP_IFC_TYPE_FILE:
-      if (create_file_recv_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx]) != TRAP_E_OK) {
+      if (create_file_recv_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of FILE input interface no. %i failed.", idx);
          goto error;
       }
@@ -1933,7 +1940,7 @@ static inline int trapifc_out_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *i
       }
       break;
    case TRAP_IFC_TYPE_FILE:
-      if (create_file_send_ifc(ctx, ifc_spec->params[idx], &ctx->out_ifc_list[idx]) != TRAP_E_OK) {
+      if (create_file_send_ifc(ctx, ifc_spec->params[idx], &ctx->out_ifc_list[idx], idx) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of FILE output interface no. %i failed.", idx);
          goto error;
       }
@@ -2358,14 +2365,14 @@ typedef struct msg_header_s {
    uint32_t data_size;
 } msg_header_t;
 
-int service_get_data(int supervisor_sd, uint32_t size, void **data)
+int service_get_data(int sock_d, uint32_t size, void **data)
 {
    int num_of_timeouts = 0;
    int total_receved = 0;
    int last_receved = 0;
 
    while (total_receved < size) {
-      last_receved = recv(supervisor_sd, (*data) + total_receved, size - total_receved, MSG_DONTWAIT);
+      last_receved = recv(sock_d, (*data) + total_receved, size - total_receved, MSG_DONTWAIT);
       if (last_receved == 0) {
          VERBOSE(CL_ERROR, "------- ! Supervisors service thread closed its socket, im done !");
          return -1;
@@ -2384,15 +2391,15 @@ int service_get_data(int supervisor_sd, uint32_t size, void **data)
       }
       total_receved += last_receved;
    }
-   return 0;
+   return TRAP_E_OK;
 }
 
-int service_send_data(int supervisor_sd, uint32_t size, void **data)
+int service_send_data(int sock_d, uint32_t size, void **data)
 {
    int num_of_timeouts = 0, total_sent = 0, last_sent = 0;
 
    while (total_sent < size) {
-      last_sent = send(supervisor_sd, (*data) + total_sent, size - total_sent, MSG_DONTWAIT);
+      last_sent = send(sock_d, (*data) + total_sent, size - total_sent, MSG_DONTWAIT);
       if (last_sent == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
             num_of_timeouts++;
@@ -2408,7 +2415,7 @@ int service_send_data(int supervisor_sd, uint32_t size, void **data)
       }
       total_sent += last_sent;
    }
-   return 0;
+   return TRAP_E_OK;
 }
 
 
@@ -2560,14 +2567,14 @@ void *service_thread_routine(void *arg)
                         // Set reply header before send
                         header->com = SERVICE_OK_REPLY;
                         header->data_size = strlen(json_data) + 1;
-                        if (service_send_data(supervisor_sd, sizeof(msg_header_t), (void **) &header) != 0) {
+                        if (service_send_data(supervisor_sd, sizeof(msg_header_t), (void **) &header) != TRAP_E_OK) {
                            VERBOSE(CL_VERBOSE_LIBRARY, "[ERROR] Service could not send data header.")
                            close(cl->sd);
                            cl->sd = -1;
                            continue;
                         }
 
-                        if (service_send_data(supervisor_sd, header->data_size, (void **) &json_data) != 0) {
+                        if (service_send_data(supervisor_sd, header->data_size, (void **) &json_data) != TRAP_E_OK) {
                            VERBOSE(CL_VERBOSE_LIBRARY, "[ERROR] Service could not send data.")
                            close(cl->sd);
                            cl->sd = -1;
@@ -2721,6 +2728,13 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
    assert(out_ifc_idx < c->num_ifc_out);
 
    ifc = &c->out_ifc_list[out_ifc_idx];
+   /* If the data type is already set, disconnect all connected clients to this output interface (auto-negotiation will be performed again to get new data format and data spec) */
+   if (ifc->data_type != TRAP_FMT_UNKNOWN) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "Data format setter: not initial setting of data_type -> disconnect all clients of the output interface %d.", out_ifc_idx);
+      if (ifc->disconn_clients != NULL) {
+         ifc->disconn_clients(ifc->priv);
+      }
+   }
    ifc->data_type = data_type;
    if (data_type != TRAP_FMT_RAW) {
       ifc->data_fmt_spec = (char *) va_arg(ap, char *);
@@ -2955,6 +2969,11 @@ int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_
    return TRAP_E_OK;
 }
 
+void *trap_get_global_ctx()
+{
+   return (trap_ctx_t *) trap_glob_ctx;
+}
+
 /**
  * @}
  */
@@ -2962,3 +2981,326 @@ int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_
  * @}
  *//* trap_mess_fmt */
 
+
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d)
+{
+   VERBOSE(CL_VERBOSE_LIBRARY, "--- Output IFC negotiation ---");
+
+   hello_msg_header_t *hello_msg_header = NULL;
+   uint32_t size_of_buffer = sizeof(hello_msg_header_t);
+   char *buffer = (char *) calloc(size_of_buffer, sizeof(char));
+   char *p = NULL;
+   uint32_t size = 0;
+   int ret_val = 0;
+   int neg_result = NEG_RES_OK;
+   int compare = 0;
+   file_private_t *file_ifc_priv = NULL;
+   tcpip_sender_private_t *tcp_ifc_priv = NULL;
+   uint8_t data_type = TRAP_FMT_UNKNOWN;
+   char *data_fmt_spec = NULL;
+   uint32_t ifc_idx = 0;
+
+   // Decide which structure can be used for interfaces private data
+   if (ifc_type == TRAP_IFC_TYPE_FILE) {
+      file_ifc_priv = (file_private_t *) ifc_priv_data;
+      data_type = file_ifc_priv->ctx->out_ifc_list[file_ifc_priv->ifc_idx].data_type;
+      data_fmt_spec = file_ifc_priv->ctx->out_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec;
+      ifc_idx = file_ifc_priv->ifc_idx;
+   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+      tcp_ifc_priv = (tcpip_sender_private_t *) ifc_priv_data;
+      data_type = tcp_ifc_priv->ctx->out_ifc_list[tcp_ifc_priv->ifc_idx].data_type;
+      data_fmt_spec = tcp_ifc_priv->ctx->out_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec;
+      ifc_idx = tcp_ifc_priv->ifc_idx;
+   } else {
+      neg_result = NEG_RES_FAILED;
+      goto out_neg_exit;
+   }
+
+   // Prepare hello_msg header with output interfaces data_type and data_fmt_spec size
+   hello_msg_header = calloc(1, sizeof(hello_msg_header_t));
+   // Check whether the output interfaces data format and data specifier are set correctly. If not, negotiation will fail.
+   if (((data_type == TRAP_FMT_UNIREC || data_type == TRAP_FMT_JSON) && data_fmt_spec == NULL) || data_type == TRAP_FMT_UNKNOWN) {
+      /**
+       * In case of file output interface, return NEG_RES_FMT_UNKNOWN
+       * In case of tcpip or unix output interface, send hello message header with format unknown value and return NEG_RES_FMT_UNKNOWN
+       */
+      VERBOSE(CL_VERBOSE_LIBRARY, "Output interface negotiation - the data format or specifier of the output interface %d are not set correctly.", ifc_idx);
+      neg_result = NEG_RES_FMT_UNKNOWN;
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         goto out_neg_exit;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "Output interface negotiation - gonna send header with TRAP_FMT_UNKNOWN.");
+         hello_msg_header->data_type = TRAP_FMT_UNKNOWN;
+         hello_msg_header->data_fmt_spec_size = 0;
+      }
+   } else {
+      hello_msg_header->data_type = data_type;
+      if (data_type == TRAP_FMT_RAW) {
+         hello_msg_header->data_fmt_spec_size = 0;
+      } else {
+         hello_msg_header->data_fmt_spec_size = strlen(data_fmt_spec);
+      }
+   }
+
+   memcpy(buffer, hello_msg_header, sizeof(hello_msg_header_t));
+   size = sizeof(hello_msg_header_t);
+   p = buffer;
+
+
+   VERBOSE(CL_VERBOSE_LIBRARY, "Step 1: sending hello msg header...   ");
+   if (ifc_type == TRAP_IFC_TYPE_FILE) {
+      ret_val = fwrite((void *) p, sizeof(char), size, file_ifc_priv->fd);
+      compare = size;
+   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+      ret_val = service_send_data(sock_d, size, (void **)&p);
+      compare = TRAP_E_OK;
+   }
+   if (ret_val != compare) {
+      // Could not send hello message header
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+      neg_result = NEG_RES_FAILED;
+      goto out_neg_exit;
+   } else {
+      VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+   }
+
+   // Data format specifier is sent only if the data format is set to JSON or UNIREC
+   if ((data_type == TRAP_FMT_UNIREC || data_type == TRAP_FMT_JSON) && data_fmt_spec != NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "Step 2: sending data_fmt_spec...   ");
+      memset(buffer, 0, sizeof(hello_msg_header_t));
+      if ((strlen(data_fmt_spec) + 1) > size_of_buffer) {
+         buffer = (char *) realloc(buffer, (strlen(data_fmt_spec) + 1) * sizeof(char));
+         memset(buffer + size_of_buffer, 0, ((strlen(data_fmt_spec) + 1) - size_of_buffer) * sizeof(char));
+         size_of_buffer = (strlen(data_fmt_spec) + 1);
+      }
+      sprintf(buffer,"%s",data_fmt_spec);
+      size = hello_msg_header->data_fmt_spec_size;
+      p = buffer;
+
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         ret_val = fwrite((void *) p, sizeof(char), size, file_ifc_priv->fd);
+         compare = size;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         ret_val = service_send_data(sock_d, size, (void **)&p);
+         compare = TRAP_E_OK;
+      }
+      if (ret_val != compare) {
+         // Could not send output interface data specifier
+         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+         neg_result = NEG_RES_FAILED;
+         goto out_neg_exit;
+      } else {
+         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+      }
+   }
+
+out_neg_exit:
+   if (buffer != NULL) {
+      free(buffer);
+      buffer = NULL;
+   }
+   if (hello_msg_header != NULL) {
+      free (hello_msg_header);
+      hello_msg_header = NULL;
+   }
+
+   return neg_result;
+}
+
+
+int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
+{
+   VERBOSE(CL_VERBOSE_LIBRARY, "--- Input IFC negotiation ---");
+
+   char *data_fmt_spec = NULL;
+   uint32_t size = 0;
+   hello_msg_header_t *hello_msg_header = calloc(1, sizeof(hello_msg_header_t));
+   int ret_val = 0;
+   void *p_p = NULL;
+   int neg_result = 0;
+   int compare = 0;
+
+   file_private_t *file_ifc_priv = NULL;
+   tcpip_receiver_private_t *tcp_ifc_priv = NULL;
+   uint8_t req_data_type = TRAP_FMT_UNKNOWN;
+   char *req_data_fmt_spec = NULL;
+
+   // Decide which structure can be used for interfaces private data
+   if (ifc_type == TRAP_IFC_TYPE_FILE) {
+      file_ifc_priv = (file_private_t *) ifc_priv_data;
+      req_data_type = file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].req_data_type;
+      req_data_fmt_spec = file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].req_data_fmt_spec;
+   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+      tcp_ifc_priv = (tcpip_receiver_private_t *) ifc_priv_data;
+      req_data_type = tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].req_data_type;
+      req_data_fmt_spec = tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].req_data_fmt_spec;
+   } else {
+      neg_result = NEG_RES_FAILED;
+      goto in_neg_exit;
+   }
+
+
+   /** Receive hello msg header with data_type and data_fmt_spec_size */
+   VERBOSE(CL_VERBOSE_LIBRARY, "Step 1: reading hello msg header...   ");
+   size = sizeof(hello_msg_header_t);
+   p_p = (void *) hello_msg_header;
+
+   if (ifc_type == TRAP_IFC_TYPE_FILE) {
+      ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+      compare = size;
+   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+      ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);
+      compare = TRAP_E_OK;
+   }
+   if (ret_val != compare) {
+      // Could not send hello message header
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+      }
+      neg_result = NEG_RES_FAILED;
+      goto in_neg_exit;
+   } else {
+      VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+      VERBOSE(CL_VERBOSE_LIBRARY, "senders data_type: %"PRIu8, hello_msg_header->data_type);
+      VERBOSE(CL_VERBOSE_LIBRARY, "senders data_fmt_spec_size: %"PRIu32, hello_msg_header->data_fmt_spec_size);
+      VERBOSE(CL_VERBOSE_LIBRARY, "receivers data_type: %"PRIu8, req_data_type);
+   }
+
+
+   /** Compare data_type */
+   // What if input interface has no specified data format or data specifier? TODO!!!
+   VERBOSE(CL_VERBOSE_LIBRARY, "Step 2: data types comparison...   ");
+   if (hello_msg_header->data_type == TRAP_FMT_UNKNOWN) {
+      // Received unknown data type in hello message header from senders interface
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - senders output interface has unknown data format");
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
+      }
+      neg_result = NEG_RES_FMT_UNKNOWN;
+      goto in_neg_exit;
+   } else if (hello_msg_header->data_type != req_data_type) {
+      // Senders and receivers interface data types are not the same
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - mismatch of senders output and receivers input interface data formats");
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+      }
+      neg_result = NEG_RES_FMT_MISMATCH;
+      goto in_neg_exit;
+   } else if (req_data_type == TRAP_FMT_RAW) {
+      // Both interfaces (senders output and receivers input) have RAW data format -> receive message with the data right after negotiation
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_OK;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_OK;
+      }
+      neg_result = NEG_RES_CONT;
+   } else {
+      // Both interfaces (senders output and receivers input) have UNIREC or JSON data format, check the data format specifier size
+      if (hello_msg_header->data_fmt_spec_size <= 0) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - received zero size of data format specifier for JSON or UNIREC data format");
+         if (ifc_type == TRAP_IFC_TYPE_FILE) {
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         }
+         neg_result = NEG_RES_FMT_MISMATCH;
+         goto in_neg_exit;
+      }
+   }
+   VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+
+
+   /** Receive data_fmt_spec */
+   // data_fmt_spec is received only in case of UNIREC and JSON data formats
+   if (hello_msg_header->data_fmt_spec_size > 0 && (hello_msg_header->data_type == TRAP_FMT_UNIREC || hello_msg_header->data_type == TRAP_FMT_JSON)) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "Step 3: receiving senders data_fmt_spec...   ");
+      size = hello_msg_header->data_fmt_spec_size;
+      data_fmt_spec = calloc(size+1, sizeof(char));
+      p_p = (void *) data_fmt_spec;
+
+      if (ifc_type == TRAP_IFC_TYPE_FILE) {
+         ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+         compare = size;
+      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+         ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);
+         compare = TRAP_E_OK;
+      }
+      if (ret_val != compare) {
+         // Could not send hello message header
+         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+         if (ifc_type == TRAP_IFC_TYPE_FILE) {
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         }
+         neg_result = NEG_RES_FAILED;
+         goto in_neg_exit;
+      } else {
+         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+         VERBOSE(CL_VERBOSE_LIBRARY, "senders data_fmt_spec: \"%s\"", data_fmt_spec);
+         VERBOSE(CL_VERBOSE_LIBRARY, "receivers data_fmt_spec: \"%s\"", req_data_fmt_spec);
+      }
+
+
+      /**Compare data_fmt_spec */
+      VERBOSE(CL_VERBOSE_LIBRARY, "Step 4: data_fmt_spec comparison...   ");
+      ret_val = trap_ctx_cmp_data_fmt(data_fmt_spec, req_data_fmt_spec);
+      if (ret_val == TRAP_E_FIELDS_MISMATCH) {
+         // senders and receivers ifc data_fmt_specs are not same
+         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+         if (ifc_type == TRAP_IFC_TYPE_FILE) {
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         }
+         neg_result = NEG_RES_FMT_MISMATCH;
+         goto in_neg_exit;
+      } else if (ret_val == TRAP_E_FIELDS_SUBSET) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+         if (ifc_type == TRAP_IFC_TYPE_FILE) {
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_SUBSET;
+         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_SUBSET;
+         }
+         neg_result = NEG_RES_FMT_SUBSET;
+      } else {
+         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+         if (ifc_type == TRAP_IFC_TYPE_FILE) {
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_OK;
+         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_OK;
+         }
+         neg_result = NEG_RES_CONT;
+      }
+   }
+
+   /** Save senders data_type and data_fmt_spec */
+   if (ifc_type == TRAP_IFC_TYPE_FILE) {
+      file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
+      file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec = data_fmt_spec;
+   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+      tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
+      tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec = data_fmt_spec;
+   }
+
+in_neg_exit:
+   if (ifc_type == TRAP_IFC_TYPE_FILE) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state);
+   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state);
+   }
+
+   if (hello_msg_header != NULL) {
+      free(hello_msg_header);
+      hello_msg_header = NULL;
+   }
+
+   return neg_result;
+}

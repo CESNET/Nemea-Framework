@@ -85,7 +85,7 @@ echo
 echo "  ASM.(32 bit only)..: $ASM"
 echo "  Static binary......: $static"
 echo
-echo "Documentation..........: `if test "x$DX_FLAG_doc" = x1; then echo enabled; else echo disabled; fi`"
+echo "Documentation..........: ${build_doc}"
 echo
 echo "Compilation............: make (or gmake)"
 echo "  CPPFLAGS.............: $CPPFLAGS"

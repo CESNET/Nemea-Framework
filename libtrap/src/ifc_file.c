@@ -53,6 +53,7 @@
 #include "trap_ifc.h"
 #include "trap_internal.h"
 #include "trap_error.h"
+#include "ifc_file.h"
 
 /**
  * \addtogroup trap_ifc TRAP communication module interface
@@ -63,13 +64,6 @@
  * @{
  */
 
-typedef struct file_private_s {
-   trap_ctx_priv_t *ctx;
-   FILE *fd;
-   char *filename;
-   char mode[3];
-   char is_terminated;
-} file_private_t;
 
 /**
  * \brief Close file and free allocated memory.
@@ -134,6 +128,43 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
 
 /***** Receiver *****/
 
+
+int open_next_file(void *priv)
+{
+   file_private_t *c = (file_private_t *) priv;
+   char *buffer = NULL;
+   int ret_val = 0;
+
+   if (c == NULL) {
+      return -1;
+   }
+   if (c->fd != NULL) {
+      fclose(c->fd);
+      c->fd = NULL;
+   }
+   c->neg_initialized = 0;
+
+   ret_val = asprintf(&buffer, "%s%d", c->filename, c->file_cnt);
+   if (ret_val < 0) {
+      return -1;
+   }
+   c->file_cnt++;
+
+   c->fd = fopen(buffer, c->mode);
+   if (c->fd == NULL) {
+      VERBOSE(CL_ERROR, "File input interface %d: could not open a new input file after changing data format.", c->ifc_idx);
+      ret_val = -1;
+   } else {
+      ret_val = 0;
+   }
+
+   if (buffer != NULL) {
+      free(buffer);
+      buffer = NULL;
+   }
+   return ret_val;
+}
+
 /**
  * \addtogroup file_receiver
  * @{
@@ -156,11 +187,62 @@ int file_recv(void *priv, void *data, uint32_t *size, int timeout)
       return trap_error(config->ctx, TRAP_E_TERMINATED);
    }
 
+   /* Check whether the file stream is opened */
+   if (config->fd == NULL) {
+      return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+   }
+
+#ifdef ENABLE_NEGOTIATION
+neg_start:
+   if (config->neg_initialized == 0) {
+      switch(input_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE)) {
+      case NEG_RES_FMT_UNKNOWN:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
+         return TRAP_E_OK_FORMAT_CHANGED;
+
+      case NEG_RES_CONT:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
+         config->neg_initialized = 1;
+         break;
+
+      case NEG_RES_FMT_SUBSET:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (data specifier of the input interface is subset of the output interface data specifier).");
+         config->neg_initialized = 1;
+         return TRAP_E_OK_FORMAT_CHANGED;
+
+      case NEG_RES_FAILED:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
+         // If the negotiation fails, try a next file.. If it fails again, return from receive
+         if (feof(config->fd)) {
+            if (open_next_file((void *) config) == 0) {
+               goto neg_start;
+            }
+         }
+         return TRAP_E_OK_FORMAT_CHANGED;
+
+      case NEG_RES_FMT_MISMATCH:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data format or data specifier mismatch).");
+         return TRAP_E_OK_FORMAT_CHANGED;
+
+      default:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
+         break;
+      }
+   }
+#endif
+
    /* Reads 4 bytes from the file, determinating the length of bytes to be read to @param[out] data */
    loaded = fread(size, sizeof(uint32_t), 1, config->fd);
 
    if (loaded != 1) {
       if (feof(config->fd)) {
+#ifdef ENABLE_NEGOTIATION
+         if (open_next_file((void *) config) == 0) {
+            goto neg_start;
+         } else {
+            VERBOSE(CL_VERBOSE_LIBRARY, "File input ifc negotiation: eof, could not open next input fle.")
+         }
+#endif
          (*size) = 0;
          return TRAP_E_OK;
       }
@@ -189,7 +271,7 @@ int file_recv(void *priv, void *data, uint32_t *size, int timeout)
  * \param[in,out] ifc   IFC interface used for calling file module.
  * \return 0 on success (TRAP_E_OK), TRAP_E_MEMORY, TRAP_E_BADPARAMS on error
  */
-int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc)
+int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc, uint32_t idx)
 {
    file_private_t *priv;
    size_t name_length;
@@ -216,6 +298,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    }
 
    priv->ctx = ctx;
+   priv->ifc_idx = idx;
    priv->filename = (char *) calloc(name_length + 1, sizeof(char));
    if (!priv->filename) {
       free(priv);
@@ -257,6 +340,39 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
 
 /***** Sender *****/
 
+void create_next_file(void *priv)
+{
+   file_private_t *c = (file_private_t *) priv;
+   char *buffer = NULL;
+   int ret_val = 0;
+
+   if (c == NULL) {
+      return;
+   }
+   if (c->fd != NULL) {
+      fclose(c->fd);
+      c->fd = NULL;
+   }
+   c->neg_initialized = 0;
+
+   ret_val = asprintf(&buffer, "%s%d", c->filename, c->file_cnt);
+   if (ret_val < 0) {
+      return;
+   }
+   c->file_cnt++;
+
+   c->fd = fopen(buffer, c->mode);
+   if (c->fd == NULL) {
+      VERBOSE(CL_ERROR, "File output interface %d: could not open a new output file after changing data format.", c->ifc_idx);
+   }
+
+   if (buffer != NULL) {
+      free(buffer);
+      buffer = NULL;
+   }
+}
+
+
 /**
  * \addtogroup file_sender
  * @{
@@ -275,6 +391,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
  */
 int file_send(void *priv, const void *data, uint32_t size, int timeout)
 {
+   int ret_val = 0;
    file_private_t *config = (file_private_t*) priv;
    const trap_buffer_header_t *data_struct = (trap_buffer_header_t *) data;
    size_t written;
@@ -283,6 +400,28 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
    if (config->is_terminated) {
       return trap_error(config->ctx, TRAP_E_TERMINATED);
    }
+
+   /* Check whether the file stream is opened */
+   if (config->fd == NULL) {
+      return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+   }
+
+#ifdef ENABLE_NEGOTIATION
+   if (config->neg_initialized == 0) {
+      ret_val = output_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE, 0);
+      if (ret_val == NEG_RES_OK) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: success.");
+         config->neg_initialized = 1;
+         fflush(config->fd);
+      } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
+         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+      } else { // ret_val == NEG_RES_FAILED
+         VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: failed (error while sending hello message to input interface).");
+         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+      }
+   }
+#endif
 
    /* Converts data_length to host byte order (little endian) */
    size_little_e = ntohl(data_struct->data_length);
@@ -318,7 +457,7 @@ int32_t file_get_client_count(void *priv)
  * \param[in,out] ifc   IFC interface used for calling file module.
  * \return 0 on success (TRAP_E_OK), TRAP_E_MEMORY, TRAP_E_BADPARAMS on error
  */
-int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc)
+int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx)
 {
    file_private_t *priv;
    char *dest, *dest2, *ret;
@@ -336,7 +475,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    }
 
    priv->ctx = ctx;
-
+   priv->ifc_idx = idx;
    /* Parses and sets filename and mode */
    priv->filename = dest = dest2 = NULL;
    ret = trap_get_param_by_delimiter(params, &dest, ':');
@@ -407,6 +546,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
    /* Fills interface structure */
    ifc->send = file_send;
+   ifc->disconn_clients = create_next_file;
    ifc->terminate = file_terminate;
    ifc->destroy = file_destroy;
    ifc->get_client_count = file_get_client_count;

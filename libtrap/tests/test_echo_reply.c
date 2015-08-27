@@ -115,6 +115,7 @@ int main(int argc, char **argv)
    last_value = -1;
    last_size = -1;
    cur_value = NULL;
+   trap_set_required_fmt(0, TRAP_FMT_RAW);
    //trap_ifcctl(TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, 2000);
    trap_ifcctl(TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, TRAP_WAIT);
    while (!stop) {

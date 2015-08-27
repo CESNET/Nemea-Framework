@@ -368,6 +368,29 @@ NOTE: Fields defined by this function can be accessed using their numeric IDs
 only. Symbolic (#define) constants are not created, of course.
 
 
+### Run-time definition of a set of fields
+```
+int ur_define_set_of_fields(const char *ifc_data_fmt);
+```
+This function allows to define sef of fields at run-time.
+
+Define new UniRec fields at run-time. It adds new fields into existing structures.
+If the field already exists and type is equal nothing will happen. If the type is not equal
+an error will be returned.
+
+Parameters:
+"fc_data_fmt" - String containing types and names of fields delimited by comma.
+Example ifc_data_fmt: "uint32 FOO,uint8 BAR,float FOO2"
+
+
+Returns:
+- UR_OK on success
+- UR_E_MEMORY if there is an allocation problem.
+- UR_E_INVALID_NAME if the name value is empty.
+- UR_E_INVALID_TYPE if the type does not exist.
+- UR_E_TYPE_MISMATCH if the name already exists, but the type is different.
+
+
 ### Undefine field
 ```
 int ur_undefine_field(const char *name)
@@ -413,6 +436,32 @@ corresponding error message.
 
 Returns:
 - Pointer to the newly created template or NULL if an error has occurred.
+
+
+### Create UniRec template for usage with Libtrap
+```
+ur_template_t *ur_create_input_template(int ifc, const char* fields, char **errstr)
+```
+Creates UniRec template and set this template to specified input interface (ifc).
+
+This template will be set as a minimum set of fields to be able to receive messages.
+If the input interface receives superset of fields, the template will be expanded.
+
+```
+ur_template_t *ur_create_output_template(int ifc, const char* fields, char **errstr)
+```
+Creates UniRec template and set this template to specified output interface (ifc).
+
+Set of fields of this template will be set to an output interface.
+
+```
+ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in, int ifc_out, const char* fields, char **errstr)
+```
+Creates UniRec template and set this template to specified input (ifc_in) and output (ifc_out) interface.
+
+This template will be set as a minimum set of fields to be able to receive messages.
+If the input interface receives superset of fields, the template will be expanded and
+new set of fields will be set to output interface.
 
 
 ### Free UniRec template
@@ -628,6 +677,30 @@ Example usage:
 ```
 ur_field_id_t id = UR_ITER_BEGIN
 while ((id = ur_iter_fields(&tmplt, id)) != UR_ITER_END) {
+...
+}
+```
+
+```
+ur_iter_fields_record_order(tmplt, id);
+```
+
+This function can be used to iterate over all fields of a given template.
+It returns n-th ID of a record specified by index.
+If the return value is UR_ITER_END. The index is higher than count of fields
+in the template.
+
+The order of fields is given by the order in the record
+Parameters:
+- "tmplt" Template to iterate over.
+- "id" Field ID returned in last iteration or UR_ITER_BEGIN to
+              get first value.
+Returns ID of the next field or UR_ITER_END if no more fields are present.
+
+Example usage:
+```
+int i = 0;
+while ((id = ur_iter_fields(&tmplt, i++)) != UR_ITER_END) {
 ...
 }
 ```

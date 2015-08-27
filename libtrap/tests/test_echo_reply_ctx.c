@@ -113,6 +113,9 @@ int main(int argc, char **argv)
       goto cleanup;
    }
 
+   // Set the required data format of the input interface
+   trap_ctx_set_required_fmt(ctx, 0, TRAP_FMT_RAW, NULL);
+
    signal(SIGTERM, signal_handler);
    signal(SIGINT, signal_handler);
 

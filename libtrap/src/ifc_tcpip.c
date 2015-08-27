@@ -570,11 +570,10 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
 #define X(pointer) free(pointer); \
    pointer = NULL;
 
-   int retval = 0, result = TRAP_E_OK;
+   int result = TRAP_E_OK;
    char *param_iterator = NULL;
    char *dest_addr = NULL;
    char *dest_port = NULL;
-   struct timeval tv = {5, 0};
    tcpip_receiver_private_t *config = NULL;
 
    if (params == NULL) {
@@ -634,6 +633,8 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
     * Use 5 seconds to wait for connection to output interface.
     */
 #ifndef ENABLE_NEGOTIATION
+   int retval = 0;
+   struct timeval tv = {5, 0};
    retval = client_socket_connect((void *) config, config->dest_addr, config->dest_port, &config->sd, &tv);
    if (retval != TRAP_E_OK) {
       config->connected = 0;
@@ -717,115 +718,6 @@ static int wait_for_connection(int sock, struct timeval *tv)
    return TRAP_E_TIMEOUT;
 }
 
-int input_ifc_negotiation(void *priv)
-{
-   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
-   VERBOSE(CL_VERBOSE_LIBRARY, "--- Input IFC negotiation ---");
-
-   // for debug
-   // config->ctx->in_ifc_list[config->ifc_idx].req_data_type = TRAP_FMT_UNIREC;
-
-   uint8_t req_data_type = config->ctx->in_ifc_list[config->ifc_idx].req_data_type;
-   char *req_data_fmt_spec = config->ctx->in_ifc_list[config->ifc_idx].req_data_fmt_spec;
-
-   uint8_t data_type = TRAP_FMT_UNIREC; //c->ctx->out_ifc_list[c->ifc_idx].data_type;
-   char *data_fmt_spec = NULL; //c->ctx->out_ifc_list[c->ifc_idx].data_fmt_spec;
-   uint32_t size = 0;
-   hello_msg_header_t *hello_msg_header = calloc(1, sizeof(hello_msg_header_t));
-   int ret_val = 0;
-   void *p_p = NULL;
-   int neg_result = 0;
-
-
-   /** Receive hello msg header with data_type and data_fmt_spec_size */
-   VERBOSE(CL_VERBOSE_LIBRARY, "Step 1: receiving hello msg header...   ");
-   size = sizeof(hello_msg_header_t);
-   p_p = (void *) hello_msg_header;
-   ret_val = receive_part(priv, &p_p, &size, NULL);
-   if (ret_val != TRAP_E_OK) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-      config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_MISMATCH;
-      neg_result = NEG_RES_FAILED;
-      goto in_neg_exit;
-   } else {
-      VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-      VERBOSE(CL_VERBOSE_LIBRARY, "senders data_type: %"PRIu8, hello_msg_header->data_type);
-      VERBOSE(CL_VERBOSE_LIBRARY, "senders data_fmt_spec_size: %"PRIu32, hello_msg_header->data_fmt_spec_size);
-      VERBOSE(CL_VERBOSE_LIBRARY, "receivers data_type: %"PRIu8, req_data_type);
-   }
-
-
-   /** Compare data_type */
-   VERBOSE(CL_VERBOSE_LIBRARY, "Step 2: data types comparison...   ");
-   if (hello_msg_header->data_type == TRAP_FMT_UNKNOWN) {
-      neg_result = NEG_RES_FMT_UNKNOWN;
-      goto in_neg_exit;
-   } else if (hello_msg_header->data_type != req_data_type) {
-      // senders and receivers ifc data types are not same
-      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-      config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_MISMATCH;
-      neg_result = NEG_RES_FMT_MISMATCH;
-      goto in_neg_exit;
-   } else if (req_data_type != TRAP_FMT_UNIREC) {
-      // both RAW or JSON -> receive message with data instead of changing template
-      config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_OK;
-      neg_result = NEG_RES_CONT;
-   } else {
-      VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-   }
-
-
-   /** Receive data_fmt_spec */
-   // JSON and RAW format will have 0 data_fmt_spec_size
-   if (hello_msg_header->data_fmt_spec_size > 0) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "Step 3: receiving senders data_fmt_spec...   ");
-      size = hello_msg_header->data_fmt_spec_size;
-      data_fmt_spec = calloc(size+1, sizeof(char));
-      p_p = (void *) data_fmt_spec;
-      ret_val = receive_part(priv, &p_p, &size, NULL);
-      if (ret_val != TRAP_E_OK) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-         config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_MISMATCH;
-         neg_result = NEG_RES_FAILED;
-         goto in_neg_exit;
-      } else {
-         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-         VERBOSE(CL_VERBOSE_LIBRARY, "senders data_fmt_spec: \"%s\"", data_fmt_spec);
-         VERBOSE(CL_VERBOSE_LIBRARY, "receivers data_fmt_spec: \"%s\"", req_data_fmt_spec);
-      }
-
-      /**Compare data_fmt_spec */
-      VERBOSE(CL_VERBOSE_LIBRARY, "Step 4: data_fmt_spec comparison...   ");
-      ret_val = trap_ctx_cmp_data_fmt(data_fmt_spec, req_data_fmt_spec);
-      if (ret_val == TRAP_E_FIELDS_MISMATCH) {
-         // senders and receivers ifc data_fmt_specs are not same
-         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-         config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_MISMATCH;
-         neg_result = NEG_RES_FMT_MISMATCH;
-         goto in_neg_exit;
-      } else if (ret_val == TRAP_E_FIELDS_SUBSET) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-         config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_SUBSET;
-         neg_result = NEG_RES_FMT_SUBSET;
-      } else {
-         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-         config->ctx->in_ifc_list[config->ifc_idx].client_state = FMT_OK;
-         neg_result = NEG_RES_CONT;
-      }
-   }
-
-   /** Set negotiation ifc state and save senders data_type and data_fmt_spec */
-   config->ctx->in_ifc_list[config->ifc_idx].data_type = data_type;
-   config->ctx->in_ifc_list[config->ifc_idx].data_fmt_spec = data_fmt_spec;
-
-in_neg_exit:
-   VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", config->ctx->in_ifc_list[config->ifc_idx].client_state);
-   if (hello_msg_header != NULL) {
-      free(hello_msg_header);
-      hello_msg_header = NULL;
-   }
-   return neg_result;
-}
 
 /**
  * \brief client_socket is used as a receiver
@@ -941,32 +833,32 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    *socket_descriptor = sockfd;
 
 
-   // Auto-negotiation
+   /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
-   switch(input_ifc_negotiation(priv)) {
+   switch(input_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP)) {
    case NEG_RES_FMT_UNKNOWN:
-      VERBOSE(CL_VERBOSE_LIBRARY, "input_ifc_negotiation return FMT_UNKNOWN");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
       close(sockfd);
       return TRAP_E_TIMEOUT;
 
    case NEG_RES_CONT:
-      VERBOSE(CL_VERBOSE_LIBRARY, "input_ifc_negotiation return CONT");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
       return TRAP_E_OK;
 
    case NEG_RES_FMT_SUBSET:
-      VERBOSE(CL_VERBOSE_LIBRARY, "input_ifc_negotiation return SUBSET");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (data specifier of the input interface is subset of the output interface data specifier).");
       return TRAP_E_FIELDS_SUBSET;
 
    case NEG_RES_FAILED:
-      VERBOSE(CL_VERBOSE_LIBRARY, "input_ifc_negotiation return FAILED");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
       return TRAP_E_FIELDS_MISMATCH;
 
    case NEG_RES_FMT_MISMATCH:
-      VERBOSE(CL_VERBOSE_LIBRARY, "input_ifc_negotiation return MISMATCH");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data format or data specifier mismatch).");
       return TRAP_E_FIELDS_MISMATCH;
 
    default:
-      VERBOSE(CL_VERBOSE_LIBRARY, "input_ifc_negotiation default case");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
       break;
    }
 #endif
@@ -1254,6 +1146,9 @@ blocking_repeat:
          break;
       }
       cl = &c->clients[i];
+      if(cl->sd == -1) {
+         continue;
+      }
       if (FD_ISSET(cl->sd, &disset)) {
          /* client disconnects */
          readbytes = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, MSG_NOSIGNAL | MSG_DONTWAIT);
@@ -1264,6 +1159,7 @@ blocking_repeat:
             continue;
          }
       }
+
       if (FD_ISSET(cl->sd, &set)) {
          if (j == c->connected_clients) {
             break;
@@ -1501,6 +1397,33 @@ exit:
    return;
 }
 
+
+/**
+ * \brief Function disconnects all clients of the output interface whose private structure is passed via "priv" parameter.
+ *
+ * \param[in] priv Pointer to output interface private structure.
+ */
+void server_disconnect_all_clients(void *priv)
+{
+   tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
+   struct client_s *cl;
+   int32_t i;
+
+   pthread_mutex_lock(&c->lock);
+   if (c->clients != NULL) {
+      for (i = 0; i < c->clients_arr_size; i++) {
+         cl = &c->clients[i];
+         if (cl->sd > 0) {
+            close(cl->sd);
+            cl->sd = -1;
+            c->connected_clients--;
+         }
+      }
+   }
+   pthread_mutex_unlock(&c->lock);
+}
+
+
 /**
  * \brief Constructor of output TCP/IP IFC module.
  * This function is called by TRAP library to initialize one output interface.
@@ -1619,6 +1542,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    }
 
    // Fill struct defining the interface
+   ifc->disconn_clients = server_disconnect_all_clients;
    ifc->send = tcpip_sender_send;
    ifc->terminate = tcpip_sender_terminate;
    ifc->destroy = tcpip_sender_destroy;
@@ -1648,84 +1572,6 @@ failsafe_cleanup:
    return result;
 }
 
-
-int output_ifc_negotiation(tcpip_sender_private_t *c, int client_sd)
-{
-   VERBOSE(CL_VERBOSE_LIBRARY, "--- Output IFC negotiation with new client ---");
-
-   /** Setting for debug */
-   // c->ctx->out_ifc_list[c->ifc_idx].data_type = TRAP_FMT_UNIREC;
-   // c->ctx->out_ifc_list[c->ifc_idx].data_fmt_spec = strdup("type1 name1,type2 name2");
-
-   uint8_t data_type = c->ctx->out_ifc_list[c->ifc_idx].data_type;
-   char *data_fmt_spec = c->ctx->out_ifc_list[c->ifc_idx].data_fmt_spec;
-   uint32_t size_of_buffer = sizeof(hello_msg_header_t);
-   char *buffer = (char *) calloc(size_of_buffer, sizeof(char));
-   char *p = NULL;
-   uint32_t size = 0;
-   int ret_val = 0;
-   char d_n_block = 0; // non-blocking send
-   int neg_result = TRAP_E_OK;
-
-   // Prepare and send hello_msg header with output ifc data_type and data_fmt_spec size
-   hello_msg_header_t *hello_msg_header = calloc(1, sizeof(hello_msg_header_t));
-   if (c->ctx->out_ifc_list[c->ifc_idx].data_fmt_spec == NULL || c->ctx->out_ifc_list[c->ifc_idx].data_type == TRAP_FMT_UNKNOWN) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "Output interface negotiation - sending TRAP_FMT_UNKNOWN header.")
-      hello_msg_header->data_type = TRAP_FMT_UNKNOWN;
-      hello_msg_header->data_fmt_spec_size = 0;
-   } else {
-      hello_msg_header->data_type = data_type;
-      hello_msg_header->data_fmt_spec_size = strlen(data_fmt_spec);
-   }
-
-   memcpy(buffer, hello_msg_header, sizeof(hello_msg_header_t));
-   size = sizeof(hello_msg_header_t);
-   p = buffer;
-
-   VERBOSE(CL_VERBOSE_LIBRARY, "Step 1: sending hello msg header...   ");
-   ret_val = send_all_data(c, client_sd, (void**)&p, &size, d_n_block);
-   if (ret_val != TRAP_E_OK) {
-      // Could not send buffer
-      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-   } else {
-      VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-   }
-
-   if (c->ctx->out_ifc_list[c->ifc_idx].data_fmt_spec != NULL && c->ctx->out_ifc_list[c->ifc_idx].data_type != TRAP_FMT_UNKNOWN) {
-      // Send output ifc data_fmt_spec
-      VERBOSE(CL_VERBOSE_LIBRARY, "Step 2: sending data_fmt_spec...   ");
-      memset(buffer, 0, sizeof(hello_msg_header_t));
-      if ((strlen(data_fmt_spec) + 1) > size_of_buffer) {
-         buffer = (char *) realloc(buffer, (strlen(data_fmt_spec) + 1) * sizeof(char));
-         memset(buffer + size_of_buffer, 0, ((strlen(data_fmt_spec) + 1) - size_of_buffer) * sizeof(char));
-         size_of_buffer = (strlen(data_fmt_spec) + 1);
-      }
-      sprintf(buffer,"%s",data_fmt_spec);
-      size = hello_msg_header->data_fmt_spec_size;
-      p = buffer;
-
-      ret_val = send_all_data(c, client_sd, (void**)&p, &size, d_n_block);
-      if (ret_val != TRAP_E_OK) {
-         // Could not send buffer
-         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-      } else {
-         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-      }
-   } else {
-      neg_result = NEG_RES_FMT_UNKNOWN;
-   }
-
-   if (buffer != NULL) {
-      free(buffer);
-      buffer = NULL;
-   }
-   if (hello_msg_header != NULL) {
-      free (hello_msg_header);
-      hello_msg_header = NULL;
-   }
-
-   return neg_result;
-}
 
 /**
  * \brief Function for server thread - accepts incoming clients and disconnects them.
@@ -1780,15 +1626,15 @@ static void *accept_clients_thread(void *arg)
 
             /** Output interface negotiation */
 #ifdef ENABLE_NEGOTIATION
-            int ret_val = output_ifc_negotiation(c, newclient);
-            if (ret_val == TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "output_ifc_negotiation success!");
+            int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, newclient);
+            if (ret_val == NEG_RES_OK) {
+               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
             } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "output_ifc_negotiation FMT_UNKNOWN -> refuse client!");
+               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
                goto refuse_client;
-            } else {
-               // TODO error, disconnect client??
-               VERBOSE(CL_VERBOSE_LIBRARY, "output_ifc_negotiation fail");
+            } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
+               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
+               goto refuse_client;
             }
 #endif
 
@@ -1855,7 +1701,7 @@ static int server_socket_open(void *priv)
          return trap_errorf(c->ctx, TRAP_E_IO_ERROR, "selectserver: %s\n", gai_strerror(rv));
       }
 
-      for(p = ai; p != NULL; p = p->ai_next) {
+      for (p = ai; p != NULL; p = p->ai_next) {
          c->server_sd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
          if (c->server_sd < 0) {
             continue;

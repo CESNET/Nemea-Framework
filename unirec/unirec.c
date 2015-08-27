@@ -55,6 +55,7 @@
 #include "unirec.h"
 #include <libtrap/trap.h>
 #include <inttypes.h>
+#include "values.c"
 
 const int ur_field_type_size[] = {
 	-1, /*UR_TYPE_STRING*/
@@ -690,8 +691,9 @@ int ur_ctx_set_output_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt)
 	}
 	if (tmplt->direction == UR_TMPLT_DIRECTION_IN) {
 		tmplt->direction = UR_TMPLT_DIRECTION_BI;
+	} else {
+		tmplt->direction = UR_TMPLT_DIRECTION_OUT;
 	}
-	tmplt->direction = UR_TMPLT_DIRECTION_OUT;
 	tmplt->ifc_out = ifc;
 	char * tmplt_str = ur_template_string(tmplt);
 	if (tmplt_str == NULL) {
@@ -708,8 +710,9 @@ int ur_ctx_set_input_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt)
 	}
 	if (tmplt->direction == UR_TMPLT_DIRECTION_OUT) {
 		tmplt->direction = UR_TMPLT_DIRECTION_BI;
+	} else {
+		tmplt->direction = UR_TMPLT_DIRECTION_IN;
 	}
-	tmplt->direction = UR_TMPLT_DIRECTION_IN;
 	char * tmplt_str = ur_template_string(tmplt);
 	if (tmplt_str == NULL) {
 		return UR_E_MEMORY;
@@ -744,7 +747,7 @@ ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in,
 			ur_free_template(tmplt);
 			return NULL;
 		}
-		trap_ctx_set_required_fmt(ctx, ifc_out, TRAP_FMT_UNIREC, tmplt_str2);
+		trap_ctx_set_data_fmt(ctx, ifc_out, TRAP_FMT_UNIREC, tmplt_str2);
 	}
 	return tmplt;
 }
@@ -1258,6 +1261,25 @@ char *ur_cpy_string(const char *str)
 	return new_str;
 }
 
+const char *ur_values_get_name_start_end(uint32_t start, uint32_t end, int32_t value)
+{
+	for (int i = start; i < end; i++) {
+		if (ur_values[i].value == value) {
+			return ur_values[i].name;
+		}
+	}
+	return NULL;
+}
+
+const char *ur_values_get_description_start_end(uint32_t start, uint32_t end, int32_t value)
+{
+	for (int i = start; i < end; i++) {
+		if (ur_values[i].value == value) {
+			return ur_values[i].description;
+		}
+	}
+	return NULL;
+}
 // *****************************************************************************
 // ** "Links" part - set of functions for handling LINK_BIT_FIELD
 

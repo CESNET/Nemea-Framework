@@ -114,6 +114,9 @@ int main(int argc, char **argv)
       goto cleanup;
    }
 
+   // Set the data format of the output interface
+   trap_ctx_set_data_fmt(ctx, 0, TRAP_FMT_RAW, NULL);
+
    signal(SIGTERM, signal_handler);
    signal(SIGINT, signal_handler);
    duration = time(NULL);

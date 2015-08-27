@@ -58,9 +58,27 @@
 
 #define MAX_ERROR_MSG_BUFF_SIZE 1024
 
-#define SERVICE_GET_COM 10
-#define SERVICE_SET_COM 11
-#define SERVICE_OK_REPLY 12
+/* Values of commands that supervisor wants module to perform. These values are sent in header via service interface. */
+#define SERVICE_GET_COM 10  ///< Signaling a request for module statistics (interfaces stats - received messages and buffers, sent messages and buffers, autoflushes counter)
+#define SERVICE_SET_COM 11  ///< Signaling a request to set some interface parameters (timeouts etc.)
+#define SERVICE_OK_REPLY 12  ///< A value used as a reply signaling success
+
+/**
+ * \defgroup negotiationretvals Negotiation return values
+ * @{*/
+
+/* Input interface negotiation return values */
+#define NEG_RES_CONT 111  ///< If the data format and data specifier of input and output interface are the same (input interface can receive the data for module right after the negotiation)
+#define NEG_RES_FMT_SUBSET 112  ///< If the data format of input and output interfaces is the same and data specifier of the input interface is subset of the output interface data specifier
+#define NEG_RES_FMT_MISMATCH 113  ///< If the data format or data specifier of input and output interfaces does not match
+
+/* Output interface negotiation return values */
+#define NEG_RES_OK 116  ///< Signaling success (hello message successfully sent to input interface)
+
+/* Return values of input and output interface negotiations */
+#define NEG_RES_FAILED 114  ///< If receiving the data from output interface fails or sending the data to input interface fails
+#define NEG_RES_FMT_UNKNOWN 115  ///< If the output interface has not specified data format
+/**@}*/
 
 /** @defgroup debug Macros for verbose and debug listings
  * @{
@@ -76,6 +94,16 @@ char trap_err_msg[4096];
 typedef struct trap_ctx_priv_s trap_ctx_priv_t;
 
 extern trap_ctx_priv_t * trap_glob_ctx;
+
+/**
+ * Hello message header structure (used during the output and input interface negotiation).
+ * Contains data format and data specifier size of the output interface which is making the negotiation.
+ */
+typedef struct hello_msg_header_s {
+   uint8_t data_type;
+   uint32_t data_fmt_spec_size;
+} hello_msg_header_t;
+
 
 /*!
 \brief VERBOSE/MSG levels

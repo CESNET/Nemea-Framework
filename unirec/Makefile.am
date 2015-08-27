@@ -18,18 +18,24 @@ unirecinclude_HEADERS=unirec.h \
 		     ipaddr.h \
 		     ipaddr_cpp.h \
 		     links.h  \
-		     ur_time.h
+		     ur_time.h\
+		     values.h
 
-EXTRA_DIST=unirec_generate_fields_files.py
+BUILT_SOURCES = values.h values.c
 
-unirec.o: unirec.c unirec.h
+EXTRA_DIST=unirec_generate_fields_files.py process_values.py values
+
+values.h values.c: process_values.py
+	$(PYTHON) process_values.py
+
+unirec.o: unirec.c unirec.h ipaddr.h values.h values.c
 	gcc -c ${CFLAGS} unirec.c -o $@
 
 #tests:
 #	make -C tests
 
 clean-hook:
-	rm -f fields.h field_func.c
+	rm -f values.h values.c values.py
 
 include doxygen.am
 
