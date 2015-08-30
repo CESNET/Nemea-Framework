@@ -23,7 +23,9 @@ unirecinclude_HEADERS=unirec.h \
 
 BUILT_SOURCES = values.h values.c
 
-EXTRA_DIST=unirec_generate_fields_files.py process_values.py values
+bin_SCRIPTS=unirec_generate_fields_files.py process_values.py
+
+EXTRA_DIST=values
 
 values.h values.c: process_values.py
 	$(PYTHON) process_values.py
