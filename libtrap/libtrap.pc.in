@@ -8,5 +8,5 @@ datadir = @datadir@
 Name: libtrap
 Version: @PACKAGE_VERSION@
 Description: Library contains modules of communication interface between TRAP modules.
-Libs: @LIBS@ -ltrap
+Libs: @LIBS@ -L${libdir} -ltrap
 Cflags: @CFLAGS@ -I${includedir}
