@@ -139,12 +139,17 @@ c_node *c_leaf_node_create(int m, int size_of_value, int size_of_key)
    c_node *node = NULL;
    c_leaf_node *leaf = NULL;
    node = c_node_create(size_of_key, m);
+   if (node == NULL) {
+      return (NULL);
+   }
    leaf = (c_leaf_node *) calloc(sizeof(c_leaf_node), 1);
    if (leaf == NULL) {
+      c_node_destroy(node);
       return (NULL);
    }
    leaf->value = (void *) calloc(sizeof(void *), m);
    if (leaf->value == NULL) {
+      c_node_destroy(node);
       free(leaf);
       return (NULL);
    }

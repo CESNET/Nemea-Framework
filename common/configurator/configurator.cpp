@@ -899,10 +899,10 @@ bool parseUserStruct(xmlNodePtr parentNode, map<string, userConfigItem> *structM
             }
 
             switch (arrChildType) {
-                case '0': cerr << "Warning: No elements found!";
+                case 0: cerr << "Warning: No elements found!";
                     break;
-                case '1':
-                case '2':
+                case 1:
+                case 2:
                 default:
                     break;
             }
@@ -1079,15 +1079,8 @@ bool fillConfigStruct(map<string, configStrucItem> *patternMap, map<string, user
 
         if (userMapIt->second.type == UARRAY) {
             // Copy elements from array
-            if (userMapIt->second.arrType == AR_ELEMENT) {
-                // Copy single elements
                 it->second.elementAr = userMapIt->second.elementAr;
                 it->second.arrType = userMapIt->second.arrType;
-            } else {
-                // Copy structs
-                it->second.elementAr = userMapIt->second.elementAr;
-                it->second.arrType = userMapIt->second.arrType;
-            }
         }
 
         setUserValueToConfig(&it->second, &userMapIt->second);
