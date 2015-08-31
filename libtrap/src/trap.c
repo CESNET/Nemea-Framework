@@ -2737,7 +2737,11 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
    }
    ifc->data_type = data_type;
    if (data_type != TRAP_FMT_RAW) {
-      ifc->data_fmt_spec = (char *) va_arg(ap, char *);
+      if (ifc->data_fmt_spec != NULL) {
+         free(ifc->data_fmt_spec);
+         ifc->data_fmt_spec = NULL;
+      }
+      ifc->data_fmt_spec = strdup((char *) va_arg(ap, char *));
    }
 }
 
@@ -2764,7 +2768,12 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
    ifc = &c->in_ifc_list[in_ifc_idx];
    ifc->req_data_type = data_type;
    if (data_type != TRAP_FMT_RAW) {
-      ifc->req_data_fmt_spec = (char *) va_arg(ap, char *);
+      if (ifc->req_data_fmt_spec != NULL) {
+         free(ifc->req_data_fmt_spec);
+         ifc->req_data_fmt_spec = NULL;
+      }
+      ifc->req_data_fmt_spec = strdup((char *) va_arg(ap, char *));
+
    }
 
    return TRAP_E_OK;
@@ -3284,9 +3293,15 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    /** Save senders data_type and data_fmt_spec */
    if (ifc_type == TRAP_IFC_TYPE_FILE) {
       file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
+      if (file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec != NULL) {
+         free(file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec);
+      }
       file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec = data_fmt_spec;
    } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
       tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
+      if (tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec != NULL) {
+         free(tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec);
+      }
       tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec = data_fmt_spec;
    }
 
