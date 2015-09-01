@@ -2722,6 +2722,7 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
 {
    trap_output_ifc_t *ifc;
    trap_ctx_priv_t *c = ctx;
+   char *data_fmt_spec = (char *) va_arg(ap, char *);
 
    assert(c != NULL);
    assert(data_type != TRAP_FMT_UNKNOWN);
@@ -2741,7 +2742,11 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
          free(ifc->data_fmt_spec);
          ifc->data_fmt_spec = NULL;
       }
-      ifc->data_fmt_spec = strdup((char *) va_arg(ap, char *));
+      if (data_fmt_spec == NULL) {
+         ifc->data_fmt_spec = NULL;
+      } else {
+         ifc->data_fmt_spec = strdup(data_fmt_spec);
+      }
    }
 }
 
@@ -2760,6 +2765,7 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
 {
    trap_input_ifc_t *ifc;
    trap_ctx_priv_t *c = ctx;
+   char *req_data_fmt_spec = (char *) va_arg(ap, char *);
 
    assert(c != NULL);
    assert(data_type != TRAP_FMT_UNKNOWN);
@@ -2772,8 +2778,11 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
          free(ifc->req_data_fmt_spec);
          ifc->req_data_fmt_spec = NULL;
       }
-      ifc->req_data_fmt_spec = strdup((char *) va_arg(ap, char *));
-
+      if (req_data_fmt_spec == NULL) {
+         ifc->req_data_fmt_spec = NULL;
+      } else {
+         ifc->req_data_fmt_spec = strdup(req_data_fmt_spec);
+      }
    }
 
    return TRAP_E_OK;
