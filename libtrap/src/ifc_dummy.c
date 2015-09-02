@@ -71,11 +71,15 @@ int generator_recv(void *priv, void *data, uint32_t *size, int timeout)
    assert(data != NULL);
    assert(size != NULL);
 
+   uint16_t *mh = data;
+   void *p = (void *) (mh + 1);
+
    generator_private_t *config = (generator_private_t*) priv;
    if (config->is_terminated) {
       return trap_error(config->ctx, TRAP_E_TERMINATED);
    }
-   memcpy(data, config->data_to_send, config->data_size);
+   *mh = config->data_size;
+   memcpy(p, config->data_to_send, config->data_size);
    *size = config->data_size;
    return TRAP_E_OK;
 }
