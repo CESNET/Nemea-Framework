@@ -68,7 +68,6 @@ c_node *c_node_create(int size_of_key, int m)
 
 void c_node_destroy(c_node *node)
 {
-   int i;
    if (node == NULL) {
       return;
    }
@@ -353,7 +352,6 @@ int c_b_tree_plus_find_my_index_in_parent(c_node *son)
 void c_b_tree_plus_add_to_node(void *key, c_node *left, c_node *right,
                                c_b_tree_plus * btree)
 {
-   int i;
    c_node *par;
    par = left->parent;
    //parent does not exist, has to be created and added as a parent to his children
