@@ -16,7 +16,7 @@ The framework consists of:
 Installation
 ============
 
-This repository is usually used as a git submodule of [Nemea](CESNET/Nemea).
+This repository is usually used as a git submodule of https://github.com/CESNET/Nemea
 However, it can be installed independently using:
 
 ```
