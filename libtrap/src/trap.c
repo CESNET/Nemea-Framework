@@ -1945,7 +1945,7 @@ static inline int trapifc_out_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *i
       }
       break;
    case TRAP_IFC_TYPE_FILE:
-      if (create_file_send_ifc(ctx, ifc_spec->params[idx], &ctx->out_ifc_list[idx], idx) != TRAP_E_OK) {
+      if (create_file_send_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx], &ctx->out_ifc_list[idx], idx) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of FILE output interface no. %i failed.", idx);
          goto error;
       }
