@@ -362,6 +362,9 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
             insert_into_buffer(&ctx->out_ifc_list[ifc], data, size);
          }
       } else {
+         if (result == TRAP_E_TIMEOUT) {
+            ctx->counter_dropped_message[ifc]++;
+         }
          if (trap_ctx_get_client_count(ctx, ifc) == 0) {
             ctx->out_ifc_list[ifc].buffer_occupied = 0;
          }
@@ -1412,6 +1415,8 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
    c->counter_send_message = NULL;
    free(c->counter_recv_buffer);
    c->counter_recv_buffer = NULL;
+   free(c->counter_dropped_message);
+   c->counter_dropped_message = NULL;
 
    // Destroy all interfaces
    if ((c->num_ifc_in > 0) && (c->in_ifc_list != NULL)) {
@@ -2012,6 +2017,7 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    ctx->counter_send_buffer = (uint64_t *) calloc(ctx->num_ifc_out, sizeof(uint64_t));
    ctx->counter_autoflush = (uint64_t *) calloc(ctx->num_ifc_out, sizeof(uint64_t));
    ctx->counter_recv_buffer = (uint64_t *) calloc(ctx->num_ifc_in, sizeof(uint64_t));
+   ctx->counter_dropped_message = (uint64_t *) calloc(ctx->num_ifc_out, sizeof(uint64_t));
 
    // Create input interfaces
    if (ctx->num_ifc_in > 0) {
@@ -2227,6 +2233,10 @@ alloc_counter_failed:
    if (ctx->counter_recv_buffer) {
       free(ctx->counter_recv_buffer);
       ctx->counter_recv_buffer = NULL;
+   }
+   if (ctx->counter_dropped_message) {
+      free(ctx->counter_dropped_message);
+      ctx->counter_dropped_message = NULL;
    }
    trap_free_ctx_t(&ctx);
    return ctx;
@@ -2448,7 +2458,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    }
 
    for (x = 0; x < ctx->num_ifc_out; x++) {
-      out_ifc_cnts = json_pack("{sisisi}", "messages", ctx->counter_send_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
+      out_ifc_cnts = json_pack("{sisisisi}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
@@ -2608,6 +2618,10 @@ void *service_thread_routine(void *arg)
                      VERBOSE(CL_VERBOSE_ADVANCED,"counter_autoflush:  ");
                      for (y=0; y<g_ctx->num_ifc_out; ++y) {
                         VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_autoflush[y]);
+                     }
+                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_dropped_message:  ");
+                     for (y=0; y<g_ctx->num_ifc_out; ++y) {
+                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_dropped_message[y]);
                      }
                }
             }

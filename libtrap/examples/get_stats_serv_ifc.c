@@ -77,6 +77,7 @@ typedef struct in_ifc_stats_s {
 
 typedef struct out_ifc_stats_s {
    uint64_t sent_msg_cnt;
+   uint64_t dropped_msg_cnt;
    uint64_t sent_buffer_cnt;
    uint64_t autoflush_cnt;
 } out_ifc_stats_t;
@@ -212,13 +213,21 @@ int decode_cnts_from_json(char **data)
             return -1;
          }
 
-         cnt = json_object_get(out_ifc_cnts, "messages");
+         cnt = json_object_get(out_ifc_cnts, "sent-messages");
          if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "messages");
+            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "sent-messages");
             json_decref(json_struct);
             return -1;
          }
          out_ifc_stats[out_ifc_cnt].sent_msg_cnt = json_integer_value(cnt);
+
+         cnt = json_object_get(out_ifc_cnts, "dropped-messages");
+         if (cnt == NULL) {
+            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "dropped-messages");
+            json_decref(json_struct);
+            return -1;
+         }
+         out_ifc_stats[out_ifc_cnt].dropped_msg_cnt = json_integer_value(cnt);
 
          cnt = json_object_get(out_ifc_cnts, "buffers");
          if (cnt == NULL) {
@@ -314,7 +323,7 @@ void print_statistics()
    if (module_num_out_ifc > 0) {
       printf("Output interfaces:\n");
       for (x = 0; x < module_num_out_ifc; x++) {
-         printf("\tIFC %d> SM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", x, out_ifc_stats[x].sent_msg_cnt, out_ifc_stats[x].sent_buffer_cnt, out_ifc_stats[x].autoflush_cnt);
+         printf("\tIFC %d> SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", x, out_ifc_stats[x].sent_msg_cnt, out_ifc_stats[x].dropped_msg_cnt, out_ifc_stats[x].sent_buffer_cnt, out_ifc_stats[x].autoflush_cnt);
       }
    }
 }

@@ -334,6 +334,10 @@ struct trap_ctx_priv_s {
     */
    uint64_t *counter_send_message;
    /**
+    * counter_dropped_message is incremented within trap_ctx_send().
+    */
+   uint64_t *counter_dropped_message;
+   /**
     * counter_recv_message is incremented within trap_ctx_recv().
     */
    uint64_t *counter_recv_message;
