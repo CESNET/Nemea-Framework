@@ -45,6 +45,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <assert.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
@@ -67,11 +68,14 @@ static void create_dump(void *priv, uint32_t idx, const char *path)
 
 int generator_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
+   assert(data != NULL);
+   assert(size != NULL);
+
    generator_private_t *config = (generator_private_t*) priv;
    if (config->is_terminated) {
       return trap_error(config->ctx, TRAP_E_TERMINATED);
    }
-   data = config->data_to_send;
+   memcpy(data, config->data_to_send, config->data_size);
    *size = config->data_size;
    return TRAP_E_OK;
 }
@@ -95,28 +99,55 @@ void generator_destroy(void *priv)
 
 int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc)
 {
-   // Check parameter
-   if (params == NULL)
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
-   unsigned char n = params[0];
-   if (n == 0)
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "zero-length data");
+   generator_private_t *priv = NULL;
+   char *param_iterator = NULL;
+   char *n_str = NULL;
+   int n, ret;
 
-   // Create structure to store private data
-   generator_private_t *priv = calloc(1, sizeof(generator_private_t));
-   if (!priv) {
-      return trap_error(ctx, TRAP_E_MEMORY);
+   // Check parameter
+   if (params == NULL) {
+      VERBOSE(CL_ERROR, "parameter is null pointer");
+      return TRAP_E_BADPARAMS;
    }
 
-   // Store data to send (param) into private data
-   priv->ctx = ctx;
-   priv->data_size = n;
-   priv->data_to_send = malloc(n);
-   if (!priv->data_to_send)
-      return free(priv), trap_error(ctx, TRAP_E_MEMORY);
-   memcpy(priv->data_to_send, params+1, n);
+   /* Parsing params */
+   param_iterator = trap_get_param_by_delimiter(params, &n_str, TRAP_IFC_PARAM_DELIMITER);
+   if (n_str == NULL) {
+      VERBOSE(CL_ERROR, "Missing parameter of generator IFC.");
+      ret = TRAP_E_BADPARAMS;
+      goto failure;
+   }
+   ret = sscanf(n_str, "%d", &n);
+   free(n_str);
+   if ((ret != 1) || (n <= 0) || (n > 255)) {
+      VERBOSE(CL_ERROR, "Generator IFC expects a number from 1 to 255 as the 1st parameter.");
+      ret = TRAP_E_BADPARAMS;
+      goto failure;
+   }
 
+   // Create structure to store private data
+   priv = calloc(1, sizeof(generator_private_t));
+   if (!priv) {
+      ret = TRAP_E_MEMORY;
+      goto failure;
+   }
+   param_iterator = trap_get_param_by_delimiter(param_iterator, &priv->data_to_send, TRAP_IFC_PARAM_DELIMITER);
+
+   // Store data to send (param) into private data
+   if (!priv->data_to_send) {
+      VERBOSE(CL_ERROR, "Generator IFC expects %d bytes as the 2nd parameter.", priv->data_size);
+      ret = TRAP_E_MEMORY;
+      goto failure;
+   }
+   if (strlen(priv->data_to_send) != n) {
+      VERBOSE(CL_ERROR, "Bad length of the 2nd parameter of generator IFC.");
+      ret = TRAP_E_BADPARAMS;
+      goto failure;
+   }
+
+   priv->ctx = ctx;
    priv->is_terminated = 0;
+   priv->data_size = n;
 
    // Fill struct defining the interface
    ifc->recv = generator_recv;
@@ -126,6 +157,12 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    ifc->priv = priv;
 
    return TRAP_E_OK;
+failure:
+   if (priv != NULL) {
+      free(priv->data_to_send);
+   }
+   free(priv);
+   return ret;
 }
 
 
