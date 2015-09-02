@@ -106,9 +106,12 @@ failure:
 			free(tree->root);
 		}
 		if (tree->domain_extension != NULL) {
-			free(tree->domain_extension->list_of_most_subdomains);
+			if (tree->domain_extension->list_of_most_subdomains != NULL) {
+				free(tree->domain_extension->list_of_most_subdomains);
+			}
 			free(tree->domain_extension);
 		}
+		free(tree);
 	}
 	return NULL;
 }
@@ -546,12 +549,15 @@ prefix_tree_domain_t * prefix_tree_add_new_item(prefix_tree_inner_node_t * node 
 
 prefix_tree_inner_node_t * prefix_tree_split_node_into_two(prefix_tree_inner_node_t * node, int index)
 {
-	prefix_tree_inner_node_t * first_node;
+	prefix_tree_inner_node_t * first_node = NULL;
 	char * second_string;
 	int map_number;
 	//first node, must be created
-	first_node = prefix_tree_new_node(node->parent, prefix_tree_map_character_to_number(*(node->string)));
+	if (node->string == NULL) {
+		return (NULL);
+	}
 	if(node->parent){
+		first_node = prefix_tree_new_node(node->parent, prefix_tree_map_character_to_number(*(node->string)));
 		node->parent->count_of_children--;
 	}
 	if(first_node == NULL){
@@ -573,9 +579,7 @@ prefix_tree_inner_node_t * prefix_tree_split_node_into_two(prefix_tree_inner_nod
 		return (NULL);
 	}
 	memcpy(second_string, node->string+index,sizeof(char) * (node->length - index));
-	if(node->string != NULL){
-		free(node->string);
-	}
+	free(node->string);
 	node->string = second_string;
 	node->length = node->length - index;
 	node->parent = first_node;
