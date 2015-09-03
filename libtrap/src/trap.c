@@ -231,7 +231,7 @@ exit:
 
 static void insert_into_buffer(trap_output_ifc_t *priv, const void *data, const uint16_t size)
 {
-   assert(priv->buffer_index < (TRAP_IFC_MESSAGEQ_SIZE - sizeof(trap_buffer_header_t)));
+   assert(priv->buffer_index <= (TRAP_IFC_MESSAGEQ_SIZE - sizeof(trap_buffer_header_t)));
    if (priv->buffer_occupied == 0) {
       uint16_t *msize = (uint16_t *) &priv->buffer[priv->buffer_index];
       (*msize) = size;
@@ -264,8 +264,8 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
       pthread_mutex_lock(&ctx->out_ifc_list[ifc].ifc_mtx);
    }
    /* initialization in locked section, otherwise autoflush can send buffer which has been already sent */
-   if (ctx->out_ifc_list[ifc].buffer_index <= TRAP_IFC_MESSAGEQ_SIZE) {
-      freespace = TRAP_IFC_MESSAGEQ_SIZE - ctx->out_ifc_list[ifc].buffer_index;
+   if (ctx->out_ifc_list[ifc].buffer_index <= (TRAP_IFC_MESSAGEQ_SIZE - sizeof(trap_buffer_header_t))) {
+      freespace = TRAP_IFC_MESSAGEQ_SIZE - ctx->out_ifc_list[ifc].buffer_index - sizeof(trap_buffer_header_t);
    } else {
       freespace = 0;
    }
