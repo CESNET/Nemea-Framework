@@ -181,6 +181,9 @@ int open_next_file(void *priv)
 int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
    size_t loaded;
+   /* header of message inside the buffer */
+   uint16_t *m_head = data;
+
    file_private_t *config = (file_private_t*) priv;
 
    if (config->is_terminated) {
@@ -243,7 +246,11 @@ neg_start:
             VERBOSE(CL_VERBOSE_LIBRARY, "File input ifc negotiation: eof, could not open next input fle.")
          }
 #endif
-         (*size) = 0;
+         /* set size of buffer to the size of 1 message (including its header) */
+         (*size) = 2;
+         /* set the header of message to 0B */
+         *m_head = 0;
+
          return TRAP_E_OK;
       }
 
