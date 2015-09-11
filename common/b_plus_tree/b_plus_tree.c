@@ -399,7 +399,8 @@ c_node *c_b_tree_plus_find_leaf(void *key, c_b_tree_plus *btree)
    //find leaf where is key, or where to add key
    int i;
    c_node *pos;
-   unsigned char go_right, result;
+   unsigned char go_right;
+   int result;
    go_right = 0;
    pos = btree->root;
    while (pos->state_extend == EXTEND_INNER) {
