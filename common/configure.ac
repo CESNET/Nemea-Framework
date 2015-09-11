@@ -70,8 +70,14 @@ DX_INIT_DOXYGEN([nemeacommon], [Doxyfile], [doc])
 AC_CONFIG_FILES([Makefile
 		 Doxyfile
 		 nemea-common.pc
-		 nemea-common.spec])
+		 nemea-common.spec
+		 tests/Makefile])
 AC_CONFIG_FILES([include/Makefile])
+
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
+        [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_TESTS], [true])])
+
 AC_OUTPUT
 echo
 echo
@@ -95,5 +101,7 @@ echo "  LDFLAGS..............: $LDFLAGS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"
+echo
+echo "Tests..................: `if [[ -z "$ENABLE_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 
