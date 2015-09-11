@@ -42,7 +42,7 @@
  *
  */
 
-#include "b_plus_tree.h"
+#include "../include/b_plus_tree.h"
 
 inline void copy_key(void *to, int index_to, void *from, int index_from, int size_of_key)
 {
