@@ -278,7 +278,7 @@ prefix_tree_inner_node_t * prefix_tree_new_node_parent_is_domain(prefix_tree_dom
  * \param[in] prefix or suffix
  * \return length to dot
  */
-int prefix_tree_count_to_domain_separator(char * string, int length, int domain_separator, char prefix);
+int prefix_tree_count_to_domain_separator(const char *string, int length, int domain_separator, char prefix);
 
 /*!
  * \brief Add new item to prefix tree
@@ -290,7 +290,7 @@ int prefix_tree_count_to_domain_separator(char * string, int length, int domain_
  * \param[in] tree pointer to the prefix tree
  * \return pointer to new domain structure
  */
-prefix_tree_domain_t * prefix_tree_add_new_item(prefix_tree_inner_node_t * node ,prefix_tree_domain_t * domain , char * string, int length, prefix_tree_t * tree);
+prefix_tree_domain_t * prefix_tree_add_new_item(prefix_tree_inner_node_t * node ,prefix_tree_domain_t * domain ,const char *string, int length, prefix_tree_t * tree);
 
 
 /*!
@@ -336,7 +336,7 @@ char * prefix_tree_read_inner_node(prefix_tree_t * tree, prefix_tree_inner_node_
  * \param[in] tree pointer to the prefix tree
  * \return added or found domain
  */
-prefix_tree_domain_t * prefix_tree_add_domain_recursive_prefix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, char * string, int length, prefix_tree_t * tree);
+prefix_tree_domain_t * prefix_tree_add_domain_recursive_prefix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, const char *string, int length, prefix_tree_t * tree);
 
 
 /*!
@@ -350,7 +350,7 @@ prefix_tree_domain_t * prefix_tree_add_domain_recursive_prefix(prefix_tree_inner
  * \param[in] tree pointer to the prefix tree
  * \return added or found domain
  */
-prefix_tree_domain_t * prefix_tree_add_domain_recursive_suffix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, char * string, int length, prefix_tree_t * tree);
+prefix_tree_domain_t * prefix_tree_add_domain_recursive_suffix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent,const char *string, int length, prefix_tree_t * tree);
 
 /*!
  * \brief Add domain to prefix tree
@@ -360,7 +360,7 @@ prefix_tree_domain_t * prefix_tree_add_domain_recursive_suffix(prefix_tree_inner
  * \param[in] length length of string
  * \return added or found domain
  */
-prefix_tree_domain_t * prefix_tree_insert(prefix_tree_t * tree, char * string, int length);
+prefix_tree_domain_t * prefix_tree_insert(prefix_tree_t * tree, const char *string, int length);
 
 /*!
  * \brief Seacrh domain in prefix tree
@@ -370,7 +370,7 @@ prefix_tree_domain_t * prefix_tree_insert(prefix_tree_t * tree, char * string, i
  * \param[in] length length of string
  * \return added or found domain
  */
-prefix_tree_domain_t * prefix_tree_search(prefix_tree_t * tree, char * string, int length);
+prefix_tree_domain_t * prefix_tree_search(prefix_tree_t * tree, const char *string, int length);
 
 /*!
  * \brief Add domain to prefix tree and set it to the exception state
@@ -380,7 +380,7 @@ prefix_tree_domain_t * prefix_tree_search(prefix_tree_t * tree, char * string, i
  * \param[in] length length of string
  * \return added or found domain
  */
-prefix_tree_domain_t * prefix_tree_add_string_exception(prefix_tree_t * tree, char * string, int length);
+prefix_tree_domain_t * prefix_tree_add_string_exception(prefix_tree_t * tree, const char *string, int length);
 
 /*!
  * \brief Test domain if is in exception state
@@ -390,7 +390,7 @@ prefix_tree_domain_t * prefix_tree_add_string_exception(prefix_tree_t * tree, ch
  * \param[in] length length of string
  * \return 1 is in exception, 0 not in exception
  */
-int prefix_tree_is_string_in_exception(prefix_tree_t * tree, char * string, int length);
+int prefix_tree_is_string_in_exception(prefix_tree_t * tree, const char *string, int length);
 
 /*!
  * \brief Statistic function percent od subdomains in certain depth

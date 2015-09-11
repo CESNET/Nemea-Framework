@@ -486,7 +486,7 @@ prefix_tree_inner_node_t * prefix_tree_new_node_parent_is_domain(prefix_tree_dom
    return domain->child;
 }
 
-int prefix_tree_count_to_domain_separator(char * string, int length, int domain_separator, char prefix)
+int prefix_tree_count_to_domain_separator(const char *string, int length, int domain_separator, char prefix)
 {
    int i;
    if (prefix == PREFIX) {
@@ -507,7 +507,7 @@ int prefix_tree_count_to_domain_separator(char * string, int length, int domain_
 
 
 
-prefix_tree_domain_t * prefix_tree_add_new_item(prefix_tree_inner_node_t * node ,prefix_tree_domain_t * domain , char * string, int length, prefix_tree_t * tree)
+prefix_tree_domain_t * prefix_tree_add_new_item(prefix_tree_inner_node_t * node ,prefix_tree_domain_t * domain , const char *string, int length, prefix_tree_t * tree)
 {
    int count, i;
    count = prefix_tree_count_to_domain_separator(string, length, tree->domain_separator, tree->prefix_suffix);
@@ -650,7 +650,7 @@ char * prefix_tree_read_string(prefix_tree_t * tree, prefix_tree_domain_t * doma
    return string;
 }
 
-prefix_tree_domain_t * prefix_tree_add_domain_recursive_suffix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, char * string, int length, prefix_tree_t * tree)
+prefix_tree_domain_t * prefix_tree_add_domain_recursive_suffix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, const char *string, int length, prefix_tree_t * tree)
 {
    //read common part;
    int i, index;
@@ -758,7 +758,7 @@ prefix_tree_domain_t * prefix_tree_add_domain_recursive_suffix(prefix_tree_inner
 
 }
 
-prefix_tree_domain_t * prefix_tree_add_domain_recursive_prefix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, char * string, int length, prefix_tree_t * tree)
+prefix_tree_domain_t * prefix_tree_add_domain_recursive_prefix(prefix_tree_inner_node_t * node, prefix_tree_domain_t * domain_parent, const char *string, int length, prefix_tree_t * tree)
 {
    //read common part;
    int i;
@@ -866,7 +866,7 @@ prefix_tree_domain_t * prefix_tree_add_domain_recursive_prefix(prefix_tree_inner
 
 }
 
-int prefix_tree_is_string_in_exception(prefix_tree_t * tree, char * string, int length)
+int prefix_tree_is_string_in_exception(prefix_tree_t * tree, const char *string, int length)
 {
    int i, index, map_number;
    prefix_tree_inner_node_t *node;
@@ -937,7 +937,7 @@ int prefix_tree_is_string_in_exception(prefix_tree_t * tree, char * string, int 
    return 0;
 }
 
-prefix_tree_domain_t * prefix_tree_search(prefix_tree_t * tree, char * string, int length)
+prefix_tree_domain_t * prefix_tree_search(prefix_tree_t * tree,const  char *string, int length)
 {
    int i, index, map_number;
    prefix_tree_inner_node_t *node;
@@ -1017,7 +1017,7 @@ double prefix_tree_most_used_domain_percent_of_subdomains(prefix_tree_t *tree, i
 
 
 
-prefix_tree_domain_t *prefix_tree_insert(prefix_tree_t * tree, char * string, int length)
+prefix_tree_domain_t *prefix_tree_insert(prefix_tree_t * tree, const char *string, int length)
 {
    prefix_tree_domain_t * found, * iter;
    if (tree->prefix_suffix == PREFIX) {
@@ -1112,7 +1112,7 @@ prefix_tree_domain_t *prefix_tree_insert(prefix_tree_t * tree, char * string, in
 
 
 
-prefix_tree_domain_t *prefix_tree_add_string_exception(prefix_tree_t *tree, char *string, int length)
+prefix_tree_domain_t *prefix_tree_add_string_exception(prefix_tree_t *tree, const char *string, int length)
 {
    prefix_tree_domain_t *found;
    if (tree->prefix_suffix == PREFIX) {
