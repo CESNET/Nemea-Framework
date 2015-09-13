@@ -95,11 +95,12 @@ fi
 AC_CONFIG_FILES([Makefile
 		 unirec.pc
 		 unirec.spec
-		 Doxyfile])
+		 Doxyfile
+                 tests/Makefile])
 
-AC_ARG_ENABLE([tests], AC_HELP_STRING([--enable-tests],[Compile with testing modules]),[with_tests=yes],[with_tests=no])
-AS_IF([test "x$with_tests" = "xyes"], [ENABLEDTESTS=./tests], [ENABLEDTESTS=""])
-AC_SUBST(ENABLEDTESTS)
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
+        [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_TESTS], [true])])
 
 DX_MAN_FEATURE(OFF)
 DX_INIT_DOXYGEN([UniRec], [Doxyfile], [doc/doxygen])

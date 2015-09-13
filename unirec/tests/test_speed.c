@@ -56,7 +56,7 @@ UR_FIELDS(
    uint16 DST_PORT,
    uint8 PROTOCOL,
    uint32 PACKETS,
-   bytes* BYTES,
+   uint64 BYTES,
    string URL,
 )
 
@@ -68,6 +68,7 @@ struct flow_rec_s {
    uint16_t  dst_port;
    uint16_t  src_port;
    uint8_t   protocol;
+   uint16_t  url_offset;
    uint16_t  url_len;
    char      url[20];
 } __attribute__((packed));
@@ -83,11 +84,7 @@ int main(int argc, char **argv)
       return 1;
    }
 
-   char *rec = ur_create_record(tmplt, 20);
-   if (rec == NULL) {
-      fprintf(stderr, "Error when creating UniRec record.\n");
-      return 1;
-   }
+   char *rec =
 #else
    flow_rec_t *rec = (flow_rec_t*)
 #endif
@@ -98,7 +95,7 @@ int main(int argc, char **argv)
       "dp"
       "sp"
       "p"
-      "\x13\x00"
+      "\00\x00\x13\x00"
       "http://example.com/";
 
    int x = 0;
@@ -136,7 +133,7 @@ int main(int argc, char **argv)
 
    printf("%i %hu %lu\n", x, y, z);
 
-   printf("Time: %us\n", time(NULL) - start_time);
+   printf("Time: %fs\n", difftime(time(NULL), start_time));
 
 #ifdef UNIREC
    ur_free_template(tmplt);

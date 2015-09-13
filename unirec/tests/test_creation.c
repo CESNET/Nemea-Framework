@@ -55,7 +55,7 @@ UR_FIELDS(
    uint16 DST_PORT,
    uint8 PROTOCOL,
    uint32 PACKETS,
-   bytes* BYTES,
+   uint64 BYTES,
    string URL,
 )
 int main(int argc, char **argv)
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
       }
    }
 
-   printf("Time: %us\n", time(NULL) - start_time);
+   printf("Time: %fs\n", difftime(time(NULL), start_time));
 
    ur_free_record(rec);
 

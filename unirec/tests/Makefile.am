@@ -1,6 +1,7 @@
 bin_PROGRAMS = test_basic test_creation  test_ipaddr  test_speed test_speed_o test_speed_ur test_speed_uro
 
 AM_LDFLAGS=-static ../libunirec.la
+COM_CPPFLAGS=-I../
 
 test_basic_SOURCES=test_basic.c
 test_basic_CFLAGS=-O2
