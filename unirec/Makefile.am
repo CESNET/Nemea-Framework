@@ -5,7 +5,7 @@ if ENABLE_TESTS
 SUBDIRS= . tests
 endif
 
-AM_CFLAGS=-std=c99 -O3 -lunirec
+AM_CFLAGS=-std=c99 -O3
 
 RPMDIR = RPMBUILD
 
