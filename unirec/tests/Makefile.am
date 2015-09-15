@@ -16,7 +16,7 @@ test_ipaddr_CFLAGS=-O2
 test_ipaddr_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_speed_SOURCES=test_speed.c
-test_speed_CFLAGS=
+test_speed_CFLAGS=-O2
 test_speed_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_speed_o_SOURCES=test_speed.c
@@ -24,7 +24,7 @@ test_speed_o_CFLAGS=-O2
 test_speed_o_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_speed_ur_SOURCES=test_speed.c
-test_speed_ur_CFLAGS=-DUNIREC
+test_speed_ur_CFLAGS=-DUNIREC -O2
 test_speed_ur_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_speed_uro_SOURCES=test_speed.c
