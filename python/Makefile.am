@@ -1,3 +1,5 @@
+SUBDIRS=unirec
+
 pkgdata_DATA=trap.py setup.py
 
 EXTRA_DIST=AUTHORS COPYING ${pkgdata_DATA}

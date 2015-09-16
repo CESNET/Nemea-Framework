@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <b_plus_tree.h>
+#include "../include/b_plus_tree.h"
 
 
 #define TEST_SIZE_ARR_SIZE 4

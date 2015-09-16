@@ -64,19 +64,20 @@ RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
+        [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_TESTS], [true])])
+
+
 DX_MAN_FEATURE(OFF)
 DX_INIT_DOXYGEN([nemeacommon], [Doxyfile], [doc])
 
 AC_CONFIG_FILES([Makefile
 		 Doxyfile
+		 include/Makefile
 		 nemea-common.pc
 		 nemea-common.spec
 		 tests/Makefile])
-AC_CONFIG_FILES([include/Makefile])
-
-AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
-        [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
-        [AM_CONDITIONAL([ENABLE_TESTS], [true])])
 
 AC_OUTPUT
 echo
