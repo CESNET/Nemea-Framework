@@ -21,8 +21,8 @@ AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
-                CFLAGS="-Wall -g $CFLAGS"
-                CXXFLAGS="-Wall -g $CXXFLAGS"
+                CFLAGS="-Wall -g -O0 $CFLAGS"
+                CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
         fi],
         [CFLAGS="-Wall -O3 $CFLAGS"
         CXXFLAGS="-Wall -O3 $CXXFLAGS"])

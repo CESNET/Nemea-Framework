@@ -5,7 +5,7 @@ if ENABLE_TESTS
 SUBDIRS= . tests
 endif
 
-AM_CFLAGS=-std=c99 -O3
+AM_CFLAGS=-std=c99
 
 RPMDIR = RPMBUILD
 
