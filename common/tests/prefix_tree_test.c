@@ -197,11 +197,12 @@ int test_tree_content(prefix_tree_t *tree, int test_count,  int toward, const ch
 
 int run_tests(int test_count, int toward, int domain_extension, int relaxation_after_delete)
 {
+   int ret_val = 0;
    prefix_tree_t * tree;
    int i, ret;
    prefix_tree_domain_t * domain = NULL;
-   char **array_of_strings;
-   int *array_of_lengths;
+   char **array_of_strings = NULL;
+   int *array_of_lengths = NULL;
    char delete_str[MAX_LENGTH+1];
    value_t value;
    double time_diff;
@@ -215,12 +216,14 @@ int run_tests(int test_count, int toward, int domain_extension, int relaxation_a
    array_of_strings = (char**) malloc (sizeof(char*) * test_count);
    if (array_of_strings == NULL) {
       fprintf(stderr, "ERROR: There are not enaugh memmory for this test. Please decrease the test_count\n Actual test_count = %u\n", test_count);
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    array_of_lengths = (int*) malloc (sizeof(int) * test_count);
    if (array_of_lengths == NULL) {
       fprintf(stderr, "ERROR: There are not enaugh memmory for this test. Please decrease the test_count\n Actual test_count = %u\n", test_count);
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    //generate random stings
    printf("Generation of random strings\n");
@@ -229,7 +232,8 @@ int run_tests(int test_count, int toward, int domain_extension, int relaxation_a
       array_of_strings[i] = gen_random_str(array_of_lengths[i]);
       if (array_of_strings[i] == NULL) {
          fprintf(stderr, "ERROR: There are not enaugh memmory for this test. Please decrease the test_count\n Actual test_count = %u\n", test_count);
-         return -1;
+         ret_val = -1;
+         goto exit_label;
       }
    }
 
@@ -240,7 +244,8 @@ int run_tests(int test_count, int toward, int domain_extension, int relaxation_a
       domain = prefix_tree_insert(tree, array_of_strings[i], array_of_lengths[i]);
       if (domain == NULL) {
          fprintf(stderr, "ERROR: Inserting string \"%s\" to the tree\n", array_of_strings[i]);
-         return -2;
+         ret_val = -2;
+         goto exit_label;
       }
       value_from_string(array_of_strings[i], &value);
       memcpy(domain->value, &value, sizeof(value_t));
@@ -254,7 +259,8 @@ int run_tests(int test_count, int toward, int domain_extension, int relaxation_a
    printf("TEST - Checking keys, values and tree parameters.\n");
    ret = test_tree_content(tree, test_count, toward, NULL, array_of_strings, array_of_lengths);
    if (ret < 0) {
-      return ret;
+      ret_val = ret;
+      goto exit_label;
    }
 
    //delete the most used doamin node
@@ -263,7 +269,8 @@ int run_tests(int test_count, int toward, int domain_extension, int relaxation_a
    inner_node = prefix_tree_most_substring(tree->root);
    if (inner_node == NULL) {
       fprintf(stderr, "ERROR: most used inner node was not found\n");
-      return -3;
+      ret_val = -3;
+      goto exit_label;
    }
    prefix_tree_read_inner_node(tree, inner_node, delete_str);
    prefix_tree_delete_inner_node(tree, inner_node);
@@ -276,18 +283,34 @@ int run_tests(int test_count, int toward, int domain_extension, int relaxation_a
    printf("TEST - Checking keys, values and tree parameters after delete\n");
    ret = test_tree_content(tree, test_count, toward, delete_str, array_of_strings, array_of_lengths);
    if (ret < 0) {
-      return ret;
+      ret_val = ret;
+      goto exit_label;
    }
 
+exit_label:
    printf("Dealocation of memmory\n");
-   printf("Time of all tests: %fs\n", time_one_set_of_test);
-   prefix_tree_destroy(tree);
-   for (i = 0; i <  test_count; i++) {
-      free(array_of_strings[i]);
+   if (tree != NULL) {
+      prefix_tree_destroy(tree);
+      tree = NULL;
    }
-   free(array_of_strings);
-   free(array_of_lengths);
-   return 0;
+   if (array_of_strings != NULL) {
+      for (i = 0; i <  test_count; i++) {
+         if (array_of_strings[i] != NULL) {
+            free(array_of_strings[i]);
+            array_of_strings[i] = NULL;
+         }
+      }
+      free(array_of_strings);
+      array_of_strings = NULL;
+   }
+   if (array_of_lengths != NULL) {
+      free(array_of_lengths);
+      array_of_lengths = NULL;
+   }
+   if (ret_val >= 0) {
+      printf("Time of all tests: %fs\n", time_one_set_of_test);
+   }
+   return ret_val;
 }
 
 int main(int argc, char **argv)

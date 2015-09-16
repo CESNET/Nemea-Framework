@@ -122,8 +122,8 @@ int compare_key(void * a, void * b)
 
 int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count )
 {
-
-   b_plus_tree_item *b_item;
+   int ret_val = 0;
+   b_plus_tree_item *b_item = NULL;
    int is_there_next = 0;
    uint32_t i;
    b_value_t *value_pt;
@@ -134,7 +134,8 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count )
    b_item = b_plus_tree_create_list_item(tree);
    if (b_item == NULL) {
       fprintf(stderr,"ERROR during initializing list iterator structure\n");
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    i = 0;
    while (i < test_count && pairs[i].deleted == 1) {
@@ -146,25 +147,30 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count )
       value_pt = b_item->value;
       if (value_pt == NULL) {
          fprintf(stderr, "ERROR during iteration through the tree. Value is NULL\n");
-         return -3;
+         ret_val = -3;
+         goto exit_label;
       }
       key_pt = b_item->key;
       if (key_pt == NULL) {
          fprintf(stderr, "ERROR during iteration through the tree. Key is NULL\n");
-         return -3;
+         ret_val = -3;
+         goto exit_label;
       }
       if (i >= test_count) {
          fprintf(stderr, "ERROR, there are more items in the tree than it was inserted.\n");
-         return -3;
+         ret_val = -3;
+         goto exit_label;
       }
       //test key and value
       if (pairs[i].key != key_pt->key) {
          fprintf(stderr, "ERROR, during iteration through the tree. Expected key: %u, key in the tree:%u\n", pairs[i].key, key_pt->key);
-         return -4;
+         ret_val = -4;
+         goto exit_label;
       }
       if (pairs[i].value != value_pt->value) {
          fprintf(stderr, "ERROR, during iteration through the tree. Key is %u. Expected value: %lu, value in the tree:%lu\n", pairs[i].key, pairs[i].value, value_pt->value);
-         return -4;
+         ret_val = -4;
+         goto exit_label;
       }
       i++;
       while (i < test_count && pairs[i].deleted == 1) {
@@ -173,19 +179,27 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count )
       //next item
       is_there_next = b_plus_tree_get_next_item_from_list(tree, b_item);
    }
-   b_plus_tree_destroy_list_item(b_item);
+
    while (i < test_count && pairs[i].deleted == 1) {
       i++;
    }
    if (i < test_count) {
       fprintf(stderr,"ERROR missing items in the tree\n");
-      return -5;
+      ret_val = -5;
    }
-   clock_gettime(CLOCK_MONOTONIC, &end_time);
-   time_diff = difftime_ms(end_time, start_time);
-   time_one_set_of_test += time_diff;
-   printf("OK. Time: %fs\n", time_diff);
-   return 0;
+
+exit_label:
+   if (b_item != NULL) {
+      b_plus_tree_destroy_list_item(b_item);
+      b_item = NULL;
+   }
+   if (ret_val >= 0) {
+      clock_gettime(CLOCK_MONOTONIC, &end_time);
+      time_diff = difftime_ms(end_time, start_time);
+      time_one_set_of_test += time_diff;
+      printf("OK. Time: %fs\n", time_diff);
+   }
+   return ret_val;
 }
 
 int run_tests(int test_count, int tree_size_leaf)
@@ -194,31 +208,35 @@ int run_tests(int test_count, int tree_size_leaf)
    uint32_t i, count_of_deleted_items = 0;
    double time_diff;
    void *tree = NULL;
-   test_pair_t *pairs;
-   test_pair_t **pairs_value_sorted;
-   test_pair_t **pairs_sorted_random_for_delete;
+   test_pair_t *pairs = NULL;
+   test_pair_t **pairs_value_sorted = NULL;
+   test_pair_t **pairs_sorted_random_for_delete = NULL;
    struct timespec start_time = {0,0}, end_time = {0,0};
+   int ret_val = 0;
 
 
    b_key_t key_st;
    b_key_t *key_pt = NULL;
    b_value_t *value_pt = NULL;
-   b_plus_tree_item *b_item;
+   b_plus_tree_item *b_item = NULL;
    //allocate structures for testing
    pairs = malloc(test_count * sizeof(test_pair_t));
    if (pairs == NULL) {
       fprintf(stderr,"ERROR: There are not enaugh memmory for this test. Please decrease the test_count\n Actual test_count = %u\n", test_count);
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    pairs_value_sorted = malloc(test_count * sizeof(test_pair_t*));
    if (pairs_value_sorted == NULL) {
       fprintf(stderr,"ERROR: There are not enaugh memmory for this test. Please decrease the test_count\n Actual test_count = %u\n", test_count);
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    pairs_sorted_random_for_delete = malloc(test_count * sizeof(test_pair_t*));
    if (pairs_sorted_random_for_delete == NULL) {
       fprintf(stderr,"ERROR: There are not enaugh memmory for this test. Please decrease the test_count\n Actual test_count = %u\n", test_count);
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
 
    //generate values
@@ -239,7 +257,8 @@ int run_tests(int test_count, int tree_size_leaf)
    tree = b_plus_tree_initialize(tree_size_leaf, &compare_key, sizeof(b_value_t), sizeof(b_key_t));
    if (tree == NULL) {
       fprintf(stderr,"ERROR during initializing b_plus_tree\n");
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    //insert items to the tree
    printf("TEST - Item insertion\n");
@@ -249,7 +268,8 @@ int run_tests(int test_count, int tree_size_leaf)
       value_pt = b_plus_tree_insert_item(tree, &key_st);
       if (value_pt == NULL) {
          fprintf(stderr,"ERROR during insertion. Key %u, value %lu \n", pairs[i].key, pairs[i].value);
-         return -2;
+         ret_val = -2;
+         goto exit_label;
       }
       value_pt->value = pairs[i].value;
    }
@@ -263,7 +283,8 @@ int run_tests(int test_count, int tree_size_leaf)
    ret = check_sort_of_items(pairs, tree, test_count);
    if (ret < 0) {
       //error
-      return ret;
+      ret_val = ret;
+      goto exit_label;
    }
 
    //delete test - random delete of some items - 50% should be deleted
@@ -277,7 +298,8 @@ int run_tests(int test_count, int tree_size_leaf)
          if (b_plus_tree_delete_item(tree, &key_st) != 1) {
             //deleting error
             fprintf(stderr,"ERROR, deleting item from tree. Key: %u\n", key_st.key);
-            return -6;
+            ret_val = -6;
+            goto exit_label;
          } else {
             //item was deleted
             pairs_sorted_random_for_delete[i]->deleted = 1;
@@ -295,7 +317,8 @@ int run_tests(int test_count, int tree_size_leaf)
    ret = check_sort_of_items(pairs, tree, test_count);
    if (ret < 0) {
       //error
-      return ret;
+      ret_val = ret;
+      goto exit_label;
    }
 
    //delete items during iterating the list of items.
@@ -304,7 +327,8 @@ int run_tests(int test_count, int tree_size_leaf)
    b_item = b_plus_tree_create_list_item(tree);
    if (b_item == NULL) {
       fprintf(stderr,"ERROR during initializing list iterator structure\n");
-      return -1;
+      ret_val = -1;
+      goto exit_label;
    }
    i = 0;
    count_of_deleted_items = 0;
@@ -317,21 +341,25 @@ int run_tests(int test_count, int tree_size_leaf)
       value_pt = b_item->value;
       if (value_pt == NULL) {
          fprintf(stderr,"ERROR during iteration through the tree. Value is NULL\n");
-         return -3;
+         ret_val = -3;
+         goto exit_label;
       }
       key_pt = b_item->key;
       if (key_pt == NULL) {
          fprintf(stderr,"ERROR during iteration through the tree. Key is NULL\n");
-         return -3;
+         ret_val = -3;
+         goto exit_label;
       }
       if (i >= test_count) {
          fprintf(stderr,"ERROR, there are more items in the tree than it was inserted.\n");
-         return -3;
+         ret_val = -3;
+         goto exit_label;
       }
       //test key and value
       if (pairs[i].key != key_pt->key || pairs[i].value != value_pt->value) {
          fprintf(stderr,"ERROR, during iteration through the tree. Expected item (key,value): (%u,%lu),  item in the tree: (%u,%lu)\n", pairs[i].key, pairs[i].value, key_pt->key, value_pt->value);
-         return -4;
+         ret_val = -4;
+         goto exit_label;
       }
       //delete item
       rand_del = rand();
@@ -350,10 +378,10 @@ int run_tests(int test_count, int tree_size_leaf)
          i++;
       }
    }
-   b_plus_tree_destroy_list_item(b_item);
    if (i < test_count) {
       fprintf(stderr,"ERROR missing items in the tree\n");
-      return -5;
+      ret_val = -5;
+      goto exit_label;
    }
    clock_gettime(CLOCK_MONOTONIC, &end_time);
    time_diff = difftime_ms(end_time, start_time);
@@ -365,16 +393,39 @@ int run_tests(int test_count, int tree_size_leaf)
    ret = check_sort_of_items(pairs, tree, test_count);
    if (ret < 0) {
       //error
-      return ret;
+      ret_val = ret;
+      goto exit_label;
    }
    printf("Dealocation of memmory\n");
-   b_plus_tree_destroy(tree);
-   free(pairs);
-   free(pairs_value_sorted);
-   free(pairs_sorted_random_for_delete);
-   printf("Time of all tests: %fs\n", time_one_set_of_test);
 
-   return 0;
+exit_label:
+   if (b_item != NULL) {
+      b_plus_tree_destroy_list_item(b_item);
+      b_item = NULL;
+   }
+   if (tree != NULL) {
+      b_plus_tree_destroy(tree);
+      tree = NULL;
+   }
+   if (pairs != NULL) {
+      free(pairs);
+      pairs = NULL;
+   }
+   if (pairs_value_sorted != NULL) {
+      free(pairs_value_sorted);
+      pairs_value_sorted = NULL;
+   }
+   if (pairs_sorted_random_for_delete != NULL) {
+      free(pairs_sorted_random_for_delete);
+      pairs_sorted_random_for_delete = NULL;
+   }
+
+   if (ret_val < 0) {
+      printf("run_tests failed!\n");
+   } else {
+      printf("Time of all tests: %fs\n", time_one_set_of_test);
+   }
+   return ret_val;
 }
 
 int main(int argc, char **argv)
