@@ -69,10 +69,10 @@ DX_INIT_DOXYGEN([nemeacommon], [Doxyfile], [doc])
 
 AC_CONFIG_FILES([Makefile
 		 Doxyfile
+		 include/Makefile
 		 nemea-common.pc
 		 nemea-common.spec
 		 tests/Makefile])
-AC_CONFIG_FILES([include/Makefile])
 
 AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
         [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],

@@ -1,10 +1,9 @@
-SUBDIRS=include
-
+SUBDIRS=. include
 if ENABLE_TESTS
-SUBDIRS+= . tests
+SUBDIRS+=tests
 endif
 
-DIST_SUBDIRS = tests
+DIST_SUBDIRS=tests
 
 RPMDIR=RPMBUILD
 lib_LTLIBRARIES=libnemea-common.la

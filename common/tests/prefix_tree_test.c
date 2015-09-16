@@ -55,7 +55,7 @@
    ((rand() % RANGE) + MIN_LENGTH);
 
 #define TEST_SIZE_ARR_SIZE 2
-static uint32_t test_size_arr[] = {999, 999999};
+static uint32_t test_size_arr[] = {999, 9999};
 
 #define difftime_ms(end, start) \
  (((double)end.tv_sec + 1.0e-9*end.tv_nsec) - ((double)start.tv_sec + 1.0e-9*start.tv_nsec));
