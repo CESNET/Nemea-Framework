@@ -3,8 +3,6 @@ if ENABLE_TESTS
 SUBDIRS+=tests
 endif
 
-DIST_SUBDIRS=tests
-
 RPMDIR=RPMBUILD
 lib_LTLIBRARIES=libnemea-common.la
 libnemea_common_la_SOURCES=configurator/configurator.cpp \

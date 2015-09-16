@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <prefix_tree.h>
+#include "../include/prefix_tree.h"
 
 #define MAX_LENGTH 50
 #define MIN_LENGTH 2

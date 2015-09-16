@@ -1,4 +1,3 @@
-AM_CFLAGS=-I../include/
 LDADD=-L../ -lnemea-common -lrt
 
 check_PROGRAMS=b_plus_tree_test prefix_tree_test
