@@ -56,6 +56,26 @@
 #include <libtrap/trap.h>
 #include <inttypes.h>
 #include "values.c"
+#include "inline.h"
+
+// All inline functions from ipaddr.h must be declared again with "extern"
+// in exactly one translation unit (it generates externally linkable code of
+// these function)
+// See this for explanation (Nemo's answer):
+// http://stackoverflow.com/questions/6312597/is-inline-without-static-or-extern-ever-useful-in-c99
+INLINE_IMPL int ip_is4(const ip_addr_t *addr);
+INLINE_IMPL int ip_is6(const ip_addr_t *addr);
+INLINE_IMPL uint32_t ip_get_v4_as_int(ip_addr_t *addr);
+INLINE_IMPL char *ip_get_v4_as_bytes(const ip_addr_t *addr);
+INLINE_IMPL ip_addr_t ip_from_int(uint32_t i);
+INLINE_IMPL ip_addr_t ip_from_4_bytes_be(char b[4]);
+INLINE_IMPL ip_addr_t ip_from_4_bytes_le(char b[4]);
+INLINE_IMPL ip_addr_t ip_from_16_bytes_be(char b[16]);
+INLINE_IMPL ip_addr_t ip_from_16_bytes_le(char b[16]);
+INLINE_IMPL int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2);
+INLINE_IMPL int ip_from_str(const char *str, ip_addr_t *addr);
+INLINE_IMPL void ip_to_str(const ip_addr_t *addr, char *str);
+
 
 const int ur_field_type_size[] = {
 	-1, /*UR_TYPE_STRING*/
