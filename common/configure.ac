@@ -5,14 +5,14 @@ AC_PREREQ([2.63])
 AC_INIT([nemea-common], [1.3.2], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([nemea-common.spec.in])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([-Wall  silent-rules subdir-objects])
+AM_INIT_AUTOMAKE([silent-rules subdir-objects])
+AM_SILENT_RULES([yes])
 RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
 AC_SUBST(USERMAIL)
-AM_SILENT_RULES([yes])
 
 AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],

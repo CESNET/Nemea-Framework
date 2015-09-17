@@ -5,7 +5,8 @@ AC_PREREQ([2.63])
 AC_INIT([nemea-python], [1.0.0], [traffic-analysis@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
-AM_INIT_AUTOMAKE([foreign -Wall silent-rules])
+AM_INIT_AUTOMAKE([foreign silent-rules])
+AM_SILENT_RULES([yes])
 AC_CONFIG_SRCDIR([nemea-python.spec.in])
 RELEASE=1
 AC_SUBST(RELEASE)
@@ -13,7 +14,6 @@ USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
 AC_SUBST(USERMAIL)
-AM_SILENT_RULES([yes])
 
 AC_CONFIG_MACRO_DIR([m4])
 

@@ -5,14 +5,14 @@ AC_PREREQ([2.63])
 AC_INIT([unirec], [2.0.0], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([-Wall  silent-rules])
+AM_INIT_AUTOMAKE([silent-rules])
+AM_SILENT_RULES([yes])
 RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
 AC_SUBST(USERMAIL)
-AM_SILENT_RULES([yes])
 
 AC_CONFIG_MACRO_DIR([m4])
 
