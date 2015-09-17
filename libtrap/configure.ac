@@ -5,8 +5,8 @@ AC_PREREQ([2.63])
 AC_INIT([libtrap], [0.7.0], [traffic-analysis@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
-AM_INIT_AUTOMAKE([silent-rules])
-AM_SILENT_RULES([yes])
+AM_INIT_AUTOMAKE()
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes]]))
 AC_CONFIG_SRCDIR([libtrap.spec.in])
 AC_CONFIG_HEADERS([config.h])
 RELEASE=1
