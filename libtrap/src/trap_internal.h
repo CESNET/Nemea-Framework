@@ -69,7 +69,8 @@
 
 /* Input interface negotiation return values */
 #define NEG_RES_CONT 111  ///< If the data format and data specifier of input and output interface are the same (input interface can receive the data for module right after the negotiation)
-#define NEG_RES_FMT_SUBSET 112  ///< If the data format of input and output interfaces is the same and data specifier of the input interface is subset of the output interface data specifier
+#define NEG_RES_RECEIVER_FMT_SUBSET 112  ///< If the data format of input and output interfaces is the same and data specifier of the input interface is subset of the output interface data specifier
+#define NEG_RES_SENDER_FMT_SUBSET 116  ///< If the data format of input and output interfaces is the same and new data specifier of the output interface is subset of the old one (it is not first negotiation)
 #define NEG_RES_FMT_MISMATCH 113  ///< If the data format or data specifier of input and output interfaces does not match
 
 /* Output interface negotiation return values */
