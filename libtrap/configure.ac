@@ -189,7 +189,7 @@ AC_ARG_ENABLE([debugbuffering], AC_HELP_STRING([--enable-debugbuffering],
 AC_ARG_ENABLE([negotiation], AC_HELP_STRING([--disable-negotiation],
       [Compile interfaces with negotiation]),
       [if test "$enableval" = "yes"; then
-        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])
+        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Disable negotiation between interfaces.])
       fi],
       [AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])])
 
