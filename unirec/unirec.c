@@ -490,20 +490,27 @@ int ur_define_set_of_fields(const char *ifc_data_fmt)
 
 ur_template_t *ur_define_fields_and_update_template(const char *ifc_data_fmt, ur_template_t *tmplt)
 {
+	ur_template_t *new_tmplt;
 	if (ur_define_set_of_fields(ifc_data_fmt) < 0) {
 		return NULL;
 	}
+	new_tmplt = ur_create_template_from_ifc_spec(ifc_data_fmt);
+	if (new_tmplt != NULL && tmplt != NULL) {
+		new_tmplt->ifc_out = tmplt->ifc_out;
+		new_tmplt->direction = tmplt->direction;
+		ur_free_template(tmplt);
+	}
+	return new_tmplt;
+}
+
+ur_template_t *ur_create_template_from_ifc_spec(const char *ifc_data_fmt)
+{
 	char *field_names = ur_ifc_data_fmt_to_field_names(ifc_data_fmt);
 	if (field_names == NULL) {
 		return NULL;
 	}
 	ur_template_t *new_tmplt = ur_create_template(field_names, NULL);
 	free(field_names);
-	if (new_tmplt != NULL && tmplt != NULL) {
-		new_tmplt->ifc_out = tmplt->ifc_out;
-		new_tmplt->direction = tmplt->direction;
-		ur_free_template(tmplt);
-	}
 	return new_tmplt;
 }
 

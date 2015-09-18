@@ -210,8 +210,8 @@ struct ur_values_s{
  */
 #define TRAP_CTX_RECEIVE(ctx, ifc_num, data, data_size, tmplt) \
 ({\
-   int ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
-   if (ret == TRAP_E_OK_FORMAT_CHANGED && trap_ctx_get_in_ifc_state(ctx, ifc_num) == FMT_SUBSET) {\
+   int fmt_state, ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
+   if (ret == TRAP_E_OK_FORMAT_CHANGED && ((fmt_state = trap_ctx_get_in_ifc_state(ctx, ifc_num)) == FMT_SUBSET || fmt_state == FMT_MATCH) {\
       const char *spec = NULL;\
       uint8_t data_fmt;\
       if (trap_ctx_get_data_fmt(ctx, TRAPIFC_INPUT, ifc_num, &data_fmt, &spec) != TRAP_E_OK) {\
@@ -230,7 +230,6 @@ struct ur_values_s{
                }\
             }\
             trap_ctx_confirm_ifc_state(ctx, ifc_num);\
-            ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
          }\
       }\
    }\
@@ -704,13 +703,13 @@ ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in,
  * In case of success the given template will be destroyed and new template will be returned.
  * \param[in] ifc_data_fmt String with types and names of fields delimited by commas
  * \param[in] tmplt Pointer to an existing template.
- * \return Pointer to the extended template or NULL in case of error.
+ * \return Pointer to the updated template or NULL in case of error.
  */
 ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t * tmplt);
 
 /** \brief Defined new fields and expand an UniRec template
  * Define new fields (function ur_define_set_of_fields) and create new UniRec
- * template (function ur_expand_template).
+ * template (function ur_create_template_from_ifc_spec).
  * The string describing fields contain types and names of fields separated by commas.
  * Example ifc_data_fmt: "uint32 FOO,uint8 BAR,float FOO2"
  * Order of fields is not important (templates with the same set of fields are
@@ -718,9 +717,20 @@ ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t * tmpl
  * In case of success the given template will be destroyed and new template will be returned.
  * \param[in] ifc_data_fmt String with types and names of fields delimited by commas
  * \param[in] tmplt Pointer to an existing template.
- * \return Pointer to the extended template or NULL in case of error.
+ * \return Pointer to the updated template or NULL in case of error.
  */
 ur_template_t *ur_define_fields_and_update_template(const char *ifc_data_fmt, ur_template_t *tmplt);
+
+/** \brief Create UniRec template from data format string.
+ * Creates new UniRec template (function ur_create_template_from_ifc_spec).
+ * The string describing fields contain types and names of fields separated by commas.
+ * Example ifc_data_fmt: "uint32 FOO,uint8 BAR,float FOO2"
+ * Order of fields is not important (templates with the same set of fields are
+ * equivalent)..
+ * \param[in] ifc_data_fmt String with types and names of fields delimited by commas
+ * \return Pointer to the new template or NULL in case of error.
+ */
+ur_template_t *ur_create_template_from_ifc_spec(const char *ifc_data_fmt);
 
 /** \brief Destroy UniRec template
  * Free all memory allocated for a template created previously by
