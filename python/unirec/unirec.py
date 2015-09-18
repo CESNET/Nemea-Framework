@@ -5,23 +5,26 @@
 import struct
 import sys
 import os.path
-from collections import namedtuple
 from textwrap import dedent
 from keyword import iskeyword
 from distutils.sysconfig import get_python_lib
+from ur_types import *
 
-from ur_ipaddr import *
-from ur_time import Timestamp
 
-FieldSpec = namedtuple("FieldSpec", "size python_type struct_type")
+FIELD_GROUPS = {
+}
 
-# Load field specification (fields.py)
-try:
-   # If run from git repository, the version of fields.py should be there
-   exec open(os.path.join(os.path.dirname(__file__), "..", "..", "unirec", "fields.py"))
-except IOError:
-   # If installed in system, field.py should be in the same diretory (in site-packages/unirec)
-   exec open(os.path.join(get_python_lib(), "unirec", "fields.py"))
+
+def getFieldSpec(field_type):
+    pt = python_types[field_type]
+    return FieldSpec(size_table[field_type], pt[0], pt[1])
+
+def genFieldsFromNegotiation(fmtspec):
+    fields = fmtspec.split(',')
+    names = [(f.split(' '))[1] for f in fields]
+    types = [getFieldSpec((f.split(' '))[0]) for f in fields]
+    return (names, dict(zip(names, types)))
+
 
 def cmpFields(f1, f2):
    """
@@ -43,6 +46,7 @@ def cmpFields(f1, f2):
 # http://code.activestate.com/recipes/576555/
 def CreateTemplate(template_name, field_names, verbose=False):
    '''Returns a new UniRec class.'''
+   global FIELDS
    # Validate template name
    if not min(c.isalnum() or c=='_' for c in template_name):
       raise ValueError('Template name can only contain alphanumeric characters'
@@ -64,7 +68,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
                field_names = field_names.replace('<'+gname+'>', gfields)
                cont = True
                break
-      field_names = field_names.split(',')
+      (field_names, FIELDS) = genFieldsFromNegotiation(field_names)
 
    field_names = map(str, field_names)
    field_names.sort(cmpFields)

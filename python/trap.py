@@ -11,6 +11,7 @@ TODO: Help strings of functions.
 
 from ctypes import *
 import signal
+from optparse import OptionParser
 
 # ***** Load libtrap library *****
 
@@ -33,8 +34,20 @@ E_IO_ERROR = 14 # IO Error
 E_TERMINATED = 15 # Interface was terminated during reading/writing
 E_NOT_SELECTED = 16 # Interface was not selected reading/writing
 E_HELP = 20 # Returned by parse_parameters when help is requested
+
 E_NOT_INITIALIZED = 254 # TRAP library not initilized
 E_MEMORY = 255 # Memory allocation error
+
+# Negotiation-related return values
+TRAP_E_FIELDS_MISMATCH = 21 # Returned when receiver fields are not subset of sender fields
+TRAP_E_FIELDS_SUBSET = 22 # Returned when receivers fields are subset of senders fields and both sets are not identical
+TRAP_E_OK_FORMAT_CHANGED = 23 # Returned by trap_recv when format or format spec of the receivers interface has been changed
+
+# Definition of data format types (trap_data_format_t)
+TRAP_FMT_UNKNOWN = 0 # unknown - message format was not specified yet
+TRAP_FMT_RAW = 1 # raw data, no format specified
+TRAP_FMT_UNIREC = 2 # UniRec records
+TRAP_FMT_JSON = 3 # structured data serialized using JSON
 
 # Definition of exceptions
 class TRAPException (Exception):
@@ -54,6 +67,7 @@ class EBadParams (TRAPException): pass
 class EIOError (TRAPException): pass
 class EHelp (TRAPException): pass
 class EMemory (TRAPException): pass
+class EFMTChanged (TRAPException): pass
 
 # Error handling function
 def errorCodeChecker(code):
@@ -73,6 +87,8 @@ def errorCodeChecker(code):
       raise ENotInitialized(code)
    elif code == E_MEMORY:
       raise EMemory(code)
+   elif code in [TRAP_E_FIELDS_SUBSET, TRAP_E_FIELDS_MISMATCH, TRAP_E_OK_FORMAT_CHANGED]:
+      raise EFMTChanged(code)
    else:
       raise TRAPException(-1, "Unknown error")
 
@@ -85,8 +101,9 @@ NO_WAIT = 0
 WAIT = -1
 HALFWAIT = -2
 
-IFC_INPUT = 1
-IFC_OUTPUT = 2
+# Direction of IFC (trap_ifc_type)
+IFC_INPUT = 1  # interface acts as source of data for module
+IFC_OUTPUT = 2 # interface is used for sending data out of module
 
 CTL_AUTOFLUSH_TIMEOUT = 1
 CTL_BUFFERSWITCH = 2
@@ -94,12 +111,35 @@ CTL_SETTIMEOUT = 3
 
 # ***** Structure definitions *****
 
+class ModuleInfoParameter(Structure):
+   _fields_ = [('short_opt', c_char),
+               ('long_opt', c_char_p),
+               ('description', c_char_p),
+               ('param_required_argument', c_int),
+               ('arg_type', c_char_p)
+              ]
+   def __str__(self):
+      return "{}, {}, {}, {}, {}".format(self.short_opt, self.long_opt, self.description, self.param_required_argument, self.arg_type)
+
 class ModuleInfo(Structure):
    _fields_ = [('name', c_char_p),
                ('description', c_char_p),
-               ('num_ifc_in', c_uint),
-               ('num_ifc_out', c_uint),
+               ('num_ifc_in', c_int),
+               ('num_ifc_out', c_int),
+               ('params', POINTER(ModuleInfoParameter))
               ]
+
+   def __str__(self):
+      return """name: {}
+description: {}
+num_ifc_in: {}
+num_ifc_out: {}
+Parameters:
+{}""".format(self.name,
+             self.description,
+             self.num_ifc_in,
+             self.num_ifc_out,
+             self.params)
 
 class MultiResult(Structure):
    _fields_ = [('message_size', c_uint16),
@@ -114,8 +154,16 @@ class IfcSpec(Structure):
 
 # Functions for creating structures
 
-def CreateModuleInfo(name, description, num_ifc_in, num_ifc_out):
-   return ModuleInfo(name, description, num_ifc_in, num_ifc_out)
+def CreateModuleInfo(name, description, num_ifc_in, num_ifc_out, opts = None):
+   params = []
+   if opts and isinstance(opts, OptionParser):
+      for o in opts.option_list:
+         t = "none" if o.nargs >= 1 else "string"
+         ar = 1 if o.nargs >= 1 else 0
+         m = ModuleInfoParameter(o._short_opts[0][-1], o._long_opts[0][2:], o.help, ar, t)
+         params.append(m)
+   params.append(ModuleInfoParameter(chr(0x0), None, None, 0, None))
+   return ModuleInfo(name, description, num_ifc_in, num_ifc_out, ((ModuleInfoParameter*params.__len__())(*params)))
 
 def CreateIfcSpec(types, params):
    return IfcSpec(types, (c_char_p*len(params))(*params))
@@ -148,6 +196,16 @@ lib.trap_print_ifc_spec_help.argtypes = None
 lib.trap_print_ifc_spec_help.restype = None
 lib.trap_ifcctl.argtypes = (c_uint, c_uint, c_uint) # in fact, some of c_units are enums, but they are probably implemented as uint
 lib.trap_ifcctl.restype = errorCodeChecker
+
+# Data format handling functions
+lib.trap_set_data_fmt.argtypes = (c_uint32, c_ubyte, c_char_p)
+lib.trap_set_data_fmt.restype = None
+lib.trap_set_required_fmt.argtypes = (c_uint32, c_ubyte, c_char_p)
+lib.trap_set_required_fmt.restype = None
+lib.trap_get_data_fmt.argtypes = (c_ubyte, c_uint32, POINTER(c_ubyte), POINTER(c_char_p))
+lib.trap_get_data_fmt.restype = c_int
+lib.trap_get_in_ifc_state.argtypes = (c_uint32,)
+lib.trap_get_in_ifc_state.restype = c_int
 
 
 def init(module_info, ifc_spec):
@@ -229,9 +287,18 @@ def parseParams(argv, module_info=None):
       setVerboseLevel(2)
       argv.remove("-vvv")
 
+   ifc_types = ""
+   ifc_params= []
    try:
-      ifc_types, ifc_params = ifc_spec.split(';', 1)
-      ifc_params = ifc_params.split(';')
+      ifcs = ifc_spec.split(',')
+
+      if len(ifcs) < (max(module_info.num_ifc_in, 0) + max(module_info.num_ifc_out, 0)):
+         raise EBadParams(E_BADPARAMS, "Number of IFC parameters doesn't match number of IFCs in module_info.")
+      for i in ifcs:
+         (ifcType, ifcParams) = i.split(":", 1)
+         ifc_types = ifc_types + ifcType
+         ifc_params.append(ifcParams)
+
    except ValueError:
       raise EBadParams(E_BADPARAMS, "Wrong format of interface specifier.")
    if len(ifc_types) != len(ifc_params):
@@ -242,6 +309,11 @@ def parseParams(argv, module_info=None):
 def freeIfcSpec(ifc_spec):
    raise NotImplementedError("Wrapper for trap_free_ifc_spec is not implemented.")
 
+def trap_get_data_fmt(direction, ifcidx):
+   fmttype = c_ubyte()
+   fmtspec = c_char_p()
+   lib.trap_get_data_fmt(direction, ifcidx, byref(fmttype), byref(fmtspec))
+   return (fmttype.value, string_at(fmtspec))
 
 # ***** Set up automatic cleanup when the interpreter exits *****
 
@@ -277,7 +349,7 @@ stop = False
 
 def py_signal_handler(signum):
    global stop
-   #print "Singal", signum, "received."
+   #print "Signal", signum, "received."
    stop = True
    try:
       terminate()
