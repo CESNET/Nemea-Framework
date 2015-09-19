@@ -996,6 +996,10 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
          timeout_cmd;\
       } else if ((ret_code) == TRAP_E_TERMINATED) {\
          error_cmd;\
+      } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
+      } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
+         fprintf(stderr, "Error: output and input interfaces data formats or data specifiers mismatch.\n", );
+         error_cmd; \
       } else {\
          fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
          error_cmd;\
