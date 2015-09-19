@@ -182,7 +182,7 @@ void* ht_insert_v2(cc_hash_table_v2_t* ht, char *key, const void *new_data)
         return NULL;
     } else {
         // we need suitable position --> do the swapping magic :)
-        for (ttl; ttl > 0; ttl--) {
+        for (; ttl > 0; ttl--) {
             // we found viable position --> finish swapping the indexes
             if (ht->ind[pos_i].valid == 0) {
                 pos_s = ht->ind[pos_i].index;
@@ -286,7 +286,7 @@ void* ht_lock_insert_v2(cc_hash_table_v2_t *ht, char *key, const void *new_data,
         return NULL;
     } else {
         // we need suitable position --> do the swapping magic :)
-        for (ttl; ttl > 0; ttl--) {
+        for (; ttl > 0; ttl--) {
             // we found viable position --> finish swapping the indexes
             if (ht->ind[pos_i].valid == 0) {
                 pos_i = ht->ind[pos_i].index;
