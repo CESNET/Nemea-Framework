@@ -184,7 +184,7 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
       /* get new data and store into buffer, set buffer_full size */
       ctx->in_ifc_list[ifc_idx].buffer_pointer = ctx->in_ifc_list[ifc_idx].buffer;
       result = ctx->in_ifc_list[ifc_idx].recv(ctx->in_ifc_list[ifc_idx].priv, bp, &tempbufheader, timeout);
-      if (result == TRAP_E_OK_FORMAT_CHANGED) {
+      if (result == TRAP_E_FORMAT_MISMATCH) {
          goto exit;
       }
 #ifdef BUFFERING_CHECK_HEADERS
@@ -226,6 +226,13 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
    }
 exit:
    pthread_mutex_unlock(&ctx->in_ifc_list[ifc_idx].ifc_mtx);
+   if (result == TRAP_E_OK) {
+      ctx->counter_recv_message[ifc_idx]++;
+      if (ctx->in_ifc_list[ifc_idx].client_state == FMT_CHANGED) {
+         ctx->in_ifc_list[ifc_idx].client_state = FMT_OK;
+         return TRAP_E_FORMAT_CHANGED;
+      }
+   }
    return result;
 }
 
@@ -1538,16 +1545,17 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
    if ((c->in_ifc_list[ifcidx].recv != NULL) && (c->in_ifc_list[ifcidx].priv != NULL)) {
 #ifndef DISABLE_BUFFERING
       ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout);
-      if (ret_val == TRAP_E_OK) {
-         c->counter_recv_message[ifcidx]++;
-      }
       return ret_val;
 #else
       uint32_t newsize = 0;
       ret_val = c->in_ifc_list[ifcidx].recv(c->in_ifc_list[ifcidx].priv, c->in_ifc_list[ifcidx].buffer, &newsize, c->in_ifc_list[ifcidx].datatimeout);
       if (ret_val == TRAP_E_OK) {
          c->counter_recv_message[ifcidx]++;
-      } else if (ret_val == TRAP_E_OK_FORMAT_CHANGED) {
+         if (c->in_ifc_list[ifcidx].client_state == FMT_CHANGED) {
+            c->in_ifc_list[ifcidx].client_state = FMT_OK;
+            return TRAP_E_FORMAT_CHANGED;
+         }
+      } else if (ret_val == TRAP_E_FORMAT_MISMATCH) {
          return ret_val;
       }
       (*size) = newsize;
@@ -2829,7 +2837,7 @@ int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, ui
       inifc = &c->in_ifc_list[ifc_idx];
 
       assert(inifc->data_type != TRAP_FMT_RAW);
-      if (inifc->client_state == FMT_OK || inifc->client_state == FMT_SUBSET) {
+      if (inifc->client_state == FMT_OK || inifc->client_state == FMT_CHANGED) {
          (*data_type) = inifc->data_type;
          if (inifc->data_type != TRAP_FMT_RAW) {
             (*spec) = inifc->data_fmt_spec;
@@ -3170,12 +3178,12 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       compare = TRAP_E_OK;
    }
    if (ret_val != compare) {
-      // Could not send hello message header
+      // Could not receive hello message header
       VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
       if (ifc_type == TRAP_IFC_TYPE_FILE) {
-         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
       } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
       }
       neg_result = NEG_RES_FAILED;
       goto in_neg_exit;
@@ -3250,12 +3258,12 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
          compare = TRAP_E_OK;
       }
       if (ret_val != compare) {
-         // Could not send hello message header
+         // Could not receive data formate specifier
          VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
          if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
          } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
          }
          neg_result = NEG_RES_FAILED;
          goto in_neg_exit;
@@ -3282,9 +3290,9 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       } else if (ret_val == TRAP_E_FIELDS_SUBSET) {
          VERBOSE(CL_VERBOSE_LIBRARY, "OK");
          if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_SUBSET;
+            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
          } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_SUBSET;
+            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
          }
          neg_result = NEG_RES_RECEIVER_FMT_SUBSET;
       } else {
@@ -3294,6 +3302,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
          } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
             tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_OK;
          }
+         neg_result = NEG_RES_CONT;
          if (current_data_fmt_spec != NULL) {
             VERBOSE(CL_VERBOSE_LIBRARY, "Step 5: comparing old and new senders data_fmt_spec (not first negotiation)...   ");
             VERBOSE(CL_VERBOSE_LIBRARY, "old data_fmt_spec: \"%s\"", current_data_fmt_spec);
@@ -3301,13 +3310,15 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
             ret_val = trap_ctx_cmp_data_fmt(current_data_fmt_spec, recv_data_fmt_spec);
             if (ret_val != TRAP_E_OK) {
                VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+               if (ifc_type == TRAP_IFC_TYPE_FILE) {
+                  file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
+               } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+                  tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
+               }
                neg_result = NEG_RES_SENDER_FMT_SUBSET;
             } else {
                VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-               neg_result = NEG_RES_CONT;
             }
-         } else {
-            neg_result = NEG_RES_CONT;
          }
       }
    }

@@ -201,7 +201,7 @@ neg_start:
       switch(input_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE)) {
       case NEG_RES_FMT_UNKNOWN:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
-         return TRAP_E_OK_FORMAT_CHANGED;
+         return TRAP_E_FORMAT_MISMATCH;
 
       case NEG_RES_CONT:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
@@ -211,12 +211,12 @@ neg_start:
       case NEG_RES_RECEIVER_FMT_SUBSET:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (data specifier of the input interface is subset of the output interface data specifier).");
          config->neg_initialized = 1;
-         return TRAP_E_OK_FORMAT_CHANGED;
+         break;
 
       case NEG_RES_SENDER_FMT_SUBSET:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new data specifier of the output interface is subset of the old one; it was not first negotiation).");
          config->neg_initialized = 1;
-         return TRAP_E_OK_FORMAT_CHANGED;
+         break;
 
       case NEG_RES_FAILED:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
@@ -226,11 +226,11 @@ neg_start:
                goto neg_start;
             }
          }
-         return TRAP_E_OK_FORMAT_CHANGED;
+         return TRAP_E_FORMAT_MISMATCH;
 
       case NEG_RES_FMT_MISMATCH:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data format or data specifier mismatch).");
-         return TRAP_E_OK_FORMAT_CHANGED;
+         return TRAP_E_FORMAT_MISMATCH;
 
       default:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");

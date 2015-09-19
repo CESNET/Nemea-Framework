@@ -210,8 +210,8 @@ struct ur_values_s{
  */
 #define TRAP_CTX_RECEIVE(ctx, ifc_num, data, data_size, tmplt) \
 ({\
-   int fmt_state, ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
-   if (ret == TRAP_E_OK_FORMAT_CHANGED && ((fmt_state = trap_ctx_get_in_ifc_state(ctx, ifc_num)) == FMT_SUBSET || fmt_state == FMT_MATCH) {\
+   int ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
+   if (ret == TRAP_E_FORMAT_CHANGED) {\
       const char *spec = NULL;\
       uint8_t data_fmt;\
       if (trap_ctx_get_data_fmt(ctx, TRAPIFC_INPUT, ifc_num, &data_fmt, &spec) != TRAP_E_OK) {\

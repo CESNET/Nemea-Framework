@@ -88,7 +88,8 @@ extern const char trap_git_version[];
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
 #define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
-#define TRAP_E_OK_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
+#define TRAP_E_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
+#define TRAP_E_FORMAT_MISMATCH 24 ///< Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
 /**@}*/
@@ -249,7 +250,7 @@ typedef enum {
    FMT_MISMATCH = 2,
 
    /** Negotiation was successful, but receivers (input ifc) template is subset of senders (output ifc) template and missing fields has to be defined */
-   FMT_SUBSET = 3
+   FMT_CHANGED = 3
 } trap_in_ifc_state_t;
 
 /**
