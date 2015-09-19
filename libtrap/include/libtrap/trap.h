@@ -335,13 +335,6 @@ void *trap_get_global_ctx();
  */
 int trap_get_in_ifc_state(uint32_t ifc_idx);
 
-/**
- * Confirms state of an input interface on specified index (it is set to FMT_OK).
- *
- * \param[in] ifc_idx   Index of the input interface
- */
-void trap_confirm_ifc_state(uint32_t ifc_idx);
-
 /** Parse command-line arguments.
  * Extract agruments needed by TRAP to set up interfaces (-i params) and return
  * the rest (argc and argv are modified). Extracted information is stored into
@@ -608,14 +601,6 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
  *  else TRAP_E_NOT_INITIALIZED.
  */
 int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
-
-/**
- * Confirms state of an input interface on specified index (it is set to FMT_OK).
- *
- * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifc_idx   Index of the input interface.
- */
-void trap_ctx_confirm_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
 
 /**
  * Set format of messages expected on input IFC.

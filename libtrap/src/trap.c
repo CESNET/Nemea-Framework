@@ -2909,24 +2909,6 @@ int trap_get_in_ifc_state(uint32_t ifc_idx)
    return trap_ctx_get_in_ifc_state(trap_glob_ctx, ifc_idx);
 }
 
-void trap_ctx_confirm_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx)
-{
-   if (ctx == NULL) {
-      return;
-   }
-   trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
-   if (ifc_idx >= c->num_ifc_in) {
-      return;
-   }
-   c->in_ifc_list[ifc_idx].client_state = FMT_OK;
-   return;
-}
-
-void trap_confirm_ifc_state(uint32_t ifc_idx)
-{
-   trap_ctx_confirm_ifc_state(trap_glob_ctx, ifc_idx);
-}
-
 const char *trap_get_type_and_name_from_string(const char *source, const char **name, const char **type, int *length_name, int *length_type)
 {
    int length_type_2 = 0, length_name_2 = 0;

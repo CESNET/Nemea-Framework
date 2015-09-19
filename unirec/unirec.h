@@ -229,7 +229,6 @@ struct ur_values_s{
                   trap_ctx_set_data_fmt(ctx, tmplt->ifc_out, TRAP_FMT_UNIREC, spec_cpy);\
                }\
             }\
-            trap_ctx_confirm_ifc_state(ctx, ifc_num);\
          }\
       }\
    }\
