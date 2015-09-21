@@ -260,6 +260,6 @@ echo "  prefix...............: $prefix"
 echo
 echo "Tests..................: `if [[ -z "$ENABLE_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "Long performance tests.: `if [[ -z "$ENABLE_LONG_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
-echo "Examples...............: `if [[ -z "$ENABLE_EXAMPLES" ]]; then echo enabled; else echo disabled; fi`"
+echo "Examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 
