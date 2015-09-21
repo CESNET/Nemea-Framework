@@ -1,12 +1,25 @@
 #!/usr/bin/python
 import sys
+import os
+from optparse import OptionParser
+o = OptionParser()
 fields = []
 values = []
 constants = []
 type_defined = False
 type_name = ""
+
+if __name__ == "__main__":
+   o.add_option("-i", "--input", action="store", dest="inputdir", help="Specify input directory.")
+   o.parse_args()
+
 # Read input file
-for n,line in enumerate(open("values", "r").readlines()):
+if o.values and o.values.inputdir:
+   inputfile = os.path.join(o.values.inputdir, "values")
+else:
+   inputfile = "values"
+
+for n,line in enumerate(open(inputfile, "r").readlines()):
    line = line.strip()
    if line == "" or line[0] == '#':
       continue
@@ -35,12 +48,24 @@ for n,line in enumerate(open("values", "r").readlines()):
 # TODO check for duplicate identifiers
 
 # ***** Write header file with field defines *****
-out = open("values.h", "w")
+out = open("ur_values.h", "w")
 
 out.write("#ifndef _UR_VALUES_H_\n")
 out.write("#define _UR_VALUES_H_\n\n")
 out.write("/************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/\n")
 out.write("/* Edit \"values\" file and run process_values.py script to add UniRec values. */\n\n")
+out.write("""
+#include <stdint.h>
+/** @brief Values names and descriptions
+ * It contains a table mapping a value to name and description
+ */
+typedef struct ur_values_s ur_values_t;
+struct ur_values_s{
+  int32_t value;
+  char *name;
+  char *description;
+};
+""")
 
 count = 0;
 for name,con in values:
@@ -54,9 +79,10 @@ out.close()
 
 
 # ***** Write C file with field-related functions *****
-out = open("values.c", "w")
+out = open("ur_values.c", "w")
 out.write("/************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/\n")
 out.write("/* Edit \"values\" file and run process_values.py script to add UniRec values. */\n\n")
+out.write('#include "ur_values.h"\n\n')
 out.write("const ur_values_t ur_values[] =\n{\n")
 for _,con in values:
    for name,value,desc in con:
@@ -66,7 +92,7 @@ out.close()
 
 
 # ***** Write Python file *****
-out = open("values.py", "w")
+out = open("ur_values.py", "w")
 out.write("#************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************\n")
 out.write("/* Edit \"values\" file and run process_values.py script to add UniRec values. */\n\n")
 out.write("values = %s\n" % values)

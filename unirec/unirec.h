@@ -54,7 +54,7 @@ extern "C" {
 #include "ipaddr.h"
 #include "ur_time.h"
 #include "links.h"
-#include "values.h"
+#include "ur_values.h"
 #include <libtrap/trap.h>
 
 //General setting
@@ -174,16 +174,6 @@ typedef struct {
    ur_tmplt_direction direction; ///< Direction of data input, output, bidirection, no direction
    uint32_t ifc_out;   ///< output interface number (stored only if the direction == UR_TMPLT_DIRECTION_BI)
 } ur_template_t;
-
-/** \brief Values names and descriptions
- * It contains a table mapping a value to name and description
- */
-typedef struct ur_values_s ur_values_t;
-struct ur_values_s{
-  int32_t value;
-  char *name;
-  char *description;
-};
 
 /** \brief Receive data from interface
  * Receive data with specified template from libtrap interface. If the receiving template is

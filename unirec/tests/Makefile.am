@@ -1,7 +1,12 @@
-bin_PROGRAMS = test_basic test_creation  test_ipaddr  test_speed test_speed_o test_speed_ur test_speed_uro
+BUILT_SOURCES=fields.h fields.c
+
+fields.h fields.c: ${top_srcdir}/unirec_generate_fields_files.py
+	$(PYTHON) ${top_srcdir}/unirec_generate_fields_files.py -i ${top_srcdir} -o ./
+
+bin_PROGRAMS=test_basic test_creation  test_ipaddr  test_speed test_speed_o test_speed_ur test_speed_uro
 
 AM_LDFLAGS=-static ../libunirec.la
-COM_CPPFLAGS=-I../../
+COM_CPPFLAGS=-I../../ -I../ -I${top_srcdir}/../../
 
 test_basic_SOURCES=test_basic.c
 test_basic_CPPFLAGS=$(COM_CPPFLAGS)
@@ -26,9 +31,6 @@ test_speed_uro_SOURCES=test_speed.c
 test_speed_uro_CFLAGS=-DUNIREC
 test_speed_uro_CPPFLAGS=$(COM_CPPFLAGS)
 
-BUILT_SOURCES = fields.h fields.c
+clean-local:
+	rm -f fields.c fields.h
 
-fields.h fields.c: ../unirec_generate_fields_files.py
-	$(PYTHON) ../unirec_generate_fields_files.py
-
-CLEANFILES = fields.c fields.h

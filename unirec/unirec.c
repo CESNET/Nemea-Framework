@@ -55,7 +55,7 @@
 #include "unirec.h"
 #include <libtrap/trap.h>
 #include <inttypes.h>
-#include "values.c"
+#include "ur_values.c"
 #include "inline.h"
 
 // All inline functions from ipaddr.h must be declared again with "extern"

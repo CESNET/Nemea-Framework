@@ -228,44 +228,40 @@ def create_fields_file (file_path):
    out.close()
 
 
-# Read input files
-for root, dirs, files in os.walk('.'):
-   definition_found = False
-   for file in files:
-      if file.endswith('.c') or file.endswith('.cpp') or file.endswith('.cc'):
-         #print file
-         #print root
-         with open(os.path.join(root, file), "r") as f:
-            lines = f.readlines()
-            if len(lines) > 0:
-               line = lines[0]
-               line_iterator = 0
-               char_iterator = 0
-               try:
-                  automata(fields)
-               except Exception, e:
-                  print >> sys.stderr, 'Error on line %i: %s, file: %s' % (line_iterator+1, str(e), file)
-                  sys.exit(1)
-   try:
-      if (definition_found == True):
-         create_fields_file(root + "//")
-      #print fields
-      fields = []
-   except Exception, e:
-      print >> sys.stderr, 'Error on line %i: %s, file: %s' % (line_iterator+1, str(e), file)
-      sys.exit(1)
+if __name__ == "__main__":
+   from optparse import OptionParser
+   o = OptionParser()
+   o.add_option("-i", "--input", action="store", dest="inputdir", help="Specify input directory.")
+   o.add_option("-o", "--output", action="store", dest="outputdir", help="Specify output directory.")
+   o.parse_args()
 
+   # Read input files
+   for root, dirs, files in os.walk('.' if o.values.inputdir == None else o.values.inputdir):
+      definition_found = False
+      for file in files:
+         if file.endswith('.c') or file.endswith('.cpp') or file.endswith('.cc'):
+            #print file
+            #print root
+            with open(os.path.join(root, file), "r") as f:
+               lines = f.readlines()
+               if len(lines) > 0:
+                  line = lines[0]
+                  line_iterator = 0
+                  char_iterator = 0
+                  try:
+                     automata(fields)
+                  except Exception, e:
+                     print >> sys.stderr, 'Error on line %i: %s, file: %s' % (line_iterator+1, str(e), file)
+                     sys.exit(1)
+      try:
+         if (definition_found == True):
+            if o.values.outputdir != None:
+               create_fields_file(o.values.outputdir + "/")
+            else:
+               create_fields_file(root + "//")
+         #print fields
+         fields = []
+      except Exception, e:
+         print >> sys.stderr, 'Error on line %i: %s, file: %s' % (line_iterator+1, str(e), file)
+         sys.exit(1)
 
-
-
-
-# ***** Write Python file *****
-# out = open("fields.py", "w")
-# out.write("#************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************\n")
-
-# out.write("FIELDS = {\n")
-# for name,type,size in fields:
-#    out.write("   '%s' : FieldSpec(%i, %s, %r),\n" % \
-#              (name, size, python_types[type][0], python_types[type][1]) )
-# out.write("}\n\n")
-# out.close()

@@ -7,11 +7,17 @@ endif
 
 AM_CFLAGS=-std=c99
 
-RPMDIR = RPMBUILD
+RPMDIR=RPMBUILD
+
+BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
+
+ur_values.h ur_values.c ur_values.py: process_values.py
+	$(PYTHON) ${top_srcdir}/process_values.py -i ${top_srcdir}
+
 
 lib_LTLIBRARIES=libunirec.la
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c
+libunirec_la_SOURCES=unirec.c ur_values.c unirec.h inline.h ipaddr_cpp.h ipaddr.h links.h ur_time.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
@@ -22,26 +28,12 @@ unirecinclude_HEADERS=unirec.h \
 		     ipaddr.h \
 		     ipaddr_cpp.h \
 		     links.h  \
-		     ur_time.h\
-		     values.h
-
-BUILT_SOURCES = values.h values.c
+		     ur_time.h \
+		     ur_values.h
 
 bin_SCRIPTS=unirec_generate_fields_files.py process_values.py
 
-EXTRA_DIST=values
-
-values.h values.c: process_values.py
-	$(PYTHON) process_values.py
-
-unirec.o: unirec.c unirec.h ipaddr.h values.h values.c
-	gcc -c ${CFLAGS} unirec.c -o $@
-
-#tests:
-#	make -C tests
-
-clean-hook:
-	rm -f values.h values.c values.py
+EXTRA_DIST=values unirec_generate_fields_files.py process_values.py
 
 include doxygen.am
 
@@ -51,6 +43,12 @@ doc: doxygen-doc
 
 clean-local: doxygen-clean
 	rm -rf doc/doxygen
+	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} +
+	find \( -name fields.c -o -name fields.h \) -exec rm -f {} +
+else
+clean-local:
+	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} +
+	find \( -name fields.c -o -name fields.h \) -exec rm -f {} +
 endif
 
 if MAKE_RPMS
