@@ -127,6 +127,31 @@ static int compare_timeouts(const void *a, const void *b);
 int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
 void create_service_thread(trap_ctx_priv_t *ctx, const char *params);
 
+trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int i_ifcs, int o_ifcs, uint16_t param_count)
+{
+   trap_module_info_t *m = NULL;
+
+   m = calloc(1, sizeof(trap_module_info_t));
+   if (m != NULL) {
+      m->params = calloc(param_count + 1, sizeof(trap_module_info_parameter_t *));
+      if (m->params == NULL) {
+         free(m);
+         return NULL;
+      }
+   }
+
+   ALLOCATE_BASIC_INFO_2(m, mname, mdesc, i_ifcs, o_ifcs);
+
+   /* allocated module_info on success, NULL on error */
+   return m;
+}
+
+int trap_update_module_param(trap_module_info_t *m, uint16_t param_id, char shortopt, const char *longopt, const char *desc, int req_arg, const char *arg_type)
+{
+   ALLOCATE_PARAM_ITEMS_2(m, param_id, shortopt, longopt, desc, req_arg, arg_type)
+   return 0;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**

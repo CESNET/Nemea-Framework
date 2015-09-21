@@ -6,13 +6,16 @@ import os.path
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
 import trap
 import unirec
+
+# How to add options of module
 from optparse import OptionParser
-parser = OptionParser()
+parser = OptionParser(add_help_option=False)
 parser.add_option("-f", "--file", dest="filename",
       help="write report to FILE", metavar="FILE")
 parser.add_option("-q", "--quiet",
       action="store_false", dest="verbose", default=True,
       help="don't print status messages to stdout")
+# usage of OptionParser can be found in its help
 
 
 module_info = trap.CreateModuleInfo(
@@ -20,7 +23,7 @@ module_info = trap.CreateModuleInfo(
    "An example TRAP module written in Python", # Description
    1, # Number of input interfaces
    1,  # Number of output interfaces
-   parser
+   parser # use previously defined OptionParser
 )
 
 # Initialize module
@@ -30,9 +33,10 @@ trap.init(module_info, ifc_spec)
 
 trap.registerDefaultSignalHandler() # This is needed to allow module termination using s SIGINT or SIGTERM signal
 
+# this module accepts all UniRec fieds -> set required format:
 trap.lib.trap_set_required_fmt(0, trap.TRAP_FMT_UNIREC, "")
-# Create class for incoming UniRec records
 
+# Specifier of UniRec records will be received during libtrap negotiation
 UR_Flow = None
 
 # Main loop (trap.stop is set to True when SIGINT or SIGTERM is received)

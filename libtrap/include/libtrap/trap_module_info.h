@@ -169,56 +169,95 @@ typedef struct trap_module_info_s {
       {0, 0, 0, 0} \
    };
 
-/** Macro for allocation and initialization of module basic information (name, description and number of input/output interfaces) in global variable module_info
+/** Macro for allocation and initialization of module basic information
+ *
+ * \param [in,out] module_info  pointer to module_info
+ * \param [in] p_name   module's name
+ * \param [in] p_description    module's description
+ * \param [in] p_input  number of input IFCs
+ * \param [in] p_output number of output IFCs
  */
-#define ALLOCATE_BASIC_INFO(p_name, p_description, p_input, p_output) \
-   if (p_name != NULL) { \
-      module_info->name = strdup(p_name); \
-   } else { \
-      module_info->name = NULL; \
-   } \
-   if (p_description != NULL) { \
-      module_info->description = strdup(p_description); \
-   } else { \
-      module_info->description = NULL; \
-   } \
-   module_info->num_ifc_in = p_input; \
-   module_info->num_ifc_out = p_output;
-
-/** Macro for allocation and initialization of module parameters information (short_opt, long_opt, description etc.) in global variable module_info
- */
-#define ALLOCATE_PARAM_ITEMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
-   if (module_info->params[trap_info_cnt] == NULL) { \
-      module_info->params[trap_info_cnt] = (trap_module_info_parameter_t *) calloc (1, sizeof(trap_module_info_parameter_t)); \
-   } \
-   if (module_info->params[trap_info_cnt] != NULL) { \
-      if (p_short_opt != 0) { \
-         module_info->params[trap_info_cnt]->short_opt = p_short_opt; \
+#define ALLOCATE_BASIC_INFO_2(module_info, p_name, p_description, p_input, p_output) \
+   if (module_info != NULL) { \
+      if (p_name != NULL) { \
+         module_info->name = strdup(p_name); \
       } else { \
-         module_info->params[trap_info_cnt]->short_opt = 0; \
-      } \
-      if (p_long_opt != NULL) { \
-         module_info->params[trap_info_cnt]->long_opt = strdup(p_long_opt); \
-      } else { \
-         module_info->params[trap_info_cnt]->long_opt = NULL; \
+         module_info->name = NULL; \
       } \
       if (p_description != NULL) { \
-         module_info->params[trap_info_cnt]->description = strdup(p_description); \
+         module_info->description = strdup(p_description); \
       } else { \
-         module_info->params[trap_info_cnt]->description = NULL; \
+         module_info->description = NULL; \
       } \
-      if (p_required_argument == 1) { \
-         module_info->params[trap_info_cnt]->param_required_argument = p_required_argument; \
-      } else { \
-         module_info->params[trap_info_cnt]->param_required_argument = 0; \
-      } \
-      if (p_argument_type != NULL) { \
-         module_info->params[trap_info_cnt]->argument_type = strdup(p_argument_type); \
-      } else { \
-         module_info->params[trap_info_cnt]->argument_type = NULL; \
-      } \
-      trap_info_cnt++; \
+      module_info->num_ifc_in = p_input; \
+      module_info->num_ifc_out = p_output; \
    }
+
+/** Macro for allocation and initialization of module basic information in global module_info
+ *
+ * \param [in] p_name   module's name
+ * \param [in] p_description    module's description
+ * \param [in] p_input  number of input IFCs
+ * \param [in] p_output number of output IFCs
+ */
+#define ALLOCATE_BASIC_INFO(p_name, p_description, p_input, p_output) \
+   ALLOCATE_BASIC_INFO_2(module_info, p_name, p_description, p_input, p_output)
+
+/** Macro for allocation and initialization of module parameters information
+ *
+ * \param [in] m  module_info pointer
+ * \param [in] param_id   index of parameter to set
+ * \param [in] p_short_opt  short option
+ * \param [in] p_long_opt   long option
+ * \param [in] p_description  option description
+ * \param [in] p_required_argument    no_argument | required_argument | optional_argument
+ * \param [in] p_argument_type  data type of option argument
+ */
+#define ALLOCATE_PARAM_ITEMS_2(m, param_id, p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+   if (m != NULL) { \
+      if (m->params[param_id] == NULL) { \
+         m->params[param_id] = (trap_module_info_parameter_t *) calloc(1, sizeof(trap_module_info_parameter_t)); \
+      } \
+      if (m->params[param_id] != NULL) { \
+         if (p_short_opt != 0) { \
+            m->params[param_id]->short_opt = p_short_opt; \
+         } else { \
+            m->params[param_id]->short_opt = 0; \
+         } \
+         if (p_long_opt != NULL) { \
+            m->params[param_id]->long_opt = strdup(p_long_opt); \
+         } else { \
+            m->params[param_id]->long_opt = strdup(""); \
+         } \
+         if (p_description != NULL) { \
+            m->params[param_id]->description = strdup(p_description); \
+         } else { \
+            m->params[param_id]->description = strdup(""); \
+         } \
+         if (p_required_argument == 1) { \
+            m->params[param_id]->param_required_argument = p_required_argument; \
+         } else { \
+            m->params[param_id]->param_required_argument = 0; \
+         } \
+         if (p_argument_type != NULL) { \
+            m->params[param_id]->argument_type = strdup(p_argument_type); \
+         } else { \
+            m->params[param_id]->argument_type = strdup(""); \
+         } \
+      } \
+   }
+
+/** Macro for allocation and initialization of module parameters information in global module_info and trap_info_cnt
+ *
+ * \param [in] p_short_opt  short option
+ * \param [in] p_long_opt   long option
+ * \param [in] p_description  option description
+ * \param [in] p_required_argument    no_argument | required_argument | optional_argument
+ * \param [in] p_argument_type  data type of option argument
+ */
+#define ALLOCATE_PARAM_ITEMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+   ALLOCATE_PARAM_ITEMS_2(module_info, trap_info_cnt, p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+   trap_info_cnt++;
 
 /** Macro releasing memory allocated for module basic information in global variable module_info
  */
@@ -281,15 +320,40 @@ typedef struct trap_module_info_s {
    char * module_getopt_string = (char *) calloc(module_getopt_string_size, sizeof(char)); \
    module_info = (trap_module_info_t *) calloc(1, sizeof(trap_module_info_t)); \
    GEN_LONG_OPT_STRUCT(PARAMS); \
+   BASIC(ALLOCATE_BASIC_INFO) \
+   PARAMS(COUNT_MODULE_PARAMS) \
    if (module_info != NULL) { \
-      BASIC(ALLOCATE_BASIC_INFO) \
-      PARAMS(COUNT_MODULE_PARAMS) \
       module_info->params = (trap_module_info_parameter_t **) calloc(trap_module_params_cnt + 1, sizeof(trap_module_info_parameter_t *)); \
       if (module_info->params != NULL) { \
          PARAMS(ALLOCATE_PARAM_ITEMS) \
          PARAMS(GENERATE_GETOPT_STRING) \
       } \
    }
+
+/**
+ * Allocate module info with empty parameters array.
+ *
+ * \param [in] mname  name of Nemea module
+ * \param [in] mdesc  description of Nemea module
+ * \param [in] i_ifcs number of input IFCs
+ * \param [in] o_ifcs number of output IFCs
+ * \param [in] param_count  number of parameters
+ * \return pointer to module_info with allocated parameters, NULL otherwise.
+ */
+trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int i_ifcs, int o_ifcs, uint16_t param_count);
+
+/**
+ * Set module's parameter in the allocated module_info structure.
+ *
+ * \param [in,out] m    pointer to allocated module_info
+ * \param [in] param_id index of parameter which is set
+ * \param [in] shortopt short form of the parameter e.g. 'f' for -f
+ * \param [in] longopt  long form of the parameter e.g. "file" for --file
+ * \param [in] desc     description of the parameter
+ * \param [in] req_arg  requirement of argument, use standard required_argument, no_argument, optional_argument
+ * \param [in] arg_type data type of argument
+ */
+int trap_update_module_param(trap_module_info_t *m, uint16_t param_id, char shortopt, const char *longopt, const char *desc, int req_arg, const char *arg_type);
 
 /** Macro releasing whole module_info structure allocated in global variable module_info
  *  First argument is macro defining module basic information (name, description, number of input/output interfaces)

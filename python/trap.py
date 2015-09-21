@@ -162,25 +162,31 @@ def CreateModuleInfo(name, description, num_ifc_in, num_ifc_out, opts = None):
    description - module's description
    num_ifc_in - number of module's input IFCs (-1 for variable number)
    num_ifc_out - number of module's output IFCs (-1 for variable number)
-   opts - python OptionParser for specification of module's parameters"""
+   opts - python optparse.OptionParser for specification of module's parameters"""
 
    # put all options into the list
    params = []
    if opts and isinstance(opts, OptionParser):
      for o in opts.option_list:
-        t = "none" if o.nargs >= 1 else "string"
-        ar = 1 if o.nargs >= 1 else 0
-        m = ModuleInfoParameter(o._short_opts[0][-1], o._long_opts[0][2:], o.help, ar, t)
+        arg_type = None if o.nargs == 0 else "string"
+        arg_req = 1 if o.nargs >= 1 else 0
+        shortopt = c_char(o._short_opts[0][-1])
+        longopt = o._long_opts[0][2:]
+        m = ModuleInfoParameter(shortopt, longopt, o.help, arg_req, arg_type)
         params.append(m)
-   # create array of pointers from the list
-   p = (c_void_p*(params.__len__()+1))()
-   for i in range(0, params.__len__()):
-      p[i] = addressof(params[i])
-   # array is ended by zero value
-   p[params.__len__()] = None
-   return ModuleInfo(name, description, num_ifc_in, num_ifc_out, addressof(p))
+
+   moduleInfo = lib.trap_create_module_info(name, description, num_ifc_in, num_ifc_out, len(params))
+   pn = 0
+   for p in params:
+      lib.trap_update_module_param(moduleInfo, pn, p.short_opt, p.long_opt, p.description, p.param_required_argument, p.arg_type)
+      pn = pn + 1
+   return moduleInfo
 
 def CreateIfcSpec(types, params):
+   """Create ifc_spec structure.
+
+   types - string containing list of IFC types
+   params - list of IFC parameters"""
    return IfcSpec(types, (c_char_p*len(params))(*params))
 
 
@@ -212,6 +218,10 @@ lib.trap_print_ifc_spec_help.restype = None
 lib.trap_ifcctl.argtypes = (c_uint, c_uint, c_uint) # in fact, some of c_units are enums, but they are probably implemented as uint
 lib.trap_ifcctl.restype = errorCodeChecker
 
+lib.trap_create_module_info.argtypes = (c_char_p, c_char_p, c_int, c_int, c_uint16)
+lib.trap_create_module_info.restype = POINTER(ModuleInfo)
+lib.trap_update_module_param.argtypes = (POINTER(ModuleInfo), c_uint16, c_char, c_char_p, c_char_p, c_int, c_char_p);
+lib.trap_update_module_param.restype = c_int
 lib.trap_set_help_section.argtypes = (c_int,)
 lib.trap_set_help_section.restype = None
 
@@ -232,7 +242,7 @@ def init(module_info, ifc_spec):
    module_info - info about module, structure created by CreateModuleInfo()
    ifc_spec - info about IFCs, structure created by parseParams() that analyzes process arguments
    """
-   lib.trap_init(byref(module_info), ifc_spec)
+   lib.trap_init(module_info, ifc_spec)
 
 terminate = lib.trap_terminate
 finalize = lib.trap_finalize
