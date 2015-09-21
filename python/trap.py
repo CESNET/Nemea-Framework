@@ -224,12 +224,23 @@ lib.trap_get_in_ifc_state.restype = c_int
 
 
 def init(module_info, ifc_spec):
+   """Initialize libtrap.
+
+   module_info - info about module, structure created by CreateModuleInfo()
+   ifc_spec - info about IFCs, structure created by parseParams() that analyzes process arguments
+   """
    lib.trap_init(byref(module_info), ifc_spec)
 
 terminate = lib.trap_terminate
 finalize = lib.trap_finalize
 
 def getData(ifc_mask, timeout):
+   """Receive and return a message.
+
+   ifc_mask - selection of IFC
+   timeout - libtrap timeout
+   Obsoleted function!
+   """
    data_ptr = c_void_p()
    data_size = c_uint16()
    lib.trap_get_data(ifc_mask, byref(data_ptr), byref(data_size), timeout)
@@ -237,6 +248,11 @@ def getData(ifc_mask, timeout):
    return data
 
 def recv(ifc):
+   """Receive and return a message.
+
+   ifc - input IFC index
+   Recommended function.
+   """
    data_ptr = c_void_p()
    data_size = c_uint16()
    lib.trap_recv(ifc, byref(data_ptr), byref(data_size))
@@ -244,11 +260,24 @@ def recv(ifc):
    return data
 
 def sendData(ifc, data, timeout):
+   """Send a message.
+
+   ifc - index of IFC
+   data - message to send (array of bytes, casted to c_char_p)
+   timeout - libtrap timeout
+   Obsoleted function!
+   """
    data_ptr = c_char_p(data)
    data_size = c_uint16(len(data))
    lib.trap_send_data(ifc, data_ptr, data_size, timeout)
 
 def send(ifc, data):
+   """Send a message.
+
+   ifc - output IFC index
+   data - array of bytes (string); data argument is casted to c_char_p and passed into libtrap
+   Recommended function.
+   """
    data_ptr = c_char_p(data)
    data_size = c_uint16(len(data))
    lib.trap_send(ifc, data_ptr, data_size)
@@ -260,6 +289,13 @@ printHelp = lib.trap_print_help
 printIfcSpecHelp = lib.trap_print_ifc_spec_help
 
 def ifcctl(type, ifcidx, request, *args):
+   """Set libtrap IFC's option.
+
+   type - IFC_INPUT or IFC_OUTPUT
+   ifcidx - index of IFC
+   request - type of option to set (see libtrap doc trap_ifcctl())
+   args - value to set (see libtrap doc trap_ifcctl())
+   """
    if type not in [IFC_INPUT, IFC_OUTPUT]:
       raise ValueError("ifcctl: type must be IFC_INPUT or IFC_OUTPUT")
    if request == CTL_AUTOFLUSH_TIMEOUT:
@@ -276,6 +312,14 @@ def ifcctl(type, ifcidx, request, *args):
 
 
 def parseParams(argv, module_info=None):
+   """
+   Parse process arguments argv and prepare IFC specification.
+
+   If -h or --help is passed, raise EHelp to print libtrap's help.
+
+   argv - process argument
+   module_info - structure of libtrap's module_info
+   """
    if "-h" in argv or "--help" in argv:
       if module_info is not None:
          printHelp(module_info)
