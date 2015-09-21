@@ -1,6 +1,6 @@
 # unirec.py - python version of UniRec structures/functions
 # Author: Vaclav Bartos (ibartosv@fit.vutbr.cz), 2013
-# Author: Tomas Cejka (cejkat@cesnet.cz), 2014
+# Author: Tomas Cejka (cejkat@cesnet.cz), 2015
 
 import struct
 import sys
@@ -124,7 +124,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
    class_code = dedent('''
       import struct
       class %(template_name)s(object):
-         '%(template_name)s(%(argtxt)s)'
+         "UniRec template %(template_name)s(%(argtxt)s) for data manipulation."
 
          __slots__  = ('_field_types', %(fieldnamestxt)s)
 

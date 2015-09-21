@@ -1,12 +1,12 @@
 # trap.py - python wrapper for TRAP library
 # Author: Vaclav Bartos (ibartosv@fit.vutbr.cz), 2013
+# Author: Tomas Cejka (cejkat@cesnet.cz), 2015
 
 """
 TRAP library python wrapper
 
 This module provides access to libtrap library.
 
-TODO: Help strings of functions.
 """
 
 import ctypes
@@ -396,10 +396,23 @@ def freeIfcSpec(ifc_spec):
    raise NotImplementedError("Wrapper for trap_free_ifc_spec is not implemented.")
 
 def trap_get_data_fmt(direction, ifcidx):
+   """Get (fmttype, fmtspec) from IFC of direction and ifcidx.
+
+   direction - IFC_INPUT | IFC_OUTPUT
+   ifcidx - index of IFC
+   Returns tuple of format type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON) and format specifier."""
    fmttype = c_ubyte()
    fmtspec = c_char_p()
    lib.trap_get_data_fmt(direction, ifcidx, byref(fmttype), byref(fmtspec))
    return (fmttype.value, string_at(fmtspec))
+
+def trap_set_data_fmt(ifcidx, fmttype, fmtspec):
+   """Set data format type and specifier on output IFC (for negotiation).
+
+   ifcidx - index of output IFC
+   fmttype - format data type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON)
+   fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
+   lib.trap_set_data_fmt(ifcidx, fmttype, fmtspec)
 
 # ***** Set up automatic cleanup when the interpreter exits *****
 

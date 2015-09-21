@@ -45,9 +45,14 @@ while not trap.stop:
    try:
       data = trap.recv(0)
    except trap.EFMTChanged:
+      # Get data format from negotiation
       (fmttype, fmtspec) = trap.trap_get_data_fmt(trap.IFC_INPUT, 0)
       UR_Flow = unirec.CreateTemplate("UR_Flow", fmtspec)
-      print(fmtspec)
+      print("Negotiation:", fmttype, fmtspec)
+      UR_Flow2 = unirec.CreateTemplate("UR_Flow2", fmtspec)
+
+      # Set the same format for output IFC negotiation
+      trap.trap_set_data_fmt(0, fmttype, fmtspec)
       continue
    except trap.ETerminated:
       break
@@ -66,7 +71,9 @@ while not trap.stop:
 
    # Send data to output interface
    try:
-      trap.send(0, rec.serialize())
+      rec2 = UR_Flow2()
+      rec2 = rec
+      trap.send(0, rec2.serialize())
    except trap.ETerminated:
       break
 
