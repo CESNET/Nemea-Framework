@@ -212,6 +212,9 @@ lib.trap_print_ifc_spec_help.restype = None
 lib.trap_ifcctl.argtypes = (c_uint, c_uint, c_uint) # in fact, some of c_units are enums, but they are probably implemented as uint
 lib.trap_ifcctl.restype = errorCodeChecker
 
+lib.trap_set_help_section.argtypes = (c_int,)
+lib.trap_set_help_section.restype = None
+
 # Data format handling functions
 lib.trap_set_data_fmt.argtypes = (c_uint32, c_ubyte, c_char_p)
 lib.trap_set_data_fmt.restype = None
@@ -322,46 +325,60 @@ def parseParams(argv, module_info=None):
    """
    if "-h" in argv or "--help" in argv:
       if module_info is not None:
+         try:
+            index = argv.index("-h")
+         except IndexError:
+            index = argv.index("--help")
+         try:
+            help_arg = argv[index + 1]
+            if help_arg in ["1", "trap"]:
+               lib.trap_set_help_section(1)
+            else:
+               lib.trap_set_help_section(0)
+         except:
+            pass
          printHelp(module_info)
          exit(0)
       else:
          raise EHelp(E_HELP, "Help was requested but it cannot be shown. Author of the module should pass a module_info into the parseParams() or catch this exception and call printHelp().")
 
-   try:
-      index = argv.index("-i")
-      ifc_spec = argv[index+1]
-      del argv[index+1]
-      del argv[index]
-      del index
-   except (ValueError, IndexError):
-      raise EBadParams(E_BADPARAMS, "Interface specifier (option -i) not found.")
+   if module_info is not None:
+      module_info = module_info.contents
+      try:
+         index = argv.index("-i")
+         ifc_spec = argv[index+1]
+         del argv[index+1]
+         del argv[index]
+         del index
+      except (ValueError, IndexError):
+         raise EBadParams(E_BADPARAMS, "Interface specifier (option -i) not found.")
 
-   if "-v" in argv:
-      setVerboseLevel(0)
-      argv.remove("-v")
-   if "-vv" in argv:
-      setVerboseLevel(1)
-      argv.remove("-vv")
-   if "-vvv" in argv:
-      setVerboseLevel(2)
-      argv.remove("-vvv")
+      if "-v" in argv:
+         setVerboseLevel(0)
+         argv.remove("-v")
+      if "-vv" in argv:
+         setVerboseLevel(1)
+         argv.remove("-vv")
+      if "-vvv" in argv:
+         setVerboseLevel(2)
+         argv.remove("-vvv")
 
-   ifc_types = ""
-   ifc_params= []
-   try:
-      ifcs = ifc_spec.split(',')
+      ifc_types = ""
+      ifc_params= []
+      try:
+         ifcs = ifc_spec.split(',')
 
-      if len(ifcs) < (max(module_info.num_ifc_in, 0) + max(module_info.num_ifc_out, 0)):
-         raise EBadParams(E_BADPARAMS, "Number of IFC parameters doesn't match number of IFCs in module_info.")
-      for i in ifcs:
-         (ifcType, ifcParams) = i.split(":", 1)
-         ifc_types = ifc_types + ifcType
-         ifc_params.append(ifcParams)
+         if len(ifcs) < (max(module_info.num_ifc_in, 0) + max(module_info.num_ifc_out, 0)):
+            raise EBadParams(E_BADPARAMS, "Number of IFC parameters doesn't match number of IFCs in module_info.")
+         for i in ifcs:
+            (ifcType, ifcParams) = i.split(":", 1)
+            ifc_types = ifc_types + ifcType
+            ifc_params.append(ifcParams)
 
-   except ValueError:
-      raise EBadParams(E_BADPARAMS, "Wrong format of interface specifier.")
-   if len(ifc_types) != len(ifc_params):
-      raise EBadParams(E_BADPARAMS, "Wrong format of interface specifier.")
+      except ValueError:
+         raise EBadParams(E_BADPARAMS, "Wrong format of interface specifier.")
+      if len(ifc_types) != len(ifc_params):
+         raise EBadParams(E_BADPARAMS, "Wrong format of interface specifier.")
 
    return CreateIfcSpec(ifc_types, ifc_params)
 

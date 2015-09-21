@@ -582,6 +582,15 @@ static void *trap_automatic_flush_thr(void *arg)
    pthread_exit(NULL);
 }
 
+/** Set section for trap_print_help()
+ *
+ * \param [in] level  0 for default info about module, 1 for info about IFC specifier
+ */
+void trap_set_help_section(int level)
+{
+   trap_help_spec = level;
+}
+
 /** Initialization function.
  * Create and initialize all interfaces. This function parses command-line
  * arguments; it extracts agruments it needs to set up interfaces and returns

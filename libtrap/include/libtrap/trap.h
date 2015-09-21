@@ -500,6 +500,11 @@ void trap_set_verbose_level(int level);
  */
 int trap_get_verbose_level();
 
+/** Set section for trap_print_help()
+ *
+ * \param [in] level  0 for default info about module, 1 for info about IFC specifier
+ */
+void trap_set_help_section(int level);
 
 /** Print common TRAP help message.
  * The help message contains information from module_info and describes common
