@@ -81,7 +81,6 @@ int main(int argc, char **argv)
    uint16_t read_size;
    uint16_t last_size;
    uint64_t last_value;
-   uint64_t *cur_value;
    uint64_t counter = 0;
    uint64_t iteration = 0;
    uint64_t errors = 0;
@@ -121,7 +120,6 @@ int main(int argc, char **argv)
    duration = 0;
    last_value = -1;
    last_size = -1;
-   cur_value = NULL;
    trap_ctx_ifcctl(ctx, TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, TRAP_WAIT);
    while (mask && !stop) {
       ret = trap_ctx_multi_recv(ctx, mask, (const void **) &mr, &read_size);
@@ -131,7 +129,6 @@ int main(int argc, char **argv)
       if (ret == TRAP_E_OK) {
          for (i = 0; i < 2; i++) {
             if (mr[i].result_code == TRAP_E_OK) {
-               cur_value = (uint64_t *) mr[i].message;
                if (mr[i].message_size <= 1) {
                   mask ^= (1 << i);
                   printf("%d: message_size: %"PRIu16" new mask %"PRIx32"\n",

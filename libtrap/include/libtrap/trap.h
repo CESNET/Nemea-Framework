@@ -88,7 +88,8 @@ extern const char trap_git_version[];
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
 #define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
-#define TRAP_E_OK_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
+#define TRAP_E_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
+#define TRAP_E_FORMAT_MISMATCH 24 ///< Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
 /**@}*/
@@ -249,7 +250,7 @@ typedef enum {
    FMT_MISMATCH = 2,
 
    /** Negotiation was successful, but receivers (input ifc) template is subset of senders (output ifc) template and missing fields has to be defined */
-   FMT_SUBSET = 3
+   FMT_CHANGED = 3
 } trap_in_ifc_state_t;
 
 /**
@@ -334,13 +335,6 @@ void *trap_get_global_ctx();
  *  else TRAP_E_NOT_INITIALIZED.
  */
 int trap_get_in_ifc_state(uint32_t ifc_idx);
-
-/**
- * Confirms state of an input interface on specified index (it is set to FMT_OK).
- *
- * \param[in] ifc_idx   Index of the input interface
- */
-void trap_confirm_ifc_state(uint32_t ifc_idx);
 
 /** Parse command-line arguments.
  * Extract agruments needed by TRAP to set up interfaces (-i params) and return
@@ -608,14 +602,6 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
  *  else TRAP_E_NOT_INITIALIZED.
  */
 int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
-
-/**
- * Confirms state of an input interface on specified index (it is set to FMT_OK).
- *
- * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifc_idx   Index of the input interface.
- */
-void trap_ctx_confirm_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
 
 /**
  * Set format of messages expected on input IFC.
@@ -1010,6 +996,10 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
          timeout_cmd;\
       } else if ((ret_code) == TRAP_E_TERMINATED) {\
          error_cmd;\
+      } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
+      } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
+         fprintf(stderr, "Error: output and input interfaces data formats or data specifiers mismatch.\n"); \
+         error_cmd; \
       } else {\
          fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
          error_cmd;\

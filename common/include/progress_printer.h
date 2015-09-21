@@ -32,6 +32,7 @@
 
 #define NMCM_PROGRESS_DEF struct nmcm_progress_t nmcm_progress; \
                           struct nmcm_progress_t *nmcm_progress_ptr = &nmcm_progress;\
+                          nmcm_progress_ptr->print_char = 0; \
                           nmcm_progress_ptr->limit = 0;
 
 /**
