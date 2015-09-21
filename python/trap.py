@@ -9,6 +9,7 @@ This module provides access to libtrap library.
 TODO: Help strings of functions.
 """
 
+import ctypes
 from ctypes import *
 import signal
 from optparse import OptionParser
@@ -126,7 +127,7 @@ class ModuleInfo(Structure):
                ('description', c_char_p),
                ('num_ifc_in', c_int),
                ('num_ifc_out', c_int),
-               ('params', POINTER(ModuleInfoParameter))
+               ('params', c_void_p)
               ]
 
    def __str__(self):
@@ -155,15 +156,29 @@ class IfcSpec(Structure):
 # Functions for creating structures
 
 def CreateModuleInfo(name, description, num_ifc_in, num_ifc_out, opts = None):
+   """Create module_info structure for libtrap.
+
+   name - name of Nemea module
+   description - module's description
+   num_ifc_in - number of module's input IFCs (-1 for variable number)
+   num_ifc_out - number of module's output IFCs (-1 for variable number)
+   opts - python OptionParser for specification of module's parameters"""
+
+   # put all options into the list
    params = []
    if opts and isinstance(opts, OptionParser):
-      for o in opts.option_list:
-         t = "none" if o.nargs >= 1 else "string"
-         ar = 1 if o.nargs >= 1 else 0
-         m = ModuleInfoParameter(o._short_opts[0][-1], o._long_opts[0][2:], o.help, ar, t)
-         params.append(m)
-   params.append(ModuleInfoParameter(chr(0x0), None, None, 0, None))
-   return ModuleInfo(name, description, num_ifc_in, num_ifc_out, ((ModuleInfoParameter*params.__len__())(*params)))
+     for o in opts.option_list:
+        t = "none" if o.nargs >= 1 else "string"
+        ar = 1 if o.nargs >= 1 else 0
+        m = ModuleInfoParameter(o._short_opts[0][-1], o._long_opts[0][2:], o.help, ar, t)
+        params.append(m)
+   # create array of pointers from the list
+   p = (c_void_p*(params.__len__()+1))()
+   for i in range(0, params.__len__()):
+      p[i] = addressof(params[i])
+   # array is ended by zero value
+   p[params.__len__()] = None
+   return ModuleInfo(name, description, num_ifc_in, num_ifc_out, addressof(p))
 
 def CreateIfcSpec(types, params):
    return IfcSpec(types, (c_char_p*len(params))(*params))
