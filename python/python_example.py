@@ -52,7 +52,7 @@ while not trap.stop:
       UR_Flow2 = unirec.CreateTemplate("UR_Flow2", fmtspec)
 
       # Set the same format for output IFC negotiation
-      trap.trap_set_data_fmt(0, fmttype, fmtspec)
+      trap.set_data_fmt(0, fmttype, fmtspec)
       continue
    except trap.ETerminated:
       break

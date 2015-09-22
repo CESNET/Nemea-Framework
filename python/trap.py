@@ -407,12 +407,21 @@ def get_data_fmt(direction, ifcidx):
    return (fmttype.value, string_at(fmtspec))
 
 def set_required_fmt(ifcidx, fmttype, fmtspec):
-   """Set required data format type and specifier on output IFC (for negotiation).
+   """Set required data format type and specifier of the input IFC (for negotiation).
 
    ifcidx - index of output IFC
    fmttype - format data type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON)
    fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
    lib.trap_set_required_fmt(ifcidx, fmttype, fmtspec)
+
+def set_data_fmt(ifcidx, fmttype, fmtspec):
+   """Set data format type and specifier of the output IFC (for negotiation).
+
+   ifcidx - index of output IFC
+   fmttype - format data type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON)
+   fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
+   lib.trap_set_data_fmt(ifcidx, fmttype, fmtspec)
+
 
 # ***** Set up automatic cleanup when the interpreter exits *****
 
