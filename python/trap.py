@@ -395,7 +395,7 @@ def parseParams(argv, module_info=None):
 def freeIfcSpec(ifc_spec):
    raise NotImplementedError("Wrapper for trap_free_ifc_spec is not implemented.")
 
-def trap_get_data_fmt(direction, ifcidx):
+def get_data_fmt(direction, ifcidx):
    """Get (fmttype, fmtspec) from IFC of direction and ifcidx.
 
    direction - IFC_INPUT | IFC_OUTPUT
@@ -406,13 +406,13 @@ def trap_get_data_fmt(direction, ifcidx):
    lib.trap_get_data_fmt(direction, ifcidx, byref(fmttype), byref(fmtspec))
    return (fmttype.value, string_at(fmtspec))
 
-def trap_set_data_fmt(ifcidx, fmttype, fmtspec):
-   """Set data format type and specifier on output IFC (for negotiation).
+def set_required_fmt(ifcidx, fmttype, fmtspec):
+   """Set required data format type and specifier on output IFC (for negotiation).
 
    ifcidx - index of output IFC
    fmttype - format data type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON)
    fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
-   lib.trap_set_data_fmt(ifcidx, fmttype, fmtspec)
+   lib.trap_set_required_fmt(ifcidx, fmttype, fmtspec)
 
 # ***** Set up automatic cleanup when the interpreter exits *****
 

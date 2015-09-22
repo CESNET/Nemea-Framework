@@ -34,7 +34,7 @@ trap.init(module_info, ifc_spec)
 trap.registerDefaultSignalHandler() # This is needed to allow module termination using s SIGINT or SIGTERM signal
 
 # this module accepts all UniRec fieds -> set required format:
-trap.lib.trap_set_required_fmt(0, trap.TRAP_FMT_UNIREC, "")
+trap.set_required_fmt(0, trap.TRAP_FMT_UNIREC, "")
 
 # Specifier of UniRec records will be received during libtrap negotiation
 UR_Flow = None
@@ -46,7 +46,7 @@ while not trap.stop:
       data = trap.recv(0)
    except trap.EFMTChanged:
       # Get data format from negotiation
-      (fmttype, fmtspec) = trap.trap_get_data_fmt(trap.IFC_INPUT, 0)
+      (fmttype, fmtspec) = trap.get_data_fmt(trap.IFC_INPUT, 0)
       UR_Flow = unirec.CreateTemplate("UR_Flow", fmtspec)
       print("Negotiation:", fmttype, fmtspec)
       UR_Flow2 = unirec.CreateTemplate("UR_Flow2", fmtspec)
