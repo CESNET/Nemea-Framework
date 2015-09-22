@@ -43,12 +43,12 @@ doc: doxygen-doc
 
 clean-local: doxygen-clean
 	rm -rf doc/doxygen
-	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} +
-	find \( -name fields.c -o -name fields.h \) -exec rm -f {} +
+	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
+	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
 else
 clean-local:
-	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} +
-	find \( -name fields.c -o -name fields.h \) -exec rm -f {} +
+	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
+	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
 endif
 
 if MAKE_RPMS
