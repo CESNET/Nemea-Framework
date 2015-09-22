@@ -44,7 +44,10 @@ while not trap.stop:
    # Read data from input interface
    try:
       data = trap.recv(0)
-   except trap.EFMTChanged:
+   except trap.EFMTMismatch:
+      print("Error: output and input interfaces data format or data specifier mismatch")
+      break
+   except trap.EFMTChanged as e:
       # Get data format from negotiation
       (fmttype, fmtspec) = trap.get_data_fmt(trap.IFC_INPUT, 0)
       UR_Flow = unirec.CreateTemplate("UR_Flow", fmtspec)
@@ -53,7 +56,7 @@ while not trap.stop:
 
       # Set the same format for output IFC negotiation
       trap.set_data_fmt(0, fmttype, fmtspec)
-      continue
+      data = e.data
    except trap.ETerminated:
       break
 

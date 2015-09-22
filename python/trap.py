@@ -42,7 +42,8 @@ E_MEMORY = 255 # Memory allocation error
 # Negotiation-related return values
 TRAP_E_FIELDS_MISMATCH = 21 # Returned when receiver fields are not subset of sender fields
 TRAP_E_FIELDS_SUBSET = 22 # Returned when receivers fields are subset of senders fields and both sets are not identical
-TRAP_E_OK_FORMAT_CHANGED = 23 # Returned by trap_recv when format or format spec of the receivers interface has been changed
+TRAP_E_FORMAT_CHANGED = 23 # Returned by trap_recv when format or format spec of the receivers interface has been changed
+TRAP_E_FORMAT_MISMATCH = 24 # Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
 
 # Definition of data format types (trap_data_format_t)
 TRAP_FMT_UNKNOWN = 0 # unknown - message format was not specified yet
@@ -68,7 +69,11 @@ class EBadParams (TRAPException): pass
 class EIOError (TRAPException): pass
 class EHelp (TRAPException): pass
 class EMemory (TRAPException): pass
-class EFMTChanged (TRAPException): pass
+class EFMTMismatch (TRAPException): pass
+class EFMTChanged(TRAPException):
+    def __init__(self, code, data = None):
+        self.code = code
+        self.data = data
 
 # Error handling function
 def errorCodeChecker(code):
@@ -88,8 +93,10 @@ def errorCodeChecker(code):
       raise ENotInitialized(code)
    elif code == E_MEMORY:
       raise EMemory(code)
-   elif code in [TRAP_E_FIELDS_SUBSET, TRAP_E_FIELDS_MISMATCH, TRAP_E_OK_FORMAT_CHANGED]:
+   elif code in [TRAP_E_FIELDS_SUBSET, TRAP_E_FIELDS_MISMATCH, TRAP_E_FORMAT_CHANGED]:
       raise EFMTChanged(code)
+   elif code == TRAP_E_FORMAT_MISMATCH:
+      raise EFMTMismatch(code)
    else:
       raise TRAPException(-1, "Unknown error")
 
@@ -268,7 +275,12 @@ def recv(ifc):
    """
    data_ptr = c_void_p()
    data_size = c_uint16()
-   lib.trap_recv(ifc, byref(data_ptr), byref(data_size))
+   try:
+      lib.trap_recv(ifc, byref(data_ptr), byref(data_size))
+   except EFMTChanged as e:
+      data = string_at(data_ptr, data_size.value)
+      raise EFMTChanged(e.code, data)
+
    data = string_at(data_ptr, data_size.value)
    return data
 
