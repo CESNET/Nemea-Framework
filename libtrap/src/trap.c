@@ -1174,54 +1174,55 @@ output:
       }
       printf("Description:\n  ");
       print_aligned(module_info->description, 2, cols - 2);
-      printf("\nParameters of module:\n---------------------\n");
+      if (module_info->params != NULL) {
+         printf("\nParameters of module:\n---------------------\n");
 
-      for (i = 0; module_info->params[i] != NULL; i++) {
-         if (HAVE_GETOPT_LONG) {
-            tmp = strlen(module_info->params[i]->long_opt) + strlen(module_info->params[i]->argument_type);
-         } else {
-            tmp = strlen(module_info->params[i]->argument_type);
-         }
-         if (tmp > align1) {
-            align1 = tmp;
-         }
-      }
-      /* add additional chars as a space: */
-      align1 += 14;
-
-      i = 0;
-      while (module_info->params[i] != NULL) {
-         if (HAVE_GETOPT_LONG) {
-            if (isprint(module_info->params[i]->short_opt)) {
-               written = printf("  -%c  --%s ", module_info->params[i]->short_opt,
-                                module_info->params[i]->long_opt);
+         for (i = 0; module_info->params[i] != NULL; i++) {
+            if (HAVE_GETOPT_LONG) {
+               tmp = strlen(module_info->params[i]->long_opt) + strlen(module_info->params[i]->argument_type);
             } else {
-               written = printf("       --%s ", module_info->params[i]->long_opt);
+               tmp = strlen(module_info->params[i]->argument_type);
             }
-         } else {
-            written = printf("  -%c ", module_info->params[i]->short_opt);
+            if (tmp > align1) {
+               align1 = tmp;
+            }
          }
-         switch (module_info->params[i]->param_required_argument) {
-         case required_argument:
-            written += printf("<%s>", module_info->params[i]->argument_type);
-            break;
-         case optional_argument:
-            written += printf("[%s]", module_info->params[i]->argument_type);
-            break;
-         case no_argument:
-            written += printf(" ");
-            break;
+         /* add additional chars as a space: */
+         align1 += 14;
+
+         i = 0;
+         while (module_info->params[i] != NULL) {
+            if (HAVE_GETOPT_LONG) {
+               if (isprint(module_info->params[i]->short_opt)) {
+                  written = printf("  -%c  --%s ", module_info->params[i]->short_opt,
+                                   module_info->params[i]->long_opt);
+               } else {
+                  written = printf("       --%s ", module_info->params[i]->long_opt);
+               }
+            } else {
+               written = printf("  -%c ", module_info->params[i]->short_opt);
+            }
+            switch (module_info->params[i]->param_required_argument) {
+            case required_argument:
+               written += printf("<%s>", module_info->params[i]->argument_type);
+               break;
+            case optional_argument:
+               written += printf("[%s]", module_info->params[i]->argument_type);
+               break;
+            case no_argument:
+               written += printf(" ");
+               break;
+            }
+            if (written < align1) {
+               printf("%*s", align1 - written, " ");
+            }
+
+            print_aligned(module_info->params[i]->description, align1, cols - align1);
+            /* empty line after param */
+            puts("");
+
+            i++;
          }
-         if (written < align1) {
-            printf("%*s", align1 - written, " ");
-         }
-
-
-         print_aligned(module_info->params[i]->description, align1, cols - align1);
-         /* empty line after param */
-         puts("");
-
-         i++;
       }
       printf("\n");
       printf("Common TRAP parameters:\n-----------------------\n");
