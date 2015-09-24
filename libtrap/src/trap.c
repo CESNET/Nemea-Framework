@@ -1268,60 +1268,8 @@ output:
  */
 void trap_print_ifc_spec_help()
 {
-   printf("Format of TRAP specifier (IFC_SPEC):\n"
-          "------------------------------------\n");
-   printf(" Interfaces (IFC) are separated by ',', e.g. \"<IFC 1>,<IFC 2>,...,<IFC N>\".\n");
-   printf(" Parameters of each ifc are separated by ':', e.g. \"<type>:<par1>:<par2>:...:<parN>\".\n\n");
-   printf(" Input IFCs must be specified at first, output IFCs follow.\n");
-   printf(" The order of IFCs are depended on the specific module.\n\n");
-   printf(" Example of module startup with 1 input and 1 output IFC:\n\n");
-   printf("    traffic_repeater -i t:server:1234,u:my_socket\n\n");
-   printf(" The example makes the repeater to connect to server via 1234 port using TCP,\n");
-   printf(" the repeater listens on UNIX socket with my_socket as identifier.\n\n");
-   printf("Supported interface types:\n"
-          "--------------------------\n");
-   printf("  TCP interface ('t')\n");
-   printf("    Communicates through a TCP socket. Output interface listens on a given port,\n");
-   printf("    input interface connects to it. There may be more than one input interfaces\n");
-   printf("    connected to one output interface, every input interface will get the same data.\n");
-   printf("    Parameters when used as INPUT interface:\n");
-   printf("      <hostname or ip>,<port>\n");
-   printf("      Hostname/IP and port to connect to must be specified.\n");
-   printf("    Parameters when used as OUTPUT interface:\n");
-   printf("      <port>,<max_num_of_clients>\n");
-   printf("      Port to listen on and maximal number of clients (input interfaces) allowed\n");
-   printf("      must be specified.\n\n");
-   printf("  UNIX socket ('u')\n");
-   printf("    Communicates through a UNIX socket. Output interface listens on a given port,\n");
-   printf("    input interface connects to it. There may be more than one input interfaces\n");
-   printf("    connected to one output interface, every input interface will get the same data.\n");
-   printf("    Parameters are the same as for TCP interface ('t').\n\n");
-   printf("  Blackhole interface ('b')\n");
-   printf("    Can be used as OUTPUT interface only. Does nothing, everything which is sent\n");
-   printf("    by this interface is dropped. It has no parameters.\n\n");
-   printf("  File interface ('f')\n");
-   printf("    Input interface reads data from given file, output interface stores data to a given file.\n");
-   printf("    Parameters when used as INPUT interface:\n");
-   printf("      <file_name>\n");
-   printf("      Name of file (path to the file) must be specified.\n");
-   printf("    Parameters when used as OUTPUT interface:\n");
-   printf("      <file_name>:<mode>\n");
-   printf("      Name of file (path to the file) must be specified.\n");
-   printf("      Mode is optional. There are two types of mode: 'a' - append, 'w' - write,\n");
-   printf("      mode append is set as default, if no mode is specified.\n");
-   printf("      Mode append writes data at the end of specified file, mode write overwrites specified file.\n");
-   printf("\n");
-   printf("More examples:\n"
-          "--------------\n");
-   printf(" my_module with 1 input interface and 2 output interfaces:\n\n");
-   printf("  ./my_module -i \"t:localhost:12345,b:,t:23456:5\"\n\n");
-   printf("  The input interface will connect to localhost:12345. The first output\n");
-   printf("  interface is unused (all data send there will be dropped), the second output\n");
-   printf("  interface will provide data on port 23456, to which another module can connect\n");
-   printf("  its input interface.\n\n");
-   printf(" nfdump_reader module that reads nfdump file and drops records via Blackhole IFC type:\n\n");
-   printf("  ./modules/nfreader/nfdump_reader -i b ./file.nfdump\n\n");
-   printf("\n");
+   extern char *trap_help_ifcspec;
+   printf("%s", trap_help_ifcspec);
 }
 
 ////////////////////////////

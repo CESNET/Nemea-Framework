@@ -16,7 +16,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtrap.pc
 
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt
+EXTRA_DIST = mdconvert.sh doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt
 
 include aminclude.am
 
