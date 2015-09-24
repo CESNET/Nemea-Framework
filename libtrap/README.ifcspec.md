@@ -3,9 +3,9 @@ Format of TRAP specifier (IFC_SPEC):
 
 TRAP specifier is an argument of `-i` option of every module.
 It specifies configuration of libtrap interfaces (IFC).
-IFCs are separated by ',', e.g. "<IFC 1>,<IFC 2>,...,<IFC N>".
+IFCs are separated by comma `,` e.g. `<IFC 1>,<IFC 2>,...,<IFC N>`.
 
-Parameters of each ifc are separated by ':', e.g. "<type>:<par1>:<par2>:...:<parN>".
+Parameters of each ifc are separated by `:`, e.g. `<type>:<par1>:<par2>:...:<parN>`.
 
 Input IFCs must be specified at first, output IFCs follow.
 The order of IFCs are depended on the specific module.
@@ -75,7 +75,7 @@ Parameters when used as OUTPUT interface:
 ```
 Name of file (path to the file) must be specified.
 
-Mode is optional. There are two types of mode: 'a' - append, 'w' - write,
+Mode is optional. There are two types of mode: `a` - append, `w` - write,
 
 mode append is set as default, if no mode is specified.
 
