@@ -126,44 +126,38 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
    free(config_file);
 }
 
-/***** Receiver *****/
-
-
-int open_next_file(void *priv)
+int open_next_file(file_private_t *c)
 {
-   file_private_t *c = (file_private_t *) priv;
    char *buffer = NULL;
-   int ret_val = 0;
 
    if (c == NULL) {
+      VERBOSE(CL_ERROR, "FILE IFC: pointer to inner data structure is NULL.");
       return -1;
    }
+
    if (c->fd != NULL) {
       fclose(c->fd);
       c->fd = NULL;
    }
+
    c->neg_initialized = 0;
 
-   ret_val = asprintf(&buffer, "%s%d", c->filename, c->file_cnt);
-   if (ret_val < 0) {
+   if (asprintf(&buffer, "%s%d", c->filename, c->file_cnt) < 0) {
+      VERBOSE(CL_ERROR, "FILE IFC: asprintf failed.");
       return -1;
    }
-   c->file_cnt++;
 
+   c->file_cnt++;
    c->fd = fopen(buffer, c->mode);
    if (c->fd == NULL) {
-      VERBOSE(CL_ERROR, "File input interface %d: could not open a new input file after changing data format.", c->ifc_idx);
-      ret_val = -1;
-   } else {
-      ret_val = 0;
+      VERBOSE(CL_ERROR, "FILE IFC %d: could not open a new file after changing data format.", c->ifc_idx);
    }
 
-   if (buffer != NULL) {
-      free(buffer);
-      buffer = NULL;
-   }
-   return ret_val;
+   free(buffer);
+   return 0;
 }
+
+/***** Receiver *****/
 
 /**
  * \addtogroup file_receiver
@@ -181,6 +175,9 @@ int open_next_file(void *priv)
 int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
    size_t loaded;
+   long int remaining_bytes;
+   long int current_position;
+
    /* header of message inside the buffer */
    uint16_t *m_head = data;
 
@@ -222,7 +219,7 @@ neg_start:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
          // If the negotiation fails, try a next file.. If it fails again, return from receive
          if (feof(config->fd)) {
-            if (open_next_file((void *) config) == 0) {
+            if (open_next_file(config) == 0) {
                goto neg_start;
             }
          }
@@ -245,7 +242,7 @@ neg_start:
    if (loaded != 1) {
       if (feof(config->fd)) {
 #ifdef ENABLE_NEGOTIATION
-         if (open_next_file((void *) config) == 0) {
+         if (open_next_file(config) == 0) {
             goto neg_start;
          } else {
             VERBOSE(CL_VERBOSE_LIBRARY, "File input ifc negotiation: eof, could not open next input fle.")
@@ -263,12 +260,29 @@ neg_start:
       return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: unable to read");
    }
 
-   /* Reads (*size) bytes from the file */
-   loaded = fread(data, 1, (*size), config->fd);
+   current_position = ftell(config->fd);
+   fseek(config->fd, 0L, SEEK_END);
+   remaining_bytes = ftell(config->fd) - current_position;
+   fseek(config->fd, current_position, SEEK_SET);
 
-   if (loaded != (*size)) {
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: loaded incorrect number of bytes from file: %s", config->filename);
+   /* Reads (*size) bytes from the file */
+   if (remaining_bytes < (*size)) {
+      VERBOSE(CL_ERROR, "INPUT FILE IFC: Attempting to read %"PRIu32" bytes from file: %s, but there are only %ld bytes remaining. Read %ld bytes instead.", (*size), config->filename, remaining_bytes, remaining_bytes);
+      loaded = fread(data, 1, remaining_bytes, config->fd);
+
+      if (loaded != remaining_bytes) {
+         VERBOSE(CL_ERROR, "INPUT FILE IFC: loaded incorrect number of bytes from file: %s", config->filename);
+         return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fread failed");
+      }
+   } else {
+      loaded = fread(data, 1, (*size), config->fd);
+
+      if (loaded != (*size)) {
+         VERBOSE(CL_ERROR, "INPUT FILE IFC: loaded incorrect number of bytes from file: %s", config->filename);
+         return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fread failed");         
+      }
    }
+
 
    return TRAP_E_OK;
 }
@@ -355,32 +369,8 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
 void create_next_file(void *priv)
 {
    file_private_t *c = (file_private_t *) priv;
-   char *buffer = NULL;
-   int ret_val = 0;
-
-   if (c == NULL) {
-      return;
-   }
-   if (c->fd != NULL) {
-      fclose(c->fd);
-      c->fd = NULL;
-   }
-   c->neg_initialized = 0;
-
-   ret_val = asprintf(&buffer, "%s%d", c->filename, c->file_cnt);
-   if (ret_val < 0) {
-      return;
-   }
-   c->file_cnt++;
-
-   c->fd = fopen(buffer, c->mode);
-   if (c->fd == NULL) {
-      VERBOSE(CL_ERROR, "File output interface %d: could not open a new output file after changing data format.", c->ifc_idx);
-   }
-
-   if (buffer != NULL) {
-      free(buffer);
-      buffer = NULL;
+   if (open_next_file(c) != 0) {
+      VERBOSE(CL_ERROR, "OUTPUT FILE IFC %d: creating and opening of a new file failed.", c->ifc_idx);
    }
 }
 
