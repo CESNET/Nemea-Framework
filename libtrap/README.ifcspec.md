@@ -73,6 +73,20 @@ Mode is optional. There are two types of mode: `a` - append, `w` - write,
 mode append is set as default, if no mode is specified.
 Mode append writes data at the end of specified file, mode write overwrites specified file.
 
+Setters of IFC parameters
+=========================
+
+There are parameters of libtrap IFC that are normally set in source codes of a module. It is possible to change the parameters via IFC_SPEC by user. The available parameters are:
+* timeout - time in microseconds that can IFC block waiting for message send / receive
+   * possible values: number of microseconds or special constants WAIT, NO_WAIT (input IFC), WAIT, NO_WAIT, HALF_WAIT (output IFC)
+* buffer - buffering of IFC increases throughput, it is enabled by default
+   * possible values: on, off
+* autoflush - libtrap contains a special thread for automatic sending of non-full buffers in given timeout.
+   * possible values: off, number of microseconds
+
+Example: `-i u:inputsocket:timeout=WAIT,u:outputsocket:timeout=500000:buffer=off:autoflush=off`
+
+
 More examples:
 ==============
 
