@@ -58,6 +58,11 @@
 
 #define MAX_ERROR_MSG_BUFF_SIZE 1024
 
+/**
+ * Max length of line printed in help (used for line-breaks).
+ */
+#define DEFAULT_MAX_TERMINAL_WIDTH 85
+
 /* Values of commands that supervisor wants module to perform. These values are sent in header via service interface. */
 #define SERVICE_GET_COM 10  ///< Signaling a request for module statistics (interfaces stats - received messages and buffers, sent messages and buffers, autoflushes counter)
 #define SERVICE_SET_COM 11  ///< Signaling a request to set some interface parameters (timeouts etc.)

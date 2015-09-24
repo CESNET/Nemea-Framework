@@ -43,18 +43,14 @@ UNIX socket ('u')
 -----------------
 
 Communicates through a UNIX socket. Output interface listens on a given port,
-
 input interface connects to it. There may be more than one input interfaces
-
 connected to one output interface, every input interface will get the same data.
-
 Parameters are the same as for TCP interface ('t').
 
 Blackhole interface ('b')
 -------------------------
 
 Can be used as OUTPUT interface only. Does nothing, everything which is sent
-
 by this interface is dropped. It has no parameters.
 
 
@@ -62,7 +58,6 @@ File interface ('f')
 --------------------
 
 Input interface reads data from given file, output interface stores data to a given file.
-
 Parameters when used as INPUT interface:
 ```
 <file_name>
@@ -74,11 +69,8 @@ Parameters when used as OUTPUT interface:
 <file_name>:<mode>
 ```
 Name of file (path to the file) must be specified.
-
 Mode is optional. There are two types of mode: `a` - append, `w` - write,
-
 mode append is set as default, if no mode is specified.
-
 Mode append writes data at the end of specified file, mode write overwrites specified file.
 
 More examples:

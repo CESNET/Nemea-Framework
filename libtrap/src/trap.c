@@ -1068,6 +1068,56 @@ write:
 }
 
 /**
+ * Print helper for formatting multiline text of help.
+ *
+ * Multiline text means that the string contains '\n'.
+ * print_aligned() is used for line breaking.
+ *
+ * \param[in] s String to print (e.g. description).
+ * \param[in] align The number of spaces that should be add after line-break.
+ * \param[in] cut Approximate (minimal) length of string that is printed on the line.
+ * Line-break is added if needed, after the current word.
+ */
+static void print_aligned_multiline(const char *s, uint16_t align, uint16_t cut)
+{
+   const char *eol = NULL, *sol = s;
+   int bufsize = 4096, linewidth;
+   char *buffer = calloc(1, bufsize);
+   if (buffer == NULL) {
+      VERBOSE(CL_ERROR, "Failed to allocate buffer for printing.");
+      goto failed;
+   }
+   do {
+      eol = strchr(sol, '\n');
+      if (eol == NULL) {
+         /* end of text */
+         linewidth = strlen(sol);
+      } else {
+         linewidth = eol - sol;
+      }
+
+      if (linewidth >= bufsize) {
+         buffer = realloc(buffer, linewidth + 100);
+         if (buffer == NULL) {
+            VERBOSE(CL_ERROR, "Failed to allocate buffer for printing.");
+            goto failed;
+         }
+      }
+      strncpy(buffer, sol, linewidth);
+      if (buffer[linewidth - 1] == '\n') {
+         buffer[linewidth - 1] = 0;
+      } else {
+         buffer[linewidth] = 0;
+      }
+      print_aligned(buffer, 0, cut);
+      sol = eol + 1;
+   } while (eol != NULL);
+
+failed:
+   free(buffer);
+}
+
+/**
  * Get size of terminal.
  *
  * \return Returns columns of terminal.
@@ -1114,7 +1164,7 @@ void trap_print_help(const trap_module_info_t *module_info)
 
    cols = get_terminal_width();
    if (cols == 0) {
-      cols = 85;
+      cols = DEFAULT_MAX_TERMINAL_WIDTH;
    }
 
    temp_env = getenv("PAGER");
@@ -1268,8 +1318,13 @@ output:
  */
 void trap_print_ifc_spec_help()
 {
-   extern char *trap_help_ifcspec;
-   printf("%s", trap_help_ifcspec);
+   extern const char *trap_help_ifcspec;
+   uint32_t cols = get_terminal_width();
+   if (cols == 0) {
+      cols = DEFAULT_MAX_TERMINAL_WIDTH;
+   }
+
+   print_aligned_multiline(trap_help_ifcspec, 0, cols - 2);
 }
 
 ////////////////////////////
