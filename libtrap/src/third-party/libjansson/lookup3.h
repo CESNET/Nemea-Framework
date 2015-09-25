@@ -34,9 +34,9 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 -------------------------------------------------------------------------------
 */
 
-#include <stdlib.h>
+#include <config.h>
 
-#include "../../../config.h"
+#include <stdlib.h>
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>     /* defines uint32_t etc */

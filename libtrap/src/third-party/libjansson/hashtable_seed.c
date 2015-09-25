@@ -2,7 +2,7 @@
    the hash function.
 */
 
-#include "../../../config.h"
+#include <config.h>
 
 #include <stdio.h>
 #include <time.h>

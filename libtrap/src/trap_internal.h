@@ -50,9 +50,9 @@
  */
 #ifndef _TRAP_INTERNAL_H
 #define _TRAP_INTERNAL_H
+#include <config.h>
 #include <stdio.h>
 #include <pthread.h>
-#include "../config.h"
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
 
