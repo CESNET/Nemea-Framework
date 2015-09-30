@@ -1068,6 +1068,56 @@ write:
 }
 
 /**
+ * Print helper for formatting multiline text of help.
+ *
+ * Multiline text means that the string contains '\n'.
+ * print_aligned() is used for line breaking.
+ *
+ * \param[in] s String to print (e.g. description).
+ * \param[in] align The number of spaces that should be add after line-break.
+ * \param[in] cut Approximate (minimal) length of string that is printed on the line.
+ * Line-break is added if needed, after the current word.
+ */
+static void print_aligned_multiline(const char *s, uint16_t align, uint16_t cut)
+{
+   const char *eol = NULL, *sol = s;
+   int bufsize = 4096, linewidth;
+   char *buffer = calloc(1, bufsize);
+   if (buffer == NULL) {
+      VERBOSE(CL_ERROR, "Failed to allocate buffer for printing.");
+      goto failed;
+   }
+   do {
+      eol = strchr(sol, '\n');
+      if (eol == NULL) {
+         /* end of text */
+         linewidth = strlen(sol);
+      } else {
+         linewidth = eol - sol;
+      }
+
+      if (linewidth >= bufsize) {
+         buffer = realloc(buffer, linewidth + 100);
+         if (buffer == NULL) {
+            VERBOSE(CL_ERROR, "Failed to allocate buffer for printing.");
+            goto failed;
+         }
+      }
+      strncpy(buffer, sol, linewidth);
+      if (buffer[linewidth - 1] == '\n') {
+         buffer[linewidth - 1] = 0;
+      } else {
+         buffer[linewidth] = 0;
+      }
+      print_aligned(buffer, 0, cut);
+      sol = eol + 1;
+   } while (eol != NULL);
+
+failed:
+   free(buffer);
+}
+
+/**
  * Get size of terminal.
  *
  * \return Returns columns of terminal.
@@ -1114,7 +1164,7 @@ void trap_print_help(const trap_module_info_t *module_info)
 
    cols = get_terminal_width();
    if (cols == 0) {
-      cols = 85;
+      cols = DEFAULT_MAX_TERMINAL_WIDTH;
    }
 
    temp_env = getenv("PAGER");
@@ -1268,60 +1318,13 @@ output:
  */
 void trap_print_ifc_spec_help()
 {
-   printf("Format of TRAP specifier (IFC_SPEC):\n"
-          "------------------------------------\n");
-   printf(" Interfaces (IFC) are separated by ',', e.g. \"<IFC 1>,<IFC 2>,...,<IFC N>\".\n");
-   printf(" Parameters of each ifc are separated by ':', e.g. \"<type>:<par1>:<par2>:...:<parN>\".\n\n");
-   printf(" Input IFCs must be specified at first, output IFCs follow.\n");
-   printf(" The order of IFCs are depended on the specific module.\n\n");
-   printf(" Example of module startup with 1 input and 1 output IFC:\n\n");
-   printf("    traffic_repeater -i t:server:1234,u:my_socket\n\n");
-   printf(" The example makes the repeater to connect to server via 1234 port using TCP,\n");
-   printf(" the repeater listens on UNIX socket with my_socket as identifier.\n\n");
-   printf("Supported interface types:\n"
-          "--------------------------\n");
-   printf("  TCP interface ('t')\n");
-   printf("    Communicates through a TCP socket. Output interface listens on a given port,\n");
-   printf("    input interface connects to it. There may be more than one input interfaces\n");
-   printf("    connected to one output interface, every input interface will get the same data.\n");
-   printf("    Parameters when used as INPUT interface:\n");
-   printf("      <hostname or ip>,<port>\n");
-   printf("      Hostname/IP and port to connect to must be specified.\n");
-   printf("    Parameters when used as OUTPUT interface:\n");
-   printf("      <port>,<max_num_of_clients>\n");
-   printf("      Port to listen on and maximal number of clients (input interfaces) allowed\n");
-   printf("      must be specified.\n\n");
-   printf("  UNIX socket ('u')\n");
-   printf("    Communicates through a UNIX socket. Output interface listens on a given port,\n");
-   printf("    input interface connects to it. There may be more than one input interfaces\n");
-   printf("    connected to one output interface, every input interface will get the same data.\n");
-   printf("    Parameters are the same as for TCP interface ('t').\n\n");
-   printf("  Blackhole interface ('b')\n");
-   printf("    Can be used as OUTPUT interface only. Does nothing, everything which is sent\n");
-   printf("    by this interface is dropped. It has no parameters.\n\n");
-   printf("  File interface ('f')\n");
-   printf("    Input interface reads data from given file, output interface stores data to a given file.\n");
-   printf("    Parameters when used as INPUT interface:\n");
-   printf("      <file_name>\n");
-   printf("      Name of file (path to the file) must be specified.\n");
-   printf("    Parameters when used as OUTPUT interface:\n");
-   printf("      <file_name>:<mode>\n");
-   printf("      Name of file (path to the file) must be specified.\n");
-   printf("      Mode is optional. There are two types of mode: 'a' - append, 'w' - write,\n");
-   printf("      mode append is set as default, if no mode is specified.\n");
-   printf("      Mode append writes data at the end of specified file, mode write overwrites specified file.\n");
-   printf("\n");
-   printf("More examples:\n"
-          "--------------\n");
-   printf(" my_module with 1 input interface and 2 output interfaces:\n\n");
-   printf("  ./my_module -i \"t:localhost:12345,b:,t:23456:5\"\n\n");
-   printf("  The input interface will connect to localhost:12345. The first output\n");
-   printf("  interface is unused (all data send there will be dropped), the second output\n");
-   printf("  interface will provide data on port 23456, to which another module can connect\n");
-   printf("  its input interface.\n\n");
-   printf(" nfdump_reader module that reads nfdump file and drops records via Blackhole IFC type:\n\n");
-   printf("  ./modules/nfreader/nfdump_reader -i b ./file.nfdump\n\n");
-   printf("\n");
+   extern const char *trap_help_ifcspec;
+   uint32_t cols = get_terminal_width();
+   if (cols == 0) {
+      cols = DEFAULT_MAX_TERMINAL_WIDTH;
+   }
+
+   print_aligned_multiline(trap_help_ifcspec, 0, cols - 2);
 }
 
 ////////////////////////////

@@ -1,3 +1,5 @@
+/* need jansson_private_config.h to get the correct snprintf */
+#include <config.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -6,8 +8,6 @@
 #include "jansson_private.h"
 #include "strbuffer.h"
 
-/* need jansson_private_config.h to get the correct snprintf */
-#include "../../../config.h"
 
 #if JSON_HAVE_LOCALECONV
 #include <locale.h>

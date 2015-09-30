@@ -169,6 +169,11 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter)
 {
 	char *str = NULL, *strmove = NULL, *str_new = NULL;
 	int len = UR_DEFAULT_LENGTH_OF_TEMPLATE, act_len = 0;
+
+	if (tmplt == NULL) {
+		return NULL;
+	}
+
 	str = (char*) calloc (sizeof(char), len);
 	if (str == NULL) {
 		return NULL;

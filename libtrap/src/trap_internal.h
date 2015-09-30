@@ -50,13 +50,18 @@
  */
 #ifndef _TRAP_INTERNAL_H
 #define _TRAP_INTERNAL_H
+#include <config.h>
 #include <stdio.h>
 #include <pthread.h>
-#include "../config.h"
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
 
 #define MAX_ERROR_MSG_BUFF_SIZE 1024
+
+/**
+ * Max length of line printed in help (used for line-breaks).
+ */
+#define DEFAULT_MAX_TERMINAL_WIDTH 85
 
 /* Values of commands that supervisor wants module to perform. These values are sent in header via service interface. */
 #define SERVICE_GET_COM 10  ///< Signaling a request for module statistics (interfaces stats - received messages and buffers, sent messages and buffers, autoflushes counter)
