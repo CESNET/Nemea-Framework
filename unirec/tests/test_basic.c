@@ -154,12 +154,12 @@ int main(int argc, char **argv)
    // one is known before (STR2), one is newly defined (NEW)
    {
       // Define the field NEW
-      ur_field_id_t new_id = ur_define_field("NEW", UR_TYPE_UINT16);
-      if (new_id < 0) {
+      int define_ret_val = ur_define_field("NEW", UR_TYPE_UINT16);
+      if (define_ret_val < 0) {
          fprintf(stderr, "ERROR: Can't define new unirec field 'NEW'");
          exit(1);
       }
-
+      ur_field_id_t new_id = define_ret_val;
       // Create templates matching the old and the new record
       ur_template_t *tmplt1 = ur_create_template("FOO,BAR,IP,STR1", NULL);
       if (tmplt1 == NULL) {
