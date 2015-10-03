@@ -323,7 +323,7 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
             ctx->counter_send_buffer[ifc]++;
             ctx->out_ifc_list[ifc].buffer_index = 0;
             ctx->out_ifc_list[ifc].buffer_occupied = 0;
-            DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Sending partial buffer invoked by autoflush timeout on iterface %d", ifc));
+            DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Sending partial buffer invoked by autoflush timeout on interface %d", ifc));
          } else {
             VERBOSE(CL_VERBOSE_LIBRARY, "Autoflush was not successful.");
             if (trap_ctx_get_client_count(ctx, ifc) == 0) {
@@ -373,11 +373,11 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
       result = ctx->out_ifc_list[ifc].send(ctx->out_ifc_list[ifc].priv, ctx->out_ifc_list[ifc].buffer_header,
                                            ctx->out_ifc_list[ifc].buffer_index + sizeof(trap_buffer_header_t), timeout);
 
-      /* if the buffer was successfuly sent OR we have no client: */
+      /* if the buffer was successfully sent OR we have no client: */
       if (result == TRAP_E_OK || result == TRAP_E_IO_ERROR) {
          if (result == TRAP_E_OK) {
             /*
-             * buffer was successfuly sent but we still have current message pending-unstored
+             * buffer was successfully sent but we still have current message pending/not stored
              * it will be the first message in buffer
              */
             ctx->counter_send_buffer[ifc]++;
@@ -388,7 +388,7 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
          /* buffer will be cleaned */
          ctx->out_ifc_list[ifc].buffer_index = 0;
          ctx->out_ifc_list[ifc].buffer_occupied = 0;
-         /* buffer was successfuly send but we still have current message pending-unstored
+         /* buffer was successfully sent but we still have current message pending/not stored
           * it will be the first message in buffer */
          if (ctx->out_ifc_list[ifc].bufferswitch == 1) {
             insert_into_buffer(&ctx->out_ifc_list[ifc], data, size);
@@ -618,7 +618,7 @@ void trap_set_help_section(int level)
 
 /** Initialization function.
  * Create and initialize all interfaces. This function parses command-line
- * arguments; it extracts agruments it needs to set up interfaces and returns
+ * arguments; it extracts arguments it needs to set up interfaces and returns
  * the rest (argc and argv are modified).
  * @param[in,out] argc Pointer to number of command-line arguments.
  * @param[in,out] argv Command-line arguments.
@@ -672,7 +672,7 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
 
    // Extract verbose level parameter (-v, -vv, -vvv)
    for (i = 0; i < *argc; i++) {
-      // If param mathes -v, -vv or -vvv, set verbosity level
+      // If param matches -v, -vv or -vvv, set verbosity level
       if (strcmp(argv[i], "-v") == 0) {
          trap_set_verbose_level(0);
       } else if (strcmp(argv[i], "-vv") == 0) {
@@ -870,7 +870,7 @@ void trap_get_internal_buffer(trap_ctx_priv_t *ctx, uint16_t ifc_idx, const void
  * interfaces, wait until data are available or `timeout` microseconds elapses.
  * If `timeout` is equal to TRAP_WAIT, wait indefinitely. If `timeout` is equal to TRAP_NO_WAIT,
  * function is non-blocking with no timeout.
- * When function returs due to timeout, contents of `data` and `size` are undefined.
+ * When function returns due to timeout, contents of `data` and `size` are undefined.
  * @param[in] ifc_mask Mask of interfaces to listen on (if *i*-th bit is set, interface *i* is enabled).
  * @param[out] data Pointer to data, you have to cast it to appropriate structure.
  * @param[out] size Number of bytes of data.
@@ -1147,7 +1147,7 @@ void trap_print_help(const trap_module_info_t *module_info)
    uint32_t i, written = 0, tmp = 0, align1 = 0, cols;
    pid_t p;
 
-   /* Decide which format of output will be used according to the enviroment variable */
+   /* Decide which format of output will be used according to the environment variable */
    temp_env = getenv("LIBTRAP_OUTPUT_FORMAT");
    if (temp_env != NULL) {
       output_format = strdup(temp_env);
@@ -1334,7 +1334,7 @@ void trap_print_ifc_spec_help()
  * Cut the first param, copy it into *dest* and returns pointer to the start of following
  * parameter.
  * \param[in] source  source string, typically *params*
- * \param[out] dest  destination string, target of first paramater copying
+ * \param[out] dest  destination string, target of first parameter copying
  * \param[in] delimiter  separator of values in *params*
  * \return Pointer to the start of following parameter (char after delimiter). \note If NULL, no other parameter is present or error during allocation occured.
  */
@@ -2164,7 +2164,7 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
 
       ctx->out_ifc_list[i].buffer_header = (void *) calloc(1, TRAP_IFC_MESSAGEQ_SIZE + sizeof(trap_buffer_header_t) + 1);
       if (ctx->out_ifc_list[i].buffer_header == NULL) {
-         trap_errorf(ctx, TRAP_E_MEMORY, "Not enought memory for input ifc buffer.");
+         trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for input ifc buffer.");
          goto freein_on_failed;
       }
       ctx->out_ifc_list[i].buffer = ((trap_buffer_header_t *) ctx->out_ifc_list[i].buffer_header)->data;
@@ -2430,7 +2430,7 @@ int service_get_data(int sock_d, uint32_t size, void **data)
    while (total_receved < size) {
       last_receved = recv(sock_d, (*data) + total_receved, size - total_receved, MSG_DONTWAIT);
       if (last_receved == 0) {
-         VERBOSE(CL_ERROR, "------- ! Supervisors service thread closed its socket, im done !");
+         VERBOSE(CL_ERROR, "------- ! Supervisor's service thread closed its socket... done!");
          return -1;
       } else if (last_receved == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
@@ -3324,6 +3324,8 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
             tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
          }
          neg_result = NEG_RES_FMT_MISMATCH;
+         free(recv_data_fmt_spec);
+         recv_data_fmt_spec = NULL;
          goto in_neg_exit;
       } else if (ret_val == TRAP_E_FIELDS_SUBSET) {
          VERBOSE(CL_VERBOSE_LIBRARY, "OK");
