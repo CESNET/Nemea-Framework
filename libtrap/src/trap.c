@@ -3304,6 +3304,8 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
             tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
          }
          neg_result = NEG_RES_FAILED;
+         free(recv_data_fmt_spec);
+         recv_data_fmt_spec = NULL;
          goto in_neg_exit;
       } else {
          VERBOSE(CL_VERBOSE_LIBRARY, "OK");
