@@ -117,7 +117,7 @@ int main(int argc, char **argv)
          return 1;
       }
       template_string2 = ur_template_string(tmplt);
-      if (template_string1 == NULL) {
+      if (template_string2 == NULL) {
          fprintf(stderr, "Error during creating template string\n");
          return 1;
       }
