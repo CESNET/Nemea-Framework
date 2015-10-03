@@ -175,8 +175,7 @@ int open_next_file(file_private_t *c)
 int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
    size_t loaded;
-   long int remaining_bytes;
-   long int current_position;
+   long int current_position, remaining_bytes;
 
    /* header of message inside the buffer */
    uint16_t *m_head = data;
@@ -236,7 +235,7 @@ neg_start:
    }
 #endif
 
-   /* Reads 4 bytes from the file, determinating the length of bytes to be read to @param[out] data */
+   /* Reads 4 bytes from the file, determining the length of bytes to be read to @param[out] data */
    loaded = fread(size, sizeof(uint32_t), 1, config->fd);
 
    if (loaded != 1) {
@@ -245,7 +244,7 @@ neg_start:
          if (open_next_file(config) == 0) {
             goto neg_start;
          } else {
-            VERBOSE(CL_VERBOSE_LIBRARY, "File input ifc negotiation: eof, could not open next input fle.")
+            VERBOSE(CL_VERBOSE_LIBRARY, "File input ifc negotiation: eof, could not open next input file.")
          }
 #endif
          /* set size of buffer to the size of 1 message (including its header) */
@@ -256,14 +255,32 @@ neg_start:
          return TRAP_E_OK;
       }
 
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: read error occured in file: %s", config->filename);
+      VERBOSE(CL_ERROR, "INPUT FILE IFC: read error occurred in file: %s", config->filename);
       return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: unable to read");
    }
 
    current_position = ftell(config->fd);
-   fseek(config->fd, 0L, SEEK_END);
-   remaining_bytes = ftell(config->fd) - current_position;
-   fseek(config->fd, current_position, SEEK_SET);
+   if (current_position < 0) {
+      VERBOSE(CL_ERROR, "INPUT FILE IFC: ftell failed in file: %s", config->filename);
+      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: ftell failed");
+   }
+
+   if (fseek(config->fd, 0L, SEEK_END) < 0) {
+      VERBOSE(CL_ERROR, "INPUT FILE IFC: fseek failed in file: %s", config->filename);
+      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fseek failed");
+   }
+
+   remaining_bytes = ftell(config->fd);
+   if (remaining_bytes < 0) {
+      VERBOSE(CL_ERROR, "INPUT FILE IFC: ftell failed in file: %s", config->filename);
+      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: ftell failed");
+   }
+
+   remaining_bytes -= current_position;
+   if (fseek(config->fd, current_position, SEEK_SET) < 0) {
+      VERBOSE(CL_ERROR, "INPUT FILE IFC: fseek failed in file: %s", config->filename);
+      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fseek failed");
+   }
 
    /* Reads (*size) bytes from the file */
    if (remaining_bytes < (*size)) {
