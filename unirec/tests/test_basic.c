@@ -97,7 +97,7 @@ int main(int argc, char **argv)
       // Store record into a buffer
       buffer = malloc(ur_rec_size(tmplt, rec));
       if(buffer == NULL) {
-         fprintf(stderr, "Error, memory alocation\n");
+         fprintf(stderr, "Error, memory allocation\n");
          return 1;
       }
       memcpy(buffer, rec, ur_rec_size(tmplt, rec));
@@ -128,20 +128,20 @@ int main(int argc, char **argv)
       }
       //test values
       if (ur_get(tmplt, buffer, F_FOO) != FOO_TEST_VALUE) {
-         fprintf(stderr, "FOO value does not match. It is %d and shoud be %d\n", ur_get(tmplt, buffer, F_FOO), FOO_TEST_VALUE);
+         fprintf(stderr, "FOO value does not match. It is %d and should be %d\n", ur_get(tmplt, buffer, F_FOO), FOO_TEST_VALUE);
          return 1;
       }
       if (ip_get_v4_as_int(&(ur_get(tmplt, buffer, F_IP))) != IP_TEST_VALUE) {
-         fprintf(stderr, "IP value does not match. It is %d and shoud be %d\n", ip_get_v4_as_int(&(ur_get(tmplt, buffer, F_IP))), IP_TEST_VALUE);
+         fprintf(stderr, "IP value does not match. It is %d and should be %d\n", ip_get_v4_as_int(&(ur_get(tmplt, buffer, F_IP))), IP_TEST_VALUE);
          return 1;
       }
       if (ur_get(tmplt, buffer, F_BAR) != BAR_TEST_VALUE) {
-         fprintf(stderr, "BAR value does not match. It is %d and shoud be %d\n", ur_get(tmplt, buffer, F_BAR), BAR_TEST_VALUE);
+         fprintf(stderr, "BAR value does not match. It is %d and should be %d\n", ur_get(tmplt, buffer, F_BAR), BAR_TEST_VALUE);
          return 1;
       }
       char str_cmp [] = STR_TEST_VALUE;
       if (strlen(str_cmp) != ur_get_var_len(tmplt, buffer, F_STR1) || memcmp(ur_get_ptr(tmplt, buffer, F_STR1), str_cmp, ur_get_var_len(tmplt, buffer, F_STR1)) != 0) {
-         fprintf(stderr, "STR1 value does not match. It is %.*s and shoud be %s\n", ur_get_var_len(tmplt, buffer, F_STR1), ur_get_ptr(tmplt, buffer, F_STR1), STR_TEST_VALUE);
+         fprintf(stderr, "STR1 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer, F_STR1), ur_get_ptr(tmplt, buffer, F_STR1), STR_TEST_VALUE);
          //return 1;
       }
 
@@ -204,27 +204,27 @@ int main(int argc, char **argv)
       }
       //test values
       if (*((int*)(ur_get_ptr_by_id(tmplt, buffer2, new_id))) != NEW_TEST_VALUE) {
-         fprintf(stderr, "NEW value does not match. It is %d and shoud be %d\n", *((int*)(ur_get_ptr_by_id(tmplt, buffer2, new_id))), NEW_TEST_VALUE);
+         fprintf(stderr, "NEW value does not match. It is %d and should be %d\n", *((int*)(ur_get_ptr_by_id(tmplt, buffer2, new_id))), NEW_TEST_VALUE);
          return 1;
       }
       if (ur_get(tmplt, buffer2, F_BAR) != BAR_TEST_VALUE) {
-         fprintf(stderr, "BAR value does not match. It is %d and shoud be %d\n", ur_get(tmplt, buffer, F_BAR), BAR_TEST_VALUE);
+         fprintf(stderr, "BAR value does not match. It is %d and should be %d\n", ur_get(tmplt, buffer, F_BAR), BAR_TEST_VALUE);
          return 1;
       }
       char str_cmp [] = STR_TEST_VALUE;
       if (strlen(str_cmp) != ur_get_var_len(tmplt, buffer2, F_STR1) || memcmp(ur_get_ptr(tmplt, buffer2, F_STR1), str_cmp, ur_get_var_len(tmplt, buffer2, F_STR1)) != 0) {
-         fprintf(stderr, "STR1 value does not match. It is %.*s and shoud be %s\n", ur_get_var_len(tmplt, buffer2, F_STR1), ur_get_ptr(tmplt, buffer2, F_STR1), STR_TEST_VALUE);
+         fprintf(stderr, "STR1 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer2, F_STR1), ur_get_ptr(tmplt, buffer2, F_STR1), STR_TEST_VALUE);
          //return 1;
       }
       char str_cmp2 [] = STR2_TEST_VALUE;
       if (strlen(str_cmp2) != ur_get_var_len(tmplt, buffer2, F_STR2) || memcmp(ur_get_ptr(tmplt, buffer2, F_STR2), str_cmp2, ur_get_var_len(tmplt, buffer2, F_STR2)) != 0) {
-         fprintf(stderr, "STR2 value does not match. It is %.*s and shoud be %s\n", ur_get_var_len(tmplt, buffer2, F_STR2), ur_get_ptr(tmplt, buffer2, F_STR2), STR2_TEST_VALUE);
+         fprintf(stderr, "STR2 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer2, F_STR2), ur_get_ptr(tmplt, buffer2, F_STR2), STR2_TEST_VALUE);
          return 1;
       }
 
       ur_free_template(tmplt);
    }
-   //dealocation
+   //deallocation
    free(buffer);
    free(buffer2);
    ur_finalize();
