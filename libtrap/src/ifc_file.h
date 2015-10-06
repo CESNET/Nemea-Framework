@@ -51,8 +51,8 @@ typedef struct file_private_s {
    char *filename;
    char mode[3];
    char is_terminated;
-   uint8_t  neg_initialized;
-   uint32_t  file_cnt;
+   uint8_t neg_initialized;
+   uint32_t file_cnt;
    uint32_t ifc_idx;
 } file_private_t;
 

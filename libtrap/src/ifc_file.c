@@ -48,6 +48,7 @@
 #include <inttypes.h>
 #include <arpa/inet.h>
 #include <wordexp.h>
+#include <unistd.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
@@ -74,7 +75,9 @@ void file_destroy(void *priv)
    file_private_t *config = (file_private_t*) priv;
 
    if (config) {
-      fclose(config->fd);
+      if (config->fd) {
+         fclose(config->fd);
+      }
       free(config->filename);
       free(config);
    } else {
@@ -150,7 +153,14 @@ int open_next_file(file_private_t *c)
    c->file_cnt++;
    c->fd = fopen(buffer, c->mode);
    if (c->fd == NULL) {
-      VERBOSE(CL_ERROR, "FILE IFC %d: could not open a new file after changing data format.", c->ifc_idx);
+      if (c->mode[0] == 'r' && access(buffer, F_OK) == -1) {
+         free(buffer);
+         return -2;
+      }
+
+      VERBOSE(CL_ERROR, "FILE IFC %d: could not open a new file: %s after changing data format.", c->ifc_idx, buffer);
+      free(buffer);
+      return -1;
    }
 
    free(buffer);
@@ -552,8 +562,29 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    strncpy(priv->filename, exp_result.we_wordv[0], name_length + 1);
    wordfree(&exp_result);
 
-   /* Attempts to open the file */
-   priv->fd = fopen(priv->filename, priv->mode);
+   if (priv->mode[0] == 'a' && access(priv->filename, F_OK) != -1) {
+      char *buffer = NULL;
+      do{
+         if (buffer != NULL) {
+            free(buffer);
+            buffer = NULL;
+         }
+
+         if (asprintf(&buffer, "%s%d", priv->filename, priv->file_cnt) < 0) {
+            VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC: asprintf failed.");
+            return trap_error(ctx, TRAP_E_MEMORY);
+         }
+
+         priv->file_cnt++;
+      } while (access(buffer, F_OK) != -1);
+
+      priv->fd = fopen(buffer, priv->mode);
+      free(buffer);
+   } else {
+      /* Attempts to open the file */
+      priv->fd = fopen(priv->filename, priv->mode);
+   }
+
    if (priv->fd == NULL) {
       VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC : unable to open file \"%s\". Possible reasons: non-existing file, bad permission.", priv->filename);
       free(priv->filename);
