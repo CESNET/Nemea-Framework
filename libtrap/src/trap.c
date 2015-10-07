@@ -1653,6 +1653,9 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
    } else if (selected_ifcs > 1) {
       // selected_ifcs initialized to 1
       c->get_data_timeout = c->in_ifc_list[selected_ifc_arr[0]].datatimeout;
+      pthread_mutex_lock(&c->mut_sem_collector);
+      c->readers_count = selected_ifcs;
+      pthread_mutex_unlock(&c->mut_sem_collector);
       for (counter = 0; counter < selected_ifcs; ++counter) {
          // unblock all selected threads
          c->counter_recv_message[counter]++;
@@ -1662,9 +1665,6 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
          }
          sem_post(&c->reader_threads[selected_ifc_arr[counter]].sem);
       }
-      pthread_mutex_lock(&c->mut_sem_collector);
-      c->readers_count = selected_ifcs;
-      pthread_mutex_unlock(&c->mut_sem_collector);
       sem_wait(&c->sem_collector);
 
       (*data) = c->in_ifc_results;
