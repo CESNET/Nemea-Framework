@@ -231,7 +231,13 @@ AC_ARG_ENABLE([initial-hashtable-order],
 AC_DEFINE_UNQUOTED([INITIAL_HASHTABLE_ORDER], [$initial_hashtable_order],
   [Number of buckets new object hashtables contain is 2 raised to this power. E.g. 3 -> 2^3 = 8.])
 
+DX_CHM_FEATURE(OFF)
+DX_CHI_FEATURE(OFF)
 DX_MAN_FEATURE(OFF)
+DX_RTF_FEATURE(OFF)
+DX_XML_FEATURE(OFF)
+DX_PDF_FEATURE(OFF)
+DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([libtrap], [Doxyfile], [doc/doxygen])
 
 AC_OUTPUT

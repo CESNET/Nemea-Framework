@@ -557,12 +557,13 @@ exit:
  * \brief Constructor of input TCP/IP IFC module.
  * This function is called by TRAP library to initialize one input interface.
  *
- * \param[in,out] ctx   pointer to the private libtrap context data (trap_ctx_init())
- * \param[in] params    configuration string containing space separated values of these parameters (in this exact order): *dest_addr* *dest_port*,
+ * \param[in,out] ctx   Pointer to the private libtrap context data (trap_ctx_init()).
+ * \param[in] params    Configuration string containing space separated values of these parameters (in this exact order): *dest_addr* *dest_port*,
  * where dest_addr is destination address of output TCP/IP IFC module and
  * dest_port is the port where sender is listening.
  * \param[in,out] ifc   IFC interface used for calling TCP/IP module.
- * \param [in] type     select the type of socket (see #tcpip_ifc_sockettype for options)
+ * \param[in] idx       Index of IFC that is created.
+ * \param [in] type     Select the type of socket (see #tcpip_ifc_sockettype for options).
  * \return 0 on success (TRAP_E_OK)
  */
 int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, uint32_t idx, enum tcpip_ifc_sockettype type)
@@ -1432,11 +1433,12 @@ void server_disconnect_all_clients(void *priv)
  * \brief Constructor of output TCP/IP IFC module.
  * This function is called by TRAP library to initialize one output interface.
  *
- * \param[in,out] ctx   pointer to the private libtrap context data (trap_ctx_init())
- * \param[in] params  configuration string containing space separated values of these parameters (in this exact order): *server_port* *max_clients*,
+ * \param[in,out] ctx  Pointer to the private libtrap context data (trap_ctx_init()).
+ * \param[in] params   Configuration string containing space separated values of these parameters (in this exact order): *server_port* *max_clients*,
  * where dest_addr is destination address of output TCP/IP IFC module and
  * dest_port is the port where sender is listening.
  * \param[in,out] ifc  IFC interface used for calling TCP/IP module.
+ * \param[in] idx      Index of IFC that is created.
  * \param [in] type select the type of socket (see #tcpip_ifc_sockettype for options)
  * \return 0 on success (TRAP_E_OK)
  */

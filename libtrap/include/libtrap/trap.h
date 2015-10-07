@@ -254,9 +254,6 @@ typedef enum {
 } trap_in_ifc_state_t;
 
 /**
- * \addtogroup simpleapi
- */
-/**
  * Set format of messages on output IFC.
  *
  * \param[in] out_ifc_idx   index of output IFC
@@ -269,7 +266,7 @@ void trap_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...);
 /**
  * Set format of messages expected on input IFC.
  *
- * \param[in] out_ifc_idx   index of input IFC
+ * \param[in] in_ifc_idx   index of input IFC
  * \param[in] data_type     format of messages defined by #trap_data_format_t
  * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
  * that specifies template is expected
@@ -284,13 +281,84 @@ int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...);
  * it should return format and template that was received.
  *
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
- * \param[in] out_ifc_idx   index of IFC
+ * \param[in] ifc_idx   index of IFC
  * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] ...   if data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template is expected
+ * \param[in] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
  * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
  */
 int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
+
+/**
+ * Set format of messages on output IFC.
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] out_ifc_idx   Index of output IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
+ */
+void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, ...);
+
+/**
+ * Set format of messages on output IFC.
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] out_ifc_idx   Index of output IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
+ */
+void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap);
+
+/**
+ * Returns current state of an input interface on specified index.
+ *
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc_idx   Index of the input interface
+ * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
+ *  else TRAP_E_NOT_INITIALIZED.
+ */
+int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
+
+/**
+ * Set format of messages expected on input IFC.
+ *
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] in_ifc_idx   Index of input IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
+ * \return TRAP_E_OK on success.
+ */
+int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...);
+
+/**
+ * Set format of messages expected on input IFC.
+ *
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] in_ifc_idx   Index of input IFC.
+ * \param[in] data_type     Format of messages defined by #trap_data_format_t.
+ * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
+ * that specifies template (char *) is expected.
+ * \return TRAP_E_OK on success.
+ */
+int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap);
+
+/**
+ * Get message format and template that is set on IFC.
+ *
+ * On output IFC it should return the values that were set.  On input IFC
+ * it should return format and template that was received.
+ *
+ * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc_dir     #trap_ifc_type direction of interface
+ * \param[in] ifc_idx     Index of IFC.
+ * \param[out] data_type   Format of messages defined by #trap_data_format_t.
+ * \param[out] spec   Specifier of data format specifies the template (char *) is expected.
+ * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
+ */
+int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
+
 /**
  * @}
  *//* trap_mess_fmt */
@@ -570,86 +638,6 @@ void trap_send_flush(uint32_t ifc);
  */
 
 #define trap_ctx_t void
-
-
-/**
- * \addtogroup trap_mess_fmt Message format
- * @{
- */
-/**
- * Set format of messages on output IFC.
- *
- * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] out_ifc_idx   Index of output IFC.
- * \param[in] data_type     Format of messages defined by #trap_data_format_t.
- * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected.
- */
-void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, ...);
-
-/**
- * Set format of messages on output IFC.
- *
- * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] out_ifc_idx   Index of output IFC.
- * \param[in] data_type     Format of messages defined by #trap_data_format_t.
- * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected.
- */
-void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap);
-
-/**
- * Returns current state of an input interface on specified index.
- *
- * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifc_idx   Index of the input interface
- * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
- *  else TRAP_E_NOT_INITIALIZED.
- */
-int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
-
-/**
- * Set format of messages expected on input IFC.
- *
- * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] out_ifc_idx   Index of input IFC.
- * \param[in] data_type     Format of messages defined by #trap_data_format_t.
- * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success.
- */
-int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...);
-
-/**
- * Set format of messages expected on input IFC.
- *
- * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] out_ifc_idx   Index of input IFC.
- * \param[in] data_type     Format of messages defined by #trap_data_format_t.
- * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
- * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success.
- */
-int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap);
-
-/**
- * Get message format and template that is set on IFC.
- *
- * On output IFC it should return the values that were set.  On input IFC
- * it should return format and template that was received.
- *
- * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifc_dir     #trap_ifc_type direction of interface
- * \param[in] ifc_idx     Index of IFC.
- * \param[out] data_type   Format of messages defined by #trap_data_format_t.
- * \param[out] spec   Specifier of data format specifies the template (char *) is expected.
- * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
- */
-int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
-
-/**
- * @}
- */
 
 /**
  * \brief Initialize and return the context of libtrap.
@@ -1060,8 +1048,9 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
  * Function handles output interface negotiation (sends hello message to input interface with its data format
  * and data specifier). Hello message contains message header (data format and data specifier size) and data specifier.
  *
- * \param[in] c  Pointer to output interface private structure.
- * \param[in] client_sd  Socket descriptor of the connection with the new input interface.
+ * \param[in] ifc_priv_data  Pointer to output interface private structure.
+ * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
+ * \param[in] sock_d  Socket descriptor of the connection with the new input interface.
  *
  * \return NEG_RES_FAILED if sending the data to input interface fails,
  *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
@@ -1075,7 +1064,8 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d);
  * and data specifier and compares it with its own data format and data specifier).
  * Hello message contains message header (data format and data specifier size) and data specifier.
  *
- * \param[in] priv Pointer to input interface private structure.
+ * \param[in,out] ifc_priv_data Pointer to input interface private structure.
+ * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
  *
  * \return NEG_RES_FAILED if receiving the data from output interface fails,
  *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,

@@ -78,7 +78,7 @@
  * \param[in] p   pointer to IFC's private memory allocated by constructor
  * \param[out] d  pointer to memory where this IFC can write received message
  * \param[out] s  size (in bytes) of received message (must be set by this IFC)
- * \param[in] t   timeout, see #trap_timeout
+ * \param[in] t   timeout, see \ref trap_timeout
  * \returns TRAP_E_OK on success
  */
 typedef int (*ifc_recv_func_t)(void *p, void *d, uint32_t *s, int t);
@@ -92,7 +92,7 @@ typedef int (*ifc_recv_func_t)(void *p, void *d, uint32_t *s, int t);
  * \param[in] p   pointer to IFC's private memory allocated by constructor
  * \param[in] d   pointer to message that will be sent
  * \param[in] s   size (in bytes) of message that will be sent
- * \param[in] t   timeout, see #trap_timeout
+ * \param[in] t   timeout, see \ref trap_timeout
  * \returns TRAP_E_OK on success
  */
 typedef int (*ifc_send_func_t)(void *p, const void *d, uint32_t s, int t);

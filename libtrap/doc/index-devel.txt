@@ -7,6 +7,6 @@ Libtrap is divided into:
 <li>Interfaces \ref trap_ifc</li>
 </ul>
 
-To learn how to implement new Libtrap interface, see \ref devel-ifc.
+To learn how to implement a new Libtrap interface, see \ref devel-ifc.
 
 */

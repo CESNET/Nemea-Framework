@@ -315,13 +315,14 @@ neg_start:
 }
 
 /**
- * \brief Initiate file input interface
+ * \brief Allocate and initiate file input interface.
  * This function is called by TRAP library to initialize one input interface.
  *
- * \param[in,out] ctx   pointer to the private libtrap context data (trap_ctx_init())
- * \param[in] params    configuration string containing *file_name*,
+ * \param[in,out] ctx   Pointer to the private libtrap context data (trap_ctx_init()).
+ * \param[in] params    Configuration string containing *file_name*,
  * where file_name is a path to a file from which data is to be read
  * \param[in,out] ifc   IFC interface used for calling file module.
+ * \param[in] idx       Index of IFC that is created.
  * \return 0 on success (TRAP_E_OK), TRAP_E_MEMORY, TRAP_E_BADPARAMS on error
  */
 int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc, uint32_t idx)
@@ -478,12 +479,14 @@ int32_t file_get_client_count(void *priv)
 }
 
 /**
- * \brief Initiate file output interface
- * \param[in,out] ctx   pointer to the private libtrap context data (trap_ctx_init())
- * \param[in] params    configuration string containing colon separated values of these parameters (in this exact order): *file_name*:*open_mode*,
+ * \brief Allocate and initiate file output interface.
+ * This function is called by TRAP library to initialize one output interface.
+ * \param[in,out] ctx   Pointer to the private libtrap context data (trap_ctx_init()).
+ * \param[in] params    Configuration string containing colon separated values of these parameters (in this exact order): *file_name*:*open_mode*,
  * where file_name is a path to a file in which data is to be written and
  * open_mode is either a - append or w - write, if no mode is specified, the file will be opened in append mode.
  * \param[in,out] ifc   IFC interface used for calling file module.
+ * \param[in] idx       Index of IFC that is created.
  * \return 0 on success (TRAP_E_OK), TRAP_E_MEMORY, TRAP_E_BADPARAMS on error
  */
 int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx)

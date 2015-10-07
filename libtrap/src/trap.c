@@ -2769,11 +2769,11 @@ int trap_ctx_get_client_count(trap_ctx_t *ctx, uint32_t ifcidx)
  */
 
 /**
- * \addtogroup trap_mess_fmt
+ * \addtogroup contextapi
  * @{
  */
 /**
- * \addtogroup contextapi
+ * \addtogroup trap_mess_fmt
  * @{
  */
 void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_type, va_list ap)
@@ -2901,10 +2901,17 @@ int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, ui
 }
 /**
  * @}
+ *//* trap_mess_fmt */
+/**
+ * @}
  */
 
 /**
  * \addtogroup simpleapi
+ * @{
+ */
+/**
+ * \addtogroup trap_mess_fmt
  * @{
  */
 void trap_set_data_fmt(uint32_t out_ifc_idx, uint8_t data_type, ...)
@@ -3034,10 +3041,10 @@ void *trap_get_global_ctx()
 
 /**
  * @}
- */
+ *//* trap_mess_fmt */
 /**
  * @}
- *//* trap_mess_fmt */
+ */
 
 
 int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d)
