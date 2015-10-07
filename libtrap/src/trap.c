@@ -1644,7 +1644,6 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
    }
    if (selected_ifcs == 1) {
       /* get data from one IFC */
-      c->counter_recv_message[selected_idx]++;
       c->in_ifc_results[counter].result_code = trap_ctx_recv(ctx, selected_idx,
             (const void **) &c->in_ifc_results[selected_idx].message, &c->in_ifc_results[selected_idx].message_size);
       (*data) = c->in_ifc_results;
@@ -1658,7 +1657,6 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
       pthread_mutex_unlock(&c->mut_sem_collector);
       for (counter = 0; counter < selected_ifcs; ++counter) {
          // unblock all selected threads
-         c->counter_recv_message[counter]++;
          /* get minimal timeout of selected ifcs */
          if (c->get_data_timeout > c->in_ifc_list[selected_ifc_arr[counter]].datatimeout) {
             c->get_data_timeout = c->in_ifc_list[selected_ifc_arr[counter]].datatimeout;
