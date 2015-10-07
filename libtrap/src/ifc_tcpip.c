@@ -257,7 +257,7 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
    uint32_t recovery = 0;
 #endif
    /** messageframe contains header that is read (even partially) in HEAD_WAIT */
-   static trap_buffer_header_t messageframe;
+   trap_buffer_header_t messageframe;
    tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
    void *p = &messageframe;
    struct timeval tm, *temptm;
