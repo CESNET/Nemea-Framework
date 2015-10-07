@@ -56,6 +56,8 @@ extern "C" {
 #include "trap_module_info.h"
 #include "jansson.h"
 
+#define trap_ctx_t void
+
 /**
  * \defgroup commonapi Common libtrap API
  *
@@ -627,7 +629,7 @@ void trap_send_flush(uint32_t ifc);
 /********** Macros generating pieces of common code **********/
 
 /**
- * \defgroup contextapi Context API
+ * \addtogroup contextapi Context API
  *
  * This API allows user to use multiple instances of libtrap in the same process.
  *
@@ -636,8 +638,6 @@ void trap_send_flush(uint32_t ifc);
  * Obtained context pointer must be passed to all functions from context API.
  * @{
  */
-
-#define trap_ctx_t void
 
 /**
  * \brief Initialize and return the context of libtrap.
