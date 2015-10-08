@@ -59,12 +59,11 @@ out.write("""
 /** @brief Values names and descriptions
  * It contains a table mapping a value to name and description
  */
-typedef struct ur_values_s ur_values_t;
-struct ur_values_s{
-  int32_t value;
-  char *name;
-  char *description;
-};
+typedef struct ur_values_s {
+   int32_t value;    ///< Numeric Value
+   char *name;       ///< Name of Value
+   char *description;///< Description of Value
+} ur_values_t;
 """)
 
 count = 0;
