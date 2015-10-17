@@ -70,6 +70,7 @@ extern "C" {
 //default values
 #define UR_INVALID_OFFSET 0xffff ///< Default value of all offsets (value is not in the record)
 #define UR_NO_DYNAMIC_VALUES 0xffff    ///< Value of variable "first_dynamic" if no dynamic values are present
+#define UR_UNINITIALIZED 0          ///< Indicator if the UniRec has not been initialized by calling function ur_init.
 #define UR_INITIALIZED 1            ///< Indicator if the UniRec has been initialized by calling function ur_init.
 #define UR_INVALID_FIELD 0xffff    ///< ID of invalid field
 //return codes

@@ -221,12 +221,11 @@ def create_fields_file (file_path):
    for name,type,_ in fields:
       out.write('   %s, /* %s */\n' % (type_table[type], name))
    out.write("};\n\n")
-   out.write("\n")
 
    # Table UR_FIELD_SPECS
    strlen_fields = str(len(fields))
    out.write("ur_static_field_specs_t UR_FIELD_SPECS_STATIC = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static, %s};\n"% strlen_fields)
-   out.write("ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static,%s,%s,%s, NULL};\n\n"% (strlen_fields, strlen_fields, strlen_fields))
+   out.write("ur_field_specs_t ur_field_specs = {ur_field_names_static, ur_field_sizes_static, ur_field_types_static,%s,%s,%s, NULL, UR_UNINITIALIZED};\n"% (strlen_fields, strlen_fields, strlen_fields))
 
    out.close()
 

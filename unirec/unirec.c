@@ -621,7 +621,7 @@ int ur_undefine_field(const char *name)
 
 void ur_finalize()
 {
-	if (ur_field_specs.ur_allocated_fields == ur_field_specs.ur_last_statically_defined_id) {
+	if (ur_field_specs.intialized != UR_INITIALIZED) {
 		//there is no need for deallocation, because nothing has been allocated.
 		return;
 	}
@@ -648,7 +648,14 @@ void ur_finalize()
 	if (ur_field_specs.ur_field_types != NULL) {
 		free(ur_field_specs.ur_field_types);
 	}
-	return;
+	ur_field_specs.ur_field_names = UR_FIELD_SPECS_STATIC.ur_field_names;
+	ur_field_specs.ur_field_sizes = UR_FIELD_SPECS_STATIC.ur_field_sizes;
+	ur_field_specs.ur_field_types = UR_FIELD_SPECS_STATIC.ur_field_types;
+	ur_field_specs.ur_last_statically_defined_id = UR_FIELD_SPECS_STATIC.ur_last_id;
+	ur_field_specs.ur_last_id = UR_FIELD_SPECS_STATIC.ur_last_id;
+	ur_field_specs.ur_allocated_fields = UR_FIELD_SPECS_STATIC.ur_last_id;
+	ur_field_specs.ur_undefine_fields = NULL;
+	ur_field_specs.intialized = UR_UNINITIALIZED;
 }
 
 // Find field ID given its name
