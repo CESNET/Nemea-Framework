@@ -12,11 +12,17 @@ This module provides access to libtrap library.
 import ctypes
 from ctypes import *
 import signal
+import os.path
 from optparse import OptionParser
 
 # ***** Load libtrap library *****
 
-lib = CDLL("libtrap.so")
+try:
+    lib = CDLL(os.path.join(os.path.dirname(__file__), "..", "libtrap", "src", ".libs", "libtrap.so"))
+    #print "Loaded libtrap from git repository"
+except OSError:
+    lib = CDLL("libtrap.so")
+    #print "Loaded libtrap from system path"
 
 # Load libc library (needed for "signal" function, see at the bottom of the file)
 libc = CDLL("libc.so.6")  # note: if libtrap will ever work on Windows, here should be "msvcrt" then
