@@ -110,7 +110,7 @@ def errorCodeChecker(code):
    elif code == TRAP_E_FORMAT_MISMATCH:
       raise EFMTMismatch(code)
    else:
-      raise TRAPException(-1, "Unknown error")
+      raise TRAPException(code, "Unknown error")
 
 
 # ***** Other constants *****
@@ -250,9 +250,9 @@ lib.trap_set_data_fmt.restype = None
 lib.trap_set_required_fmt.argtypes = (c_uint32, c_ubyte, c_char_p)
 lib.trap_set_required_fmt.restype = None
 lib.trap_get_data_fmt.argtypes = (c_ubyte, c_uint32, POINTER(c_ubyte), POINTER(c_char_p))
-lib.trap_get_data_fmt.restype = c_int
+lib.trap_get_data_fmt.restype = errorCodeChecker
 lib.trap_get_in_ifc_state.argtypes = (c_uint32,)
-lib.trap_get_in_ifc_state.restype = c_int
+lib.trap_get_in_ifc_state.restype = c_int # check for errors is made specially later
 
 
 def init(module_info, ifc_spec):
@@ -446,6 +446,14 @@ def set_data_fmt(ifcidx, fmttype, fmtspec):
    fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
    lib.trap_set_data_fmt(ifcidx, fmttype, fmtspec)
 
+
+def get_in_ifc_state(ifcidx):
+   """Returns current state of an input interface on specified index."""
+   # trap_get_in_ifc_state returns either the state or an error code
+   ret = lib.trap_get_in_ifc_state
+   if ret in [STATE_FMT_WAITING, STATE_FMT_OK, STATE_FMT_MISMATCH, STATE_FMT_CHANGED]:
+      return ret
+   return errorCodeChecker(ret)
 
 # ***** Set up automatic cleanup when the interpreter exits *****
 
