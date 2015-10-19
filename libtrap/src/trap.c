@@ -666,7 +666,7 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    if (ifc_spec_str == NULL) {
       //return trap_errorf(ctx, TRAP_E_BADPARAMS, "Interface specifier (option -i) not found.");
       trap_last_error = TRAP_E_BADPARAMS;
-      trap_last_error_msg = default_err_msg[TRAP_E_BADPARAMS];
+      trap_last_error_msg = "Interface specifier (option -i) not found.";
       return TRAP_E_BADPARAMS;
    }
 
@@ -2949,7 +2949,7 @@ int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx)
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
 
    if (ifc_idx >= c->num_ifc_in) {
-      return TRAP_E_NOT_INITIALIZED;
+      return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
    return c->in_ifc_list[ifc_idx].client_state;

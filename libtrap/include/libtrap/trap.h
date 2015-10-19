@@ -317,8 +317,9 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_idx   Index of the input interface
- * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
- *  else TRAP_E_NOT_INITIALIZED.
+ * \return An item from trap_in_ifc_state enum on success, else
+ * TRAP_E_NOT_INITIALIZED (uninitiliazed context) or
+ * TRAP_E_BAD_IFC_INDEX (ifc_idx >= number of input ifcs).
  */
 int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
 
