@@ -57,6 +57,12 @@ TRAP_FMT_RAW = 1 # raw data, no format specified
 TRAP_FMT_UNIREC = 2 # UniRec records
 TRAP_FMT_JSON = 3 # structured data serialized using JSON
 
+# Definition of input interface states (trap_in_ifc_state_t)
+STATE_FMT_WAITING = 0
+STATE_FMT_OK = 1
+STATE_FMT_MISMATCH = 2
+STATE_FMT_CHANGED = 3
+
 # Definition of exceptions
 class TRAPException (Exception):
    def __init__(self, code, msg = None):
