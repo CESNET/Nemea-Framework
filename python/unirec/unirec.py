@@ -87,7 +87,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
 
    # Create and fill-in the class template
    numfields = len(field_names)
-   minsize = sum((FIELDS[f].size if FIELDS[f].size != -1 else 2) for f in field_names)
+   minsize = sum((FIELDS[f].size if FIELDS[f].size != -1 else 4) for f in field_names)
    argtxt = ', '.join(field_names)
    fieldnamestxt = ', '.join('%r' % f for f in field_names)
    valuestxt = ', '.join('self.%s' % f for f in field_names)
@@ -113,12 +113,12 @@ def CreateTemplate(template_name, field_names, verbose=False):
                    for i,f in enumerate(stat_field_names)
                 )
    offsetcode = ('o = 0; ' + \
-                '; '.join('o += len(self.%s); s += struct.pack("=H", o)' % f for f in dyn_field_names)) \
+                '; '.join('l = len(self.%s); s += struct.pack("=HH", o, l); o += l' % f for f in dyn_field_names)) \
                 if len(dyn_field_names) > 0 else ''
    dynfieldcode = '; '.join('s += self.%s' % f for f in dyn_field_names)
    tuplestatic = repr(tuple('self.%s' % f for f in stat_field_names)).replace("'",'')
-   unpackdyncode = '; offset += 2; last_end = end; '.join(\
-                   'end = %d + struct.unpack_from("=H", data, offset)[0]; self.%s = data[last_end : end]' % (minsize, f) \
+   unpackdyncode = '; offset += 4; '.join(\
+                   'start,length = struct.unpack_from("=HH", data, offset); self.%s = data[%d+start : %d+start+length]' % (f, minsize, minsize) \
                    for f in dyn_field_names\
                    )
    class_code = dedent('''
