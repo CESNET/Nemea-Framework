@@ -51,6 +51,10 @@ TRAP_E_FIELDS_SUBSET = 22 # Returned when receivers fields are subset of senders
 TRAP_E_FORMAT_CHANGED = 23 # Returned by trap_recv when format or format spec of the receivers interface has been changed
 TRAP_E_FORMAT_MISMATCH = 24 # Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
 
+# Input/output ifc (enum trap_ifc_type)
+IFC_INPUT = 1
+IFC_OUTPUT = 2
+
 # Definition of data format types (trap_data_format_t)
 TRAP_FMT_UNKNOWN = 0 # unknown - message format was not specified yet
 TRAP_FMT_RAW = 1 # raw data, no format specified
@@ -226,6 +230,8 @@ lib.trap_recv.argtypes = (c_uint32, POINTER(c_void_p), POINTER(c_uint16))
 lib.trap_recv.restype = errorCodeChecker
 lib.trap_send.argtypes = (c_uint32, c_void_p, c_uint16)
 lib.trap_send.restype = errorCodeChecker
+lib.trap_send_flush.argtypes = (c_int,)
+lib.trap_send_flush.restype = errorCodeChecker
 lib.trap_set_verbose_level.argtypes = (c_int,)
 lib.trap_set_verbose_level.restype = None
 lib.trap_get_verbose_level.argtypes = None
@@ -318,6 +324,8 @@ def send(ifc, data):
    data_ptr = c_char_p(data)
    data_size = c_uint16(len(data))
    lib.trap_send(ifc, data_ptr, data_size)
+
+sendFlush = lib.trap_send_flush
 
 setVerboseLevel = lib.trap_set_verbose_level
 getVerboseLevel = lib.trap_get_verbose_level
@@ -428,7 +436,7 @@ def get_data_fmt(direction, ifcidx):
    fmttype = c_ubyte()
    fmtspec = c_char_p()
    lib.trap_get_data_fmt(direction, ifcidx, byref(fmttype), byref(fmtspec))
-   return (fmttype.value, string_at(fmtspec))
+   return (fmttype.value, string_at(fmtspec) if fmtspec else None)
 
 def set_required_fmt(ifcidx, fmttype, fmtspec):
    """Set required data format type and specifier of the input IFC (for negotiation).
