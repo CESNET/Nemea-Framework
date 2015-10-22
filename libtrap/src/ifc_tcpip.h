@@ -51,12 +51,6 @@
  */
 #define TCPIP_IFC_PARAMS_DELIMITER  (',')
 
-#define NEG_RES_CONT 111
-#define NEG_RES_FMT_SUBSET 112
-#define NEG_RES_FMT_MISMATCH 113
-#define NEG_RES_FAILED 114
-#define NEG_RES_FMT_UNKNOWN 115
-
 /**
  * Communication via UNIX socket needs to specify path to socket file.
  * It is currently placed according to this format, where %s is replaced by

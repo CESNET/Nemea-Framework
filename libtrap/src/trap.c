@@ -3236,9 +3236,9 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       goto in_neg_exit;
    } else {
       VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-      VERBOSE(CL_VERBOSE_LIBRARY, "senders data_type: %"PRIu8, hello_msg_header->data_type);
-      VERBOSE(CL_VERBOSE_LIBRARY, "senders data_fmt_spec_size: %"PRIu32, hello_msg_header->data_fmt_spec_size);
-      VERBOSE(CL_VERBOSE_LIBRARY, "receivers data_type: %"PRIu8, req_data_type);
+      VERBOSE(CL_VERBOSE_LIBRARY, "sender's data_type: %"PRIu8, hello_msg_header->data_type);
+      VERBOSE(CL_VERBOSE_LIBRARY, "sender's data_fmt_spec_size: %"PRIu32, hello_msg_header->data_fmt_spec_size);
+      VERBOSE(CL_VERBOSE_LIBRARY, "receiver's data_type: %"PRIu8, req_data_type);
    }
 
 
@@ -3247,7 +3247,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    VERBOSE(CL_VERBOSE_LIBRARY, "Step 2: data types comparison...   ");
    if (hello_msg_header->data_type == TRAP_FMT_UNKNOWN) {
       // Received unknown data type in hello message header from senders interface
-      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - senders output interface has unknown data format");
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - sender's output interface has unknown data format");
       if (ifc_type == TRAP_IFC_TYPE_FILE) {
          file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
       } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
@@ -3257,7 +3257,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       goto in_neg_exit;
    } else if (hello_msg_header->data_type != req_data_type) {
       // Senders and receivers interface data types are not the same
-      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - mismatch of senders output and receivers input interface data formats");
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - mismatch of sender's output and receiver's input interface data types");
       if (ifc_type == TRAP_IFC_TYPE_FILE) {
          file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
       } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
@@ -3293,7 +3293,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    /** Receive data_fmt_spec */
    // data_fmt_spec is received only in case of UNIREC and JSON data formats
    if (hello_msg_header->data_type == TRAP_FMT_UNIREC || hello_msg_header->data_type == TRAP_FMT_JSON) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "Step 3: receiving senders data_fmt_spec...   ");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Step 3: receiving sender's data_fmt_spec...   ");
       size = hello_msg_header->data_fmt_spec_size;
       recv_data_fmt_spec = calloc(size+1, sizeof(char));
       p_p = (void *) recv_data_fmt_spec;
@@ -3370,7 +3370,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
          }
          neg_result = NEG_RES_CONT;
          if (current_data_fmt_spec != NULL) {
-            VERBOSE(CL_VERBOSE_LIBRARY, "Step 5: comparing old and new senders data_fmt_spec (not first negotiation)...   ");
+            VERBOSE(CL_VERBOSE_LIBRARY, "Step 5: comparing old and new sender's data_fmt_spec (not first negotiation)...   ");
             VERBOSE(CL_VERBOSE_LIBRARY, "old data_fmt_spec: \"%s\"", current_data_fmt_spec);
             VERBOSE(CL_VERBOSE_LIBRARY, "new data_fmt_spec: \"%s\"", recv_data_fmt_spec);
             if (hello_msg_header->data_type == TRAP_FMT_UNIREC) {
@@ -3379,15 +3379,19 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
                ret_val = (strcmp(current_data_fmt_spec, recv_data_fmt_spec) != 0 ? 1 /* CHANGE */ : TRAP_E_OK);
             }
             if (ret_val != TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+               VERBOSE(CL_VERBOSE_LIBRARY, "CHANGE");
                if (ifc_type == TRAP_IFC_TYPE_FILE) {
                   file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
                } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
                   tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
                }
-               neg_result = NEG_RES_SENDER_FMT_SUBSET;
+               if (hello_msg_header->data_type == TRAP_FMT_UNIREC) {
+                  neg_result = NEG_RES_SENDER_FMT_SUBSET;
+               } else {
+                  neg_result = NEG_RES_FMT_CHANGED;
+               }
             } else {
-               VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+               VERBOSE(CL_VERBOSE_LIBRARY, "SAME");
             }
          }
       }

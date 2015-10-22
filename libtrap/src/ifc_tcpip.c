@@ -846,12 +846,16 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
       return TRAP_E_OK;
 
-   case NEG_RES_RECEIVER_FMT_SUBSET:
-      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (data specifier of the input interface is subset of the output interface data specifier).");
+   case NEG_RES_FMT_CHANGED: // used on format change with JSON
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (format has changed; it was not first negotiation).");
       return TRAP_E_OK;
 
-   case NEG_RES_SENDER_FMT_SUBSET:
-      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new data specifier of the output interface is subset of the old one; it was not first negotiation).");
+   case NEG_RES_RECEIVER_FMT_SUBSET: // used on format change with UniRec
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (required set of fields of the input interface is subset of the recevied format).");
+      return TRAP_E_OK;
+
+   case NEG_RES_SENDER_FMT_SUBSET: // used on format change with UniRec
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new recevied format specifier is subset of the old one; it was not first negotiation).");
       return TRAP_E_OK;
 
    case NEG_RES_FAILED:
@@ -859,7 +863,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
       return TRAP_E_FIELDS_MISMATCH;
 
    case NEG_RES_FMT_MISMATCH:
-      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data format or data specifier mismatch).");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
       return TRAP_E_FIELDS_MISMATCH;
 
    default:
