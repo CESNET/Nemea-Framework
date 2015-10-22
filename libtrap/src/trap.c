@@ -3132,6 +3132,10 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d)
    // Data format specifier is sent only if the data format is set to JSON or UNIREC
    if ((data_type == TRAP_FMT_UNIREC || data_type == TRAP_FMT_JSON) && data_fmt_spec != NULL) {
       VERBOSE(CL_VERBOSE_LIBRARY, "Step 2: sending data_fmt_spec...   ");
+      if (hello_msg_header->data_fmt_spec_size == 0) { // JSON can have empty string as format specifier
+          VERBOSE(CL_VERBOSE_LIBRARY, "SKIPPED because data_fmt_spec_size is 0.");
+          goto out_neg_exit;
+      }
       memset(buffer, 0, sizeof(hello_msg_header_t));
       if ((strlen(data_fmt_spec) + 1) > size_of_buffer) {
          buffer = (char *) realloc(buffer, (strlen(data_fmt_spec) + 1) * sizeof(char));
@@ -3270,9 +3274,10 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       }
       neg_result = NEG_RES_CONT;
    } else {
-      // Both interfaces (senders output and receivers input) have UNIREC or JSON data format, check the data format specifier size
-      if (hello_msg_header->data_fmt_spec_size <= 0) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - received zero size of data format specifier for JSON or UNIREC data format");
+      // Both interfaces (senders output and receivers input) have UNIREC or JSON data format, that's OK
+      // If type is UNIREC, check data format specifier size (JSON can have empty specifier, but UNIREC don't)
+      if (hello_msg_header->data_type == TRAP_FMT_UNIREC && hello_msg_header->data_fmt_spec_size <= 0) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - received zero size of UNIREC data format specifier.");
          if (ifc_type == TRAP_IFC_TYPE_FILE) {
             file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
          } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
@@ -3287,41 +3292,55 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
 
    /** Receive data_fmt_spec */
    // data_fmt_spec is received only in case of UNIREC and JSON data formats
-   if (hello_msg_header->data_fmt_spec_size > 0 && (hello_msg_header->data_type == TRAP_FMT_UNIREC || hello_msg_header->data_type == TRAP_FMT_JSON)) {
+   if (hello_msg_header->data_type == TRAP_FMT_UNIREC || hello_msg_header->data_type == TRAP_FMT_JSON) {
       VERBOSE(CL_VERBOSE_LIBRARY, "Step 3: receiving senders data_fmt_spec...   ");
       size = hello_msg_header->data_fmt_spec_size;
       recv_data_fmt_spec = calloc(size+1, sizeof(char));
       p_p = (void *) recv_data_fmt_spec;
 
-      if (ifc_type == TRAP_IFC_TYPE_FILE) {
-         ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
-         compare = size;
-      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-         ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);
-         compare = TRAP_E_OK;
-      }
-      if (ret_val != compare) {
-         // Could not receive data formate specifier
-         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+      if (hello_msg_header->data_fmt_spec_size > 0) {
          if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
+            ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+            compare = size;
          } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
+            ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);
+            compare = TRAP_E_OK;
          }
-         neg_result = NEG_RES_FAILED;
-         free(recv_data_fmt_spec);
-         recv_data_fmt_spec = NULL;
-         goto in_neg_exit;
-      } else {
-         VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-         VERBOSE(CL_VERBOSE_LIBRARY, "senders data_fmt_spec: \"%s\"", recv_data_fmt_spec);
-         VERBOSE(CL_VERBOSE_LIBRARY, "receivers data_fmt_spec: \"%s\"", req_data_fmt_spec);
+      
+         if (ret_val != compare) {
+            // Could not receive data formate specifier
+            VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
+            if (ifc_type == TRAP_IFC_TYPE_FILE) {
+               file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
+            } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
+               tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
+            }
+            neg_result = NEG_RES_FAILED;
+            free(recv_data_fmt_spec);
+            recv_data_fmt_spec = NULL;
+            goto in_neg_exit;
+         } else {
+            VERBOSE(CL_VERBOSE_LIBRARY, "OK");
+         }
+      } else { // data_fmt_spec_size == 0
+         *(char*)p_p = 0; // set to empty string
+         VERBOSE(CL_VERBOSE_LIBRARY, "SKIPPED because data_fmt_spec_size is 0.");
       }
+      VERBOSE(CL_VERBOSE_LIBRARY, "sender's data_fmt_spec: \"%s\"", recv_data_fmt_spec);
+      VERBOSE(CL_VERBOSE_LIBRARY, "receiver's data_fmt_spec: \"%s\"", req_data_fmt_spec);
 
 
       /**Compare data_fmt_spec */
       VERBOSE(CL_VERBOSE_LIBRARY, "Step 4: comparing senders data_fmt_spec and receivers required data_fmt_spec...   ");
-      ret_val = trap_ctx_cmp_data_fmt(recv_data_fmt_spec, req_data_fmt_spec);
+      if (hello_msg_header->data_type == TRAP_FMT_UNIREC) {
+         ret_val = trap_ctx_cmp_data_fmt(recv_data_fmt_spec, req_data_fmt_spec);
+      } else {
+         // For JSON, misamtch occurs if recevier's format is non-empty and formats are different
+         ret_val = (req_data_fmt_spec == NULL || req_data_fmt_spec[0] == 0 ||
+                    /*recv_data_fmt_spec == NULL || recv_data_fmt_spec[0] == 0 ||*/ // Uncomment this to enable sender's empty format to match anything
+                    strcmp(req_data_fmt_spec, recv_data_fmt_spec) == 0
+                   ) ? TRAP_E_OK : TRAP_E_FIELDS_MISMATCH;
+      }
       if (ret_val == TRAP_E_FIELDS_MISMATCH) {
          // senders and receivers ifc data_fmt_specs are not same
          VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
@@ -3354,7 +3373,11 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
             VERBOSE(CL_VERBOSE_LIBRARY, "Step 5: comparing old and new senders data_fmt_spec (not first negotiation)...   ");
             VERBOSE(CL_VERBOSE_LIBRARY, "old data_fmt_spec: \"%s\"", current_data_fmt_spec);
             VERBOSE(CL_VERBOSE_LIBRARY, "new data_fmt_spec: \"%s\"", recv_data_fmt_spec);
-            ret_val = trap_ctx_cmp_data_fmt(current_data_fmt_spec, recv_data_fmt_spec);
+            if (hello_msg_header->data_type == TRAP_FMT_UNIREC) {
+               ret_val = trap_ctx_cmp_data_fmt(current_data_fmt_spec, recv_data_fmt_spec);
+            } else {
+               ret_val = (strcmp(current_data_fmt_spec, recv_data_fmt_spec) != 0 ? 1 /* CHANGE */ : TRAP_E_OK);
+            }
             if (ret_val != TRAP_E_OK) {
                VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
                if (ifc_type == TRAP_IFC_TYPE_FILE) {
