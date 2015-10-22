@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import pdb
 import sys
@@ -32,6 +32,9 @@ ifc_spec = trap.parseParams(sys.argv, module_info)
 trap.init(module_info, ifc_spec)
 
 trap.registerDefaultSignalHandler() # This is needed to allow module termination using s SIGINT or SIGTERM signal
+
+# Parse remaining command-line arguments
+(options, args) = parser.parse_args()
 
 # this module accepts all UniRec fieds -> set required format:
 trap.set_required_fmt(0, trap.TRAP_FMT_UNIREC, "")
