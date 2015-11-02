@@ -3009,13 +3009,14 @@ int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_
    int compare_str = 0;
    receiver_move = receiver_ifc_data_fmt;
    sender_move = sender_ifc_data_fmt;
+   // go through all fields of receiver and search for each one in set of sender's fields
    while (*receiver_move != 0) {
-      //through all fields of receiver
+      // get a receiver's field
       receiver_move = trap_get_type_and_name_from_string(receiver_move, &field_name_receiver,
          &field_type_receiver, &field_name_receiver_length, &field_type_receiver_length);
       compare_str = 0;
       while (*sender_move != 0 && !compare_str) {
-            //search field which should be in sender and receiver.
+            // search the field in set of sender's fields
             sender_move = trap_get_type_and_name_from_string(sender_move, &field_name_sender,
                &field_type_sender, &field_name_sender_length, &field_type_sender_length);
             compare_str = (field_name_sender_length == field_name_receiver_length &&
@@ -3024,8 +3025,10 @@ int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_
                memcmp(field_type_sender, field_type_receiver, field_type_receiver_length) == 0);
       }
       if (!compare_str) {
-         return TRAP_E_FIELDS_MISMATCH;
+         return TRAP_E_FIELDS_MISMATCH; // one of receiver fields not found
       }
+      // reset pointer to beginning of sender's set of fields
+      sender_move = sender_ifc_data_fmt;
    }
    if (strlen(sender_ifc_data_fmt) > strlen(receiver_ifc_data_fmt)) {
       // receivers fmt spec is subset of senders fmt spec
