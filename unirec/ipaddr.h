@@ -188,6 +188,22 @@ INLINE int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2)
    return memcmp((const char *)addr1, (const char *)addr2, 16);
 }
 
+// Is IP address NULL/invalid/unspecified?
+// There are two variants being used as invalid/unspecified address:
+//   00000000 00000000 00000000 ffffffff (i.e. "0.0.0.0", zero IPv4)
+//   00000000 00000000 00000000 00000000 (i.e. "::", zero IPv6)
+// This function returns 1 if given address matches any of the ones above.
+// Otherwise returns 0.
+INLINE int ip_is_null(const ip_addr_t *addr)
+{
+   if (addr->ui64[0] == 0) {
+      if (addr->ui64[1] == 0 || (addr->ui32[2] == 0 && addr->ui32[3] == 0xffffffff)) {
+         return 1;
+      }
+   }
+   return 0;
+}
+
 #ifndef __WIN32
 // Convert IP address in a string into ip_addr_t. Return 1 on success,
 // 0 on error (i.e. string doesn't contain a valid IP address).
