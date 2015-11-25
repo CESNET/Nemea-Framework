@@ -994,44 +994,26 @@ typedef enum tcpip_sender_result {
 static inline int tcpip_sender_conn_phase(tcpip_sender_private_t *config, struct timespec *t)
 {
    int res;
+   assert(t != NULL);
+
    if (check_connected_clients(config) == 0) {
       /* there is no connected client */
-      if (t == NULL) {
-         /* blocking */
-         DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "send Waiting for clients (sem)."));
-         res = sem_wait(&config->have_clients);
-         if (res == -1) {
-            if (errno == EINTR) {
-               DEBUG_IFC(VERBOSE(CL_ERROR, "send interrupt."));
-               if (config->is_terminated != 0) {
-                  return TRAP_E_TERMINATED;
-               }
+      res = sem_timedwait(&config->have_clients, t);
+      if (res == -1) {
+         if (errno == EINTR) {
+            DEBUG_IFC(VERBOSE(CL_ERROR, "interrupt."));
+            if (config->is_terminated != 0) {
+               return TRAP_E_TERMINATED;
             }
-            VERBOSE(CL_ERROR, "Semaphore wait.");
-         } else {
-            /* Accepted new client, semaphore opened. */
-            DEBUG_IFC(VERBOSE(CL_VERBOSE_BASIC, "send Semaphore opened."));
-         }
-         /* continue sending */
-      } else {
-         /* non-blocking (TRAP_HALFWAIT), unconnected clients... there is nobody to send data to */
-         res = sem_timedwait(&config->have_clients, t);
-         if (res == -1) {
-            if (errno == EINTR) {
-               DEBUG_IFC(VERBOSE(CL_ERROR, "interrupt."));
-               if (config->is_terminated != 0) {
-                  return TRAP_E_TERMINATED;
-               }
-            } else if (errno == ETIMEDOUT) {
-               return TRAP_E_TIMEOUT; /* no client after timeout */
-            } else {
-               VERBOSE(CL_ERROR, "sem_timedwait failed (%d): %s", errno, strerror(errno));
-            }
-         }
-         /* timeout or connected client */
-         if (check_connected_clients(config) == 0) {
+         } else if (errno == ETIMEDOUT) {
             return TRAP_E_TIMEOUT; /* no client after timeout */
+         } else {
+            VERBOSE(CL_ERROR, "sem_timedwait failed (%d): %s", errno, strerror(errno));
          }
+      }
+      /* timeout or connected client */
+      if (check_connected_clients(config) == 0) {
+         return TRAP_E_TIMEOUT; /* no client after timeout */
       }
    }
    /* connected client */
@@ -1085,9 +1067,22 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    assert(timeout >= TRAP_HALFWAIT);
 
    /* I. Init phase: set timeout and double-send switch */
-   trap_set_timeouts(timeout, &tm, &tmnblk);
+   trap_set_timeouts(timeout, &tm, NULL);
    temptm = (((timeout==TRAP_WAIT) || (timeout==TRAP_HALFWAIT))?NULL:&tm);
-   temptmblk = ((timeout==TRAP_WAIT)?NULL:&tmnblk);
+
+   switch (timeout) {
+   case TRAP_WAIT:
+      trap_set_abs_timespec(1000000, &tm, &tmnblk);
+      break;
+   case TRAP_HALFWAIT:
+      trap_set_abs_timespec(0, &tm, &tmnblk);
+      break;
+   default:
+      trap_set_abs_timespec(timeout, &tm, &tmnblk);
+      break;
+   }
+   temptmblk = &tmnblk;
+
    block = ((timeout==TRAP_WAIT)?1:0);
 
 blocking_repeat:
@@ -1106,6 +1101,15 @@ blocking_repeat:
    result = tcpip_sender_conn_phase(c, temptmblk);
    if (result != TRAP_E_OK) {
       goto exit;
+   }
+
+   /*
+    * add term_pipe for reading into the disconnect client set
+    */
+   FD_SET(c->term_pipe[0], &disset);
+   if (maxsd < c->term_pipe[0]) {
+      maxsd = c->term_pipe[0];
+      VERBOSE(CL_VERBOSE_LIBRARY, "term_pipe disconnected");
    }
 
    for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
@@ -1202,6 +1206,11 @@ blocking_repeat:
    }
    pthread_mutex_unlock(&c->sending_lock);
 
+   if (FD_ISSET(c->term_pipe[0], &disset)) {
+      /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
+      return TRAP_E_TERMINATED;
+   }
+
    if (failed != 0) {
       result = TRAP_E_TIMEOUT;
    } else {
@@ -1251,6 +1260,8 @@ void tcpip_sender_terminate(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
    if (c != NULL) {
       c->is_terminated = 1;
+      close(c->term_pipe[1]);
+      VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break select()");
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
    }
@@ -1549,6 +1560,11 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    if (result != TRAP_E_OK) {
       VERBOSE(CL_ERROR, "Socket could not be opened on given port '%s'.", server_port);
       goto failsafe_cleanup;
+   }
+
+   if (pipe(priv->term_pipe) != 0) {
+      VERBOSE(CL_ERROR, "Opening of pipe failed. Using stdin as a fall back.");
+      priv->term_pipe[0] = 0;
    }
 
    // Fill struct defining the interface

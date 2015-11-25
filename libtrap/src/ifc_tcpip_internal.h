@@ -103,6 +103,16 @@ typedef struct tcpip_sender_private_s {
 
    char initialized;
 
+   /**
+    * File descriptor pair for select() termination.
+    *
+    * Using python wrapper, it is not possible to terminate module
+    * when no receiver is connected to output IFC.  Therefore,
+    * this file descriptor will be used to signal termination to
+    * select().
+    */
+   int term_pipe[2];
+
    pthread_mutex_t  lock;
    pthread_mutex_t  sending_lock;
    pthread_t        accept_thread;

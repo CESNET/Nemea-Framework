@@ -1368,23 +1368,8 @@ inline char *get_param_by_delimiter(const char *source, char **dest, const char 
    return trap_get_param_by_delimiter(source, dest, delimiter);
 }
 
-inline void trap_set_timeouts(int timeout, struct timeval *tm, struct timespec *tmnblk)
+void trap_set_abs_timespec(int timeout, struct timeval *tm, struct timespec *tmnblk)
 {
-   if ((timeout == TRAP_NO_WAIT) || (timeout == TRAP_HALFWAIT)) {
-      tm->tv_sec  = 0;
-      tm->tv_usec = 0;
-   } else if (timeout > TRAP_HALFWAIT) {
-      if (timeout == TRAP_WAIT) {
-         tm->tv_sec  = 0;
-         tm->tv_usec = 0;
-      } else {
-         tm->tv_sec  = timeout / 1000000;
-         tm->tv_usec = timeout % 1000000;
-      }
-   } else {
-      VERBOSE(CL_ERROR, "Setting timeout to %d failed", timeout);
-      return;
-   }
    if (tmnblk == NULL) {
       /* we do not need tmnblk */
       return;
@@ -1402,6 +1387,26 @@ inline void trap_set_timeouts(int timeout, struct timeval *tm, struct timespec *
       tmnblk->tv_nsec = 0;
    }
    tmnblk->tv_sec += (time_t) (tm->tv_sec + (tm->tv_usec / 1000000));
+}
+
+void trap_set_timeouts(int timeout, struct timeval *tm, struct timespec *tmnblk)
+{
+   if ((timeout == TRAP_NO_WAIT) || (timeout == TRAP_HALFWAIT)) {
+      tm->tv_sec  = 0;
+      tm->tv_usec = 0;
+   } else if (timeout > TRAP_HALFWAIT) {
+      if (timeout == TRAP_WAIT) {
+         tm->tv_sec  = 0;
+         tm->tv_usec = 0;
+      } else {
+         tm->tv_sec  = timeout / 1000000;
+         tm->tv_usec = timeout % 1000000;
+      }
+   } else {
+      VERBOSE(CL_ERROR, "Setting timeout to %d failed", timeout);
+      return;
+   }
+   trap_set_abs_timespec(timeout, tm, tmnblk);
 }
 
 int trap_ifcctl(int8_t type, uint32_t ifcidx, int32_t request, ... /* arg */)
