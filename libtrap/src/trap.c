@@ -125,7 +125,7 @@ const char *trap_last_error_msg = NULL;
 static inline char *get_param_by_delimiter(const char *source, char **dest, const char delimiter);
 static int compare_timeouts(const void *a, const void *b);
 int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
-void create_service_thread(trap_ctx_priv_t *ctx, const char *params);
+void *service_thread_routine(void *arg);
 
 trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int i_ifcs, int o_ifcs, uint16_t param_count)
 {
@@ -2042,20 +2042,8 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    ctx->num_ifc_out = module_info->num_ifc_out;
 
    int strlen_ifc_types = strlen(ifc_spec.types);
-   int service_ifc = 0;
-   for (i=0; i<strlen_ifc_types; i++) {
-      if (ifc_spec.types[i] == 's') {
-         if (i == strlen_ifc_types-1) {
-            service_ifc = 1;
-         } else {
-            printf("Parameter \"s\" in ifc_types is not last.\n");
-            service_ifc = 0;
-         }
-         break;
-      }
-   }
 
-   if (strlen_ifc_types != (ctx->num_ifc_in + ctx->num_ifc_out + service_ifc)) {
+   if (strlen_ifc_types != (ctx->num_ifc_in + ctx->num_ifc_out)) {
       trap_errorf(ctx, TRAP_E_BADPARAMS, "Number of given ifc types is not equal to number of input and output ifc from module_info.");
       return ctx;
    }
@@ -2196,11 +2184,12 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
       ctx->timeout_thread_initialized = 1;
    }
 
-   if ((strlen_ifc_types > (ctx->num_ifc_out + ctx->num_ifc_in)) &&
-         (ifc_spec.types[ctx->num_ifc_out + ctx->num_ifc_in] == TRAP_IFC_TYPE_SERVICE)) {
-      create_service_thread(ctx, ifc_spec.params[ctx->num_ifc_out + ctx->num_ifc_in]);
+   // Implicit service thread creation
+   if (pthread_create(&ctx->service_thread, NULL, service_thread_routine, (void *) ctx) == 0) {
+      ctx->service_thread_initialized = 1;
    } else {
-      VERBOSE(CL_VERBOSE_ADVANCED,"Service ifc will not be opened.");
+      ctx->service_thread_initialized = 0;
+      VERBOSE(CL_VERBOSE_LIBRARY, "pthread_create() error: could not create service thread.");
    }
 
    if (pthread_rwlock_wrlock(&ctx->context_lock) != 0) {
@@ -2403,19 +2392,6 @@ void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
  * \addtogroup supervisor Supervisor monitoring feature
  * @{
  */
-/**
- * Structure that contains arguments passed to service thread.
- */
-typedef struct trap_service_thread_arg_s {
-   /**
-    * pointer to libtrap context
-    */
-   trap_ctx_priv_t *ctx;
-   /**
-    * IFC params
-    */
-   char *params;
-} trap_service_thread_arg_t;
 
 /* Structure used as a header sent before data in json format in service interface */
 typedef struct msg_header_s {
@@ -2534,7 +2510,7 @@ clean_up:
  * This function is run in separate thread.  It waits for incoming
  * connections e.g. from supervisor.  Service IFC can send IFC counters
  * declared in #trap_ctx_priv_s
- * \param[in] arg   service thread arguments in #trap_service_thread_arg_t
+ * \param[in] arg  Pointer to the private libtrap context data (#trap_ctx_init()).
  */
 void *service_thread_routine(void *arg)
 {
@@ -2542,7 +2518,6 @@ void *service_thread_routine(void *arg)
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
    int ret_val, y, supervisor_sd;
-   trap_service_thread_arg_t *arguments = (trap_service_thread_arg_t *) arg;
    trap_output_ifc_t *service_ifc = (trap_output_ifc_t *) calloc(1, sizeof(trap_output_ifc_t));
    tcpip_sender_private_t *priv;
    int i; /* loop var */
@@ -2552,7 +2527,7 @@ void *service_thread_routine(void *arg)
    fd_set fds;
    int maxfd;
 
-   trap_ctx_priv_t *g_ctx = arguments->ctx;
+   trap_ctx_priv_t *g_ctx = (trap_ctx_priv_t *) arg;
 
 
    /** \todo add missing counter */
@@ -2560,8 +2535,16 @@ void *service_thread_routine(void *arg)
    int num_ints_tosend = TRAP_IN_IFC_COUNTERS * g_ctx->num_ifc_in + TRAP_OUT_IFC_COUNTERS * g_ctx->num_ifc_out;
    uint64_t *data = (uint64_t *) calloc(num_ints_tosend, sizeof(uint64_t));
 
+   // service_sock_spec size is length of "service_PID" where PID is max 5 chars (8 + 5 + 1 zero terminating)
+   char service_sock_spec[14];
+   memset(service_sock_spec, 0, 14 * sizeof(char));
+   if (sprintf(service_sock_spec, "service_%d", getpid()) < 1) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "Error: could not create service socket specifier in service routine.");
+      goto exit_service_thread;
+   }
+
    /* service port does not create thread for accepting clients */
-   if (create_tcpip_sender_ifc(NULL, arguments->params, service_ifc, 0, TRAP_IFC_TCPIP_SERVICE) != TRAP_E_OK) {
+   if (create_tcpip_sender_ifc(NULL, service_sock_spec, service_ifc, 0, TRAP_IFC_TCPIP_SERVICE) != TRAP_E_OK) {
       VERBOSE(CL_ERROR,"Error while creating service IFC.");
       goto exit_service_thread;
    }
@@ -2705,28 +2688,11 @@ accept_success:
    }
 
 exit_service_thread:
-   free(arguments->params);
-   free(arguments);
    free(data);
    service_ifc->terminate(service_ifc->priv);
    service_ifc->destroy(service_ifc->priv);
    free(service_ifc);
    pthread_exit(NULL);
-}
-
-void create_service_thread(trap_ctx_priv_t *ctx, const char *params)
-{
-   char *arg_params = strdup(params);
-   if (arg_params == NULL) {
-      ctx->service_thread_initialized = 0;
-      return;
-   }
-
-   trap_service_thread_arg_t *arg = (trap_service_thread_arg_t *) calloc(1, sizeof(trap_service_thread_arg_t));
-   arg->params = arg_params;
-   arg->ctx = ctx;
-   pthread_create(&ctx->service_thread, NULL, service_thread_routine, (void *) arg);
-   ctx->service_thread_initialized = 1;
 }
 
 /**
