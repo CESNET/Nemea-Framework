@@ -1728,7 +1728,6 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
       pthread_join(c->timeout_thread, NULL);
    }
    if (c->service_thread_initialized == 1) {
-      pthread_cancel(c->service_thread);
       pthread_join(c->service_thread, NULL);
    }
    trap_free_ctx_t(&c);
@@ -2539,6 +2538,7 @@ clean_up:
  */
 void *service_thread_routine(void *arg)
 {
+   struct timeval tv;
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
    int ret_val, y, supervisor_sd;
@@ -2591,7 +2591,10 @@ void *service_thread_routine(void *arg)
          }
       }
       fflush(stdout);
-      ret_val = select(maxfd, &fds, NULL, NULL, NULL);
+      tv.tv_sec = 0;
+      tv.tv_usec = 100000;
+
+      ret_val = select(maxfd, &fds, NULL, NULL, &tv);
       if (ret_val == -1) {
          if (errno == EINTR) {
             /* received interrupt, go to next terminated condition */
@@ -2600,7 +2603,7 @@ void *service_thread_routine(void *arg)
          VERBOSE(CL_ERROR, "Select() failed in service thread.");
          break;
       } else if (ret_val == 0) {
-         /* no data - strange in blocking mode... */
+         // timeout
          continue;
       } else {
          /* handle all read events - requests / new client */
