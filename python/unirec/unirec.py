@@ -208,9 +208,9 @@ def CreateTemplate(template_name, field_names, verbose=False):
    # Execute the template string in a temporary namespace
    namespace = {'IPAddr':IPAddr, 'Timestamp':Timestamp}
    try:
-      exec class_code in namespace
-      if verbose: print class_code
-   except SyntaxError, e:
+      exec(class_code) in namespace
+      if verbose: print(class_code)
+   except SyntaxError as e:
       raise SyntaxError(e.message + ':\n' + class_code)
    cls = namespace[template_name]
    # For pickling to work, the __module__ variable needs to be set to the frame
