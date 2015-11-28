@@ -2,8 +2,9 @@
 # Author: Tomas Cejka (cejkat@cesnet.cz), 2015
 
 from collections import namedtuple
-from ur_ipaddr import *
-from ur_time import Timestamp
+from . import ur_ipaddr
+from . ur_ipaddr import *
+from . ur_time import Timestamp
 
 FieldSpec = namedtuple("FieldSpec", "size python_type struct_type")
 
