@@ -972,6 +972,12 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
          timeout_cmd;\
       } else if ((ret_code) == TRAP_E_TERMINATED) {\
          error_cmd;\
+      } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
+         /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro
+            (module can perform some special operations with templates after trap_get_data() signals format change) */
+      } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
+         fprintf(stderr, "trap_get_data() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
+         error_cmd; \
       } else {\
          fprintf(stderr, "Error: trap_get_data() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
          error_cmd;\
@@ -991,8 +997,10 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
       } else if ((ret_code) == TRAP_E_TERMINATED) {\
          error_cmd;\
       } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
+         /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro
+            (module can perform some special operations with templates after trap_recv() signals format change) */
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
-         fprintf(stderr, "Error: output and input interfaces data formats or data specifiers mismatch.\n"); \
+         fprintf(stderr, "trap_recv() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
          error_cmd; \
       } else {\
          fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
