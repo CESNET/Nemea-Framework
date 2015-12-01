@@ -1146,6 +1146,7 @@ void trap_print_help(const trap_module_info_t *module_info)
    int pager_fds[2];
    uint32_t i, written = 0, tmp = 0, align1 = 0, cols;
    pid_t p;
+   uint8_t pos_param = 0;
 
    /* Decide which format of output will be used according to the environment variable */
    temp_env = getenv("LIBTRAP_OUTPUT_FORMAT");
@@ -1224,8 +1225,11 @@ output:
       }
       printf("Description:\n  ");
       print_aligned(module_info->description, 2, cols - 2);
+
+      printf("\nUsage:  %s [COMMON]... [OPTIONS]... [ADDITIONAL]...\n", module_info->name);
+
       if (module_info->params != NULL) {
-         printf("\nParameters of module:\n---------------------\n");
+         printf("\nParameters of module [OPTIONS]:\n-------------------------------\n");
 
          for (i = 0; module_info->params[i] != NULL; i++) {
             if (HAVE_GETOPT_LONG) {
@@ -1242,7 +1246,12 @@ output:
 
          i = 0;
          while (module_info->params[i] != NULL) {
-            if (HAVE_GETOPT_LONG) {
+            /* Position parameters (params without option, instead of "-o arg" it is only "arg") are specified with '-' in short-opt */
+            if (module_info->params[i]->short_opt == '-') {
+               pos_param = 1;
+               i++;
+               continue;
+            } else if (HAVE_GETOPT_LONG) {
                if (isprint(module_info->params[i]->short_opt)) {
                   written = printf("  -%c  --%s ", module_info->params[i]->short_opt,
                                    module_info->params[i]->long_opt);
@@ -1273,9 +1282,25 @@ output:
 
             i++;
          }
+
+         /* If the module has some position parameters, their section is printed */
+         if (pos_param == 1) {
+            printf("\nAdditional parameters of module [ADDITIONAL]:\n---------------------------------------------\n");
+
+            i = 0;
+            while (module_info->params[i] != NULL) {
+               if (module_info->params[i]->short_opt == '-') {
+                  printf("  %s", module_info->params[i]->description);
+                  if (module_info->params[i]->param_required_argument == required_argument) {
+                     printf(" (data type: <%s>)", module_info->params[i]->argument_type);
+                  }
+                  printf("\n\n");
+               }
+               i++;
+            }
+         }
       }
-      printf("\n");
-      printf("Common TRAP parameters:\n-----------------------\n");
+      printf("\nCommon TRAP parameters [COMMON]:\n--------------------------------\n");
 
 #define X(param, text, align, cut) do { \
   written = printf(param); \
@@ -1300,8 +1325,8 @@ output:
       X("  -vv", "Be more verbose.", align1, cols - align1);
       X("  -vvv", "Be even more verbose.", align1, cols - align1);
 
-      puts("Environment variables that affects output:\n------------------------------------------");
-      X("  LIBTRAP_OUTPUT_FORMAT", "Print information about module in JSON format.",
+      puts("\nEnvironment variables that affects output:\n------------------------------------------");
+      X("  LIBTRAP_OUTPUT_FORMAT", "If set to \"json\", information about module is printed in JSON format.",
         align1, cols - align1);
       X("  PAGER", "Show the help output in the set PAGER.",
         align1, cols - align1);
