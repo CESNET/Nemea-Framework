@@ -973,8 +973,8 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
       } else if ((ret_code) == TRAP_E_TERMINATED) {\
          error_cmd;\
       } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
-         /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro
-            (module can perform some special operations with templates after trap_get_data() signals format change) */
+         /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro */ \
+         /* (module can perform some special operations with templates after trap_get_data() signals format change) */ \
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
          fprintf(stderr, "trap_get_data() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
          error_cmd; \
@@ -997,8 +997,8 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
       } else if ((ret_code) == TRAP_E_TERMINATED) {\
          error_cmd;\
       } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
-         /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro
-            (module can perform some special operations with templates after trap_recv() signals format change) */
+         /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro */ \
+         /* (module can perform some special operations with templates after trap_recv() signals format change) */ \
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
          fprintf(stderr, "trap_recv() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
          error_cmd; \
