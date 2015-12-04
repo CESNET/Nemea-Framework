@@ -8,7 +8,7 @@ import os.path
 from textwrap import dedent
 from keyword import iskeyword
 from distutils.sysconfig import get_python_lib
-from ur_types import *
+from .ur_types import *
 
 
 FIELD_GROUPS = {
