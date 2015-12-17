@@ -14,6 +14,20 @@ from ctypes import *
 import signal
 import os.path
 from optparse import OptionParser
+import sys
+
+if sys.version_info > (3,):
+   long = int
+   str = str
+   unicode = str
+   bytes = bytes
+   basestring = (str,bytes)
+else:
+   str = str
+   unicode = unicode
+   basestring = basestring
+   def bytes(string, encoding):
+       return str(string)
 
 # ***** Load libtrap library *****
 
