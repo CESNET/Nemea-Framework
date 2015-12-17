@@ -1144,9 +1144,11 @@ void trap_print_help(const trap_module_info_t *module_info)
    char *pager = NULL, *output_format = NULL;
    const char *temp_env;
    int pager_fds[2];
-   uint32_t i, written = 0, tmp = 0, align1 = 0, cols;
+   uint32_t i, written = 0, tmp = 0, cols;
    pid_t p;
-   uint8_t pos_param = 0;
+   char buffer[19]; // 19 because it can contain only "/proc/PID/status" (max 18 chars) or "module"
+   uint8_t adit_param = 0, opt_param = 0;
+   uint16_t align_def = 0, align_opt = 0;
 
    /* Decide which format of output will be used according to the environment variable */
    temp_env = getenv("LIBTRAP_OUTPUT_FORMAT");
@@ -1226,29 +1228,70 @@ output:
       printf("Description:\n  ");
       print_aligned(module_info->description, 2, cols - 2);
 
-      printf("\nUsage:  %s [COMMON]... [OPTIONS]... [ADDITIONAL]...\n", module_info->name);
+
+      memset(buffer, 0, 19 * sizeof(char)); // size of buffer == 19 because it can contain only "/proc/PID/status" (max 18 chars) or "module"
+      sprintf(buffer, "/proc/%d/status", getpid()); // status file (to get name of the process)
+
+      FILE *status_fd = fopen(buffer, "r");
+      memset(buffer, 0, 19 * sizeof(char));
+      if (status_fd != NULL) {
+         fscanf(status_fd, "Name:%*[ \n\t]%s", buffer);
+         fclose(status_fd);
+      } else {
+         sprintf(buffer, "module");
+      }
 
       if (module_info->params != NULL) {
-         printf("\nParameters of module [OPTIONS]:\n-------------------------------\n");
+         i = 0;
+         while (module_info->params[i] != NULL) {
+            if (module_info->params[i]->short_opt == '-') {
+               adit_param = 1;
+            } else if (module_info->params[i]->short_opt >= 97 && module_info->params[i]->short_opt <= 122) {
+               opt_param = 1;
+            }
+            i++;
+         }
+      }
 
+      printf("\nUsage:  %s [COMMON]... ", buffer);
+      if (opt_param == 1) {
+         printf("[OPTIONS]... ");
+      }
+      if (adit_param == 1) {
+         printf("[ADDITIONAL]... ");
+      }
+      printf("\n");
+
+      align_def = strlen("LIBTRAP_OUTPUT_FORMAT") + 4;
+      align_opt = 0;
+
+      if (opt_param == 1) {
          for (i = 0; module_info->params[i] != NULL; i++) {
-            if (HAVE_GETOPT_LONG) {
+            if (module_info->params[i]->argument_type == NULL) {
+               continue;
+            }
+            if (HAVE_GETOPT_LONG && module_info->params[i]->long_opt != NULL) {
                tmp = strlen(module_info->params[i]->long_opt) + strlen(module_info->params[i]->argument_type);
             } else {
                tmp = strlen(module_info->params[i]->argument_type);
             }
-            if (tmp > align1) {
-               align1 = tmp;
+            if (tmp > align_opt) {
+               align_opt = tmp;
             }
          }
          /* add additional chars as a space: */
-         align1 += 14;
+         align_opt += 14;
+
+         if (align_opt > align_def) {
+            align_def = align_opt;
+         }
+
+         printf("\nParameters of module [OPTIONS]:\n-------------------------------\n");
 
          i = 0;
          while (module_info->params[i] != NULL) {
             /* Position parameters (params without option, instead of "-o arg" it is only "arg") are specified with '-' in short-opt */
             if (module_info->params[i]->short_opt == '-') {
-               pos_param = 1;
                i++;
                continue;
             } else if (HAVE_GETOPT_LONG) {
@@ -1272,39 +1315,40 @@ output:
                written += printf(" ");
                break;
             }
-            if (written < align1) {
-               printf("%*s", align1 - written, " ");
+            if (written < align_def) {
+               printf("%*s", align_def - written, " ");
             }
 
-            print_aligned(module_info->params[i]->description, align1, cols - align1);
+            print_aligned(module_info->params[i]->description, align_def, cols - align_def);
             /* empty line after param */
             puts("");
 
             i++;
          }
+      }
 
-         /* If the module has some position parameters, their section is printed */
-         if (pos_param == 1) {
-            printf("\nAdditional parameters of module [ADDITIONAL]:\n---------------------------------------------\n");
+      /* If the module has some position parameters, their section is printed */
+      if (adit_param == 1) {
+         printf("\nAdditional parameters of module [ADDITIONAL]:\n---------------------------------------------\n");
 
-            i = 0;
-            while (module_info->params[i] != NULL) {
-               if (module_info->params[i]->short_opt == '-') {
-                  printf("  %s", module_info->params[i]->description);
-                  if (module_info->params[i]->param_required_argument == required_argument) {
-                     printf(" (data type: <%s>)", module_info->params[i]->argument_type);
-                  }
-                  printf("\n\n");
+         i = 0;
+         while (module_info->params[i] != NULL) {
+            if (module_info->params[i]->short_opt == '-') {
+               printf("  %s", module_info->params[i]->description);
+               if (module_info->params[i]->param_required_argument == required_argument) {
+                  printf(" (data type: <%s>)", module_info->params[i]->argument_type);
                }
-               i++;
+               printf("\n\n");
             }
+            i++;
          }
       }
+
       printf("\nCommon TRAP parameters [COMMON]:\n--------------------------------\n");
 
 #define X(param, text, align, cut) do { \
   written = printf(param); \
-  if (written < align1) { \
+  if (written < align_def) { \
     printf("%*s", align - written, " "); \
   } \
   print_aligned(text, align, cut); \
@@ -1314,22 +1358,22 @@ output:
       X("  -h [trap,1]",
         "If no argument, print this message. If \"trap\" or 1 is given, print "
         "TRAP help.",
-        align1, cols - align1);
+        align_def, cols - align_def);
 
       X("  -i IFC_SPEC",
         "Specification of interface types and their parameters, "
         "see \"-h trap\" (mandatory parameter).",
-        align1, cols - align1);
+        align_def, cols - align_def);
 
-      X("  -v", "Be verbose.", align1, cols - align1);
-      X("  -vv", "Be more verbose.", align1, cols - align1);
-      X("  -vvv", "Be even more verbose.", align1, cols - align1);
+      X("  -v", "Be verbose.", align_def, cols - align_def);
+      X("  -vv", "Be more verbose.", align_def, cols - align_def);
+      X("  -vvv", "Be even more verbose.", align_def, cols - align_def);
 
       puts("\nEnvironment variables that affects output:\n------------------------------------------");
       X("  LIBTRAP_OUTPUT_FORMAT", "If set to \"json\", information about module is printed in JSON format.",
-        align1, cols - align1);
+        align_def, cols - align_def);
       X("  PAGER", "Show the help output in the set PAGER.",
-        align1, cols - align1);
+        align_def, cols - align_def);
 
 #undef X
    } else if (trap_help_spec != 0) {
