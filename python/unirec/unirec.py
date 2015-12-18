@@ -98,7 +98,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
    # Create and fill-in the class template
    numfields = len(field_names)
    minsize = sum((FIELDS[f].size if FIELDS[f].size != -1 else 4) for f in field_names)
-   argtxt = ', '.join(field_names)
+   argtxt = b', '.join(field_names).decode('ascii')
    fieldnamestxt = ', '.join('%r' % f for f in field_names)
    valuestxt = ', '.join('self.%s' % f for f in field_names)
    strtxt = ', '.join('%s=%%s' % f for f in field_names)
@@ -108,8 +108,8 @@ def CreateTemplate(template_name, field_names, verbose=False):
    itertxt = '; '.join('yield (%r, self.%s)' % (f,f) for f in field_names)
    eqtxt   = ' and '.join('self.%s==other.%s' % (f,f) for f in field_names)
    typedict = '{' + ', '.join('%r : %s' % (f, FIELDS[f].python_type.__name__) for f in field_names) + '}'
-   stat_field_names = filter(lambda f: FIELDS[f].size != -1, field_names)
-   dyn_field_names = filter(lambda f: FIELDS[f].size == -1, field_names)
+   stat_field_names = [f for f in field_names if FIELDS[f].size != -1]
+   dyn_field_names = [f for f in field_names if FIELDS[f].size == -1]
    staticfmt = "="+''.join(FIELDS[f].struct_type for f in stat_field_names)
    staticvalues = ', '.join(\
                   "self.%s.toUniRec()" % f if (FIELDS[f].struct_type[-1] == "s" and FIELDS[f].python_type != str) else "self.%s" % f \
