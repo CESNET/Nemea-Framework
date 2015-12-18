@@ -466,7 +466,7 @@ def set_data_fmt(ifcidx, fmttype, fmtspec):
    ifcidx - index of output IFC
    fmttype - format data type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON)
    fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
-   lib.trap_set_data_fmt(ifcidx, fmttype, bytes(fmtspec,'ascii'))
+   lib.trap_set_data_fmt(ifcidx, fmttype, fmtspec)
 
 
 def get_in_ifc_state(ifcidx):

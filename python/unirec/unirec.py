@@ -143,7 +143,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
          def __init__(self, data=None):
             if data is None:
                %(inittxt)s
-            elif isinstance(data, str):
+            elif isinstance(data, str) or isinstance(data,bytes):
                %(initstatic)s
                #(%(tuplestatic)s) = struct.unpack_from("%(staticfmt)s", data, 0)
                offset = %(staticsize)d
