@@ -117,18 +117,18 @@ def CreateTemplate(template_name, field_names, verbose=False):
    staticsize = sum(FIELDS[f].size for f in stat_field_names)
    initstatic = 't = struct.unpack_from("%s", data, 0);' % staticfmt + \
                 '; '.join(\
-                   "object.__setattr__(self, '%s', %s.fromUniRec(t[%d]))" % (f, FIELDS[f].python_type.__name__, i) \
+                   "object.__setattr__(self, '%s', %s.fromUniRec(t[%d]))" % (f.decode('ascii'), FIELDS[f].python_type.__name__, i) \
                       if hasattr(FIELDS[f].python_type, 'fromUniRec') \
-                   else "object.__setattr__(self, '%s', t[%d])" % (f,i) \
+                   else "object.__setattr__(self, '%s', t[%d])" % (f.decode('ascii'),i) \
                    for i,f in enumerate(stat_field_names)
                 )
    offsetcode = ('o = 0; ' + \
-                '; '.join('l = len(self.%s); s += struct.pack("=HH", o, l); o += l' % f for f in dyn_field_names)) \
+                '; '.join('l = len(self.%s); s += struct.pack("=HH", o, l); o += l' % f.decode('ascii') for f in dyn_field_names)) \
                 if len(dyn_field_names) > 0 else ''
-   dynfieldcode = '; '.join('s += self.%s' % f for f in dyn_field_names)
-   tuplestatic = repr(tuple('self.%s' % f for f in stat_field_names)).replace("'",'')
+   dynfieldcode = '; '.join('s += self.%s' % f.decode('ascii') for f in dyn_field_names)
+   tuplestatic = repr(tuple('self.%s' % f.decode('ascii') for f in stat_field_names)).replace("'",'')
    unpackdyncode = '; offset += 4; '.join(\
-                   'start,length = struct.unpack_from("=HH", data, offset); self.%s = data[%d+start : %d+start+length]' % (f, minsize, minsize) \
+                   'start,length = struct.unpack_from("=HH", data, offset); self.%s = data[%d+start : %d+start+length]' % (f.decode('ascii'), minsize, minsize) \
                    for f in dyn_field_names\
                    )
    class_code = dedent('''
