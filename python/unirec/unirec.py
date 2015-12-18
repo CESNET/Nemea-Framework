@@ -32,9 +32,9 @@ def getFieldSpec(field_type):
     return FieldSpec(size_table[field_type], pt[0], pt[1])
 
 def genFieldsFromNegotiation(fmtspec):
-    fields = fmtspec.split(',')
-    names = [(f.split(' '))[1] for f in fields]
-    types = [getFieldSpec((f.split(' '))[0]) for f in fields]
+    fields = fmtspec.split(b',')
+    names = [(f.split(b' '))[1] for f in fields]
+    types = [getFieldSpec((f.split(b' '))[0]) for f in fields]
     return (names, dict(zip(names, types)))
 
 
@@ -82,9 +82,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
                break
       (field_names, FIELDS) = genFieldsFromNegotiation(field_names)
 
-   field_names = map(str, field_names)
-   field_names.sort(cmpFields)
-   field_names = tuple(field_names)
+   field_names = tuple(sorted(field_names,key=lambda f1: FIELDS[f1].size, reverse=True))
 
    # Validate fields
    if not field_names:
