@@ -136,7 +136,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
       class %(template_name)s(object):
          "UniRec template %(template_name)s(%(argtxt)s) for data manipulation."
 
-         __slots__  = ('_field_types', %(fieldnamestxt)s)
+         __slots__  = (%(fieldnamestxt)s)
 
          _field_types = %(typedict)s
 
@@ -218,7 +218,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
    # Execute the template string in a temporary namespace
    namespace = {'IPAddr':IPAddr, 'Timestamp':Timestamp}
    try:
-      exec(class_code) in namespace
+      exec(class_code, namespace)
       if verbose: print(class_code)
    except SyntaxError as e:
       raise SyntaxError(str(e) + ':\n' + class_code)
