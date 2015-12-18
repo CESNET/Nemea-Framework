@@ -99,20 +99,20 @@ def CreateTemplate(template_name, field_names, verbose=False):
    numfields = len(field_names)
    minsize = sum((FIELDS[f].size if FIELDS[f].size != -1 else 4) for f in field_names)
    argtxt = b', '.join(field_names).decode('ascii')
-   fieldnamestxt = ', '.join('%r' % f for f in field_names)
-   valuestxt = ', '.join('self.%s' % f for f in field_names)
-   strtxt = ', '.join('%s=%%s' % f for f in field_names)
-   dicttxt = ', '.join('%r: self.%s' % (f,f) for f in field_names)
-   tupletxt = repr(tuple('self.%s' % f for f in field_names)).replace("'",'')
-   inittxt = '; '.join('self.%s=%s()' % (f,FIELDS[f].python_type.__name__) for f in field_names)
-   itertxt = '; '.join('yield (%r, self.%s)' % (f,f) for f in field_names)
-   eqtxt   = ' and '.join('self.%s==other.%s' % (f,f) for f in field_names)
-   typedict = '{' + ', '.join('%r : %s' % (f, FIELDS[f].python_type.__name__) for f in field_names) + '}'
+   fieldnamestxt = ', '.join('%r' % f.decode('ascii') for f in field_names)
+   valuestxt = ', '.join('self.%s' % f.decode('ascii') for f in field_names)
+   strtxt = ', '.join('%s=%%s' % f.decode('ascii') for f in field_names)
+   dicttxt = ', '.join('%r: self.%s' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
+   tupletxt = '('+', '.join(('self.%s' % f.decode('ascii') for f in field_names))+')'
+   inittxt = '; '.join('self.%s=%s()' % (f.decode('ascii'),FIELDS[f].python_type.__name__) for f in field_names)
+   itertxt = '; '.join('yield (%r, self.%s)' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
+   eqtxt   = ' and '.join('self.%s==other.%s' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
+   typedict = '{' + ', '.join('%r : %s' % (f.decode('ascii'), FIELDS[f].python_type.__name__) for f in field_names) + '}'
    stat_field_names = [f for f in field_names if FIELDS[f].size != -1]
    dyn_field_names = [f for f in field_names if FIELDS[f].size == -1]
    staticfmt = "="+''.join(FIELDS[f].struct_type for f in stat_field_names)
    staticvalues = ', '.join(\
-                  "self.%s.toUniRec()" % f if (FIELDS[f].struct_type[-1] == "s" and FIELDS[f].python_type != str) else "self.%s" % f \
+                  "self.%s.toUniRec()" % f.decode('ascii') if (FIELDS[f].struct_type[-1] == "s" and FIELDS[f].python_type != str) else "self.%s" % f.decode('ascii') \
                   for f in stat_field_names)
    staticsize = sum(FIELDS[f].size for f in stat_field_names)
    initstatic = 't = struct.unpack_from("%s", data, 0);' % staticfmt + \
@@ -221,7 +221,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
       exec(class_code) in namespace
       if verbose: print(class_code)
    except SyntaxError as e:
-      raise SyntaxError(e.message + ':\n' + class_code)
+      raise SyntaxError(str(e) + ':\n' + class_code)
    cls = namespace[template_name]
    # For pickling to work, the __module__ variable needs to be set to the frame
    # where the named tuple is created.  Bypass this step in enviroments where
