@@ -89,7 +89,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
        raise ValueError('Template must have at least one field')
    seen_names = set()
    for name in field_names:
-      if name not in FIELDS.iterkeys():
+      if name not in list(FIELDS.keys()):
          raise ValueError('Unknown field: %r' % name)
       if name in seen_names:
          raise ValueError('Encountered duplicate field: %r' % name)
