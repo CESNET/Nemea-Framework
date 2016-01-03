@@ -715,9 +715,21 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    p = ifc_spec_str;
    for (i = 0; i < ifc_count; i++) {
       /* set IFC type and skip to params */
-      ifc_spec->types[i] = p[0];
-      p += 2;
-      p = get_param_by_delimiter(p, &ifc_spec->params[i], TRAP_IFC_DELIMITER);
+      if (p != NULL) {
+         ifc_spec->types[i] = p[0];
+         if (strlen(p) >= 2 && p[1] == TRAP_IFC_PARAM_DELIMITER) {
+            /* there is a param string to parse */
+            p += 2;
+            p = get_param_by_delimiter(p, &ifc_spec->params[i], TRAP_IFC_DELIMITER);
+         } else {
+            /* param was not passed, set an empty one */
+            ifc_spec->params[i] = strdup("");
+         }
+      } else {
+         /* unexpected error, p shouldn't be NULL */
+         VERBOSE(CL_ERROR, "Bad IFC_SPEC '%s'. See -h trap for help.", ifc_spec_str);
+         ifc_spec->params[i] = strdup("");
+      }
    }
 
    /* check for unsupported IFCs */
