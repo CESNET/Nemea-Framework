@@ -715,9 +715,21 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    p = ifc_spec_str;
    for (i = 0; i < ifc_count; i++) {
       /* set IFC type and skip to params */
-      ifc_spec->types[i] = p[0];
-      p += 2;
-      p = get_param_by_delimiter(p, &ifc_spec->params[i], TRAP_IFC_DELIMITER);
+      if (p != NULL) {
+         ifc_spec->types[i] = p[0];
+         if (strlen(p) >= 2 && p[1] == TRAP_IFC_PARAM_DELIMITER) {
+            /* there is a param string to parse */
+            p += 2;
+            p = get_param_by_delimiter(p, &ifc_spec->params[i], TRAP_IFC_DELIMITER);
+         } else {
+            /* param was not passed, set an empty one */
+            ifc_spec->params[i] = strdup("");
+         }
+      } else {
+         /* unexpected error, p shouldn't be NULL */
+         VERBOSE(CL_ERROR, "Bad IFC_SPEC '%s'. See -h trap for help.", ifc_spec_str);
+         ifc_spec->params[i] = strdup("");
+      }
    }
 
    /* check for unsupported IFCs */
@@ -1246,7 +1258,8 @@ output:
          while (module_info->params[i] != NULL) {
             if (module_info->params[i]->short_opt == '-') {
                adit_param = 1;
-            } else if (module_info->params[i]->short_opt >= 97 && module_info->params[i]->short_opt <= 122) {
+            } else if ((module_info->params[i]->short_opt >= 'a' && module_info->params[i]->short_opt <= 'z')
+                       || (module_info->params[i]->short_opt >= 'A' && module_info->params[i]->short_opt <= 'Z')) {
                opt_param = 1;
             }
             i++;
@@ -2757,6 +2770,7 @@ accept_success:
    }
 
 exit_service_thread:
+   free(header);
    free(data);
    service_ifc->terminate(service_ifc->priv);
    service_ifc->destroy(service_ifc->priv);
