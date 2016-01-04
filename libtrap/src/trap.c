@@ -1258,7 +1258,8 @@ output:
          while (module_info->params[i] != NULL) {
             if (module_info->params[i]->short_opt == '-') {
                adit_param = 1;
-            } else if (module_info->params[i]->short_opt >= 97 && module_info->params[i]->short_opt <= 122) {
+            } else if ((module_info->params[i]->short_opt >= 'a' && module_info->params[i]->short_opt <= 'z')
+                       || (module_info->params[i]->short_opt >= 'A' && module_info->params[i]->short_opt <= 'Z')) {
                opt_param = 1;
             }
             i++;
