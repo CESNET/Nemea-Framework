@@ -2769,6 +2769,7 @@ accept_success:
    }
 
 exit_service_thread:
+   free(header);
    free(data);
    service_ifc->terminate(service_ifc->priv);
    service_ifc->destroy(service_ifc->priv);
