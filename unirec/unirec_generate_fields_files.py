@@ -37,9 +37,10 @@
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "python", "unirec"))
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python", "unirec"))
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python", "unirec"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "python"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
+
 try:
    from unirec.ur_types import *
 except:
