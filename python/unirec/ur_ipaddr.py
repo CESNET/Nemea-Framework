@@ -10,10 +10,6 @@ TODO: creation of IP4Range/IP6Range using address-netmask notation,
 
 from collections import namedtuple as _nt
 import struct
-import sys
-
-if sys.version_info > (3,):
-   long = int
 
 __all__ = ['IPAddr', 'IP4Addr', 'IP6Addr', 'IPRange', 'IP4Range', 'IP6Range']
 
@@ -82,7 +78,7 @@ class IP4Addr(IPAddr):
    """
    __slots__ = ()
 
-   def __new__(cls, val = long(0)):
+   def __new__(cls, val = 0L):
       if isinstance(val, IP4Addr):
          return val
       elif isinstance(val, long) or isinstance(val, int):
@@ -161,7 +157,7 @@ class IP6Addr(IPAddr):
    """
    __slots__ = ()
 
-   def __new__(cls, val = long(0)):
+   def __new__(cls, val = 0L):
       if isinstance(val, IP6Addr):
          return val
       elif isinstance(val, long) or isinstance(val, int):
@@ -325,13 +321,13 @@ class IPRange(IPRangeParentType):
       if isinstance(base, IP4Addr):
          if not 0 <= prefix_len <= 32:
             raise ValueError("Length of IPv4 prefix must be between 0 and 32.")
-         start = base &  (~long(0) << (32-prefix_len))
-         end   = base | ~(~long(0) << (32-prefix_len))
+         start = base &  (~0L << (32-prefix_len))
+         end   = base | ~(~0L << (32-prefix_len))
       else:
          if not 0 <= prefix_len <= 128:
             raise ValueError("Length of IPv6 prefix must be between 0 and 128.")
-         start = base &  (~long(0) << (128-prefix_len))
-         end   = base | ~(~long(0) << (128-prefix_len))
+         start = base &  (~0L << (128-prefix_len))
+         end   = base | ~(~0L << (128-prefix_len))
       return cls.fromPair(start, end)
 
 
@@ -473,7 +469,7 @@ if __name__ == '__main__':
          self.assertRaises(TypeError, IPAddr, 0.5)
          self.assertRaises(TypeError, IPAddr, (1,2))
 
-   print("IP Address module - self testing:")
+   print "IP Address module - self testing:"
    unittest.main()
 
 

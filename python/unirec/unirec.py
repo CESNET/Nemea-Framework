@@ -8,20 +8,8 @@ import os.path
 from textwrap import dedent
 from keyword import iskeyword
 from distutils.sysconfig import get_python_lib
-from .ur_types import *
+from ur_types import *
 
-if sys.version_info > (3,):
-   long = int
-   str = str
-   unicode = str
-   bytes = bytes
-   basestring = (str,bytes)
-else:
-   str = str
-   unicode = unicode
-   basestring = basestring
-   def bytes(string, encoding):
-       return str(string)
 
 FIELD_GROUPS = {
 }
@@ -32,9 +20,9 @@ def getFieldSpec(field_type):
     return FieldSpec(size_table[field_type], pt[0], pt[1])
 
 def genFieldsFromNegotiation(fmtspec):
-    fields = fmtspec.split(b',')
-    names = [(f.split(b' '))[1] for f in fields]
-    types = [getFieldSpec((f.split(b' '))[0]) for f in fields]
+    fields = fmtspec.split(',')
+    names = [(f.split(' '))[1] for f in fields]
+    types = [getFieldSpec((f.split(' '))[0]) for f in fields]
     return (names, dict(zip(names, types)))
 
 
@@ -82,14 +70,16 @@ def CreateTemplate(template_name, field_names, verbose=False):
                break
       (field_names, FIELDS) = genFieldsFromNegotiation(field_names)
 
-   field_names = tuple(sorted(field_names,key=lambda f1: FIELDS[f1].size, reverse=True))
+   field_names = map(str, field_names)
+   field_names.sort(cmpFields)
+   field_names = tuple(field_names)
 
    # Validate fields
    if not field_names:
        raise ValueError('Template must have at least one field')
    seen_names = set()
    for name in field_names:
-      if name not in list(FIELDS.keys()):
+      if name not in FIELDS.iterkeys():
          raise ValueError('Unknown field: %r' % name)
       if name in seen_names:
          raise ValueError('Encountered duplicate field: %r' % name)
@@ -98,37 +88,37 @@ def CreateTemplate(template_name, field_names, verbose=False):
    # Create and fill-in the class template
    numfields = len(field_names)
    minsize = sum((FIELDS[f].size if FIELDS[f].size != -1 else 4) for f in field_names)
-   argtxt = b', '.join(field_names).decode('ascii')
-   fieldnamestxt = ', '.join('%r' % f.decode('ascii') for f in field_names)
-   valuestxt = ', '.join('self.%s' % f.decode('ascii') for f in field_names)
-   strtxt = ', '.join('%s=%%s' % f.decode('ascii') for f in field_names)
-   dicttxt = ', '.join('%r: self.%s' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
-   tupletxt = '('+', '.join(('self.%s' % f.decode('ascii') for f in field_names))+')'
-   inittxt = '; '.join('self.%s=%s()' % (f.decode('ascii'),FIELDS[f].python_type.__name__) for f in field_names)
-   itertxt = '; '.join('yield (%r, self.%s)' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
-   eqtxt   = ' and '.join('self.%s==other.%s' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
-   typedict = '{' + ', '.join('%r : %s' % (f.decode('ascii'), FIELDS[f].python_type.__name__) for f in field_names) + '}'
-   stat_field_names = [f for f in field_names if FIELDS[f].size != -1]
-   dyn_field_names = [f for f in field_names if FIELDS[f].size == -1]
+   argtxt = ', '.join(field_names)
+   fieldnamestxt = ', '.join('%r' % f for f in field_names)
+   valuestxt = ', '.join('self.%s' % f for f in field_names)
+   strtxt = ', '.join('%s=%%s' % f for f in field_names)
+   dicttxt = ', '.join('%r: self.%s' % (f,f) for f in field_names)
+   tupletxt = repr(tuple('self.%s' % f for f in field_names)).replace("'",'')
+   inittxt = '; '.join('self.%s=%s()' % (f,FIELDS[f].python_type.__name__) for f in field_names)
+   itertxt = '; '.join('yield (%r, self.%s)' % (f,f) for f in field_names)
+   eqtxt   = ' and '.join('self.%s==other.%s' % (f,f) for f in field_names)
+   typedict = '{' + ', '.join('%r : %s' % (f, FIELDS[f].python_type.__name__) for f in field_names) + '}'
+   stat_field_names = filter(lambda f: FIELDS[f].size != -1, field_names)
+   dyn_field_names = filter(lambda f: FIELDS[f].size == -1, field_names)
    staticfmt = "="+''.join(FIELDS[f].struct_type for f in stat_field_names)
    staticvalues = ', '.join(\
-                  "self.%s.toUniRec()" % f.decode('ascii') if (FIELDS[f].struct_type[-1] == "s" and FIELDS[f].python_type != str) else "self.%s" % f.decode('ascii') \
+                  "self.%s.toUniRec()" % f if (FIELDS[f].struct_type[-1] == "s" and FIELDS[f].python_type != str) else "self.%s" % f \
                   for f in stat_field_names)
    staticsize = sum(FIELDS[f].size for f in stat_field_names)
    initstatic = 't = struct.unpack_from("%s", data, 0);' % staticfmt + \
                 '; '.join(\
-                   "object.__setattr__(self, '%s', %s.fromUniRec(t[%d]))" % (f.decode('ascii'), FIELDS[f].python_type.__name__, i) \
+                   "object.__setattr__(self, '%s', %s.fromUniRec(t[%d]))" % (f, FIELDS[f].python_type.__name__, i) \
                       if hasattr(FIELDS[f].python_type, 'fromUniRec') \
-                   else "object.__setattr__(self, '%s', t[%d])" % (f.decode('ascii'),i) \
+                   else "object.__setattr__(self, '%s', t[%d])" % (f,i) \
                    for i,f in enumerate(stat_field_names)
                 )
    offsetcode = ('o = 0; ' + \
-                '; '.join('l = len(self.%s); s += struct.pack("=HH", o, l); o += l' % f.decode('ascii') for f in dyn_field_names)) \
+                '; '.join('l = len(self.%s); s += struct.pack("=HH", o, l); o += l' % f for f in dyn_field_names)) \
                 if len(dyn_field_names) > 0 else ''
-   dynfieldcode = '; '.join('s += self.%s' % f.decode('ascii') for f in dyn_field_names)
-   tuplestatic = repr(tuple('self.%s' % f.decode('ascii') for f in stat_field_names)).replace("'",'')
+   dynfieldcode = '; '.join('s += self.%s' % f for f in dyn_field_names)
+   tuplestatic = repr(tuple('self.%s' % f for f in stat_field_names)).replace("'",'')
    unpackdyncode = '; offset += 4; '.join(\
-                   'start,length = struct.unpack_from("=HH", data, offset); self.%s = data[%d+start : %d+start+length]' % (f.decode('ascii'), minsize, minsize) \
+                   'start,length = struct.unpack_from("=HH", data, offset); self.%s = data[%d+start : %d+start+length]' % (f, minsize, minsize) \
                    for f in dyn_field_names\
                    )
    class_code = dedent('''
@@ -136,14 +126,14 @@ def CreateTemplate(template_name, field_names, verbose=False):
       class %(template_name)s(object):
          "UniRec template %(template_name)s(%(argtxt)s) for data manipulation."
 
-         __slots__  = (%(fieldnamestxt)s)
+         __slots__  = ('_field_types', %(fieldnamestxt)s)
 
          _field_types = %(typedict)s
 
          def __init__(self, data=None):
             if data is None:
                %(inittxt)s
-            elif isinstance(data, str) or isinstance(data,bytes):
+            elif isinstance(data, str):
                %(initstatic)s
                #(%(tuplestatic)s) = struct.unpack_from("%(staticfmt)s", data, 0)
                offset = %(staticsize)d
@@ -218,10 +208,10 @@ def CreateTemplate(template_name, field_names, verbose=False):
    # Execute the template string in a temporary namespace
    namespace = {'IPAddr':IPAddr, 'Timestamp':Timestamp}
    try:
-      exec(class_code, namespace)
-      if verbose: print(class_code)
-   except SyntaxError as e:
-      raise SyntaxError(str(e) + ':\n' + class_code)
+      exec class_code in namespace
+      if verbose: print class_code
+   except SyntaxError, e:
+      raise SyntaxError(e.message + ':\n' + class_code)
    cls = namespace[template_name]
    # For pickling to work, the __module__ variable needs to be set to the frame
    # where the named tuple is created.  Bypass this step in enviroments where

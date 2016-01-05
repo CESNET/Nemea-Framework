@@ -4,8 +4,6 @@ import pdb
 import sys
 import os.path
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python"))
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import trap
 import unirec
 
@@ -73,7 +71,7 @@ while not trap.stop:
 
    # Convert data to UniRec and print it
    rec = UR_Flow(data)
-   print(rec)
+   print rec
 
    assert(data == rec.serialize()) # Check that serialization works fine
 
