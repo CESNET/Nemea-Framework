@@ -44,7 +44,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
 try:
    from unirec.ur_types import *
 except:
-   from ur_types import *
+   sys.path.append(os.path.join(os.path.dirname(__file__), "python", "unirec"))
+   sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python", "unirec"))
+   sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python", "unirec"))
+   import unirec
 
 fields = []
 line_iterator = 0
