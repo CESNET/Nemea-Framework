@@ -2,6 +2,7 @@
 # Author: Vaclav Bartos (ibartosv@fit.vutbr.cz), 2013
 # Author: Tomas Cejka (cejkat@cesnet.cz), 2015
 
+from __future__ import absolute_import
 import struct
 import sys
 import os.path
