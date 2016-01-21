@@ -219,9 +219,9 @@ def CreateTemplate(template_name, field_names, verbose=False):
    # Execute the template string in a temporary namespace
    namespace = {'IPAddr':IPAddr, 'Timestamp':Timestamp}
    try:
-      if sys.version_info > (3,):
+      try:
         exec(class_code, namespace)
-      else:
+      except SyntaxError as e:
         exec(class_code) in namespace
       if verbose: print(class_code)
    except SyntaxError as e:
