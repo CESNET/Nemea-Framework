@@ -1,10 +1,10 @@
 # ur_types.py - Definitions of UniRec data types and sizes
 # Author: Tomas Cejka (cejkat@cesnet.cz), 2015
 
+from __future__ import absolute_import
 from collections import namedtuple
-from . import ur_ipaddr
-from . ur_ipaddr import *
-from . ur_time import Timestamp
+from .ur_ipaddr import *
+from .ur_time import Timestamp
 
 FieldSpec = namedtuple("FieldSpec", "size python_type struct_type")
 
