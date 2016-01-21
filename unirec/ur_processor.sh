@@ -32,32 +32,7 @@ fi
 
 tempfile="`mktemp`"
 
-
-find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} sed -n '/^\s*UR_FIELDS/,/)/p' {} 2>/dev/null |
-   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
-   sort -k2 -t' ' | uniq | tee "$tempfile" |
-   awk -F' ' '{
-   if (NR == 1) {
-      type=$1;
-      iden=$2;
-   }
-   if ((iden == $2) && (type != $1)) {
-      printf("Conflicting types (%s, %s) of UniRec field (%s)\n", type, $1, iden);
-      exit 1;
-   } 
-   type=$1;
-   iden=$2;
-}'
-
-ret=$?
-if [ "$ret" -ne 0 ]; then
-   rm "$tempfile"
-   exit "$ret"
-fi
-
-awk -F' ' '
-BEGIN {
-size_table["char"] = 1;
+sizetable='size_table["char"] = 1;
 size_table["uint8"] = 1;
 size_table["int8"] = 1;
 size_table["uint16"] = 2;
@@ -71,22 +46,37 @@ size_table["double"] = 8;
 size_table["ipaddr"] = 16;
 size_table["time"] = 8;
 size_table["string"] = -1;
-size_table["bytes*"] = -1;
-type_table["char"] = "UR_TYPE_CHAR";
-type_table["uint8"] = "UR_TYPE_UINT8";
-type_table["int8"] = "UR_TYPE_INT8";
-type_table["uint16"] = "UR_TYPE_UINT16";
-type_table["int16"] = "UR_TYPE_INT16";
-type_table["uint32"] = "UR_TYPE_UINT32";
-type_table["int32"] = "UR_TYPE_INT32";
-type_table["uint64"] = "UR_TYPE_UINT64";
-type_table["int64"] = "UR_TYPE_INT64";
-type_table["float"] = "UR_TYPE_FLOAT";
-type_table["double"] = "UR_TYPE_DOUBLE";
-type_table["ipaddr"] = "UR_TYPE_IP";
-type_table["time"] = "UR_TYPE_TIME";
-type_table["string"] = "UR_TYPE_STRING";
-type_table["bytes*"] = "UR_TYPE_BYTES";
+size_table["bytes*"] = -1;'
+
+find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} sed -n '/^\s*UR_FIELDS/,/)/p' {} 2>/dev/null |
+   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
+   sort -k2 -t' ' | uniq |
+   awk -F' ' 'BEGIN{
+'"$sizetable"'
+}
+{
+   if (NR == 1) {
+      type=$1;
+      iden=$2;
+   }
+   if ((iden == $2) && (type != $1)) {
+      printf("Conflicting types (%s, %s) of UniRec field (%s)\n", type, $1, iden);
+      exit 1;
+   } 
+   type=$1;
+   iden=$2;
+   print $1, $2, size_table[$1];
+}' | sort -k3nr -k2 > "$tempfile"
+
+ret=$?
+if [ "$ret" -ne 0 ]; then
+   rm "$tempfile"
+   exit "$ret"
+fi
+
+awk -F' ' '
+BEGIN {
+'"$sizetable"'
 c_types["char"] = "char";
 c_types["uint8"] = "uint8_t";
 c_types["int8"] = "int8_t";
