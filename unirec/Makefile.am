@@ -31,9 +31,9 @@ unirecinclude_HEADERS=unirec.h \
 		     ur_time.h \
 		     ur_values.h
 
-bin_SCRIPTS=unirec_generate_fields_files.py process_values.py
+bin_SCRIPTS=unirec_generate_fields_files.py process_values.py ur_processor.sh
 
-EXTRA_DIST=values unirec_generate_fields_files.py process_values.py
+EXTRA_DIST=values unirec_generate_fields_files.py process_values.py ur_processor.sh
 
 include doxygen.am
 

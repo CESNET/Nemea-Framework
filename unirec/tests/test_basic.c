@@ -48,7 +48,7 @@
 
 #include <string.h>
 #include "../unirec.h"
-#include "fields.c"
+#include "fields.h"
 //Example of usage Unirec library
 #define FOO_TEST_VALUE 12345
 #define BAR_TEST_VALUE 54321

@@ -1,7 +1,7 @@
 BUILT_SOURCES=fields.h fields.c
 
-fields.h fields.c: ${top_srcdir}/unirec_generate_fields_files.py
-	$(PYTHON) ${top_srcdir}/unirec_generate_fields_files.py -i ${top_srcdir} -o ./
+fields.h fields.c: ${top_srcdir}/ur_processor.sh
+	${top_srcdir}/ur_processor.sh -i ${top_srcdir} -o ./
 
 bin_PROGRAMS=test_basic test_creation  test_ipaddr  test_speed test_speed_o test_speed_ur test_speed_uro
 
