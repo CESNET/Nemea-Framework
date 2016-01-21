@@ -3,8 +3,8 @@
 
 from __future__ import absolute_import
 from collections import namedtuple
-from .ur_ipaddr import *
-from .ur_time import Timestamp
+from unirec.ur_ipaddr import *
+from unirec.ur_time import Timestamp
 
 FieldSpec = namedtuple("FieldSpec", "size python_type struct_type")
 

@@ -9,7 +9,7 @@ import os.path
 from textwrap import dedent
 from keyword import iskeyword
 from distutils.sysconfig import get_python_lib
-from .ur_types import *
+from unirec.ur_types import *
 
 if sys.version_info > (3,):
    long = int
