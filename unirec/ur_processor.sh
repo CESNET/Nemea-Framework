@@ -127,6 +127,22 @@ c_types["time"] = "time_t";
 c_types["string"] = "char";
 c_types["bytes*"] = "char";
 
+type_table["char"]="UR_TYPE_CHAR";
+type_table["uint8"]="UR_TYPE_UINT8";
+type_table["int8"]="UR_TYPE_INT8";
+type_table["uint16"]="UR_TYPE_UINT16";
+type_table["int16"]="UR_TYPE_INT16";
+type_table["uint32"]="UR_TYPE_UINT32";
+type_table["int32"]="UR_TYPE_INT32";
+type_table["uint64"]="UR_TYPE_UINT64";
+type_table["int64"]="UR_TYPE_INT64";
+type_table["float"]="UR_TYPE_FLOAT";
+type_table["double"]="UR_TYPE_DOUBLE";
+type_table["ipaddr"]="UR_TYPE_IP";
+type_table["time"]="UR_TYPE_TIME";
+type_table["string"]="UR_TYPE_STRING";
+type_table["bytes*"]="UR_TYPE_BYTES";
+
 field_id=0;
 
 cfile="/************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/\n";
