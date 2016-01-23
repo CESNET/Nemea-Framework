@@ -82,7 +82,7 @@ size_table["time"] = 8;
 size_table["string"] = -1;
 size_table["bytes*"] = -1;'
 
-find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} sed -n '/^\s*UR_FIELDS/,/)/p' {} 2>/dev/null |
+find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} sed -n '/^\s*UR_FIELDS\s*([^)]*$/,/)/p; /^\s*UR_FIELDS\s*([^)]*$/,/)/p' {} 2>/dev/null |
    sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
    sort -k2 -t' ' | uniq |
    awk -F' ' 'BEGIN{
