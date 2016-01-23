@@ -82,9 +82,16 @@ size_table["time"] = 8;
 size_table["string"] = -1;
 size_table["bytes*"] = -1;'
 
-find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} sed -n '/^\s*UR_FIELDS\s*([^)]*$/,/)/p; /^\s*UR_FIELDS\s*([^)]*$/,/)/p' {} 2>/dev/null |
+find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) |
+# remove line and block comments
+   xargs -I{} sed 's,\s*//.*$,,;:a; s%\(.*\)/\*.*\*/%\1%; ta; /\/\*/ !b; N; ba'  {} |
+# print contents of UR_FIELDS
+   sed -n '/^\s*UR_FIELDS\s*([^)]*$/,/)/p; /^\s*UR_FIELDS\s*([^)]*$/,/)/p' 2>/dev/null |
+# clean output to get fields only
    sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
+# sort by name
    sort -k2 -t' ' | uniq |
+# check for conflicting types and print type, name, size of fields
    awk -F' ' 'BEGIN{
 '"$sizetable"'
 }
@@ -108,6 +115,7 @@ if [ "$ret" -ne 0 ]; then
    exit "$ret"
 fi
 
+# generate fields.{c,h}
 awk -F' ' '
 BEGIN {
 '"$sizetable"'
