@@ -80,6 +80,7 @@ size_table["double"] = 8;
 size_table["ipaddr"] = 16;
 size_table["time"] = 8;
 size_table["string"] = -1;
+size_table["bytes"] = -1;
 size_table["bytes*"] = -1;'
 
 find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) |
@@ -88,7 +89,7 @@ find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) |
 # print contents of UR_FIELDS
    sed -n '/^\s*UR_FIELDS\s*([^)]*$/,/)/p; /^\s*UR_FIELDS\s*([^)]*$/,/)/p' 2>/dev/null |
 # clean output to get fields only
-   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
+   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//; s/bytes \*/bytes /g' |
 # sort by name
    sort -k2 -t' ' | uniq |
 # check for conflicting types and print type, name, size of fields
@@ -133,6 +134,7 @@ c_types["double"] = "double";
 c_types["ipaddr"] = "ip_addr_t";
 c_types["time"] = "time_t";
 c_types["string"] = "char";
+c_types["bytes"] = "char";
 c_types["bytes*"] = "char";
 
 type_table["char"]="UR_TYPE_CHAR";
@@ -149,6 +151,7 @@ type_table["double"]="UR_TYPE_DOUBLE";
 type_table["ipaddr"]="UR_TYPE_IP";
 type_table["time"]="UR_TYPE_TIME";
 type_table["string"]="UR_TYPE_STRING";
+type_table["bytes"]="UR_TYPE_BYTES";
 type_table["bytes*"]="UR_TYPE_BYTES";
 
 field_id=0;
