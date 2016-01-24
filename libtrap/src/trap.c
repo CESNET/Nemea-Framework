@@ -1242,12 +1242,12 @@ output:
 
 
       memset(buffer, 0, 19 * sizeof(char)); // size of buffer == 19 because it can contain only "/proc/PID/status" (max 18 chars) or "module"
-      sprintf(buffer, "/proc/%d/status", getpid()); // status file (to get name of the process)
+      snprintf(buffer, 19, "/proc/%d/status", getpid()); // status file (to get name of the process)
 
       FILE *status_fd = fopen(buffer, "r");
       memset(buffer, 0, 19 * sizeof(char));
       if (status_fd != NULL) {
-         fscanf(status_fd, "Name:%*[ \n\t]%s", buffer);
+         fscanf(status_fd, "Name:%*[ \n\t]%18s", buffer); // Linux kernel truncates the Name in /proc/PID/status to 15 chars, but the %s should still be limited to be sure
          fclose(status_fd);
       } else {
          sprintf(buffer, "module");
