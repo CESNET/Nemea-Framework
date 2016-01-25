@@ -1159,7 +1159,9 @@ void trap_print_help(const trap_module_info_t *module_info)
    int pager_fds[2];
    uint32_t i, written = 0, tmp = 0, cols;
    pid_t p;
-   char buffer[19]; // 19 because it can contain only "/proc/PID/status" (max 18 chars) or "module"
+   char buffer[24]; // 24 because it can contain only "/proc/PID/status" or "module".
+                    // Max value of PID is by default 65536, but it is configurable, here we count with 2^32 as max.
+                    // "/proc/4294967296/status" is 23 characters + terminating null
    uint8_t adit_param = 0, opt_param = 0;
    uint16_t align_def = 0, align_opt = 0;
 
@@ -1242,13 +1244,13 @@ output:
       print_aligned(module_info->description, 2, cols - 2);
 
 
-      memset(buffer, 0, 19 * sizeof(char)); // size of buffer == 19 because it can contain only "/proc/PID/status" (max 18 chars) or "module"
-      snprintf(buffer, 19, "/proc/%d/status", getpid()); // status file (to get name of the process)
-
+      // read status file to get name of the executable
+      buffer[0] = '\0';
+      snprintf(buffer, 24, "/proc/%d/status", getpid()); // size of buffer == 24, see above for explanation
       FILE *status_fd = fopen(buffer, "r");
-      memset(buffer, 0, 19 * sizeof(char));
+      buffer[0] = '\0';
       if (status_fd != NULL) {
-         fscanf(status_fd, "Name:%*[ \n\t]%18s", buffer); // Linux kernel truncates the Name in /proc/PID/status to 15 chars, but the %s should still be limited to be sure
+         fscanf(status_fd, "Name:%*[ \n\t]%23s", buffer); // Linux kernel truncates the Name in /proc/PID/status to 15 chars (but the %s should still be limited to be sure)
          fclose(status_fd);
       } else {
          strcpy(buffer, "module");
@@ -2618,11 +2620,10 @@ void *service_thread_routine(void *arg)
    int num_ints_tosend = TRAP_IN_IFC_COUNTERS * g_ctx->num_ifc_in + TRAP_OUT_IFC_COUNTERS * g_ctx->num_ifc_out;
    uint64_t *data = (uint64_t *) calloc(num_ints_tosend, sizeof(uint64_t));
 
-   // service_sock_spec size is length of "service_PID" where PID is max 5 chars (8 + 5 + 1 zero terminating)
-   char service_sock_spec[14];
-   memset(service_sock_spec, 0, 14 * sizeof(char));
-   if (sprintf(service_sock_spec, "service_%d", getpid()) < 1) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "Error: could not create service socket specifier in service routine.");
+   // service_sock_spec size is length of "service_PID" where PID is max 10 chars (8 + 10 + 1 zero terminating)
+   char service_sock_spec[19];
+   if (snprintf(service_sock_spec, 19, "service_%d", getpid()) < 1) {
+      VERBOSE(CL_ERROR, "Error: could not create service socket specifier in service routine.");
       goto exit_service_thread;
    }
 
