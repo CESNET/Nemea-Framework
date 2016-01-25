@@ -1093,7 +1093,7 @@ write:
 static void print_aligned_multiline(const char *s, uint16_t align, uint16_t cut)
 {
    const char *eol = NULL, *sol = s;
-   int bufsize = 4096, linewidth;
+   int bufsize = 512, linewidth;
    char *buffer = calloc(1, bufsize);
    if (buffer == NULL) {
       VERBOSE(CL_ERROR, "Failed to allocate buffer for printing.");
@@ -1109,7 +1109,8 @@ static void print_aligned_multiline(const char *s, uint16_t align, uint16_t cut)
       }
 
       if (linewidth >= bufsize) {
-         buffer = realloc(buffer, linewidth + 100);
+         buffer = realloc(buffer, linewidth + 1);
+         bufsize = linewidth + 1;
          if (buffer == NULL) {
             VERBOSE(CL_ERROR, "Failed to allocate buffer for printing.");
             goto failed;
@@ -1250,7 +1251,7 @@ output:
          fscanf(status_fd, "Name:%*[ \n\t]%18s", buffer); // Linux kernel truncates the Name in /proc/PID/status to 15 chars, but the %s should still be limited to be sure
          fclose(status_fd);
       } else {
-         sprintf(buffer, "module");
+         strcpy(buffer, "module");
       }
 
       if (module_info->params != NULL) {
