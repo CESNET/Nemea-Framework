@@ -53,8 +53,6 @@ def cmpFields(f1, f2):
    else:
       return cmp(f1, f2)
 
-
-
 # Inspired by "Records" python recipe by George Sakkis available at:
 # http://code.activestate.com/recipes/576555/
 def CreateTemplate(template_name, field_names, verbose=False):
@@ -97,136 +95,138 @@ def CreateTemplate(template_name, field_names, verbose=False):
       seen_names.add(name)
 
    # Create and fill-in the class template
-   numfields = len(field_names)
-   minsize = sum((FIELDS[f].size if FIELDS[f].size != -1 else 4) for f in field_names)
-   argtxt = b', '.join(field_names).decode('ascii')
-   fieldnamestxt = ', '.join('%r' % f.decode('ascii') for f in field_names)
-   valuestxt = ', '.join('self.%s' % f.decode('ascii') for f in field_names)
-   strtxt = ', '.join('%s=%%s' % f.decode('ascii') for f in field_names)
-   dicttxt = ', '.join('%r: self.%s' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
-   tupletxt = '('+', '.join(('self.%s' % f.decode('ascii') for f in field_names))+')'
-   inittxt = '; '.join('self.%s=%s()' % (f.decode('ascii'),FIELDS[f].python_type.__name__) for f in field_names)
-   itertxt = '; '.join('yield (%r, self.%s)' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
-   eqtxt   = ' and '.join('self.%s==other.%s' % (f.decode('ascii'),f.decode('ascii')) for f in field_names)
-   typedict = '{' + ', '.join('%r : %s' % (f.decode('ascii'), FIELDS[f].python_type.__name__) for f in field_names) + '}'
-   stat_field_names = [f for f in field_names if FIELDS[f].size != -1]
-   dyn_field_names = [f for f in field_names if FIELDS[f].size == -1]
-   staticfmt = "="+''.join(FIELDS[f].struct_type for f in stat_field_names)
-   staticvalues = ', '.join(\
-                  "self.%s.toUniRec()" % f.decode('ascii') if (FIELDS[f].struct_type[-1] == "s" and FIELDS[f].python_type != str) else "self.%s" % f.decode('ascii') \
-                  for f in stat_field_names)
-   staticsize = sum(FIELDS[f].size for f in stat_field_names)
-   initstatic = 't = struct.unpack_from("%s", data, 0);' % staticfmt + \
-                '; '.join(\
-                   "object.__setattr__(self, '%s', %s.fromUniRec(t[%d]))" % (f.decode('ascii'), FIELDS[f].python_type.__name__, i) \
-                      if hasattr(FIELDS[f].python_type, 'fromUniRec') \
-                   else "object.__setattr__(self, '%s', t[%d])" % (f.decode('ascii'),i) \
-                   for i,f in enumerate(stat_field_names)
-                )
-   offsetcode = ('o = 0; ' + \
-                '; '.join('l = len(self.%s); s += struct.pack("=HH", o, l); o += l' % f.decode('ascii') for f in dyn_field_names)) \
-                if len(dyn_field_names) > 0 else ''
-   dynfieldcode = '; '.join('s += self.%s' % f.decode('ascii') for f in dyn_field_names)
-   tuplestatic = repr(tuple('self.%s' % f.decode('ascii') for f in stat_field_names)).replace("'",'')
-   unpackdyncode = '; offset += 4; '.join(\
-                   'start,length = struct.unpack_from("=HH", data, offset); self.%s = data[%d+start : %d+start+length]' % (f.decode('ascii'), minsize, minsize) \
-                   for f in dyn_field_names\
-                   )
-   class_code = dedent('''
-      import struct
-      class %(template_name)s(object):
-         "UniRec template %(template_name)s(%(argtxt)s) for data manipulation."
+   strFIELDS = {f.decode('ascii'): FIELDS[f] for f in field_names}
+   _field_types = {f.decode('ascii'): FIELDS[f].python_type for f in field_names}
+   _staticfmt = "="+''.join(FIELDS[f].struct_type for f in field_names if FIELDS[f].size != -1)
+   minimalsize = sum(FIELDS[x].size if FIELDS[x].size != -1 else 4 for x in field_names)
+   staticsize = sum(FIELDS[x].size for x in field_names if x != -1)
+   _slots = tuple(f.decode('ascii') for f in field_names)
 
-         __slots__  = (%(fieldnamestxt)s)
+   FIELDS  = strFIELDS
+   classdict = {'FIELDS': FIELDS, '_slots': _slots, '_field_types': _field_types, '_staticfmt': _staticfmt, 'minimalsize': minimalsize, 'staticsize': staticsize}
 
-         _field_types = %(typedict)s
-
-         def __init__(self, data=None):
-            if data is None:
-               %(inittxt)s
-            elif isinstance(data, str) or isinstance(data,bytes):
-               %(initstatic)s
-               #(%(tuplestatic)s) = struct.unpack_from("%(staticfmt)s", data, 0)
-               offset = %(staticsize)d
-               last_end = %(minsize)d
-               %(unpackdyncode)s
-            else:
-               raise TypeError("%%s() argument must be a string or None, not '%%s'" %% (%(template_name)r, type(data).__name__))
-
-         def __len__(self):
-            "Return number of fields of the template"
-            return %(numfields)d
-
-         @staticmethod
-         def minsize():
-            """Return minimal size of a record with this template, i.e. size
-            of the static part, in bytes."""
-            return %(minsize)d
-
-         @staticmethod
-         def fields():
-            """Return list of names of all fields"""
-            return [%(fieldnamestxt)s]
-
-         def __iter__(self):
-            %(itertxt)s
-
-         def todict(self):
-            "Return a new dict which maps field names to their values"
-            return {%(dicttxt)s}
-
-         def __repr__(self):
-            return '%(template_name)s(%%r)' %% self.serialize()
-
-         def __str__(self):
-            return '%(strtxt)s' %% %(tupletxt)s
-
-         def __eq__(self, other):
-            return isinstance(other, self.__class__) and %(eqtxt)s
-
-         def __ne__(self, other):
-            return not self==other
-
-         def __getstate__(self):
-            return %(tupletxt)s
-
-         def __setstate__(self, state):
-            %(tupletxt)s = state
-
-         def __setattr__(self, attr, value):
-            try:
-               field_type = self._field_types[attr]
-            except KeyError:
-               raise AttributeError("'%(template_name)s' object has no attribute '%%s'" %% attr)
-            if not isinstance(value, field_type):
-               if isinstance(value, str) and hasattr(field_type, 'fromUniRec'):
-                  value = field_type.fromUniRec(value)
-               elif isinstance(value, int) and field_type == long:
-                  value = long(value)
-               else:
-                  raise TypeError("'%%s' is of type '%%s', not '%%s'" %% (attr, field_type.__name__, type(value).__name__))
-            object.__setattr__(self, attr, value)
-
-         def serialize(self):
-            # Fill static fields
-            s = struct.pack("%(staticfmt)s", %(staticvalues)s)
-            # Fill offsets of dynamic fields
-            %(offsetcode)s
-            # Fill dynamic fields
-            %(dynfieldcode)s
-            return s
-   ''') % locals()
-   # Execute the template string in a temporary namespace
-   namespace = {'IPAddr':IPAddr, 'Timestamp':Timestamp}
-   try:
-      if (sys.version_info < (3,)):
-        exec(class_code) in namespace
+   def init(self, data = None):
+      if data is None:
+         for key in _field_types.keys():
+            self.__dict__[key] = _field_types[key].__new__(_field_types[key])
+      elif isinstance(data,str) or isinstance(data,bytes):
+         t = struct.unpack_from(_staticfmt, data, 0)
+         index = 0
+         # static unpacking
+         for key in (x for x in _slots if FIELDS[x].size != -1):
+            curr_type = _field_types[key]
+            self.__dict__[key] = curr_type.fromUniRec(t[index]) if hasattr(curr_type,'fromUniRec') else t[index]
+            index += 1
+         # dynamic unpacking
+         offset = staticsize
+         last_end = minimalsize
+         for key in (x for x in _slots if FIELDS[x].size == 1):
+            start, length = struct.unpack_from("=HH", data, offset)
+            self.__dict__[key] = data[(minimalsize + start):(minimalsize + start + length)]
+            offset += 4
       else:
-        exec(class_code, namespace)
-      if verbose: print(class_code)
-   except SyntaxError as e:
-      raise SyntaxError(str(e) + ':\n' + class_code)
-   cls = namespace[template_name]
+         raise TypeError("%s() argument must be a string or None, not '%s'" % (__name__,type(data).__name__))
+
+   classdict['__init__'] = init
+
+   def length(self):
+      return len(_slots)
+   
+   classdict['__len__'] = length
+
+   @staticmethod
+   def minsize():
+      """Return minimal size of a record with this template, i.e. size of the static part, in bytes."""
+      return minimalsize
+
+   classdict['minsize'] = minsize
+
+   @staticmethod
+   def fields():
+      """Return list of names of all fields"""
+      return list(_slots)
+
+   classdict['fields'] = fields
+
+   def iterate(self):
+      for key in _slots:
+         yield (key, self.__dict__[key])
+   
+   classdict['__iter__'] = iterate
+
+   def todict(self):
+      return self.__dict__
+
+   classdict['todict'] = todict
+
+   def repr(self):
+      return "%s(%r)" % (__name__,self.serialize)
+
+   classdict['__repr__'] = repr
+
+   def tostring(self):
+      return ", ".join([key+"="+str(self.__dict__[key]) for key in _slots])
+
+   classdict['__str__'] = tostring   
+
+   def eq(self, other):
+      equality = isinstance(other, self.__class__)
+      for key in _slots:
+         equality = equality and (self.__dict__[key] == other.__dict__[key])
+      return equality
+
+   classdict['__eq__'] = eq
+
+   def ne(self,other):
+      return not self == other
+
+   classdict['__ne__'] = ne
+
+   def getstate(self):
+      return tuple(self.__dict__[key] for key in _slots)
+
+   classdict['__getstate__'] = getstate
+
+   def setstate(self,state):
+      index = 0
+      for key in _slots:
+         self.__dict__[key] = state[index]
+         index += 1
+
+   classdict['__setstate__'] = setstate
+
+   def setattr(self,attr,value):
+      try:
+         field_type = _field_types[attr]
+      except KeyError:
+         raise AttributeError("'%s' object has no attribute '%s'" % (__name__,attr))
+      if not isinstance(value,field_type):
+         if isinstance(value, str) and hasattr(field_type, 'fromUniRec'):
+            value = field_type.fromUniRec(value)
+         elif isinstance(value, int) and field_type == long:
+            value = long(value)
+         else:
+            raise TypeError("'%s' is of type '%s', not '%s'" % (attr, field_type.__name__, type(value).__name__))
+      
+      self.__dict__[attr] = value
+   
+   classdict['__setattr__'] = setattr
+
+   def serialize(self):
+      staticvals = tuple(self.__dict__[key].toUniRec() if (FIELDS[key].struct_type[-1] == "s" and FIELDS[key].python_type != str) else self.__dict__[key] for key in _slots if FIELDS[key].size != -1) 
+      s = struct.pack(_staticfmt, *staticvals)
+      offset = 0 # not staticsize?
+      for key in (x for x in _slots if FIELDS[x].size == -1):
+         length = len(self.__dict__[key])
+         s += struct.pack("=HH", offset, length)
+         offset += length
+      for key in (x for x in _slots if FIELDS[x].size == -1):
+         s += self.__dict__[key]
+      return s
+
+   classdict['serialize'] = serialize
+
+   cls = type(template_name, (), classdict)
    # For pickling to work, the __module__ variable needs to be set to the frame
    # where the named tuple is created.  Bypass this step in enviroments where
    # sys._getframe is not defined (Jython for example).
