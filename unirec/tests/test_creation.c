@@ -46,7 +46,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "fields.c"
+#include "fields.h"
 
 UR_FIELDS(
    ipaddr SRC_IP,
