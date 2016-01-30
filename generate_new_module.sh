@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+#
+# Copyright (C) 2016 CESNET
+#
+# LICENSE TERMS
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in
+#    the documentation and/or other materials provided with the
+#    distribution.
+# 3. Neither the name of the Company nor the names of its contributors
+#    may be used to endorse or promote products derived from this
+#    software without specific prior written permission.
+#
+# ALTERNATIVELY, provided that this notice is retained in full, this
+# product may be distributed under the terms of the GNU General Public
+# License (GPL) version 2 or later, in which case the provisions
+# of the GPL apply INSTEAD OF those given above.
+#
+# This software is provided ``as is'', and any express or implied
+# warranties, including, but not limited to, the implied warranties of
+# merchantability and fitness for a particular purpose are disclaimed.
+# In no event shall the company or contributors be liable for any
+# direct, indirect, incidental, special, exemplary, or consequential
+# damages (including, but not limited to, procurement of substitute
+# goods or services; loss of use, data, or profits; or business
+# interruption) however caused and on any theory of liability, whether
+# in contract, strict liability, or tort (including negligence or
+# otherwise) arising in any way out of the use of this software, even
+# if advised of the possibility of such damage.
+
+MODULES_PATH="../modules"
+
+if [ ! -d "$MODULES_PATH" ]; then
+   echo "Error: Cannot find modules folder. Please specify variable MODULES_PATH in the script correctly."
+   exit -1
+fi
+
+EXAMPLE_PATH="$MODULES_PATH/example"
+
+if [ ! -d "$EXAMPLE_PATH" ]; then
+   echo "Error: Cannot folder with the example module. Please specify variable EXAMPLE_PATH in the script correctly."
+   exit -1
+fi
+
+SOURCE=$(cat "$EXAMPLE_PATH/example_module.c")
+MAKEFILE=$(cat "$EXAMPLE_PATH/Makefile.am")
+
+year="`date +%Y`"
+inputs="1"
+outputs="1"
+
+echo " *** Nemea Module Wizard ***"
+echo 
+echo "This utility helps you to create a new Nemea module easily."
+echo "Just fill in a few details and a skeleton of the module will be created for you."
+echo "Options can be changed later within the module."
+echo
+echo "1) Choose a name for the module. It will also affect the name of the folder."
+echo -n "Enter module name: "
+read name
+
+MODULE_PATH="$MODULES_PATH/$name"
+
+while [ -d "$MODULE_PATH" ]; do
+   echo "This module/folder already exist, please choose another name."
+   echo
+   echo -n "Enter module name: "
+   read name
+   MODULE_PATH="$MODULES_PATH/$name"
+done
+
+echo
+echo "2) Enter few words that will describe the main purpose of the module."
+echo -n "Short module description: "
+read brief
+
+echo
+echo "3) You can also add a description used on help screen. Otherwise the short description will be used instead (can be changed later)."
+echo -n "Do you wish to enter long module description now? (Y/N): "
+read ret
+
+if [ "$ret" == "Y" -o "$ret" == "y" ]; then
+   echo -n "Long module description: "
+   read desc
+else
+   desc="$brief"
+fi
+
+echo
+echo "4) Number of input interfaces describes how many modules will be connected to the input of your module."
+echo -n "Enter the number of input interfaces (0-31, default 1): "
+read inputs
+
+echo
+echo "5) Number of output interfaces describes how many modules will be connected to the output of your module."
+echo -n "Enter the number of output interfaces (0-31, default 1): "
+read outputs
+
+echo
+echo "6) Author's name and email will be placed in the source code documentation."
+echo -n "Author: "
+read author
+echo -n "Email: "
+read email
+
+echo
+echo "Thank you, the module will now be created."
+echo
+echo -n "Do you really wish to create the module $name (Y/N)? "
+read ret
+
+if [ "$ret" == "N" -o "$ret" == "n" ]; then
+   exit
+fi
+
+echo
+echo "*** Creating module $name ***"
+
+header='/**
+ * \file '"$name"'.c
+ * \brief '"$brief"'
+ * \author '"$author"' <'"$email"'>
+ * \date '"$year"'
+ */'
+
+if [ "$inputs" == "0" ]; then
+    SOURCE=$(sed '/ur_template_t \*in_tmplt/,/}/ d
+                  /in_tmplt/d' <<< "$SOURCE")
+fi
+
+if [ "$outputs" == "0" ]; then
+    SOURCE=$(sed '/ur_template_t \*out_tmplt/,/}/ d 
+                  /void \*out_rec/,/}/ d
+                  /out_tmplt/d
+                  /out_rec/d' <<< "$SOURCE")
+fi
+
+# process example c source
+SOURCE="$header"$'\n\n'$(echo "$SOURCE" |
+   sed -e '/\/\*\*/,/\*\// d' \
+       -e 's/Copyright (C) .* CESNET/Copyright (C) '"$year"' CESNET/' \
+       -e '/UR_FIELDS/,/)/ c\
+UR_FIELDS ( \
+  ipaddr DST_IP, \
+  ipaddr SRC_IP, \
+  uint16 DST_PORT,\
+  uint16 SRC_PORT, \
+  uint8  PROTOCOL, \
+  uint64 BYTES, \
+  uint32 PACKETS \
+)' \
+       -e 's/\(.*\)"FOO,BAR"\(.*\)/\1"DST_IP,SRC_IP,DST_PORT,SRC_PORT,PROTOCOL,BYTES,PACKETS"\2/' \
+       -e 's/\(.*\)"FOO,BAR,BAZ"\(.*\)/\1"DST_IP,SRC_IP,DST_PORT,SRC_PORT,PROTOCOL,BYTES,PACKETS"\2/' \
+       -e '/ur_template_t \*in_tmplt/ s|$|  // Set your input fields here|' \
+       -e '/ur_template_t \*out_tmplt/ s|$|  // Set your output fields here|' \
+       -e 's/BASIC(.*/BASIC("'"${name^}"' module","'"$desc"'",'"$inputs"','"$outputs"')/' \
+       -e '/int ret/d' \
+       -e '/Main processing loop/,/Cleanup/ c\
+   // ***** Main processing loop ***** \
+   \
+   while (!stop) {\
+   \
+   \
+      //  Insert your code here \
+   \
+   \
+   }')
+
+# process example makefile
+MAKEFILE=$(echo "$MAKEFILE"|
+        sed '1s/^/ACLOCAL_AMFLAGS=-I m4\n/' |
+        sed 's|\.\./aminclude.am|\./aminclude.am|' |
+        sed 's/example_module/'"$name"'/g')
+
+mkdir "$MODULE_PATH" 2>/dev/null
+
+echo "Creating $MODULE_PATH"
+echo "Creating $MODULE_PATH/$name.c"
+echo "$SOURCE" > "$MODULE_PATH/$name.c"
+
+echo "Creating $MODULE_PATH/Makefile.am"
+echo "$MAKEFILE" > "$MODULE_PATH/Makefile.am"
+
+echo "Copying m4 folder..."
+cp -r "$EXAMPLE_PATH/../m4" "$MODULE_PATH"
+
+echo "Copying aminclude.am..."
+cp -r "$EXAMPLE_PATH/../aminclude.am" "$MODULE_PATH"
+
+cd "$MODULE_PATH"
+echo "Running autoscan..."
+autoscan
+
+echo "Creating configure.ac..."
+mv configure.{scan,ac}
+
+sed -i -e '/AC_CONFIG_HEADERS/ a\
+AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects]) \
+AC_CONFIG_MACRO_DIR([m4]) \
+\
+AX_LIBTRAP_CHECK \
+AX_UNIREC_CHECK \
+AX_NEMEACOMMON_CHECK' \
+       -e '/AC_INIT/ c\
+AC_INIT(['"$name"'], [1.0.0], [traffic-analysis@cesnet.cz])' configure.ac
+
+echo "Running autoreconf..."
+autoreconf -i
+echo "Configuring..."
+./configure -q
+echo "Running make..."
+echo
+make -j10  >/dev/null \
+&& echo "Module $name has been created successfully at $MODULE_PATH." \
+|| echo "Error while creating module $name, please report the bug to author."
