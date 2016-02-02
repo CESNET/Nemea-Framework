@@ -83,7 +83,7 @@ size_table["string"] = -1;
 size_table["bytes"] = -1;
 size_table["bytes*"] = -1;'
 
-find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) |
+find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) -exec grep -l "\s*UR_FIELDS\s*" {} \; |
 # remove line and block comments
    xargs -I{} sed 's,\s*//.*$,,;:a; s%\(.*\)/\*.*\*/%\1%; ta; /\/\*/ !b; N; ba'  {} |
 # print contents of UR_FIELDS
