@@ -808,10 +808,11 @@ int b_plus_tree_delete_item_from_list(void *btree, b_plus_tree_item *delete_item
    //get next value
    is_there_next = b_plus_tree_get_next_item_from_list(btree, delete_item);
 
+   c_b_tree_plus_delete_know_leaf(index_of_delete_item, leaf_del, (c_b_tree_plus *) btree);
+
    if (is_there_next == 0) {
       return is_there_next;
    }
-   c_b_tree_plus_delete_know_leaf(index_of_delete_item, leaf_del, (c_b_tree_plus *) btree);
 
    delete_item->leaf = c_b_tree_plus_find_leaf(delete_item->key, (c_b_tree_plus *) btree);
    delete_item->index_of_value = c_node_find_index_key(delete_item->key, delete_item->leaf,
