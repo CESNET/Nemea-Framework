@@ -21,9 +21,6 @@ EXTRA_DIST = README README.ifcspec.md mdconvert.sh doc/index.txt doc/history.txt
 include aminclude.am
 
 if DX_COND_doc
-clean-local: doxygen-clean
-	rm -rf doc/doxygen doc/devel
-
 .PHONY: doxygen-devel
 doxygen-devel:
 	rm -rf devel-docs/
