@@ -247,7 +247,7 @@ typedef struct trap_module_info_s {
       } \
    }
 
-/** Macro for allocation and initialization of module parameters information in global module_info and trap_info_cnt
+/** Macro for allocation and initialization of module parameters information in global module_info
  *
  * \param [in] p_short_opt  short option
  * \param [in] p_long_opt   long option
@@ -256,8 +256,8 @@ typedef struct trap_module_info_s {
  * \param [in] p_argument_type  data type of option argument
  */
 #define ALLOCATE_PARAM_ITEMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
-   ALLOCATE_PARAM_ITEMS_2(module_info, trap_info_cnt, p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
-   trap_info_cnt++;
+   ALLOCATE_PARAM_ITEMS_2(module_info, trap_module_params_cnt, p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
+   trap_module_params_cnt++;
 
 /** Macro releasing memory allocated for module basic information in global variable module_info
  */
@@ -274,23 +274,23 @@ typedef struct trap_module_info_s {
 /** Macro releasing memory allocated for module parameters information in global variable module_info
   */
 #define FREE_PARAM_ITEMS(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
-   if (module_info->params[trap_info_cnt] != NULL) { \
-      if (module_info->params[trap_info_cnt]->long_opt != NULL) { \
-         free(module_info->params[trap_info_cnt]->long_opt); \
-         module_info->params[trap_info_cnt]->long_opt= NULL; \
+   if (module_info->params[trap_module_params_cnt] != NULL) { \
+      if (module_info->params[trap_module_params_cnt]->long_opt != NULL) { \
+         free(module_info->params[trap_module_params_cnt]->long_opt); \
+         module_info->params[trap_module_params_cnt]->long_opt= NULL; \
       } \
-      if (module_info->params[trap_info_cnt]->description != NULL) { \
-         free(module_info->params[trap_info_cnt]->description); \
-         module_info->params[trap_info_cnt]->description= NULL; \
+      if (module_info->params[trap_module_params_cnt]->description != NULL) { \
+         free(module_info->params[trap_module_params_cnt]->description); \
+         module_info->params[trap_module_params_cnt]->description= NULL; \
       } \
-      if (module_info->params[trap_info_cnt]->argument_type != NULL) { \
-         free(module_info->params[trap_info_cnt]->argument_type); \
-         module_info->params[trap_info_cnt]->argument_type= NULL; \
+      if (module_info->params[trap_module_params_cnt]->argument_type != NULL) { \
+         free(module_info->params[trap_module_params_cnt]->argument_type); \
+         module_info->params[trap_module_params_cnt]->argument_type= NULL; \
       } \
-      if (module_info->params[trap_info_cnt] != NULL) { \
-         free(module_info->params[trap_info_cnt]); \
+      if (module_info->params[trap_module_params_cnt] != NULL) { \
+         free(module_info->params[trap_module_params_cnt]); \
       } \
-      trap_info_cnt++; \
+      trap_module_params_cnt++; \
    }
 
 #define GENERATE_GETOPT_STRING(p_short_opt, p_long_opt, p_description, p_required_argument, p_argument_type) \
@@ -314,7 +314,6 @@ typedef struct trap_module_info_s {
  *  Last pointer of module info parameters array is NULL to detect end of the array without any counter
  */
 #define INIT_MODULE_INFO_STRUCT(BASIC, PARAMS) \
-   int trap_info_cnt = 0; \
    int trap_module_params_cnt = 0; \
    size_t module_getopt_string_size = 50; \
    char * module_getopt_string = (char *) calloc(module_getopt_string_size, sizeof(char)); \
@@ -325,6 +324,7 @@ typedef struct trap_module_info_s {
    if (module_info != NULL) { \
       module_info->params = (trap_module_info_parameter_t **) calloc(trap_module_params_cnt + 1, sizeof(trap_module_info_parameter_t *)); \
       if (module_info->params != NULL) { \
+         trap_module_params_cnt = 0; \
          PARAMS(ALLOCATE_PARAM_ITEMS) \
          PARAMS(GENERATE_GETOPT_STRING) \
       } \
@@ -361,7 +361,7 @@ int trap_update_module_param(trap_module_info_t *m, uint16_t param_id, char shor
 */
 #define FREE_MODULE_INFO_STRUCT(BASIC, PARAMS) \
    if (module_info != NULL) { \
-      trap_info_cnt = 0; \
+      trap_module_params_cnt = 0; \
       BASIC(FREE_BASIC_INFO) \
       if (module_info->params != NULL) { \
          PARAMS(FREE_PARAM_ITEMS) \
