@@ -1688,7 +1688,7 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
       return ret_val;
 #endif
    } else {
-      return trap_errorf(c, TRAP_E_MEMORY, "IFC was not initialized.");
+      return trap_error(c, TRAP_E_NOT_INITIALIZED);
    }
 }
 
