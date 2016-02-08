@@ -163,23 +163,6 @@ type_table["string"]="UR_TYPE_STRING";
 type_table["bytes"]="UR_TYPE_BYTES";
 type_table["bytes*"]="UR_TYPE_BYTES";
 
-c_types["char"] = "char";
-c_types["uint8"] = "uint8_t";
-c_types["int8"] = "int8_t";
-c_types["uint16"] = "uint16_t";
-c_types["int16"] = "int16_t";
-c_types["uint32"] = "uint32_t";
-c_types["int32"] = "int32_t";
-c_types["uint64"] = "uint64_t";
-c_types["int64"] = "int64_t";
-c_types["float"] = "float";
-c_types["double"] = "double";
-c_types["ipaddr"] = "ip_addr_t";
-c_types["time"] = "time_t";
-c_types["string"] = "char";
-c_types["bytes"] = "char";
-c_types["bytes*"] = "char";
-
 field_id=0;
 
 cfile="/************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/\n";
