@@ -813,7 +813,7 @@ ur_template_t *ur_create_template(const char* fields, char **errstr)
 	const char *end_ptr;
 	for (int i = 0; i < n_fields; i++) {
 		// Get field name
-		end_ptr = strchr(start_ptr, (i < n_fields-1) ? ',' : '\0'); // find next semicolon or the end of string
+		end_ptr = strchr(start_ptr, (i < n_fields-1) ? ',' : '\0'); // find next comma or the end of string
 		int len = end_ptr - start_ptr;
 		fields_spec[written_fields].name = malloc(len + 1);
 		if (fields_spec[written_fields].name == NULL) {

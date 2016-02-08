@@ -575,6 +575,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
          if (asprintf(&buffer, "%s%d", priv->filename, priv->file_cnt) < 0) {
             VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC: asprintf failed.");
+            free(priv->filename);
+            free(priv);
             return trap_error(ctx, TRAP_E_MEMORY);
          }
 
