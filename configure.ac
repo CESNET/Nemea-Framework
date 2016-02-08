@@ -46,7 +46,8 @@ AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AC_CONFIG_FILES([Makefile
-		 nemea.spec])
+		 nemea.spec
+		 create_module.sh])
 
 AC_ARG_ENABLE([libtrap], AC_HELP_STRING([--disable-libtrap], [Disable libtrap.]),
         [AM_CONDITIONAL([ENABLE_LIBTRAP], [test "x$enableval" = xyes])],

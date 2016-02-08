@@ -15,4 +15,6 @@ endif
 
 EXTRA_DIST=README.md
 
+bin_SCRIPTS=create_module.sh
+
 ACLOCAL_AMFLAGS=-I m4
