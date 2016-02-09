@@ -100,14 +100,14 @@ typedef enum {
    UR_TYPE_FLOAT, ///< float (32b)
    UR_TYPE_DOUBLE,   ///< double (64b)
    UR_TYPE_IP,    ///< IP address (128b)
-   UR_TYPE_TIME,  ///< time (64b)
+   UR_TYPE_TIME   ///< time (64b)
 } ur_field_type_t;
 
 typedef enum {
    UR_TMPLT_DIRECTION_NO,  ///< template is not used for sending data
    UR_TMPLT_DIRECTION_IN,  ///< input direction
    UR_TMPLT_DIRECTION_OUT, ///< ouput direction
-   UR_TMPLT_DIRECTION_BI,  ///< bidirection
+   UR_TMPLT_DIRECTION_BI   ///< bidirection
 } ur_tmplt_direction;
 
 typedef uint16_t ur_field_id_t;  ///< Type of UniRec field identifiers
