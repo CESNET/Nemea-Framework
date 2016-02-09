@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <libtrap/trap.h>
 #include "trap_internal.h"
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
    #endif
 
    if (argc > 1) {
-      if (sscanf(argv[1], "%hi", &mess_size) != 1) {
+      if (sscanf(argv[1], "%hu", &mess_size) != 1) {
          mess_size = strlen(argv[0]);
       } else {
          /* send mess_size - 1 x '*', '\0' */
@@ -144,7 +145,7 @@ int main(int argc, char **argv)
       #endif
    }
 
-   printf("ok: %llu\ntimeout: %llu\n", (long long unsigned int) countok, (long long unsigned int) countto);
+   printf("ok: %"PRIu64"\ntimeout: %"PRIu64"\n", (uint64_t) countok, (uint64_t) countto);
 
    if (argc > 1) {
       free(data_to_send);

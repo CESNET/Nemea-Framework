@@ -147,14 +147,14 @@ int main(int argc, char **argv)
    printf("\n");
    duration = time(NULL) - duration;
 
-   printf("Number of iterations: %llu\nNumber of sent messages: %llu\nErrors: %llu\nSize changes: %llu\nLast size: %hu\nTime: %llus\n",
-      (unsigned long long int) iteration,
-      (unsigned long long int) counter,
-      (unsigned long long int) errors,
-      (unsigned long long int) size_changes,
+   printf("Number of iterations: %"PRIu64"\nNumber of sent messages: %"PRIu64"\nErrors: %"PRIu64"\nSize changes: %"PRIu64"\nLast size: %hu\nTime: %"PRIu64"s\n",
+      (uint64_t) iteration,
+      (uint64_t) counter,
+      (uint64_t) errors,
+      (uint64_t) size_changes,
       last_size,
-      (unsigned long long int) duration);
-   printf("Last received value: %llu\n", (unsigned long long int) last_value);
+      (uint64_t) duration);
+   printf("Last received value: %"PRIu64"\n", (uint64_t) last_value);
 
    // Do all necessary cleanup before exiting
    // (close interfaces and free allocated memory)
