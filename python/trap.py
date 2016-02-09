@@ -14,6 +14,20 @@ from ctypes import *
 import signal
 import os.path
 from optparse import OptionParser
+import sys
+
+if sys.version_info > (3,):
+   long = int
+   str = str
+   unicode = str
+   bytes = bytes
+   basestring = (str,bytes)
+else:
+   str = str
+   unicode = unicode
+   basestring = basestring
+   def bytes(string, encoding):
+       return str(string)
 
 # ***** Load libtrap library *****
 
@@ -192,13 +206,13 @@ def CreateModuleInfo(name, description, num_ifc_in, num_ifc_out, opts = None):
    if opts and isinstance(opts, OptionParser):
      for o in opts.option_list:
         arg_type = None if o.nargs == 0 else "string"
-        arg_req = 1 if o.nargs >= 1 else 0
-        shortopt = c_char(o._short_opts[0][-1])
-        longopt = o._long_opts[0][2:]
-        m = ModuleInfoParameter(shortopt, longopt, o.help, arg_req, arg_type)
+        arg_req = 1 if o.nargs and o.nargs >= 1 else 0
+        shortopt = c_char(bytes(o._short_opts[0][-1],'ascii'))
+        longopt = bytes(o._long_opts[0][2:],'ascii')
+        m = ModuleInfoParameter(shortopt, longopt, bytes(o.help,'ascii'), arg_req, bytes(arg_type,'ascii'))
         params.append(m)
 
-   moduleInfo = lib.trap_create_module_info(name, description, num_ifc_in, num_ifc_out, len(params))
+   moduleInfo = lib.trap_create_module_info(bytes(name,'ascii'), bytes(description, 'ascii'), num_ifc_in, num_ifc_out, len(params))
    pn = 0
    for p in params:
       lib.trap_update_module_param(moduleInfo, pn, p.short_opt, p.long_opt, p.description, p.param_required_argument, p.arg_type)
@@ -405,7 +419,7 @@ def parseParams(argv, module_info=None):
          setVerboseLevel(2)
          argv.remove("-vvv")
 
-      ifc_types = ""
+      ifc_types = b""
       ifc_params= []
       try:
          ifcs = ifc_spec.split(',')
@@ -413,7 +427,7 @@ def parseParams(argv, module_info=None):
          if len(ifcs) < (max(module_info.num_ifc_in, 0) + max(module_info.num_ifc_out, 0)):
             raise EBadParams(E_BADPARAMS, "Number of IFC parameters doesn't match number of IFCs in module_info.")
          for i in ifcs:
-            (ifcType, ifcParams) = i.split(":", 1)
+            (ifcType, ifcParams) = (bytes(x,'ascii') for x in i.split(":", 1))
             ifc_types = ifc_types + ifcType
             ifc_params.append(ifcParams)
 
@@ -444,7 +458,7 @@ def set_required_fmt(ifcidx, fmttype, fmtspec):
    ifcidx - index of output IFC
    fmttype - format data type (TRAP_FMT_RAW, TRAP_FMT_UNIREC, TRAP_FMT_JSON)
    fmtspec - specifier of format type (e.g. "ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT" for TRAP_FMT_UNIREC)"""
-   lib.trap_set_required_fmt(ifcidx, fmttype, fmtspec)
+   lib.trap_set_required_fmt(ifcidx, fmttype, bytes(fmtspec,'ascii'))
 
 def set_data_fmt(ifcidx, fmttype, fmtspec):
    """Set data format type and specifier of the output IFC (for negotiation).

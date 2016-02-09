@@ -105,7 +105,7 @@ typedef enum {
  */
 typedef enum {
     AR_ELEMENT,
-    AR_STRUCT,
+    AR_STRUCT
 } arrayType;
 
 /**

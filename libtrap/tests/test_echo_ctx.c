@@ -47,6 +47,7 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 #include <getopt.h>
 #include <unistd.h>
 #include <libtrap/trap.h>
@@ -162,10 +163,10 @@ int main(int argc, char **argv)
    trap_ctx_send_flush(ctx, 0);
    duration = time(NULL) - duration;
 
-   printf("Number of iterations: %llu\nLast sent: %llu\nTime: %llus\n",
-      (unsigned long long int) iteration,
-      (unsigned long long int) counter-1,
-      (unsigned long long int) duration);
+   printf("Number of iterations: %"PRIu64"\nLast sent: %"PRIu64"\nTime: %"PRIu64"s\n",
+      (uint64_t) iteration,
+      (uint64_t) counter-1,
+      (uint64_t) duration);
 
 cleanup:
    // Do all necessary cleanup before exiting

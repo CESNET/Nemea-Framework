@@ -80,11 +80,19 @@ size_table["double"] = 8;
 size_table["ipaddr"] = 16;
 size_table["time"] = 8;
 size_table["string"] = -1;
+size_table["bytes"] = -1;
 size_table["bytes*"] = -1;'
 
-find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} sed -n '/^\s*UR_FIELDS/,/)/p' {} 2>/dev/null |
-   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
+find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) -exec grep -l "\s*UR_FIELDS\s*" {} \; |
+# remove line and block comments
+   xargs -I{} sed 's,\s*//.*$,,;:a; s%\(.*\)/\*.*\*/%\1%; ta; /\/\*/ !b; N; ba'  {} |
+# print contents of UR_FIELDS
+   sed -n '/^\s*UR_FIELDS\s*([^)]*$/,/)/p; /^\s*UR_FIELDS\s*([^)]*$/,/)/p' 2>/dev/null |
+# clean output to get fields only
+   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//; s/bytes \*/bytes /g' |
+# sort by name
    sort -k2 -t' ' | uniq |
+# check for conflicting types and print type, name, size of fields
    awk -F' ' 'BEGIN{
 '"$sizetable"'
 }
@@ -96,7 +104,16 @@ find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) | xargs -I{} 
    if ((iden == $2) && (type != $1)) {
       printf("Conflicting types (%s, %s) of UniRec field (%s)\n", type, $1, iden);
       exit 1;
-   } 
+   }
+   type=$1;
+   if (NR == 1) {
+      type=$1;
+      iden=$2;
+   }
+   if ((iden == $2) && (type != $1)) {
+      printf("Conflicting types (%s, %s) of UniRec field (%s)\n", type, $1, iden);
+      exit 1;
+   }
    type=$1;
    iden=$2;
    print $1, $2, size_table[$1];
@@ -108,6 +125,7 @@ if [ "$ret" -ne 0 ]; then
    exit "$ret"
 fi
 
+# generate fields.{c,h}
 awk -F' ' '
 BEGIN {
 '"$sizetable"'
@@ -125,6 +143,7 @@ c_types["double"] = "double";
 c_types["ipaddr"] = "ip_addr_t";
 c_types["time"] = "time_t";
 c_types["string"] = "char";
+c_types["bytes"] = "char";
 c_types["bytes*"] = "char";
 
 type_table["char"]="UR_TYPE_CHAR";
@@ -141,6 +160,7 @@ type_table["double"]="UR_TYPE_DOUBLE";
 type_table["ipaddr"]="UR_TYPE_IP";
 type_table["time"]="UR_TYPE_TIME";
 type_table["string"]="UR_TYPE_STRING";
+type_table["bytes"]="UR_TYPE_BYTES";
 type_table["bytes*"]="UR_TYPE_BYTES";
 
 field_id=0;

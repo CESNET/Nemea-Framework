@@ -100,14 +100,14 @@ typedef enum {
    UR_TYPE_FLOAT, ///< float (32b)
    UR_TYPE_DOUBLE,   ///< double (64b)
    UR_TYPE_IP,    ///< IP address (128b)
-   UR_TYPE_TIME,  ///< time (64b)
+   UR_TYPE_TIME   ///< time (64b)
 } ur_field_type_t;
 
 typedef enum {
    UR_TMPLT_DIRECTION_NO,  ///< template is not used for sending data
    UR_TMPLT_DIRECTION_IN,  ///< input direction
    UR_TMPLT_DIRECTION_OUT, ///< ouput direction
-   UR_TMPLT_DIRECTION_BI,  ///< bidirection
+   UR_TMPLT_DIRECTION_BI   ///< bidirection
 } ur_tmplt_direction;
 
 typedef uint16_t ur_field_id_t;  ///< Type of UniRec field identifiers
@@ -334,8 +334,8 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Pointer to the field. Pointer type depends on the type of the field.
  */
 #define ur_get_ptr(tmplt, data, field_id) \
-   (field_id ## _T*)((char*) (ur_is_static(field_id) ? ((data) + (tmplt)->offset[field_id]) : \
-   data + (tmplt)->static_size + (*((uint16_t*)((data) + (tmplt)->offset[field_id])))))
+   (field_id ## _T*)((char*) (ur_is_static(field_id) ? ((char*)(data) + (tmplt)->offset[field_id]) : \
+   (char*)(data) + (tmplt)->static_size + (*((uint16_t*)((char*)(data) + (tmplt)->offset[field_id])))))
 
 /** \brief Get pointer to UniRec field
  * Get pointer to fixed or varible length UniRec field. In contrast to ur_get_ptr, field_id may
@@ -346,8 +346,8 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Pointer to the field (void*).
  */
 #define ur_get_ptr_by_id(tmplt, data, field_id) \
-   (void*)((char*) (ur_is_static(field_id) ? ((data) + (tmplt)->offset[field_id]) : \
-      data + (tmplt)->static_size + (*((uint16_t*)((data) + (tmplt)->offset[field_id])))))
+   (void*)((char*) (ur_is_static(field_id) ? ((char*)(data) + (tmplt)->offset[field_id]) : \
+      (char*)(data) + (tmplt)->static_size + (*((uint16_t*)((char*)(data) + (tmplt)->offset[field_id])))))
 
 /** \brief Set value of UniRec (static) field
  * Set value of a fixed-length UniRec field. For variable-length fields, use ur_set_var.
@@ -368,7 +368,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Offset of the field in the record relative to the beginning of the record.
  */
 #define ur_get_var_offset(tmplt, rec, field_id) \
-   *((uint16_t*)(rec + tmplt->offset[field_id]))
+   *((uint16_t*)((char*)rec + tmplt->offset[field_id]))
 
 /** \brief Get size of a variable sized field in the record.
  * Get size of a variable-length field in the record. Given field has to be part of the record.
@@ -378,7 +378,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Length of the field in the record in bytes.
  */
 #define ur_get_var_len(tmplt, rec, field_id) \
-   *((uint16_t*)(rec + tmplt->offset[field_id] + 2))
+   *((uint16_t*)((char*)rec + tmplt->offset[field_id] + 2))
 
 /** \brief Set size of variable-length field in the record.
  * Set size of specified variable-length field in the record. Field has to be part of the record. It does
@@ -389,7 +389,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \param[in] len The value the length should be set to.
  */
 #define ur_set_var_len(tmplt, rec, field_id, len) \
-   *((uint16_t*)(rec + tmplt->offset[field_id] + 2)) = (uint16_t)len
+   *((uint16_t*)((char*)rec + tmplt->offset[field_id] + 2)) = (uint16_t)len
 
 /** \brief Set offset of variable-length field in the record.
  * Set offset of specified variable-length field in the record. Field has to be part of the record. It does

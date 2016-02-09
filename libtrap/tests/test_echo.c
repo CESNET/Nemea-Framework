@@ -47,6 +47,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <inttypes.h>
 #include <time.h>
 #include <getopt.h>
 #include <unistd.h>
@@ -153,7 +154,6 @@ int main(int argc, char **argv)
       *((uint64_t *) payload) = counter;
       ret = trap_send_data(0, (void *) payload, payload_size, TRAP_WAIT);
       if (ret == TRAP_E_OK) {
-         //printf("\r%llu", (unsigned long long int) counter);
          counter++;
       } else if (ret == TRAP_E_TIMEOUT) {
          timeouts++;
@@ -172,11 +172,11 @@ int main(int argc, char **argv)
    trap_send_flush(0);
    duration = time(NULL) - duration;
 
-   printf("Number of iterations: %llu\nTimeouts: %llu\nLast sent: %llu\nTime: %llus\n",
-      (unsigned long long int) iteration,
-      (unsigned long long int) timeouts,
-      (unsigned long long int) counter-1,
-      (unsigned long long int) duration);
+   printf("Number of iterations: %"PRIu64"\nTimeouts: %"PRIu64"\nLast sent: %"PRIu64"\nTime: %"PRIu64"s\n",
+      (uint64_t) iteration,
+      (uint64_t) timeouts,
+      (uint64_t) counter-1,
+      (uint64_t) duration);
 
    // Do all necessary cleanup before exiting
    // (close interfaces and free allocated memory)

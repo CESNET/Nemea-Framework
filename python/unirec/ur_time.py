@@ -6,6 +6,10 @@ from datetime import datetime
 import time
 import calendar
 import re
+import sys
+
+if sys.version_info > (3,):
+   long = int
 
 MSEC_TO_FRAC = 0b01000001100010010011011101001011110001101010011111101111 # 2**32 / 1000 in fixed-point
 FRAC_TO_MSEC = 0b1111101001 # 1000 / 2**32 in fixed-point

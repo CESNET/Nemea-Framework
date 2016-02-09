@@ -105,7 +105,6 @@ int main(int argc, char **argv)
       }
       ret = trap_send_data(0, (void *) payload, payload_size, TRAP_WAIT);
       if (ret == TRAP_E_OK) {
-         //printf("\r%llu", (unsigned long long int) counter);
          counter++;
       } else {
          VERBOSE(CL_ERROR, "error: %s", trap_last_error_msg);
@@ -117,10 +116,10 @@ int main(int argc, char **argv)
    }
    duration = time(NULL) - duration;
 
-   printf("Number of iterations: %llu\nLast sent: %llu\nTime: %llus\n",
-      (unsigned long long int) iteration,
-      (unsigned long long int) counter-1,
-      (unsigned long long int) duration);
+   printf("Number of iterations: %"PRIu64"\nLast sent: %"PRIu64"\nTime: %"PRIu64"s\n",
+      (uint64_t) iteration,
+      (uint64_t) counter-1,
+      (uint64_t) duration);
    sleep(2);
 
    // Do all necessary cleanup before exiting
