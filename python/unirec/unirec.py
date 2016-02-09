@@ -120,7 +120,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
          # dynamic unpacking
          offset = staticsize
          last_end = minimalsize
-         for key in (x for x in _slots if FIELDS[x].size == 1):
+         for key in (x for x in _slots if FIELDS[x].size == -1):
             start, length = struct.unpack_from("=HH", data, offset)
             self.__dict__[key] = data[(minimalsize + start):(minimalsize + start + length)]
             offset += 4
