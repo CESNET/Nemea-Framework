@@ -1269,7 +1269,7 @@ failed_time_parsing:
          // Generic string of bytes
          int size = strlen(v)/2;
          ur_var_change_size(tmpl, data, f_id, size);
-         char *data_ptr = ur_get_ptr_by_id(tmpl, data, f_id);
+         unsigned char *data_ptr = ur_get_ptr_by_id(tmpl, data, f_id);
          for ( ; size > 0; --size, v += 2, ++data_ptr) {
             sscanf(v, "%2hhx", data_ptr);
          }
