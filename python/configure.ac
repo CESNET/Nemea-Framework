@@ -7,7 +7,7 @@ AC_INIT([nemea-python], [1.0.0], [traffic-analysis@cesnet.cz])
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([foreign silent-rules])
 AM_SILENT_RULES([yes])
-AC_CONFIG_SRCDIR([nemea-python.spec.in])
+AC_CONFIG_SRCDIR([trap.py])
 RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
