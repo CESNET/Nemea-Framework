@@ -48,7 +48,6 @@ AC_PROG_INSTALL
 
 AC_CONFIG_FILES([Makefile
                  unirec/Makefile
-                 nemea-python.spec
                  ])
 
 AC_SUBST(RELEASE)
