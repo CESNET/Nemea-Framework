@@ -4,11 +4,42 @@ import argparse
 import json
 import trap
 import unirec
-import pymongo
-import warden_client
+from time import time, gmtime
+from uuid import uuid4
+from datetime import datetime
+
+def getDefaultId():
+    """Return unique ID of IDEA message. It is done by UUID in this implementation."""
+    return str(uuid4())
+
+def setAddr(idea_field, addr):
+    """Set IP address into 'idea_field'.
+This method automatically recognize IPv4 vs IPv6 and sets the correct information into the IDEA message.
+Usage: setAddr(idea['Source'][0], rec.SRC_IP)"""
+
+    if isinstance(addr, unirec.ur_ipaddr.IP6Addr):
+        idea_field['IP6'] = [str(addr)]
+    else:
+        idea_field['IP4'] = [str(addr)]
+
+def getIDEAtime(unirecField = None):
+    """Return timestamp in IDEA format (string).
+    If unirecField is provided, it will convert it into correct format.
+    Otherwise, current time is returned."""
+
+    if unirecField:
+        return unirecField.toString('%Y-%m-%dT%H:%M:%SZ')
+    else:
+        t = time()
+        g = gmtime(t)
+        iso = '%04d-%02d-%02dT%02d:%02d:%02dZ' % g[0:6]
+    return iso
+
 
 # TODO: resolve argument parsing and help in Python modules
 # Ideally it should all be done in Python using overloaded ArgParse
+
+# TODO: allow setting library verbose mode
 
 # TODO: Node.Name shouldn't be hard-coded in convertors, it should be passed by parameter
 
@@ -137,13 +168,12 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             filehandle = open(args.file, "a" if args.file_append else "w")
     
     if args.mongodb:
-        print "Creating mongoDB client"
+        import pymongo
         mongoclient = pymongo.MongoClient(args.mongodb_host, args.mongodb_port)
-        print "done"
         mongocoll = mongoclient[args.mongodb][args.mongodb_coll]
-        print "collection done"
     
     if args.warden:
+        import warden_client
         wardenclient = warden_client.Client(**warden_client.read_cfg(args.warden))
     
     
@@ -220,7 +250,14 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                 trap.stop = 1
 
         # MongoDB output
+       
         if mongocoll:
+            # Convert timestamps from string to Date format
+            idea['DetectTime'] = datetime.strptime(idea['DetectTime'], "%Y-%m-%dT%H:%M:%SZ")
+            idea['CreateTime'] = datetime.strptime(idea['CreateTime'], "%Y-%m-%dT%H:%M:%SZ")
+            idea['EventTime'] = datetime.strptime(idea['EventTime'], "%Y-%m-%dT%H:%M:%SZ")
+            idea['CeaseTime'] = datetime.strptime(idea['CeaseTime'], "%Y-%m-%dT%H:%M:%SZ")
+
             try:
                 mongocoll.insert(idea)
             except pymongo.errors.AutoReconnect:
