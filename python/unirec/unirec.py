@@ -95,8 +95,8 @@ def CreateTemplate(template_name, field_names, verbose=False):
       seen_names.add(name)
 
    # Create and fill-in the class template
-   strFIELDS = {f.decode('ascii'): FIELDS[f] for f in field_names}
-   _field_types = {f.decode('ascii'): FIELDS[f].python_type for f in field_names}
+   strFIELDS = dict(zip([f.decode('ascii') for f in field_names], [FIELDS[f] for f in field_names]))
+   _field_types = dict(zip([f.decode('ascii') for f in field_names], [FIELDS[f].python_type for f in field_names]))
    _staticfmt = "="+''.join(FIELDS[f].struct_type for f in field_names if FIELDS[f].size != -1)
    minimalsize = sum(FIELDS[x].size if FIELDS[x].size != -1 else 4 for x in field_names)
    staticsize = sum(FIELDS[x].size for x in field_names if x != -1)
