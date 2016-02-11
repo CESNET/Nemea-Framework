@@ -1,5 +1,5 @@
 import sys, os.path
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "nemea-framework", "python"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "nemea-framework", "python"))
 import argparse
 import json
 import trap
@@ -8,7 +8,7 @@ from time import time, gmtime
 from uuid import uuid4
 from datetime import datetime
 
-def getDefaultId():
+def getRandomId():
     """Return unique ID of IDEA message. It is done by UUID in this implementation."""
     return str(uuid4())
 
@@ -40,8 +40,6 @@ def getIDEAtime(unirecField = None):
 # Ideally it should all be done in Python using overloaded ArgParse
 
 # TODO: allow setting library verbose mode
-
-# TODO: Node.Name shouldn't be hard-coded in convertors, it should be passed by parameter
 
 # Template of module description
 desc_template = """
