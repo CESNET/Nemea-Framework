@@ -12,6 +12,9 @@ endif
 if ENABLE_PYTHON
 SUBDIRS+=python
 endif
+if ENABLE_PYCOMMON
+SUBDIRS+=pycommon
+endif
 
 EXTRA_DIST=README.md
 

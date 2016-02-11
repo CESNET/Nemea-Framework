@@ -46,6 +46,7 @@ AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AC_CONFIG_FILES([Makefile
+		 pycommon/Makefile
 		 nemea.spec
 		 create_module.sh])
 
@@ -56,6 +57,10 @@ AC_ARG_ENABLE([libtrap], AC_HELP_STRING([--disable-libtrap], [Disable libtrap.])
 AC_ARG_ENABLE([common], AC_HELP_STRING([--disable-common], [Disable nemea-common.]),
         [AM_CONDITIONAL([ENABLE_NEMEACOMMON], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_NEMEACOMMON], [true])])
+
+AC_ARG_ENABLE([pycommon], AC_HELP_STRING([--disable-pycommon], [Disable nemea-pycommon.]),
+        [AM_CONDITIONAL([ENABLE_PYCOMMON], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_PYCOMMON], [true])])
 
 AC_ARG_ENABLE([unirec], AC_HELP_STRING([--disable-unirec], [Disable UniRec.]),
         [AM_CONDITIONAL([ENABLE_UNIREC], [test "x$enableval" = xyes])],
