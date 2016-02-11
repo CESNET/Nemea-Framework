@@ -437,9 +437,10 @@ void b_plus_tree_destroy(void *tree);
 int b_plus_tree_delete_item(void *btree, void *key);
 
 /*!
- * \brief Delete item from list
+ * \brief Delete item given by list iterator
+ * After deletion, iterator will point to the next item in the list (if any).
  * \param[in] btree pointer to tree
- * \param[in] delete_item structure to list item
+ * \param[inout] delete_item structure to list item
  * \return 1 ON SUCCESS,  0 END OF LIST
  */
 int b_plus_tree_delete_item_from_list(void *btree, b_plus_tree_item *delete_item);
@@ -447,7 +448,7 @@ int b_plus_tree_delete_item_from_list(void *btree, b_plus_tree_item *delete_item
 /*!
  * \brief Get list of items in tree
  * \param[in] t pointer to tree
- * \param[in] item pointer to item list structure
+ * \param[out] item pointer to item list structure
  * \return 1 ON SUCCESS,  0 tree is empty
  */
 int b_plus_tree_get_list(void *t, b_plus_tree_item *item);
@@ -466,9 +467,9 @@ b_plus_tree_item *b_plus_tree_create_list_item(void *btree);
 void b_plus_tree_destroy_list_item(b_plus_tree_item *item);
 
 /*!
- * \brief Get next intem from list
+ * \brief Get next item from list
  * \param[in] t pointer to tree
- * \param[in] item pointer to item
+ * \param[inout] item pointer to item
  * \return 1 ON SUCCESS,  0 END OF LIST
  */
 int b_plus_tree_get_next_item_from_list(void *t, b_plus_tree_item *item);
