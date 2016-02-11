@@ -47,6 +47,8 @@ AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AC_CONFIG_FILES([Makefile
 		 pycommon/Makefile
+		 python/Makefile
+		 python/unirec/Makefile
 		 nemea.spec
 		 create_module.sh])
 
@@ -70,7 +72,7 @@ AC_ARG_ENABLE([python], AC_HELP_STRING([--disable-python], [Disable python wrapp
         [AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_PYTHON], [true])])
 
-AC_CONFIG_SUBDIRS([libtrap common python unirec])
+AC_CONFIG_SUBDIRS([libtrap common unirec])
 AC_OUTPUT
 
 echo
