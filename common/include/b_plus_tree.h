@@ -62,15 +62,6 @@
 #define EXTEND_INNER 0
  /* /} */
 
-/*!
- * \name Compare values
- *  Used for compare function.
- * \{ */
-#define EQUAL 0
-#define LESS -1
-#define MORE 1
- /* /} */
-
 typedef struct c_node c_node;
 /*!
  * \brief Structure - B+ tree - node structure
