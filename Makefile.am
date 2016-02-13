@@ -15,6 +15,9 @@ endif
 if ENABLE_PYCOMMON
 SUBDIRS+=pycommon
 endif
+if ENABLE_EXAMPLES
+SUBDIRS+=examples
+endif
 
 EXTRA_DIST=README.md
 
