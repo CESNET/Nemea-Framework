@@ -23,7 +23,7 @@ size_table = {
    b"ipaddr" : 16,
    b"time" : 8,
    b"string" : -1,
-   b"bytes*" : -1,
+   b"bytes" : -1,
 }
 
 python_types = {
@@ -41,7 +41,7 @@ python_types = {
    b"ipaddr" : (IPAddr, "16s"),
    b"time" : (Timestamp, "8s"),
    b"string" : (str, "s"),
-   b"bytes*" : (str, "s"),
+   b"bytes" : (str, "s"),
 }
 
 
@@ -60,7 +60,7 @@ size_table = {
    b"ipaddr" : 16,
    b"time" : 8,
    b"string" : -1,
-   b"bytes*" : -1,
+   b"bytes" : -1,
 }
 
 type_table = {
@@ -78,7 +78,7 @@ type_table = {
    b"ipaddr" : b"UR_TYPE_IP",
    b"time" : b"UR_TYPE_TIME",
    b"string" : b"UR_TYPE_STRING",
-   b"bytes*" : b"UR_TYPE_BYTES",
+   b"bytes" : b"UR_TYPE_BYTES",
 }
 
 c_types = {
@@ -96,6 +96,6 @@ c_types = {
    b"ipaddr" : b"ip_addr_t",
    b"time" : b"time_t",
    b"string" : b"char",
-   b"bytes*" : b"char",
+   b"bytes" : b"char",
 }
 

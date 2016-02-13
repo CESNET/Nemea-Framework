@@ -1,8 +1,6 @@
 SUBDIRS=unirec
 
-pkgdata_DATA=trap.py setup.py
-
-EXTRA_DIST=AUTHORS COPYING ${pkgdata_DATA}
+EXTRA_DIST=AUTHORS COPYING trap.py setup.py
 
 if MAKE_RPMS
 .PHONY: rpm
