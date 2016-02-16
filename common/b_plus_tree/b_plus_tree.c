@@ -329,7 +329,7 @@ int c_b_tree_plus_search(void *key, c_leaf_node **val, c_b_tree_plus *btree)
       return (-1);
    }
    *val = (c_leaf_node *) node->extend;
-   return result + 1;
+   return result;
 }
 
 int c_b_tree_plus_find_my_index_in_parent(c_node *son)
