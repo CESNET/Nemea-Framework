@@ -23,6 +23,8 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(PYTHON, python, python, [""])
+AC_SUBST(PYTHON)
 
 # Checks for header files.
 
@@ -72,7 +74,11 @@ AC_ARG_ENABLE([python], AC_HELP_STRING([--disable-python], [Disable python wrapp
         [AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_PYTHON], [true])])
 
-AC_CONFIG_SUBDIRS([libtrap common unirec])
+AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.]),
+        [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
+
+AC_CONFIG_SUBDIRS([libtrap common unirec examples])
 AC_OUTPUT
 
 echo
@@ -99,5 +105,6 @@ echo "  libtrap................: `if [[ -z "$ENABLE_LIBTRAP_TRUE" ]]; then echo 
 echo "  nemea-common...........: `if [[ -z "$ENABLE_NEMEACOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  python.................: `if [[ -z "$ENABLE_PYTHON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  unirec.................: `if [[ -z "$ENABLE_UNIREC_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 

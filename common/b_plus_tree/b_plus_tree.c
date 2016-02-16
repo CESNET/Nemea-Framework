@@ -111,7 +111,7 @@ int c_node_find_index_key(void *key, c_node *node, c_b_tree_plus *btree)
 {
    int i;
    for (i = 0; i < node->count - 1; i++) {
-      if (btree->compare((char*)(node->key) + (i * btree->size_of_key), key) == EQUAL) {
+      if (btree->compare((char*)(node->key) + (i * btree->size_of_key), key) == 0) {
          return i;
       }
    }
@@ -201,7 +201,7 @@ int c_leaf_node_add_key_value(void *key, c_node *node, c_b_tree_plus *btree,
    }
    //find position of new item
    i = node->count - 2; //index of last item
-   while (i >= 0 && btree->compare((char*)(node->key) + (i * btree->size_of_key), key) == MORE) {
+   while (i >= 0 && btree->compare((char*)(node->key) + (i * btree->size_of_key), key) > 0) {
       //node->key[i + 1] = node->key[i];
       memcpy((char*)(node->key) + (i + 1) * btree->size_of_key,
              (char*)(node->key) + (i) * btree->size_of_key,
@@ -256,7 +256,7 @@ int c_inner_node_addKey(void *add, c_node * left, c_node * right, c_node * node,
 
    inner = (c_inner_node *) node->extend;
    i = node->count - 2;
-   while (i >= 0 && btree->compare((char*)(node->key) + i * btree->size_of_key, add) == MORE) {
+   while (i >= 0 && btree->compare((char*)(node->key) + i * btree->size_of_key, add) > 0) {
       //key[i + 1] = key[i];
       copy_key(node->key, i + 1, node->key, i, btree->size_of_key);
       inner->child[i + 2] = inner->child[i + 1];
@@ -408,7 +408,7 @@ c_node *c_b_tree_plus_find_leaf(void *key, c_b_tree_plus *btree)
       go_right = 0;
       for (i = 0; i < pos->count - 1; i++) {
          result = btree->compare(key, (char*)(pos->key) + i * btree->size_of_key);
-         if ((result == LESS) || (result == EQUAL)) {
+         if ((result <= 0)) {
             pos = pos2->child[i];
             go_right = 1;
             break;

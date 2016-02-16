@@ -97,7 +97,7 @@ const int ur_field_type_size[] = {
 
 const char *ur_field_type_str[] = {
 	"string", /*UR_TYPE_STRING*/
-	"bytes*", /*UR_TYPE_BYTES*/
+	"bytes", /*UR_TYPE_BYTES*/
 	"char", /*UR_TYPE_CHAR*/
 	"uint8", /*UR_TYPE_UINT8*/
 	"int8", /*UR_TYPE_INT8*/

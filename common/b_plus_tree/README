@@ -18,9 +18,9 @@ the function are number of children for node, size of the table, pointer to func
 comparing keys, size of the value, length of the key used for "indexing" stored items
 
 Function for comparing keys has two parameters (two keys which are compared),
-returns  0 - a==b,
-        -1 - a<b,
-         1 - a>b.
+returns         zero - a==b,
+        negative int - a<b,
+        positive int - a>b.
 
    For inserting or searching there is b_plus_tree_insert_or_find_item() function.
 Parameters are pointer to b+ tree structure and key which should be added. The return

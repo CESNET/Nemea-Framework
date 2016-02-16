@@ -1,3 +1,4 @@
+2015-06-26 (Tomas Cejka): Moved from internal repo to github for testing.
 2015-06-20 (Tomas Cejka): libtrap: tests: rxtx removed sleep in test, replaced by wait
 2015-06-19 (Tomas Cejka): libtrap: CLEANUP removed commented unused code
 2015-06-19 (Tomas Cejka): libtrap: doc revision
