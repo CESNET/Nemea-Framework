@@ -1,1 +1,1 @@
-SUBDIRS=module
+SUBDIRS=module python
