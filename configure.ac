@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-framework], [1.0.0], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-framework], [2.0.0], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -23,6 +23,8 @@ AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(PYTHON, python, python, [""])
+AC_SUBST(PYTHON)
 
 # Checks for header files.
 
@@ -46,6 +48,9 @@ AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AC_CONFIG_FILES([Makefile
+		 pycommon/Makefile
+		 python/Makefile
+		 python/unirec/Makefile
 		 nemea.spec
 		 create_module.sh])
 
@@ -57,6 +62,10 @@ AC_ARG_ENABLE([common], AC_HELP_STRING([--disable-common], [Disable nemea-common
         [AM_CONDITIONAL([ENABLE_NEMEACOMMON], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_NEMEACOMMON], [true])])
 
+AC_ARG_ENABLE([pycommon], AC_HELP_STRING([--disable-pycommon], [Disable nemea-pycommon.]),
+        [AM_CONDITIONAL([ENABLE_PYCOMMON], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_PYCOMMON], [true])])
+
 AC_ARG_ENABLE([unirec], AC_HELP_STRING([--disable-unirec], [Disable UniRec.]),
         [AM_CONDITIONAL([ENABLE_UNIREC], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_UNIREC], [true])])
@@ -65,7 +74,11 @@ AC_ARG_ENABLE([python], AC_HELP_STRING([--disable-python], [Disable python wrapp
         [AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_PYTHON], [true])])
 
-AC_CONFIG_SUBDIRS([libtrap common python unirec])
+AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.]),
+        [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
+
+AC_CONFIG_SUBDIRS([libtrap common unirec examples])
 AC_OUTPUT
 
 echo
@@ -92,5 +105,6 @@ echo "  libtrap................: `if [[ -z "$ENABLE_LIBTRAP_TRUE" ]]; then echo 
 echo "  nemea-common...........: `if [[ -z "$ENABLE_NEMEACOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  python.................: `if [[ -z "$ENABLE_PYTHON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  unirec.................: `if [[ -z "$ENABLE_UNIREC_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 

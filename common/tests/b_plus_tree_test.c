@@ -119,8 +119,50 @@ int compare_key(void * a, void * b)
    }
 }
 
+int check_search_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
+{
+   int ret_val = 0;
+   uint32_t i;
+   b_value_t *value_pt;
+   b_key_t *key_pt;
+   double time_diff;
+   c_leaf_node *leaf;
+   struct timespec start_time = {0,0}, end_time = {0,0};
+   clock_gettime(CLOCK_MONOTONIC, &start_time);
+   i = 0;
+   while (i < test_count && pairs[i].deleted == 1) {
+      i++;
+   }
+   while (i < test_count) {
+      //value from bplus item structure
+      value_pt = b_plus_tree_search(tree, &(pairs[i].key));
+      if (value_pt == NULL) {
+         fprintf(stderr, "ERROR during searching item in the tree by function b_plus_tree_search.\n");
+         ret_val = -3;
+         goto exit_label2;
+      }
+      if (pairs[i].value != value_pt->value) {
+         fprintf(stderr, "ERROR, during iteration through the tree. Key is %u. Expected value: %lu, value in the tree:%lu\n", pairs[i].key, pairs[i].value, value_pt->value);
+         ret_val = -4;
+         goto exit_label2;
+      }
+      i++;
+      while (i < test_count && pairs[i].deleted == 1) {
+         i++;
+      }
+   }
 
-int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count )
+exit_label2:
+   if (ret_val >= 0) {
+      clock_gettime(CLOCK_MONOTONIC, &end_time);
+      time_diff = difftime_ms(end_time, start_time);
+      time_one_set_of_test += time_diff;
+      printf("OK. Time: %fs\n", time_diff);
+   }
+   return ret_val;
+}
+
+int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
 {
    int ret_val = 0;
    b_plus_tree_item *b_item = NULL;
@@ -286,6 +328,14 @@ int run_tests(int test_count, int tree_size_leaf)
       ret_val = ret;
       goto exit_label;
    }
+   //test sort of items
+   printf("TEST - Seach of inserted items\n");
+   ret = check_search_of_items(pairs, tree, test_count);
+   if (ret < 0) {
+      //error
+      ret_val = ret;
+      goto exit_label;
+   }
 
    //delete test - random delete of some items - 50% should be deleted
    printf("TEST - Deleting approximately 50%% of items\n");
@@ -313,8 +363,15 @@ int run_tests(int test_count, int tree_size_leaf)
    printf("OK - %d items were deleted. Time: %fs\n", count_of_deleted_items, time_diff);
 
    //test - checking the reamining items
-   printf("TEST - Check remaing items after deleting.\n");
+   printf("TEST - Check remaing items after deleting. - Iteration function.\n");
    ret = check_sort_of_items(pairs, tree, test_count);
+   if (ret < 0) {
+      //error
+      ret_val = ret;
+      goto exit_label;
+   }
+   printf("TEST - Check remaing items after deleting. - Searchnig function.\n");
+   ret = check_search_of_items(pairs, tree, test_count);
    if (ret < 0) {
       //error
       ret_val = ret;
@@ -389,8 +446,15 @@ int run_tests(int test_count, int tree_size_leaf)
    printf("OK - %d items were deleted. Time: %fs\n", count_of_deleted_items, time_diff);
 
    //test - checking the reamining items
-   printf("TEST - Check remaing items after deleting.\n");
+   printf("TEST - Check remaing items after deleting. - Iteration function.\n");
    ret = check_sort_of_items(pairs, tree, test_count);
+   if (ret < 0) {
+      //error
+      ret_val = ret;
+      goto exit_label;
+   }
+   printf("TEST - Check remaing items after deleting. - Searchnig function.\n");
+   ret = check_search_of_items(pairs, tree, test_count);
    if (ret < 0) {
       //error
       ret_val = ret;

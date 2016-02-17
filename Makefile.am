@@ -1,4 +1,5 @@
 SUBDIRS=
+PYTHON_SUBDIRS=
 
 if ENABLE_LIBTRAP
 SUBDIRS+=libtrap
@@ -11,6 +12,14 @@ SUBDIRS+=common
 endif
 if ENABLE_PYTHON
 SUBDIRS+=python
+PYTHON_SUBDIRS+=python
+endif
+if ENABLE_PYCOMMON
+SUBDIRS+=pycommon
+PYTHON_SUBDIRS+=pycommon
+endif
+if ENABLE_EXAMPLES
+SUBDIRS+=examples
 endif
 
 EXTRA_DIST=README.md
@@ -18,3 +27,13 @@ EXTRA_DIST=README.md
 bin_SCRIPTS=create_module.sh
 
 ACLOCAL_AMFLAGS=-I m4
+
+install-exec-hook:
+	@echo -e "\n\n"
+	@echo "For installation of Python components run the following commands as root:"
+	@for i in ${PYTHON_SUBDIRS}; do \
+		echo -e "(cd $${i}; ${PYTHON} setup.py install --record=installed-files.txt;)\n"; \
+	done
+	@echo -e "\n\n"
+
+

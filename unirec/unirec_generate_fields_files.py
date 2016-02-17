@@ -115,17 +115,8 @@ def parse_field(field_str, fields):
    try:
       size = size_table[x[0]]
    except KeyError:
-      if len(x) == 2 and x[1][0] == '*':
-         size = size_table["bytes*"]
-         x[0] = "bytes*"
-         x[1] = x[1][1:]
-      elif len(x) == 3 and x[1] == "*":
-         x[0] = "bytes*"
-         size = size_table["bytes*"]
-         x[1] = x[2]
-      else:
-         print >> sys.stderr, 'Unknown type "%s", on line %i, in %s' % (x[0], line_iterator+1, file)
-         sys.exit(1)
+      print >> sys.stderr, 'Unknown type "%s", on line %i, in %s' % (x[0], line_iterator+1, file)
+      sys.exit(1)
    notapend = False
    for elem in fields:
       if elem[0] == x[1]:
