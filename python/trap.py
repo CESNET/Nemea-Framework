@@ -50,7 +50,7 @@ libpath = find_library("c")
 if not libpath:
     print("libc was not found.")
     sys.exit(1)
-lib = CDLL(libpath) # note: if libtrap will ever work on Windows, here should be "msvcrt" then
+libc = CDLL(libpath) # note: if libtrap will ever work on Windows, here should be "msvcrt" then
 
 
 # ***** Error handling and exceptions *****
