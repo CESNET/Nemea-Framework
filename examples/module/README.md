@@ -3,17 +3,25 @@
 ## Installation
 Follow these steps:
 
-1) Let Autotools process the configuration files.\
-    `autoreconf -i`
+1) Let Autotools process the configuration files.
+```
+autoreconf -i
+```
 
-2) Configure the module directory.\
-    `./configure`
+2) Configure the module directory.
+```
+./configure
+```
 
-3) Build the module.\
-    `make`
+3) Build the module.
+```
+make
+```
 
-4) Install the module. The command should be performed as root (e.g. using sudo).\
-    `make install`
+4) Install the module. The command should be performed as root (e.g. using sudo).
+```
+make install
+```
 
 Important: Nemea-Framework has to be compiled (or installed) in advance.
 
