@@ -18,6 +18,9 @@ if ENABLE_PYCOMMON
 SUBDIRS+=pycommon
 PYTHON_SUBDIRS+=pycommon
 endif
+if ENABLE_EXAMPLES
+SUBDIRS+=examples
+endif
 
 EXTRA_DIST=README.md
 
@@ -26,12 +29,11 @@ bin_SCRIPTS=create_module.sh
 ACLOCAL_AMFLAGS=-I m4
 
 install-exec-hook:
-	@for i in $(PYTHON_SUBDIRS); do \
-		(cd $${i}; $(PYTHON) setup.py install --record=installed-files.txt;) \
+	@echo -e "\n\n"
+	@echo "For installation of Python components run the following commands as root:"
+	@for i in ${PYTHON_SUBDIRS}; do \
+		echo -e "(cd $${i}; ${PYTHON} setup.py install --record=installed-files.txt;)\n"; \
 	done
+	@echo -e "\n\n"
 
-uninstall-hook:
-	@for i in $(PYTHON_SUBDIRS); do \
-		(cd $${i}; cat installed-files.txt | xargs rm -rf;) \
-	done
 

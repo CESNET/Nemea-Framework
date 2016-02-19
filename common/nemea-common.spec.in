@@ -12,13 +12,14 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 
 BuildRequires: gcc make doxygen pkgconfig 
 Provides: nemea-common
+Requires: libxml2
 
 %description
 
 %package devel
 Summary: Nemea-common development package containing hash table interface etc.
 Group: Liberouter
-Requires: nemea-common = %{version}-%{release}
+Requires: nemea-common = %{version}-%{release} libxml2-devel
 Provides: nemea-common-devel
 
 %description devel

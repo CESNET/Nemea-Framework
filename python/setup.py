@@ -6,7 +6,7 @@ LONG_DESCRIPTION="""This distribution contains two related modules/packages:
   unirec: Python version of a data structure used in TRAP
 """
 setup(name='nemea-python',
-      version='2.0.0',
+      version='2.0.1',
       py_modules=['trap'],
       packages=['unirec'],
       author='Vaclav Bartos, CESNET',

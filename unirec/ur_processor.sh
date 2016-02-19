@@ -88,7 +88,7 @@ find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) -exec grep -l
 # print contents of UR_FIELDS
    sed -n '/^\s*UR_FIELDS\s*([^)]*$/,/)/p; /^\s*UR_FIELDS\s*([^)]*$/,/)/p' 2>/dev/null |
 # clean output to get fields only
-   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//; s/bytes \*/bytes /g' |
+   sed 's/^\s*UR_FIELDS\s*(\s*//g; s/)//g; s/,/\r/g; /^\s*$/d; s/^\s*//; s/\s\s*/ /g; s/\s\s*$//' |
 # sort by name
    sort -k2 -t' ' | uniq |
 # check for conflicting types and print type, name, size of fields
