@@ -81,7 +81,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
                break
       (field_names, FIELDS) = genFieldsFromNegotiation(field_names)
 
-   field_names = tuple(sorted(field_names,key=lambda f1: FIELDS[f1].size, reverse=True))
+   field_names = tuple(sorted(field_names,cmp=cmpFields))
 
    # Validate fields
    if not field_names:
@@ -99,7 +99,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
    _field_types = dict(zip([f.decode('ascii') for f in field_names], [FIELDS[f].python_type for f in field_names]))
    _staticfmt = "="+''.join(FIELDS[f].struct_type for f in field_names if FIELDS[f].size != -1)
    minimalsize = sum(FIELDS[x].size if FIELDS[x].size != -1 else 4 for x in field_names)
-   staticsize = sum(FIELDS[x].size for x in field_names if x != -1)
+   staticsize = sum(FIELDS[x].size for x in field_names if FIELDS[x].size != -1)
    _slots = tuple(f.decode('ascii') for f in field_names)
 
    FIELDS  = strFIELDS
@@ -119,7 +119,6 @@ def CreateTemplate(template_name, field_names, verbose=False):
             index += 1
          # dynamic unpacking
          offset = staticsize
-         last_end = minimalsize
          for key in (x for x in _slots if FIELDS[x].size == -1):
             start, length = struct.unpack_from("=HH", data, offset)
             self.__dict__[key] = data[(minimalsize + start):(minimalsize + start + length)]
@@ -215,7 +214,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
    def serialize(self):
       staticvals = tuple(self.__dict__[key].toUniRec() if (FIELDS[key].struct_type[-1] == "s" and FIELDS[key].python_type != str) else self.__dict__[key] for key in _slots if FIELDS[key].size != -1) 
       s = struct.pack(_staticfmt, *staticvals)
-      offset = 0 # not staticsize?
+      offset = 0
       for key in (x for x in _slots if FIELDS[x].size == -1):
          length = len(self.__dict__[key])
          s += struct.pack("=HH", offset, length)
