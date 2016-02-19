@@ -44,25 +44,6 @@ python_types = {
    b"bytes" : (str, "s"),
 }
 
-
-size_table = {
-   b"char" : 1,
-   b"uint8" : 1,
-   b"int8" : 1,
-   b"uint16" : 2,
-   b"int16" : 2,
-   b"uint32" : 4,
-   b"int32" : 4,
-   b"uint64" : 8,
-   b"int64" : 8,
-   b"float" : 4,
-   b"double" : 8,
-   b"ipaddr" : 16,
-   b"time" : 8,
-   b"string" : -1,
-   b"bytes" : -1,
-}
-
 type_table = {
    b"char" : b"UR_TYPE_CHAR",
    b"uint8" : b"UR_TYPE_UINT8",
