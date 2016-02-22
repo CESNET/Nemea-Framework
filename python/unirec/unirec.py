@@ -18,16 +18,15 @@ if sys.version_info > (3,):
    bytes = bytes
    basestring = (str,bytes)
    import functools # because of backward compatibility with python 2.6 (cmp_to_key is available since Python 2.7)
-   def my_sorted(to_sort, cmp):
-       return sorted(to_sort,key=functools.cmp_to_key(cmp))
+   newsorted = sorted
+   def sorted(to_sort, cmp):
+      return newsorted(to_sort,key=functools.cmp_to_key(cmp))
 else:
    str = str
    unicode = unicode
    basestring = basestring
    def bytes(string, encoding):
        return str(string)
-   def my_sorted(to_sort, cmp):
-       return sorted(to_sort,cmp)
 
 FIELD_GROUPS = {
 }
@@ -91,7 +90,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
                break
       (field_names, FIELDS) = genFieldsFromNegotiation(field_names)
 
-   field_names = tuple(my_sorted(field_names,cmp=cmpFields))
+   field_names = tuple(sorted(field_names,cmp=cmpFields))
 
    # Validate fields
    if not field_names:
