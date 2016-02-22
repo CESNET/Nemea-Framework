@@ -6,9 +6,8 @@ AC_INIT([nemea-framework], [2.0.0], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([foreign subdir-objects])
+AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
-LT_INIT()
 RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
@@ -16,11 +15,6 @@ USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
 AC_SUBST(USERMAIL)
 
-
-# Checks for programs.
-AC_PROG_CC
-AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 AC_CHECK_PROG(PYTHON, python, python, [""])
@@ -47,13 +41,6 @@ RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
-AC_CONFIG_FILES([Makefile
-		 pycommon/Makefile
-		 python/Makefile
-		 python/unirec/Makefile
-		 nemea.spec
-		 create_module.sh])
-
 AC_ARG_ENABLE([libtrap], AC_HELP_STRING([--disable-libtrap], [Disable libtrap.]),
         [AM_CONDITIONAL([ENABLE_LIBTRAP], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_LIBTRAP], [true])])
@@ -77,6 +64,13 @@ AC_ARG_ENABLE([python], AC_HELP_STRING([--disable-python], [Disable python wrapp
 AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.]),
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
+
+AC_CONFIG_FILES([Makefile
+		 pycommon/Makefile
+		 python/Makefile
+		 python/unirec/Makefile
+		 nemea.spec
+		 create_module.sh])
 
 AC_CONFIG_SUBDIRS([libtrap common unirec examples])
 AC_OUTPUT
