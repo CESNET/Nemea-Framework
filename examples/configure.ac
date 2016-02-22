@@ -17,6 +17,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects])
 # Checks for library functions.
 
 AC_CONFIG_FILES([Makefile
+                 libtrap/Makefile
                  python/Makefile])
 AC_CONFIG_SUBDIRS([module])
 AC_OUTPUT

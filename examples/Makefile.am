@@ -1,1 +1,1 @@
-SUBDIRS=module python
+SUBDIRS=module python libtrap

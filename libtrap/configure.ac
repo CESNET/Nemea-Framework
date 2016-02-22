@@ -145,7 +145,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  include/Makefile
                  tests/Makefile
-                 examples/Makefile
+                 tools/Makefile
                  libtrap.pc
                  libtrap.spec
                  Doxyfile
@@ -173,10 +173,6 @@ AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing mo
 AC_ARG_ENABLE([long-tests], AC_HELP_STRING([--enable-long-tests], [Run long performance tests (--enable-tests must be used for any effect)]),
         [AM_CONDITIONAL([ENABLE_LONG_TESTS], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_LONG_TESTS], [false])])
-
-AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-examples],[Compile with example modules]),
-        [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
-        [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
 
 AC_ARG_ENABLE([debugifc], AC_HELP_STRING([--enable-debugifc],
       [Compile IFC with debug messages]),
@@ -266,6 +262,5 @@ echo "  prefix...............: $prefix"
 echo
 echo "Tests..................: `if [[ -z "$ENABLE_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "Long performance tests.: `if [[ -z "$ENABLE_LONG_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
-echo "Examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 
