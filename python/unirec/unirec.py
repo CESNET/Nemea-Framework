@@ -17,12 +17,17 @@ if sys.version_info > (3,):
    unicode = str
    bytes = bytes
    basestring = (str,bytes)
+   import functools # because of backward compatibility with python 2.6 (cmp_to_key is available since Python 2.7)
+   def my_sorted(to_sort, cmp):
+       return sorted(to_sort,key=functools.cmp_to_key(cmp))
 else:
    str = str
    unicode = unicode
    basestring = basestring
    def bytes(string, encoding):
        return str(string)
+   def my_sorted(to_sort, cmp):
+       return sorted(to_sort,cmp)
 
 FIELD_GROUPS = {
 }
@@ -50,8 +55,13 @@ def cmpFields(f1, f2):
       return 1
    elif (size1 > size2):
       return -1
-   else:
-      return cmp(f1, f2)
+   else: # the cmp function is not available in Python3
+      if f1 < f2:
+         return -1
+      elif f1 > f2:
+         return 1
+      else:
+         return 0
 
 # Inspired by "Records" python recipe by George Sakkis available at:
 # http://code.activestate.com/recipes/576555/
@@ -81,7 +91,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
                break
       (field_names, FIELDS) = genFieldsFromNegotiation(field_names)
 
-   field_names = tuple(sorted(field_names,cmp=cmpFields))
+   field_names = tuple(my_sorted(field_names,cmp=cmpFields))
 
    # Validate fields
    if not field_names:
