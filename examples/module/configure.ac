@@ -17,10 +17,30 @@ AX_NEMEACOMMON_CHECK
 AC_PROG_CC
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-ltrap':
-AC_CHECK_LIB([trap], [main])
-# FIXME: Replace `main' with a function in `-lunirec':
-AC_CHECK_LIB([unirec], [main])
+TRAPLIB=""
+PKG_CHECK_MODULES([libtrap], [libtrap], [TRAPLIB="yes"])
+if test -n "$TRAPLIB"; then
+  LDFLAGS="$libtrap_LDFLAGS $LDFLAGS"
+  LIBS="$libtrap_LIBS $LIBS"
+  CFLAGS="$libtrap_CFLAGS $CFLAGS"
+  CXXFLAGS="$libtrap_CFLAGS $CXXFLAGS"
+else
+  AC_MSG_ERROR([Libtrap was not found.])
+fi
+
+UNIRECLIB=""
+PKG_CHECK_MODULES([unirec], [unirec], [UNIRECLIB="yes"])
+if test -n "$UNIRECLIB"; then
+  LDFLAGS="$unirec_LDFLAGS $LDFLAGS"
+  LIBS="$unirec_LIBS $LIBS"
+  CFLAGS="$unirec_CFLAGS $CFLAGS"
+  CXXFLAGS="$unirec_CFLAGS $CXXFLAGS"
+else
+  AC_MSG_ERROR([unirec was not found.])
+fi
+
+AC_PATH_PROG(UNIRECPROC, ur_processor.sh, [], [/usr/bin/nemea/$PATH_SEPARATOR$PATH])
+AC_SUBST(UNIRECPROC)
 
 # Checks for header files.
 
