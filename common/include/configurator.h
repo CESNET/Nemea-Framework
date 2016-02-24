@@ -44,6 +44,102 @@
 #ifndef _NEMEA_COMMON_CONFIGURATOR_H
 #define _NEMEA_COMMON_CONFIGURATOR_H
 
+
+// PLAIN text configurator
+#ifdef __cplusplus
+
+#include <syslog.h>
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <string>
+#include <pthread.h>
+
+#define INI_DELIM '='
+#define INI_WHITESPACE " \n\r\t"
+
+using namespace std;
+
+enum ConfigurationStatus {NOT_INIT, INIT_OK, INIT_FAILED};
+
+class Configuration {
+private:
+   map<string, string> values;
+   static pthread_mutex_t config_mutex;
+   static string configFilePath;
+   static ConfigurationStatus initStatus;
+   void parseLine(string line);
+   Configuration();
+   Configuration(Configuration const&){};
+   Configuration& operator=(Configuration const&);
+   ~Configuration(){};
+   static Configuration *instance;
+   void trimString(string &text);
+   ConfigurationStatus load();
+   void clean();
+public:
+   string getValue(string paramName);
+   friend ostream &operator<<(ostream &i, Configuration &c)
+   {
+      map<string, string>::iterator it;
+      i << "Configuration:" << endl;
+      for (it=c.values.begin(); it!=c.values.end(); ++it) {
+         i << "\"" << (*it).first << "\"" << " -> " << "\"" << (*it).second << "\"" << endl;
+      }
+      return i;
+   }
+
+   // Get integer configuration value
+   int get_cfg_val(string name, string param, int def_value,
+      int min_value);
+   // Get status configuration value
+   bool get_cfg_val(string name, string param);
+   // Get float configuration value
+   float get_cfg_val(string name, string param, float def_value);
+
+   /**
+    * \brief Force Configuration to reread configuration file
+    */
+   void reload();
+
+   /**
+    * \brief Lock current setting to prevent reloading during multiple getValue()
+    * \return 0 on success, otherwise nonzero
+    */
+   int lock();
+
+   /**
+    * \brief Unlock current setting - opposite to lock()
+    * \return 0 on success, otherwise nonzero
+    */
+   int unlock();
+
+   static Configuration *getInstance();
+
+   /**
+    * \brief Clean-up on application exit.
+    * Warning: Do not use this class after calling this method!
+    */
+   static void freeConfiguration();
+
+   /**
+    * \brief Set path to user defined configuration file
+    * \param[in] file Path to configuration file
+    */
+   static void setConfigPath(const string &file);
+
+   /**
+    * \brief Info about inicialization status
+    * \return Status value
+    */
+   static ConfigurationStatus getInitStatus();
+
+};
+#endif
+
+
+// XML configurator
+
 /**
  * Enum for pattern types, used for specifying type of pattern XML config.
  */
@@ -52,7 +148,6 @@ enum patternTypes {
     CONF_PATTERN_STRING
 };
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,7 +155,6 @@ extern "C" {
 int loadConfiguration(char *patternFile, char *userFile, void *userStruct, int patternType);
 void configuratorFreeUAMBS();
 unsigned int configuratorGetArrElemCount(void *arr);
-
 
 #ifdef __cplusplus
 }

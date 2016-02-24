@@ -5,7 +5,8 @@ endif
 
 RPMDIR=RPMBUILD
 lib_LTLIBRARIES=libnemea-common.la
-libnemea_common_la_SOURCES=configurator/configurator.cpp \
+libnemea_common_la_SOURCES=configurator/configurator-xml.cpp \
+                           configurator/configurator-plain.cpp \
                            configurator/configurator-internal.h \
                            cuckoo_hash/cuckoo_hash.c \
 			   cuckoo_hash/hashes.h \
