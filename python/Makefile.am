@@ -1,6 +1,8 @@
 SUBDIRS=unirec
 
-EXTRA_DIST=AUTHORS COPYING nemea-python.spec trap.py setup.py
+EXTRA_DIST=AUTHORS COPYING nemea-python.spec trap.py setup.py test.sh
+
+TESTS = test.sh
 
 if MAKE_RPMS
 RPMFILENAME=nemea-python
