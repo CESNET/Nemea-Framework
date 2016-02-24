@@ -126,20 +126,6 @@ AC_FUNC_MMAP
 AC_FUNC_FORK
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime memset munmap select socket strchr strdup strerror dup2 mkdir])
-AC_CHECK_FUNCS([getopt_long getopt])
-
-# Define TRAP_GETOPT() for example of module_info
-if test "x$ac_cv_func_getopt_long" = xyes; then
-  AC_DEFINE_UNQUOTED([TRAP_GETOPT(argc, argv, optstr, longopts)],
-    [getopt_long(argc, argv, optstr, longopts, NULL)],
-    [Trap getopt macro. Argc and argv are number and values of arguments, optstr is a string containing legitimate option characters, longopts is the array of option structures (unused for on system without getopt_long())])
-elif test "x$ac_cv_func_getopt" = xyes; then
-  AC_DEFINE_UNQUOTED([TRAP_GETOPT(argc, argv, optstr, longopts)],
-  [getopt(argc, argv, optstr)],
-  [Trap getopt macro. Argc and argv are number and values of arguments, optstr is a string containing legitimate option characters, longopts is the array of option structures (unused for on system without getopt_long())])
-else
-  AC_MSG_ERROR([getopt() was not found, module depend on it...])
-fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
