@@ -54,8 +54,6 @@
 
 #include "../include/libtrap/trap.h"
 
-#define MODULES_UNIXSOCKET_PATH_FILENAME_FORMAT   "/tmp/trap-localhost-%s.sock" ///< Modules output interfaces socket, to which connects service thread.
-
 #define SERVICE_GET_COM 10
 #define SERVICE_SET_COM 11
 #define SERVICE_OK_REPLY 12
@@ -70,29 +68,11 @@ union tcpip_socket_addr {
    struct sockaddr_un unix_addr; ///< used for path of UNIX socket
 };
 
-typedef struct in_ifc_stats_s {
-   uint64_t recv_msg_cnt;
-   uint64_t recv_buffer_cnt;
-} in_ifc_stats_t;
-
-typedef struct out_ifc_stats_s {
-   uint64_t sent_msg_cnt;
-   uint64_t dropped_msg_cnt;
-   uint64_t sent_buffer_cnt;
-   uint64_t autoflush_cnt;
-} out_ifc_stats_t;
-
 /**************************/
 
 uint8_t prog_terminated = 0;
 int sd = -1;
-char * dest_port = NULL;
-
-in_ifc_stats_t *in_ifc_stats = NULL;
-out_ifc_stats_t *out_ifc_stats = NULL;
-
-int module_num_out_ifc = 0;
-int module_num_in_ifc = 0;
+char * dest_sock = NULL;
 
 int connect_to_module_service_ifc()
 {
@@ -101,7 +81,7 @@ int connect_to_module_service_ifc()
    memset(&addr, 0, sizeof(addr));
 
    addr.unix_addr.sun_family = AF_UNIX;
-   snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, MODULES_UNIXSOCKET_PATH_FILENAME_FORMAT, dest_port);
+   snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, dest_sock);
    sd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sd == -1) {
          return -1;
@@ -120,7 +100,9 @@ int decode_cnts_from_json(char **data)
 {
    size_t arr_idx = 0;
 
-   uint32_t in_ifc_cnt = 0, out_ifc_cnt = 0;
+   uint64_t ifc_cnts[4];
+   memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
+   uint8_t msg_idx = 0, buffers_idx = 1, dropped_msg_idx = 2, af_idx = 3;
 
    json_error_t error;
    json_t *json_struct = NULL;
@@ -148,105 +130,106 @@ int decode_cnts_from_json(char **data)
     }
 
 
-    if (module_num_in_ifc > 0) {
-      // Get value of the key "in" from json root elem (it should be an array of json objects - every object contains counters of one input interface)
-      in_ifces_arr = json_object_get(json_struct, "in");
-      if (in_ifces_arr == NULL) {
-         printf("[ERROR] Could not get key \"in\" from root json object while parsing modules stats.\n");
+   // Get value of the key "in" from json root elem (it should be an array of json objects - every object contains counters of one input interface)
+   in_ifces_arr = json_object_get(json_struct, "in");
+   if (in_ifces_arr == NULL) {
+      printf("[ERROR] Could not get key \"in\" from root json object while parsing modules stats.\n");
+      json_decref(json_struct);
+      return -1;
+   }
+
+   if (json_is_array(in_ifces_arr) == 0) {
+      printf("[ERROR] Value of key \"in\" is not a json array.\n");
+      json_decref(json_struct);
+      return -1;
+   }
+
+   printf("Input interfaces:\n");
+   json_array_foreach(in_ifces_arr, arr_idx, in_ifc_cnts) {
+      if (json_is_object(in_ifc_cnts) == 0) {
+         printf("[ERROR] Counters of an input interface are not a json object in received json structure.\n");
          json_decref(json_struct);
          return -1;
       }
 
-      if (json_is_array(in_ifces_arr) == 0) {
-         printf("[ERROR] Value of key \"in\" is not a json array.\n");
+      cnt = json_object_get(in_ifc_cnts, "messages");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an input interface json object.\n", "messages");
          json_decref(json_struct);
          return -1;
       }
+      ifc_cnts[msg_idx] = json_integer_value(cnt);
 
-      json_array_foreach(in_ifces_arr, arr_idx, in_ifc_cnts) {
-         if (json_is_object(in_ifc_cnts) == 0) {
-            printf("[ERROR] Counters of an input interface are not a json object in received json structure.\n");
-            json_decref(json_struct);
-            return -1;
-         }
 
-         cnt = json_object_get(in_ifc_cnts, "messages");
-         if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an input interface json object.\n", "messages");
-            json_decref(json_struct);
-            return -1;
-         }
-         in_ifc_stats[in_ifc_cnt].recv_msg_cnt = json_integer_value(cnt);
-
-         cnt = json_object_get(in_ifc_cnts, "buffers");
-         if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an input interface json object.\n", "buffers");
-            json_decref(json_struct);
-            return -1;
-         }
-         in_ifc_stats[in_ifc_cnt].recv_buffer_cnt = json_integer_value(cnt);
-
-         in_ifc_cnt++;
+      cnt = json_object_get(in_ifc_cnts, "buffers");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an input interface json object.\n", "buffers");
+         json_decref(json_struct);
+         return -1;
       }
+      ifc_cnts[buffers_idx] = json_integer_value(cnt);
+
+      printf("\tIFC %d> RM: %" PRIu64 ", RB: %" PRIu64 "\n", (int) arr_idx, ifc_cnts[msg_idx], ifc_cnts[buffers_idx]);
+      memset(ifc_cnts, 0, 2 * sizeof(uint64_t));
    }
 
 
-   if (module_num_out_ifc > 0) {
-      // Get value of the key "out" from json root elem (it should be an array of json objects - every object contains counters of one output interface)
-      out_ifces_arr = json_object_get(json_struct, "out");
-      if (out_ifces_arr == NULL) {
-         printf("[ERROR] Could not get key \"out\" from root json object while parsing modules stats.\n");
+   // Get value of the key "out" from json root elem (it should be an array of json objects - every object contains counters of one output interface)
+   out_ifces_arr = json_object_get(json_struct, "out");
+   if (out_ifces_arr == NULL) {
+      printf("[ERROR] Could not get key \"out\" from root json object while parsing modules stats.\n");
+      json_decref(json_struct);
+      return -1;
+   }
+
+   if (json_is_array(out_ifces_arr) == 0) {
+      printf("[ERROR] Value of key \"out\" is not a json array.\n");
+      json_decref(json_struct);
+      return -1;
+   }
+
+   printf("Output interfaces:\n");
+   json_array_foreach(out_ifces_arr, arr_idx, out_ifc_cnts) {
+      if (json_is_object(out_ifc_cnts) == 0) {
+         printf("[ERROR] Counters of an output interface are not a json object in received json structure.\n");
          json_decref(json_struct);
          return -1;
       }
 
-      if (json_is_array(out_ifces_arr) == 0) {
-         printf("[ERROR] Value of key \"out\" is not a json array.\n");
+      cnt = json_object_get(out_ifc_cnts, "sent-messages");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "sent-messages");
          json_decref(json_struct);
          return -1;
       }
+      ifc_cnts[msg_idx] = json_integer_value(cnt);
 
-      json_array_foreach(out_ifces_arr, arr_idx, out_ifc_cnts) {
-         if (json_is_object(out_ifc_cnts) == 0) {
-            printf("[ERROR] Counters of an output interface are not a json object in received json structure.\n");
-            json_decref(json_struct);
-            return -1;
-         }
-
-         cnt = json_object_get(out_ifc_cnts, "sent-messages");
-         if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "sent-messages");
-            json_decref(json_struct);
-            return -1;
-         }
-         out_ifc_stats[out_ifc_cnt].sent_msg_cnt = json_integer_value(cnt);
-
-         cnt = json_object_get(out_ifc_cnts, "dropped-messages");
-         if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "dropped-messages");
-            json_decref(json_struct);
-            return -1;
-         }
-         out_ifc_stats[out_ifc_cnt].dropped_msg_cnt = json_integer_value(cnt);
-
-         cnt = json_object_get(out_ifc_cnts, "buffers");
-         if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "buffers");
-            json_decref(json_struct);
-            return -1;
-         }
-         out_ifc_stats[out_ifc_cnt].sent_buffer_cnt = json_integer_value(cnt);
-
-         cnt = json_object_get(out_ifc_cnts, "autoflushes");
-         if (cnt == NULL) {
-            printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "autoflushes");
-            json_decref(json_struct);
-            return -1;
-         }
-         out_ifc_stats[out_ifc_cnt].autoflush_cnt = json_integer_value(cnt);
-
-         out_ifc_cnt++;
+      cnt = json_object_get(out_ifc_cnts, "dropped-messages");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "dropped-messages");
+         json_decref(json_struct);
+         return -1;
       }
+      ifc_cnts[dropped_msg_idx] = json_integer_value(cnt);
+
+      cnt = json_object_get(out_ifc_cnts, "buffers");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "buffers");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_cnts[buffers_idx] = json_integer_value(cnt);
+
+      cnt = json_object_get(out_ifc_cnts, "autoflushes");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an output interface json object.\n", "autoflushes");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_cnts[af_idx] = json_integer_value(cnt);
+
+      printf("\tIFC %d> SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", (int) arr_idx, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
+      memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
    }
 
    json_decref(json_struct);
@@ -308,26 +291,6 @@ int service_send_data(uint32_t size, void **data)
    return 0;
 }
 
-
-void print_statistics()
-{
-   unsigned int x = 0;
-
-   if (module_num_in_ifc > 0) {
-      printf("Input interfaces:\n");
-      for (x = 0; x < module_num_in_ifc; x++) {
-         printf("\tIFC %d> RM: %" PRIu64 ", RB: %" PRIu64 "\n", x, in_ifc_stats[x].recv_msg_cnt, in_ifc_stats[x].recv_buffer_cnt);
-      }
-   }
-
-   if (module_num_out_ifc > 0) {
-      printf("Output interfaces:\n");
-      for (x = 0; x < module_num_out_ifc; x++) {
-         printf("\tIFC %d> SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", x, out_ifc_stats[x].sent_msg_cnt, out_ifc_stats[x].dropped_msg_cnt, out_ifc_stats[x].sent_buffer_cnt, out_ifc_stats[x].autoflush_cnt);
-      }
-   }
-}
-
 void signal_handler(int catched_signal)
 {
    if (catched_signal == SIGINT) {
@@ -348,46 +311,37 @@ int main (int argc, char **argv)
       printf("[ERROR] Sigaction: signal handler won't catch SIGINT !\n");
    }
 
+   uint32_t buffer_size = 256; // beginning size of the dynamic buffer
+   char * buffer = (char *) calloc(buffer_size, sizeof(char));
+   service_msg_header_t *header = (service_msg_header_t *) calloc(1, sizeof(service_msg_header_t));
    char c = 0;
    int original_argc = argc;
 
    // Parse program arguments
    while (1) {
-      c = getopt(argc, argv, "hi:o:s:");
+      c = getopt(argc, argv, "hs:");
       if (c == -1) {
          break;
       }
 
       switch (c) {
       case 'h':
-         printf("Usage:  ./program  -s service_socket_name  -i number_input_ifces  -o number_output_ifces\n(note: service_socket_name is the string from -i specifier of the running module, -i s:module_serv_sock)\n");
+         printf("Usage:  %s  -s service_socket_path\n", argv[0]);
          return 0;
-      case 'i':
-         module_num_in_ifc = atoi(optarg);
-         break;
-      case 'o':
-         module_num_out_ifc = atoi(optarg);
-         break;
       case 's':
-         dest_port = strdup(optarg);
+         dest_sock = strdup(optarg);
          break;
       }
    }
 
-   if (original_argc != 7) {
-      printf("Usage:  ./program  -s service_socket_name  -i number_input_ifces  -o number_output_ifces\n(note: service_socket_name is the string from -i specifier of the running module, -i s:module_serv_sock)\n");
+   if (original_argc != 3) {
+      printf("Usage:  %s  -s service_socket_path\n", argv[0]);
       return 0;
    } else {
       printf("\x1b[31;1m""Use Control+C to stop me...\n""\x1b[0m");
-      printf("Legend:\n\tRM (received messages)\n\tRB (received buffers)\n\tSM (sent messages)\n\tSB (sent buffers)\n\tAF (autoflushes counter)\n- - - - - - - - - - - - - - - - -\n");
+      printf("Legend:\n\tRM (received messages)\n\tRB (received buffers)\n\tSM (sent messages)\n\tDM (dropped messages)\n\tSB (sent buffers)\n\tAF (autoflushes counter)\n- - - - - - - - - - - - - - - - -\n");
    }
 
-   uint32_t buffer_size = 256;
-   char * buffer = (char *) calloc(buffer_size, sizeof(char));
-   service_msg_header_t *header = (service_msg_header_t *) calloc(1, sizeof(service_msg_header_t));
-
-   in_ifc_stats = (in_ifc_stats_t *) calloc(module_num_in_ifc, sizeof(in_ifc_stats_t));
-   out_ifc_stats = (out_ifc_stats_t *) calloc(module_num_out_ifc, sizeof(out_ifc_stats_t));
 
    // Connect to modules service interface
    if (connect_to_module_service_ifc() == -1) {
@@ -440,8 +394,6 @@ int main (int argc, char **argv)
          break;
       }
 
-      // Print stats
-      print_statistics();
       printf("--- 3 seconds waiting ---\n");
       sleep(3);
    }
@@ -451,24 +403,14 @@ int main (int argc, char **argv)
       buffer = NULL;
    }
 
-   if (in_ifc_stats != NULL) {
-      free(in_ifc_stats);
-      in_ifc_stats = NULL;
-   }
-
-   if (out_ifc_stats != NULL) {
-      free(out_ifc_stats);
-      out_ifc_stats = NULL;
-   }
-
    if (header != NULL) {
       free(header);
       header = NULL;
    }
 
-   if (dest_port != NULL) {
-      free(dest_port);
-      dest_port = NULL;
+   if (dest_sock != NULL) {
+      free(dest_sock);
+      dest_sock = NULL;
    }
 
    return 0;
