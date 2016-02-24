@@ -42,6 +42,19 @@ fi
 AC_PATH_PROG(UNIRECPROC, ur_processor.sh, [], [/usr/bin/nemea/$PATH_SEPARATOR$PATH])
 AC_SUBST(UNIRECPROC)
 
+## If nemea-common is needed, uncomment the following code:
+#NEMEACOMMONLIB=""
+#PKG_CHECK_MODULES([nemeacommon], [nemea-common], [NEMEACOMMONLIB="yes"])
+#if test -n "$NEMEACOMMONLIB"; then
+# LDFLAGS="$nemeacommon_LDFLAGS $LDFLAGS"
+# LIBS="$nemeacommon_LIBS $LIBS"
+# CFLAGS="$nemeacommon_CFLAGS $CFLAGS"
+# CXXFLAGS="$nemeacommon_CFLAGS $CXXFLAGS"
+#else
+# AC_MSG_ERROR([nemea-common was not found.])
+#fi
+
+
 # Checks for header files.
 
 # Checks for typedefs, structures, and compiler characteristics.
