@@ -15,6 +15,8 @@ USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
 AC_SUBST(USERMAIL)
 
+AC_PROG_CC
+
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 AC_CHECK_PROG(PYTHON, python, python, [""])
@@ -69,10 +71,12 @@ AC_CONFIG_FILES([Makefile
 		 pycommon/Makefile
 		 python/Makefile
 		 python/unirec/Makefile
+                 examples/libtrap/Makefile
+                 examples/python/Makefile
 		 nemea.spec
 		 create_module.sh])
 
-AC_CONFIG_SUBDIRS([libtrap common unirec examples])
+AC_CONFIG_SUBDIRS([libtrap common unirec])
 AC_OUTPUT
 
 echo
