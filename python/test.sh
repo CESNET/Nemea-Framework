@@ -52,6 +52,16 @@ cQEGOgAAAAAAAAAAAAEICSf/////AAAAAAAAAABiBDBU/////2ZmZkZUi7tWSQwCa5+Nu1b0AQAA
 SWOokQEGOgAAAAAAAAAAAAEICSf/////AAAAAAAAAABJCQ4+/////1G4HkVJi7tWLbKdz7mNu1bC
 AQAA2NNIUAEGAQAA"
 
+expected="H4sIAHPszVYAA63VTWvbQBAG4Ht/hW5uQRnmY2c/BDoU1wVDahtHFNqLCSQUH5qU4v7/jh3b2S1l
+1To5ziJWj2bfHb2dLO6/Pe62t7vt40M3aRtum8n2x+3d3c/mw82wma/aY3Wznu6r3fb7fTPMP802
+H+frmyGrr99b+Wv7sBNuVsv1sJkunmryh632a6d6v9m5js3s82wxbIYvq9lxYbVeDsvp8nry7s2T
+onfAoMDUHiG9C4caoomfPT0j+SvkK8KBUoe+YwQW/do+I/94hqnDCE7Injm5e1Jsz+peMcX2jO5T
+Im0zdG+qk7j3J7HRIIGkszhGE1MwTkVM2HEERKyLbRsRl4sd5mIJ3mFGdgGFLjAn6wy4CFHrZqeQ
+MFbMFDtBEA4Vc3IhZWYJHOMFZp8gAEXgUDNTJ/ZZIdX7rNH67HMzU4Fm5ylHKyu7f0Wfjug/0IdG
+V8PBHRIkwTpa3aXov6WjdgcNTQqiI3dQxe5gkY5YpoOpIItP/iVkXycjA7OMjA2GQMUl1HJsqDh5
+hUDbmdubbBFHzSFR3WyhVy+52WsZjSD5rOOEIi/psxuJhrfIj41niwbFos9lnNVReIU+B7GaHPiR
+OKOdRxgZ0JwgUvFLcWU2HAvnfUZVrph/A6AVd/WpBwAA"
+
 
 data="`mktemp`"
 out="`mktemp`"
@@ -62,6 +72,11 @@ errors=0
 
 ../examples/python/python_example.py -i "f:$data,f:$out" > orig-data-parsed.txt
 ../examples/python/python_example.py -i "f:$out,b:" > processed-data-parsed.txt
+
+diff orig-data-parsed.txt <(echo -n "$expected" | base64 -d | gunzip) || {
+   echo "Historically stored expected output does not match with the current one. Test failed."
+   ((errors++))
+}
 
 diff orig-data-parsed.txt processed-data-parsed.txt || {
    echo "Python returns different output. Test failed."
@@ -80,6 +95,6 @@ else
 fi
 
 
-rm "$data" "$out"
+rm -f "$data" "$out" logger-orig.txt logger-processed.txt orig-data-parsed.txt processed-data-parsed.txt
 exit $errors
 
