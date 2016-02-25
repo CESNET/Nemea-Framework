@@ -16,7 +16,7 @@ if sys.version_info > (3,):
     basestring = (str, bytes)
     import functools  # because of backward compatibility with python 2.6 (cmp_to_key is available since Python 2.7)
     newsorted = sorted
-    
+
     def sorted(to_sort, cmp):
         return newsorted(to_sort, key=functools.cmp_to_key(cmp))
 else:
@@ -138,7 +138,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
 
     def length(self):
         return len(_slots)
-    
+
     classdict['__len__'] = length
 
     @staticmethod
