@@ -1,0 +1,5 @@
+<map id="TRAP communication module interface" name="TRAP communication module interface">
+<area shape="rect" id="node1" href="$group__tcpip__ifc.html" title="TCP/IP and UNIX socket\l communication interface\l module" alt="" coords="205,5,376,61"/>
+<area shape="rect" id="node2" href="$group__trap__ifc__api.html" title="IFC API" alt="" coords="255,85,326,112"/>
+<area shape="rect" id="node4" href="$group__file__ifc.html" title="file interface module" alt="" coords="221,136,360,163"/>
+</map>
