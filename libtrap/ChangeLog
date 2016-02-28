@@ -1,3 +1,10 @@
+2016-02-24 (Tomas Cejka): Merge branch 'master' of https://github.com/CESNET/Nemea-Framework
+2016-02-24 (Tomas Cejka): examples: build should pass, distcheck still fails
+2016-02-24 (Marek Svepes): libtrap: tools: update of the trap_stats program for reading module's interface statistics
+2016-02-23 (Marek Svepes): libtrap: added "service-ifc.md" file describing principle of the service interface
+2016-02-23 (Tomas Cejka): rpm: add trap_stats into the package
+2016-02-22 (Tomas Cejka): libtrap: rename trap_stats and moved example of module_info
+
 2015-06-26 (Tomas Cejka): Moved from internal repo to github for testing.
 2015-06-20 (Tomas Cejka): libtrap: tests: rxtx removed sleep in test, replaced by wait
 2015-06-19 (Tomas Cejka): libtrap: CLEANUP removed commented unused code
