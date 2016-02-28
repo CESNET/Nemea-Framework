@@ -1,1 +1,4 @@
+2016-02-28 nemea-common-1.4.1
+	* bugfixes of b+ tree
+
 2016-02-09 (Tomas Jansky): b_plus_tree: fixed warning regarding void* in arithmetic
