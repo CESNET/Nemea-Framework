@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.7.1], [traffic-analysis@cesnet.cz])
+AC_INIT([libtrap], [0.7.2], [traffic-analysis@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -126,26 +126,12 @@ AC_FUNC_MMAP
 AC_FUNC_FORK
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime memset munmap select socket strchr strdup strerror dup2 mkdir])
-AC_CHECK_FUNCS([getopt_long getopt])
-
-# Define TRAP_GETOPT() for example of module_info
-if test "x$ac_cv_func_getopt_long" = xyes; then
-  AC_DEFINE_UNQUOTED([TRAP_GETOPT(argc, argv, optstr, longopts)],
-    [getopt_long(argc, argv, optstr, longopts, NULL)],
-    [Trap getopt macro. Argc and argv are number and values of arguments, optstr is a string containing legitimate option characters, longopts is the array of option structures (unused for on system without getopt_long())])
-elif test "x$ac_cv_func_getopt" = xyes; then
-  AC_DEFINE_UNQUOTED([TRAP_GETOPT(argc, argv, optstr, longopts)],
-  [getopt(argc, argv, optstr)],
-  [Trap getopt macro. Argc and argv are number and values of arguments, optstr is a string containing legitimate option characters, longopts is the array of option structures (unused for on system without getopt_long())])
-else
-  AC_MSG_ERROR([getopt() was not found, module depend on it...])
-fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  include/Makefile
                  tests/Makefile
-                 examples/Makefile
+                 tools/Makefile
                  libtrap.pc
                  libtrap.spec
                  Doxyfile
@@ -173,10 +159,6 @@ AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing mo
 AC_ARG_ENABLE([long-tests], AC_HELP_STRING([--enable-long-tests], [Run long performance tests (--enable-tests must be used for any effect)]),
         [AM_CONDITIONAL([ENABLE_LONG_TESTS], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_LONG_TESTS], [false])])
-
-AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-examples],[Compile with example modules]),
-        [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
-        [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
 
 AC_ARG_ENABLE([debugifc], AC_HELP_STRING([--enable-debugifc],
       [Compile IFC with debug messages]),
@@ -266,6 +248,5 @@ echo "  prefix...............: $prefix"
 echo
 echo "Tests..................: `if [[ -z "$ENABLE_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "Long performance tests.: `if [[ -z "$ENABLE_LONG_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
-echo "Examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo
 

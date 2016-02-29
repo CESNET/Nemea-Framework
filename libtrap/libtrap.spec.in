@@ -29,7 +29,7 @@ if you want to develop your own TRAP module.
 %setup
 
 %build
-./configure --prefix=%{_prefix} --libdir=%{_libdir} --disable-doxygen-pdf --disable-doxygen-ps --disable-tests --disable-examples --enable-silent-rules -q;
+./configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --disable-doxygen-pdf --disable-doxygen-ps --disable-tests --disable-examples --enable-silent-rules -q;
 make -j5
 make doc
 
@@ -40,6 +40,7 @@ make DESTDIR=$RPM_BUILD_ROOT install
 ldconfig
 
 %files
+%{_bindir}/nemea/trap_stats
 %{_libdir}/libtrap.so.*
 
 %files devel

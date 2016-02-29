@@ -1,14 +1,8 @@
-SUBDIRS = src include
-
-if ENABLE_EXAMPLES
-SUBDIRS+=examples
-endif
+SUBDIRS = src include tools
 
 if ENABLE_TESTS
 SUBDIRS+=tests
 endif
-
-DIST_SUBDIRS = src include tests examples
 
 RPMDIR = RPMBUILD
 
