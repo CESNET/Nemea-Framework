@@ -1157,7 +1157,7 @@ static uint16_t get_terminal_width()
 char *get_module_name(void)
 {
    size_t bufsize = 1024, rv;
-   char buffer[bufsize], *ret;
+   char buffer[bufsize], *p, *ret;
    FILE *f = fopen("/proc/self/cmdline", "r");
    if (f == NULL) {
       /* unknown name */
@@ -1165,20 +1165,27 @@ char *get_module_name(void)
    }
    rv = fread(buffer, 1, bufsize - 1, f);
    if (rv >= 0) {
+      p = buffer;
       buffer[rv] = 0;
-      ret = strrchr(buffer, '/');
+      /* skip to the next argument if this one matches regex /^python[23]?/ */
+      ret = strstr(p, "python");
+      if (ret != NULL && ((ret[6] == 0) || (ret[6] == '2') || (ret[6] == '3'))) {
+         p = strchr(p, 0);
+         p += 2;
+      }
+      ret = strrchr(p, '/');
       if (ret == NULL) {
          /* '/' was not found, module_name does not contain path */
-         ret = strdup(buffer);
+         ret = strdup(p);
       } else {
          /* skip found '/' */
-         ret++;
+         p = ret + 1;
          /* skip "lt-" prefix of libtool */
-         if (ret[0] == 'l' && ret[1] == 't' && ret[2] == '-') {
-            ret += 3;
+         if (p[0] == 'l' && p[1] == 't' && p[2] == '-') {
+            p += 3;
          }
          /* return the result */
-         ret = strdup(ret);
+         ret = strdup(p);
       }
    } else {
       /* unknown name */
