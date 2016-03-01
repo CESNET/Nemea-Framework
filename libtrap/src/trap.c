@@ -1147,6 +1147,47 @@ static uint16_t get_terminal_width()
    }
    return 0;
 }
+
+/**
+ * Get name of this process/module.
+ *
+ * \return Allocated string. If it is not possible to get the name,
+ * "module" is returned.
+ */
+char *get_module_name(void)
+{
+   size_t bufsize = 1024, rv;
+   char buffer[bufsize], *ret;
+   FILE *f = fopen("/proc/self/cmdline", "r");
+   if (f == NULL) {
+      /* unknown name */
+      return strdup("module");
+   }
+   rv = fread(buffer, 1, bufsize - 1, f);
+   if (rv >= 0) {
+      buffer[rv] = 0;
+      ret = strrchr(buffer, '/');
+      if (ret == NULL) {
+         /* '/' was not found, module_name does not contain path */
+         ret = strdup(buffer);
+      } else {
+         /* skip found '/' */
+         ret++;
+         /* skip "lt-" prefix of libtool */
+         if (ret[0] == 'l' && ret[1] == 't' && ret[2] == '-') {
+            ret += 3;
+         }
+         /* return the result */
+         ret = strdup(ret);
+      }
+   } else {
+      /* unknown name */
+      ret = strdup("module");
+   }
+   fclose(f);
+   return ret;
+}
+
 /** Print common TRAP help message.
  * The help message contains information from module_info and describes common
  * TRAP command-line parameters.
@@ -1159,9 +1200,6 @@ void trap_print_help(const trap_module_info_t *module_info)
    int pager_fds[2];
    uint32_t i, written = 0, tmp = 0, cols;
    pid_t p;
-   char buffer[24]; // 24 because it can contain only "/proc/PID/status" or "module".
-                    // Max value of PID is by default 65536, but it is configurable, here we count with 2^32 as max.
-                    // "/proc/4294967296/status" is 23 characters + terminating null
    uint8_t adit_param = 0, opt_param = 0;
    uint16_t align_def = 0, align_opt = 0;
 
@@ -1244,17 +1282,10 @@ output:
       print_aligned(module_info->description, 2, cols - 2);
 
 
-      // read status file to get name of the executable
-      buffer[0] = '\0';
-      snprintf(buffer, 24, "/proc/%d/status", getpid()); // size of buffer == 24, see above for explanation
-      FILE *status_fd = fopen(buffer, "r");
-      buffer[0] = '\0';
-      if (status_fd != NULL) {
-         fscanf(status_fd, "Name:%*[ \n\t]%23s", buffer); // Linux kernel truncates the Name in /proc/PID/status to 15 chars (but the %s should still be limited to be sure)
-         fclose(status_fd);
-      } else {
-         strcpy(buffer, "module");
-      }
+      /* print basic usage with module name */
+      char *module_name = get_module_name();
+      printf("\nUsage:  %s [COMMON]... ", module_name);
+      free(module_name);
 
       if (module_info->params != NULL) {
          i = 0;
@@ -1269,7 +1300,6 @@ output:
          }
       }
 
-      printf("\nUsage:  %s [COMMON]... ", buffer);
       if (opt_param == 1) {
          printf("[OPTIONS]... ");
       }
