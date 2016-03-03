@@ -44,7 +44,7 @@ before_script:
 
 script:
   # build with debug symbols and print possible core-dumps
-  - ./bootstrap.sh && ./configure --enable-debug && make clean && make && make check
+  - ./bootstrap.sh && ./configure --enable-debug && make clean && make && make check || { find . \( -name '*.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1; }
   - for i in $(find -name '*core*'); do
     ( cd `dirname "$i"`; c=`basename "$i"`;
     exe=`file "$c"|grep 'core file'|sed "s/^[^']*'//;s/[   '].*//;"`;
@@ -53,7 +53,7 @@ script:
     rm "$c";
     fi;);done;
   # build without debug symbols and print possible core-dumps
-  - ./configure && make clean && make && make check
+  - ./configure && make clean && make && make check || { find . \( -name '*.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1; }
   - for i in $(find -name '*core*'); do
     ( cd `dirname "$i"`; c=`basename "$i"`;
     exe=`file "$c"|grep 'core file'|sed "s/^[^']*'//;s/[   '].*//;"`;

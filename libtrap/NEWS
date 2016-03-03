@@ -1,3 +1,7 @@
+version 0.7.2
+   * trap_stats
+   * moved example into nemea-framework
+   * improved doc
 Version 0.7.0:
    * added new tests
    * documentation improved and revisited
