@@ -297,6 +297,8 @@ bool setType(configStrucItem *item, string type)
         item->type = UINT64_T;
     } else if (type.compare("int64_t") == 0) {
         item->type = INT64_T;
+    } else if (type.compare("bool") == 0) {
+        item->type = BOOL;
     } else if (type.compare("float") == 0) {
         item->type = FLOAT;
     } else if (type.compare("double") == 0) {
@@ -393,6 +395,16 @@ bool addElement(string name,
         tmpItem.defaultValue = malloc(sizeof(int64_t*));
         *(int64_t*)tmpItem.defaultValue = (int64_t)atoll(defValue.c_str());
         globalStructureOffset += sizeof(int64_t) * setGlobalOffset;
+        break;
+    case BOOL:
+        tmpItem.defaultValue = malloc(sizeof(int32_t*));
+        transform(defValue.begin(), defValue.end(), defValue.begin(), ::tolower);
+        if (defValue == "true" || defValue == "on" || defValue == "1") {
+            *(int32_t*)tmpItem.defaultValue = 1;
+        } else {
+            *(int32_t*)tmpItem.defaultValue = 0;
+        }
+        globalStructureOffset += sizeof(int32_t) * setGlobalOffset;
         break;
     case FLOAT:
         tmpItem.defaultValue = malloc(sizeof(float*));
@@ -1034,6 +1046,17 @@ void setUserValueToConfig(configStrucItem *configStruct, userConfigItem *userStr
     case INT64_T:
         *(int64_t*)configStruct->defaultValue = (int64_t)atoll(userStruct->value.c_str());
         break;
+    case BOOL:
+        {
+           string tmp = userStruct->value;
+           transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+           if (tmp == "true" || tmp == "on" || tmp == "1") {
+               *(int32_t*)configStruct->defaultValue = 1;
+           } else {
+               *(int32_t*)configStruct->defaultValue = 0;
+           }
+        }
+        break;
     case FLOAT:
         *(float*)configStruct->defaultValue = (float)atof(userStruct->value.c_str());
         break;
@@ -1126,6 +1149,17 @@ void storeElementToMemory(string &element, void *dest, unsigned type)
     case INT64_T:
         *(int64_t*)dest = (int64_t)atoll(element.c_str());
         break;
+    case BOOL:
+        {
+           string tmp = element;
+           transform(tmp.begin(), tmp.end(), tmp.begin(), ::tolower);
+           if (tmp == "true" || tmp == "on" || tmp == "1") {
+               *(int32_t*)dest = 1;
+           } else {
+               *(int32_t*)dest = 0;
+           }
+        }
+        break;
     case FLOAT:
         *(float*)dest = (float)atof(element.c_str());
         break;
@@ -1139,8 +1173,6 @@ void storeElementToMemory(string &element, void *dest, unsigned type)
         break;
     }
 }
-
-
 
 /**
  * \brief Function will allocate memory for user specified array and
@@ -1266,6 +1298,9 @@ void getConfiguration(void *inputStruct, map<string, configStrucItem> *configure
             break;
         case INT64_T:
             *(int64_t*)((char*)inputStruct + it->second.offset) = *((int64_t*)(it->second).defaultValue);
+            break;
+        case BOOL:
+            *(int32_t*)((char*)inputStruct + it->second.offset) = *((int32_t*)(it->second).defaultValue);
             break;
         case FLOAT:
             *(float*)((char*)inputStruct + it->second.offset) = *((float*)(it->second).defaultValue);

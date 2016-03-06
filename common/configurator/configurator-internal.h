@@ -45,7 +45,6 @@
 #ifndef _NEMEA_COMMON_CONFIGURATOR
 #define _NEMEA_COMMON_CONFIGURATOR
 
-
 /**
  * Default string maximum size (with 0 terminating byte included)
  */
@@ -64,6 +63,7 @@ typedef enum {
     INT32_T,
     UINT64_T,
     INT64_T,
+    BOOL,
     FLOAT,
     DOUBLE,
     STRING,
@@ -84,6 +84,7 @@ static const char varTypeSize[] = {
     sizeof(int32_t),
     sizeof(uint64_t),
     sizeof(int64_t),
+    sizeof(int32_t),
     sizeof(float),
     sizeof(double),
     -1, // String, size is computed based on specified max size.
