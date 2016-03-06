@@ -189,17 +189,37 @@ void printTypeAndDefaultValue(configStrucItem item) {
         cout << "UINT8_T" << endl;
         cout << "DefaultValue: " << *(uint8_t*)item.defaultValue << endl;
         break;
+    case INT8_T:
+        cout << "INT8_T" << endl;
+        cout << "DefaultValue: " << *(int8_t*)item.defaultValue << endl;
+        break;
     case UINT16_T:
         cout << "UINT16_T" << endl;
         cout << "DefaultValue: " << *(uint16_t*)item.defaultValue << endl;
+        break;
+    case INT16_T:
+        cout << "INT16_T" << endl;
+        cout << "DefaultValue: " << *(int16_t*)item.defaultValue << endl;
         break;
     case UINT32_T:
         cout << "UINT32_T" << endl;
         cout << "DefaultValue: " << *(uint32_t*)item.defaultValue << endl;
         break;
+    case INT32_T:
+        cout << "INT32_T" << endl;
+        cout << "DefaultValue: " << *(int32_t*)item.defaultValue << endl;
+        break;
     case UINT64_T:
         cout << "UINT64_T" << endl;
         cout << "DefaultValue: " << *(uint64_t*)item.defaultValue << endl;
+        break;
+    case INT64_T:
+        cout << "INT64_T" << endl;
+        cout << "DefaultValue: " << *(int64_t*)item.defaultValue << endl;
+        break;
+    case BOOL:
+        cout << "BOOL" << endl;
+        cout << "DefaultValue: " << (*(int32_t*)item.defaultValue ? "true" : "false") << endl;
         break;
     case FLOAT:
         cout << "FLOAT" << endl;
