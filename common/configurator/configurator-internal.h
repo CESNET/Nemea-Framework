@@ -45,6 +45,12 @@
 #ifndef _NEMEA_COMMON_CONFIGURATOR
 #define _NEMEA_COMMON_CONFIGURATOR
 
+#include <string>
+#include <vector>
+#include <map>
+
+using namespace std;
+
 /**
  * Default string maximum size (with 0 terminating byte included)
  */
@@ -52,6 +58,7 @@
 
 /**
  * Enum of supported types.
+ * NOTE: Bool type is represented as a int32_t type.
  * WARNING: Order of elements must correspond to `varTypeSize` array!
  */
 typedef enum {
@@ -164,5 +171,16 @@ typedef struct {
     std::string name;
     std::string value;
 } userArrElemStruct;
+
+void trim(std::string &s, const char *t = " \t\n\r\f\v");
+void addElementToUserMap(string name, string value, map<string, userConfigItem> *userMap);
+bool addElement(string name, string type, string defValue, string charArraySize,
+                bool requiredFlag, map<string, configStrucItem> *structMap, bool setGlobalOffset);
+void clearConfigStructureMap(map<string, configStrucItem> *configMap);
+void clearConfigStructureMap(map<string, userConfigItem> *configMap);
+void printUserMap(map<string, userConfigItem> *configMap);
+void printConfigMap(map<string, configStrucItem> *configMap);
+bool fillConfigStruct(map<string, configStrucItem> *patternMap, map<string, userConfigItem> *userMap);
+void getConfiguration(void *inputStruct, map<string, configStrucItem> *configureMap);
 
 #endif

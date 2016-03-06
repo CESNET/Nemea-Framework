@@ -170,7 +170,7 @@ To use this configuration in C application a few functions are used and
 a structure created with "special" variables for some elements (mostly array).
 
 List of functions and what they do:
-    1) loadConfiguration(patterFile, userConfigFile, structurePtr) - This
+    1) confXmlLoadConfiguration(patterFile, userConfigFile, structurePtr) - This
           function is called at application start to parse specified XML
           files and store its content to given structure.
     2) configuratorGetArrElemCount(arrPtr) - This function is used to

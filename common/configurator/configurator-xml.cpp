@@ -330,7 +330,7 @@ bool setType(configStrucItem *item, string type)
              << item->name
              << "' has unknown type '"
              << tmpString
-             << "'. Could not continue, aborting."
+             << "'"
              << endl;
         return false;
     }
@@ -751,7 +751,7 @@ void addElementToUserMap(string name, string value, map<string, userConfigItem> 
  * \param t Optional paramater, which specify characters to remove.
  *          (default are whitespace characters)
  */
-void trim(std::string &s, const char *t = " \t\n\r\f\v")
+void trim(std::string &s, const char *t)
 {
     s.erase(0, s.find_first_not_of(t));
     s.erase(s.find_last_not_of(t) + 1);
@@ -1395,7 +1395,7 @@ bool initXmlParser()
  *                    string.
  * \return 0 on success, EXIT_FAILURE otherwise.
  */
-extern "C" int loadConfiguration(char *patternFile, char *userFile, void *userStruct, int patternType)
+extern "C" int confXmlLoadConfiguration(char *patternFile, char *userFile, void *userStruct, int patternType)
 {
     string structurePatternFile = patternFile;
     string structureUserConfigFile = userFile;
@@ -1460,8 +1460,6 @@ extern "C" int loadConfiguration(char *patternFile, char *userFile, void *userSt
         cerr << "Configurator: Validation failed." << endl;
         //printConfigMap(configStructureMap);
     }
-
-
 
     getConfiguration(userStruct, configStructureMap);
 

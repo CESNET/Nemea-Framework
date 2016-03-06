@@ -1,285 +1,423 @@
-/*!
- * \file config.cpp
- * \brief The Configuration singleton - used for centralized access to configuration
- * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2015
- * \date 2014
- * \date 2013
- * \date 2012
- */
-/*
- * Copyright (C) 2012-2015 CESNET
- *
- * LICENSE TERMS
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name of the Company nor the names of its contributors
- *    may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * ALTERNATIVELY, provided that this notice is retained in full, this
- * product may be distributed under the terms of the GNU General Public
- * License (GPL) version 2 or later, in which case the provisions
- * of the GPL apply INSTEAD OF those given above.
- *
- * This software is provided ``as is'', and any express or implied
- * warranties, including, but not limited to, the implied warranties of
- * merchantability and fitness for a particular purpose are disclaimed.
- * In no event shall the company or contributors be liable for any
- * direct, indirect, incidental, special, exemplary, or consequential
- * damages (including, but not limited to, procurement of substitute
- * goods or services; loss of use, data, or profits; or business
- * interruption) however caused and on any theory of liability, whether
- * in contract, strict liability, or tort (including negligence or
- * otherwise) arising in any way out of the use of this software, even
- * if advised of the possibility of such damage.
- *
- */
-#include <config.h>
 #include <iostream>
 #include <fstream>
 #include <map>
 #include <string>
-#include <cstdlib>
-#include <pthread.h>
+#include <inttypes.h>
+#include <algorithm>
+
 #include "../include/configurator.h"
+#include "configurator-internal.h"
 
 using namespace std;
 
-bool copy_file(const char* from, const char* to)
+#define KEYVAL_DELIMITER "="
+
+extern map<string, configStrucItem> *configStructureMap;
+extern map<string, userConfigItem> *userConfigMap;
+extern int globalStructureOffset;
+
+/**
+ * \brief Parse configuration lines and add elements into user configuration map.
+ * \param line Line to parse.
+ * \return True on success, false otherwise.
+ */
+bool parseLine(const string &line)
 {
-   ifstream src(from);
-   if (!src.good()) {
-      src.close();
+   string key, value;
+
+   // Skip comments and blank lines.
+   if (line.length() == 0 || line[0] == '#') {
+      return true;
+   }
+
+   // Look for key-value delimiter.
+   size_t pos = line.find_first_of(KEYVAL_DELIMITER);
+   if (pos == string::npos) {
+      cerr << "Configurator: Invalid line format '" << line << "'" << endl;
       return false;
    }
-   ofstream dst(to);
-   if (!dst.good()) {
-      src.close();
-      dst.close();
+
+   key = line.substr(0, pos);
+   value = line.substr(pos + 1);
+   trim(key);
+   trim(value);
+
+   // Check if element was specified in configuration map.
+   if (configStructureMap->find(key) == configStructureMap->end()) {
+      cerr << "Configurator: Unknown element \"" << key << "\"" << endl;
       return false;
    }
-   dst << src.rdbuf();
-   if (!dst.good()) {
-      src.close();
-      dst.close();
-      return false;
-   }
-   src.close();
-   dst.close();
+
+   // Insert element into user configuration map.
+   addElementToUserMap(key, value, userConfigMap);
    return true;
 }
 
-
-void Configuration::trimString(string &text)
+/**
+ * \brief Load plain configuration from file.
+ * \param filePath Path to the configuration file.
+ * \return True on success, false otherwise.
+ */
+bool loadFilePlain(const char *filePath)
 {
-   /* erase end of string */
-   text.erase(text.find_last_not_of(INI_WHITESPACE) + 1);
-
-   /* erase begin of string */
-   size_t pos;
-   if ((pos = text.find_first_not_of(INI_WHITESPACE)) != 0) {
-      text.erase(0, pos);
-   }
-}
-
-void Configuration::parseLine(string line)
-{
-   string paramName, value;
-
-   if (line.length() == 0 || line[0] == '#') {
-      /* skip comment */
-      return;
-   }
-
-   size_t pos = line.find_first_of(INI_DELIM);
-   if (pos == string::npos) {
-      /* not found - skip? */
-      return;
-   }
-   paramName = line.substr(0, pos);
-   trimString(paramName);
-   value = line.substr(pos + 1);
-   trimString(value);
-   values[paramName] = value;
-}
-
-ConfigurationStatus Configuration::load()
-{
-   fstream file;
+   fstream file(filePath);
    string line;
 
-   // Load configuration from a path defined by the user
-   if (configFilePath.size()) {
-      file.open(configFilePath.c_str(), ios_base::in);
-      if (file.good()) {
-         while (file.good()) {
-            getline(file, line);
-            parseLine(line);
+   if (file.good()) {
+      while (file.good()) {
+         getline(file, line);
+         trim(line);
+
+         if (!parseLine(line)) {
+            return false;
          }
-         file.close();
-         return INIT_OK;
-      } else {
-         cerr << "Failed to open configuration file \"" << configFilePath << "\"" << endl;
-         return INIT_FAILED;
       }
+
+      file.close();
+      return true;
    }
 
-   cerr << "Could not load configuration." << endl;
-   return INIT_FAILED;
+   cerr << "Configurator: Unable to open configuration file '" << filePath << "'" << endl;
+   return false;
 }
 
-Configuration::Configuration()
-{
-   pthread_mutex_init(&config_mutex, NULL);
-   initStatus = load();
-}
-
-int Configuration::lock()
-{
-   return pthread_mutex_lock(&config_mutex);
-}
-
-int Configuration::unlock()
-{
-   return pthread_mutex_unlock(&config_mutex);
-}
-
-void Configuration::reload()
-{
-   lock();
-   clean();
-   initStatus = load();
-   unlock();
-}
-
-string Configuration::getValue(string paramName)
-{
-   return values[paramName];
-}
-
-Configuration *Configuration::getInstance()
-{
-   // Only allow one instance of class to be generated.
-   if (!Configuration::instance) {
-      instance = new Configuration();
-   }
-
-   return instance;
-}
-
-void Configuration::clean()
-{
-   /* should be already locked, do not try to lock again */
-   values.clear();
-}
-
-void Configuration::freeConfiguration()
-{
-   delete instance;
-   pthread_mutex_destroy(&config_mutex);
-   /* This class is useless from this time! */
-}
-
-void Configuration::setConfigPath(const string &file)
-{
-   configFilePath = file;
-}
-
-ConfigurationStatus Configuration::getInitStatus()
-{
-   return initStatus;
-}
-
-/** \brief Get integer configuration value
- * Get the value from the configuration file. If the value is not specified or
- * is less than a minimal value, returns default value.
- * \param[in] name Meaning of the value for error messages
- * \param[in] param Name of the value in the configuration file
- * \param[in] def_value Default value
- * \param[in] min_value Minimal value
- * \return Variable from configuration file or default value.
+/**
+ * \brief Initializes configuration maps.
+ * \return 0 on success, EXIT_FAILURE otherwise.
  */
-int Configuration::get_cfg_val(string name, string param, int def_value,
-   int min_value)
+extern "C" int confPlainCreateContext()
 {
-   int value;
-   string value_str = getValue(param);
-   trimString(value_str);
-
-   if (value_str.empty()) {
-      value = def_value;
-   } else {
-      value = atoi(value_str.c_str());
+   configStructureMap  = new map<string, configStrucItem>;
+   if (configStructureMap == NULL) {
+     cerr << "Configurator: ERROR: Cannot allocate enought space for configuration map." << endl;
+      return EXIT_FAILURE;
    }
 
-   if (value < min_value) {
-      value = def_value;
+   userConfigMap = new map<string, userConfigItem>;
+   if (userConfigMap == NULL) {
+      cerr << "Configurator: ERROR: Cannot allocate enought space for configuration map." << endl;
+      delete configStructureMap;
+      configStructureMap = NULL;
+
+      return EXIT_FAILURE;
    }
 
-   return value;
+   globalStructureOffset = 0;
+   return 0;
 }
 
-/** \brief Get status configuration value
- * Get the value from the configuration file. If value is "1", "true" or
- * "enabled", returns true. Otherwise returns false.
- * If the value is not specified, returns false.
- * \param[in] name Meaning of the value for error messages
- * \param[in] param Name of the value in the configuration file
- * \return True or false
+/**
+ * \brief Used to clean configuration maps.
  */
-bool Configuration::get_cfg_val(std::string name, std::string param)
+extern "C" void confPlainClearContext()
 {
-   bool value;
-   string value_str = getValue(param);
-   trimString(value_str);
-
-   if (value_str.empty()) {
-      value = false;
-   } else {
-      if (value_str == "1" || value_str == "true" || value_str == "enabled") {
-         value = true;
-      } else {
-         value = false;
-      }
+   // Clear configuration maps.
+   if (configStructureMap) {
+      clearConfigStructureMap(configStructureMap);
    }
 
-   return value;
+   if (userConfigMap) {
+      clearConfigStructureMap(userConfigMap);
+   }
+
+   configStructureMap = NULL;
+   userConfigMap = NULL;
 }
 
-/** \brief Get float configuration value
- * Get the value from the configuration file.
- * If the value is not specified, returns def_value.
- * \param[in] name Meaning of the value for error messages
- * \param[in] param Name of the value in the configuration file
- * \param[in] def_value Default float value
- * \return Float configuration value
+/**
+ * \brief Wrapper for addElement function. WARNING: Configuration maps must be initialized
+ *        with confPlainCreateContext function before first use.
+ * \param name Name of the element.
+ * \param type Type of the element.
+ * \param defValue Default value of the element.
+ * \param charArraySize Maximum allowed size for string type item.
+ * \param requiredFlag Item will be required if set, otherwise it is optional.
+ *                        will be changed. Otherwise it will NOT be changed.
+ * \return 0 on success, 1 otherwise.
  */
-float Configuration::get_cfg_val(std::string name, std::string param, float def_value)
+extern "C" int confPlainAddElement(const char *name, const char *type, const char *defValue, int charArraySize, int requiredFlag)
 {
-   float value;
-   string value_str = getValue(param);
-   trimString(value_str);
-
-   if (value_str.empty()) {
-      value = def_value;
-   } else {
-      value = strtof(value_str.c_str(), NULL);
-   }
-
-   return value;
+   char buffer[20];
+   snprintf(buffer, sizeof(buffer), "%d", charArraySize);
+   return !addElement(name, type, defValue, buffer, requiredFlag, NULL, true);
 }
 
-// Static variables Initialization
-string Configuration::configFilePath = "";
-ConfigurationStatus Configuration::initStatus = NOT_INIT;
-Configuration *Configuration::instance = NULL;
-pthread_mutex_t Configuration::config_mutex;
+/**
+ * \brief Load configuration from file to user defined struct.
+ *        WARNING: Configuration items must be specified using confPlainAddElement function.
+ * \param filePath Configuration file path.
+ * \param userStruct Pointer to memory where configuration structure will
+ *                   be created.
+ * \return 0 on success, EXIT_FAILURE otherwise.
+ */
+extern "C" int confPlainLoadConfiguration(const char *filePath, void *userStruct)
+{
+   if (configStructureMap == NULL || userConfigMap == NULL) {
+      cerr << "Configurator: No context created, aborting." << endl;
+      return EXIT_FAILURE;
+   }
+
+   // Load configuration from file.
+   if (!loadFilePlain(filePath)) {
+      cerr << "Configurator: Parsing failed." << endl;
+      return EXIT_FAILURE;
+   }
+
+   //printConfigMap(configStructureMap);
+   //printUserMap(userConfigMap);
+
+   bool validationRetVal = fillConfigStruct(configStructureMap, userConfigMap);
+   if (!validationRetVal) {
+      cerr << "Configurator: Validation failed." << endl;
+      return EXIT_FAILURE;
+   }
+
+   // If ptr is specified, copy configuration into user defined structure.
+   if (userStruct) {
+      // Load configuration into user defined struct.
+      getConfiguration(userStruct, configStructureMap);
+   }
+   userConfigMap->clear();
+
+   return 0;
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" uint8_t confPlainGetUint8(const char *name, uint8_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((uint8_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" int8_t confPlainGetInt8(const char *name, int8_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((int8_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" uint16_t confPlainGetUint16(const char *name, uint16_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((uint16_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" int16_t confPlainGetInt16(const char *name, int16_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((int16_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" uint32_t confPlainGetUint32(const char *name, uint32_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((uint32_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" int32_t confPlainGetInt32(const char *name, int32_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((int32_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" uint64_t confPlainGetUint64(const char *name, uint64_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((uint64_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" int64_t confPlainGetInt64(const char *name, int64_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((int64_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" int32_t confPlainGetBool(const char *name, int32_t defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((int32_t *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" float confPlainGetFloat(const char *name, float defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((float *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" double confPlainGetDouble(const char *name, double defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return *((double *)(it->second).defaultValue);
+}
+
+/**
+ * \brief Get configuration item from configuration map.
+ * \param name Name of the configuration item.
+ * \param defValue Default value to return if item does not exits.
+ * \return Value of the configuration item or defValue.
+ */
+extern "C" const char *confPlainGetString(const char *name, const char *defValue)
+{
+   if (!configStructureMap) {
+      return defValue;
+   }
+
+   map<string, configStrucItem>::iterator it = configStructureMap->find(name);
+   if (it == configStructureMap->end()) {
+      return defValue;
+   }
+
+   return (it->second).defaultStringValue.c_str();
+}
