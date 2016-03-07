@@ -133,13 +133,18 @@ extern "C" void confPlainClearContext()
  * \param charArraySize Maximum allowed size for string type item.
  * \param requiredFlag Item will be required if set, otherwise it is optional.
  *                        will be changed. Otherwise it will NOT be changed.
- * \return 0 on success, 1 otherwise.
+ * \return 0 on success, EXIT_FAILURE otherwise.
  */
 extern "C" int confPlainAddElement(const char *name, const char *type, const char *defValue, int charArraySize, int requiredFlag)
 {
+   if (configStructureMap == NULL || userConfigMap == NULL) {
+      cerr << "Configurator: No context created, failed to add element." << endl;
+      return EXIT_FAILURE;
+   }
+
    char buffer[20];
    snprintf(buffer, sizeof(buffer), "%d", charArraySize);
-   return !addElement(name, type, defValue, buffer, requiredFlag, NULL, true);
+   return addElement(name, type, defValue, buffer, requiredFlag, NULL, true) ? 0 : EXIT_FAILURE;
 }
 
 /**
@@ -153,7 +158,7 @@ extern "C" int confPlainAddElement(const char *name, const char *type, const cha
 extern "C" int confPlainLoadConfiguration(const char *filePath, void *userStruct)
 {
    if (configStructureMap == NULL || userConfigMap == NULL) {
-      cerr << "Configurator: No context created, aborting." << endl;
+      cerr << "Configurator: No context created, failed to load configuration." << endl;
       return EXIT_FAILURE;
    }
 
