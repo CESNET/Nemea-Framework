@@ -81,7 +81,7 @@ userAllocatedMemoryBlockStructure UAMBS;
  *        Using global variable `UAMBS`, which is structure
  *        holding information about allocated arrays.
  */
-extern "C" void configuratorFreeUAMBS()
+extern "C" void confFreeUAMBS()
 {
     for (unsigned int i = 0; i < UAMBS.memBlockArr.size(); i++) {
         free(UAMBS.memBlockArr[i]);
@@ -98,7 +98,7 @@ extern "C" void configuratorFreeUAMBS()
  * \param arr Void pointer to array of which size we want to know.
  * \return Number of elements in provided array.
  */
-extern "C" unsigned int configuratorGetArrElemCount(void *arr)
+extern "C" unsigned int confArrElemCount(void *arr)
 {
     for (unsigned int i = 0; i < UAMBS.memBlockArr.size(); i++) {
         if (arr == UAMBS.memBlockArr[i]) {

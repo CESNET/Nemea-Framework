@@ -59,8 +59,8 @@ extern "C" {
 #endif
 
 int confXmlLoadConfiguration(char *patternFile, char *userFile, void *userStruct, int patternType);
-void configuratorFreeUAMBS();
-unsigned int configuratorGetArrElemCount(void *arr);
+void confFreeUAMBS();
+unsigned int confArrElemCount(void *arr);
 
 
 int confPlainCreateContext();

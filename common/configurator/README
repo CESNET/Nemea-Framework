@@ -173,9 +173,9 @@ List of functions and what they do:
     1) confXmlLoadConfiguration(patterFile, userConfigFile, structurePtr) - This
           function is called at application start to parse specified XML
           files and store its content to given structure.
-    2) configuratorGetArrElemCount(arrPtr) - This function is used to
+    2) confArrElemCount(arrPtr) - This function is used to
           count elements of given array.
-    3) configuratorFreeUAMBS() - This function free memory allocated for
+    3) confFreeUAMBS() - This function free memory allocated for
           user arrays. It needs to be called when application uses arrays
           at application termination.
 
