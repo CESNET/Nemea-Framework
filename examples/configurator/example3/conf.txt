@@ -1,0 +1,10 @@
+# configuration file for example3
+
+var4 = 1234567890
+var3=123.456
+
+# in this example, strings are not reduced to defined fixed length
+string1=      whitespaces from left and right will be removed   
+
+
+optional_var2    =    777

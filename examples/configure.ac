@@ -33,6 +33,10 @@ AX_TRAP_GETOPT()
 
 AC_CONFIG_FILES([Makefile
                  libtrap/Makefile
-                 python/Makefile])
+                 python/Makefile
+                 configurator/Makefile
+                 configurator/example1/Makefile
+                 configurator/example2/Makefile
+                 configurator/example3/Makefile])
 AC_CONFIG_SUBDIRS([module])
 AC_OUTPUT

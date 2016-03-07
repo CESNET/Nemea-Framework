@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+<module-name>Example module</module-name>
+<struct>
+   <element name="Variable1">
+      -1
+   </element>
+   <element name="Variable2">
+      11.1
+   </element>
+   <element name="Variable_optional">
+      4567
+   </element>
+   <element name="Variable_string">
+      ahoj
+   </element>
+   <struct name="first struct">
+      <element name="Struct_variable1">
+         74
+      </element>
+   </struct>
+   <element name="Last_param">
+      Bla bla bla, tento string bude orezany. Hadaj preco?
+   </element>
+   <array name="test_ar">
+      <struct>
+         <element name="id">
+            1
+         </element>
+         <element name="name">
+            Johnabcdefghijklmnopqrst
+         </element>
+      </struct>
+      <struct>
+         <element name="id">
+            2
+         </element>
+         <element name="name">
+            Rambo
+         </element>
+      </struct>
+      <struct>
+         <element name="id">
+            3
+         </element>
+         <element name="name">
+            Commando
+         </element>
+      </struct>
+   </array>
+   <element name="Variable3">
+      -1
+   </element>
+   <array name="name_ar">
+      <element>
+         Rocky1234567890
+      </element>
+      <element>
+         Babofka
+      </element>
+   </array>
+   <array name="num_ar">
+      <element>
+         123
+      </element>
+      <element>
+         -1
+      </element>
+      <element>
+         10000000
+      </element>
+      <element>
+         -23
+      </element>
+      <element>
+         -6662342
+      </element>
+   </array>
+</struct>
+</configuration>
+

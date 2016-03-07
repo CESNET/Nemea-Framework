@@ -1,3 +1,3 @@
-SUBDIRS=module python libtrap
+SUBDIRS=module python libtrap configurator
 
 ACLOCAL_AMFLAGS=-I m4

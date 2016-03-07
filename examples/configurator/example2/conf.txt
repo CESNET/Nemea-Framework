@@ -1,0 +1,10 @@
+# configuration file for example2
+
+var4 = 1234567890
+var3=123.456
+
+# this string will be reduced to 31 characters + terminating character
+string1=      whitespaces from left and right will be removed   
+
+
+optional_var2    =    777
