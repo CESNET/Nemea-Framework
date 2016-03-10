@@ -44,6 +44,10 @@
 #define _NEMEA_COMMON_H
 
 
+#  ifdef __cplusplus
+extern "C" {
+#  endif
+
 // include Super Fast Hash
 #include "super_fast_hash.h"
 
@@ -54,5 +58,8 @@
 #include "fast_hash_filter.h"
 #include "progress_printer.h"
 
+#  ifdef __cplusplus
+}
+#  endif
 #endif
 
