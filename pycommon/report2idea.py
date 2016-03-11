@@ -252,9 +252,9 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         if mongocoll:
             # Convert timestamps from string to Date format
             idea['DetectTime'] = datetime.strptime(idea['DetectTime'], "%Y-%m-%dT%H:%M:%SZ")
-            idea['CreateTime'] = datetime.strptime(idea['CreateTime'], "%Y-%m-%dT%H:%M:%SZ")
-            idea['EventTime'] = datetime.strptime(idea['EventTime'], "%Y-%m-%dT%H:%M:%SZ")
-            idea['CeaseTime'] = datetime.strptime(idea['CeaseTime'], "%Y-%m-%dT%H:%M:%SZ")
+            for i in [ 'CreateTime', 'EventTime', 'CeaseTime' ]:
+                if idea.has_key(i):
+                    idea[i] = datetime.strptime(idea[i], "%Y-%m-%dT%H:%M:%SZ")
 
             try:
                 mongocoll.insert(idea)
