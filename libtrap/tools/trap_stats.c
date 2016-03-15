@@ -374,13 +374,12 @@ int main (int argc, char **argv)
          break;
       }
 
-      memset(buffer, 0, buffer_size);
       if (header->data_size > buffer_size) {
          // Reallocate buffer for incoming data
-         buffer_size += buffer_size / 2;
+         buffer_size += (header->data_size - buffer_size) + 1;
          buffer = (char *) realloc(buffer, buffer_size * sizeof(char));
-         memset(buffer + (2 * (buffer_size / 3)), 0, (buffer_size / 3) * sizeof(char));
       }
+      memset(buffer, 0, buffer_size * sizeof(char));
 
       // Receive module stats in json format
       if (service_recv_data(header->data_size, (void **) &buffer) == -1) {

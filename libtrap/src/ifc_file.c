@@ -591,7 +591,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    }
 
    if (priv->fd == NULL) {
-      VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC : unable to open file \"%s\". Possible reasons: non-existing file, bad permission.", priv->filename);
+      VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC : unable to open file \"%s\" in mode \"%c\". Possible reasons: non-existing file, bad permission, file can not be opened in this mode.", priv->filename, priv->mode[0]);
       free(priv->filename);
       free(priv);
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "unable to open file");
