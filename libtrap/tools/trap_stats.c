@@ -81,7 +81,7 @@ int connect_to_module_service_ifc()
    memset(&addr, 0, sizeof(addr));
 
    addr.unix_addr.sun_family = AF_UNIX;
-   snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, dest_sock);
+   snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, "%s", dest_sock);
    sd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sd == -1) {
          return -1;
