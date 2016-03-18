@@ -50,7 +50,11 @@
 extern "C" {
 #endif
 
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS
+#endif
 #include <stdint.h>
+
 #include "ipaddr.h"
 #include "ur_time.h"
 #include "links.h"
