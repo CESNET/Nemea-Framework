@@ -112,7 +112,7 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
 
    file_private_t *cf = (file_private_t*) priv;
    ret = asprintf(&config_file, "%s/trap-i%02"PRIu32"-config.txt", path, idx);
-   if (ret != -1) {
+   if (ret == -1) {
       VERBOSE(CL_ERROR, "FILE IFC: not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
       return;
    }
