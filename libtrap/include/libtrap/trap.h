@@ -467,7 +467,7 @@ int trap_free_ifc_spec(trap_ifc_spec_t ifc_spec);
  *                      their parameters.
  * @return Error code (0 on success)
  */
-int trap_init(const trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
+int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /** Function to terminate module's operation.
  * This function stops all read/write operations on all interfaces.
@@ -648,7 +648,7 @@ void trap_send_flush(uint32_t ifc);
  *                      their parameters.
  * \return Pointer to the allocated private libtrap context data.
  */
-trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
+trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /**
  * \brief Terminate libtrap context and free resources.

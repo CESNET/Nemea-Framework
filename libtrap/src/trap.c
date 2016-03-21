@@ -794,7 +794,7 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx);
  *                      their parameters.
  * @return Error code (0 on success)
  */
-int trap_init(const trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
+int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
 {
    if ((trap_glob_ctx != NULL) && (trap_glob_ctx->initialized != 0)) {
       return trap_error(trap_glob_ctx, TRAP_E_INITIALIZED);
@@ -2134,7 +2134,7 @@ error:
  *
  * \return context, NULL when allocation failed.
  */
-trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
+trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
 {
    int i;
    if ((ifc_spec.types == NULL) || (ifc_spec.params == NULL)) {
@@ -2143,6 +2143,14 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    trap_ctx_priv_t *ctx = trap_create_ctx_t();
    if (ctx == NULL) {
       return NULL;
+   }
+   /* count number of interfaces */
+   if (module_info->num_ifc_in < 0 && module_info->num_ifc_out < 0) {
+      return NULL;
+   } else if (module_info->num_ifc_in < 0) {
+      module_info->num_ifc_in = strlen(ifc_spec.types) - module_info->num_ifc_out;
+   } else if (module_info->num_ifc_out < 0) {
+      module_info->num_ifc_out = strlen(ifc_spec.types) - module_info->num_ifc_in;
    }
    /* create mutex protecting session list */
    pthread_rwlockattr_t lock_attrs;
