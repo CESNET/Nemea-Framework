@@ -326,7 +326,7 @@ bool setType(configStrucItem *item, string type)
     } else if (type.compare("string") == 0) {
         item->type = STRING;
     } else {
-        cerr << "Error: Element '"
+        cerr << "Configurator: Error: Element '"
              << item->name
              << "' has unknown type '"
              << tmpString
@@ -337,7 +337,6 @@ bool setType(configStrucItem *item, string type)
 
     return true;
 }
-
 
 /**
  * \brief Function which convert string representation of item to structure
@@ -512,7 +511,7 @@ void parseElement(xmlNodePtr structNode,
                 }
                 if (stringSizeNotPresentFlag) {
                     // Set default size
-                    cerr << "Warning: Element '"
+                    cerr << "Configurator: Warning: Element '"
                          << elementName
                          << "' is missing size attribute, using default size ("
                          << DEFAULT_STRING_MAX_SIZE
@@ -588,7 +587,7 @@ bool parseStruct(xmlNodePtr parentNode, map<string, configStrucItem> *structMap)
             tmpItem.arrElement = NULL;
             map<string, configStrucItem> *newStructMap = new map<string, configStrucItem>;
             if (newStructMap == NULL) {
-                cerr << "parser error, cannot allocate enought space for sub-map." << endl;
+                cerr << "Configurator: parser error, cannot allocate enought space for sub-map." << endl;
                 return false;
             }
             tmpItem.map = (void*)newStructMap;
@@ -629,7 +628,7 @@ bool parseStruct(xmlNodePtr parentNode, map<string, configStrucItem> *structMap)
                     // Allocate memory for element information
                     tmpItem.arrElement = new configStrucItem;
                     if (tmpItem.arrElement == NULL) {
-                        cerr << "Error: Could not allocate enought space for array element." << endl;
+                        cerr << "Configurator: Error: Could not allocate enought space for array element." << endl;
                         return false;
                     }
 
@@ -647,7 +646,7 @@ bool parseStruct(xmlNodePtr parentNode, map<string, configStrucItem> *structMap)
                     // Create map for elements in structure
                     map<string, configStrucItem> *newStructMap = new map<string, configStrucItem>;
                     if (newStructMap == NULL) {
-                        cerr << "parser error, cannot allocate enought space for sub-map." << endl;
+                        cerr << "Configurator: parser error, cannot allocate enought space for sub-map." << endl;
                         return false;
                     }
                     tmpItem.map = (void*)newStructMap;
@@ -693,7 +692,7 @@ bool parseStruct(xmlNodePtr parentNode, map<string, configStrucItem> *structMap)
 
             switch (arrChildType) {
             case '0':
-                cerr << "Warning: No elements found!";
+                cerr << "Configurator: Warning: No elements found!";
                 break;
             case '1':
             case '2':
@@ -819,7 +818,7 @@ bool parseUserStruct(xmlNodePtr parentNode, map<string, userConfigItem> *structM
 
             map<string, userConfigItem> *userStructSubMap = new map<string, userConfigItem>;
             if (userStructSubMap == NULL) {
-                cerr << "parser error, cannot allocate enought space for sub-map." << endl;
+                cerr << "Configurator: parser error, cannot allocate enought space for sub-map." << endl;
                 return false;
             }
 
@@ -859,7 +858,7 @@ bool parseUserStruct(xmlNodePtr parentNode, map<string, userConfigItem> *structM
                     // Create vector for elements in array
                     vector<userArrElemStruct> *userArrVector = new vector<userArrElemStruct>;
                     if (userArrVector == NULL) {
-                        cerr << "parser error, cannot allocate enought space for vector of elements." << endl;
+                        cerr << "Configurator: parser error, cannot allocate enought space for vector of elements." << endl;
                         return false;
                     }
                     tmpItem.elementAr = (void*)userArrVector;
@@ -888,7 +887,7 @@ bool parseUserStruct(xmlNodePtr parentNode, map<string, userConfigItem> *structM
                     // Create vector for maps of elements in structure
                     vector<map<string, userConfigItem> > *userConfigVector = new vector<map<string, userConfigItem> >;
                     if (userConfigVector == NULL) {
-                        cerr << "parser error, cannot allocate enought space for vector." << endl;
+                        cerr << "Configurator: parser error, cannot allocate enought space for vector." << endl;
                         return false;
                     }
                     tmpItem.elementAr = (void*)userConfigVector;
@@ -931,7 +930,7 @@ bool parseUserStruct(xmlNodePtr parentNode, map<string, userConfigItem> *structM
             }
 
             switch (arrChildType) {
-                case 0: cerr << "Warning: No elements found!";
+                case 0: cerr << "Configurator: Warning: No elements found!";
                     break;
                 case 1:
                 case 2:
@@ -967,12 +966,12 @@ bool parseUserStruct(xmlNodePtr parentNode, map<string, userConfigItem> *structM
 bool checkHeader(xmlNodePtr cur)
 {
     if (cur == NULL) {
-        cerr << "parser error, input user configuration is empty." << endl;
+        cerr << "Configurator: parser error, input user configuration is empty." << endl;
         return false;
     }
 
     if (xmlStrcmp(cur->name, (const xmlChar *) "configuration")) {
-        cerr << "parser error, root element is not valid, <" << cur->name <<"> found, must be <configuration>." << endl;
+        cerr << "Configurator: parser error, root element is not valid, <" << cur->name <<"> found, must be <configuration>." << endl;
         return false;
     }
 
@@ -1105,7 +1104,7 @@ bool fillConfigStruct(map<string, configStrucItem> *patternMap, map<string, user
         map<string, userConfigItem>::iterator userMapIt = userMap->find(it->first);
         if (userMapIt == userMap->end()) {
             if (it->second.isRequired) {
-                cerr << "validation failed, variable (" << it->second.name << ") is required, but not found in user configuration file." << endl;
+                cerr << "Configurator: validation failed, variable (" << it->second.name << ") is required, but not found in user configuration file." << endl;
                 return false;
             } else {
                 it++;
@@ -1218,7 +1217,7 @@ void *createUserArray(configStrucItem &item)
         arrayData = malloc(elemCnt * elemSize);
 
         if (arrayData == NULL) {
-            cerr << "Error: Could not allocate memory for user array!\n";
+            cerr << "Configurator: Error: Could not allocate memory for user array!\n";
             return NULL;
         }
         UAMBS.memBlockArr.push_back(arrayData);
@@ -1250,7 +1249,7 @@ void *createUserArray(configStrucItem &item)
         // Allocate space for array
         arrayData = malloc(structCnt * structSize);
         if (arrayData == NULL) {
-            cerr << "Error: Could not allocate memory for user array!\n";
+            cerr << "Configurator: Error: Could not allocate memory for user array!\n";
             return NULL;
         }
         UAMBS.memBlockArr.push_back(arrayData);
@@ -1367,13 +1366,13 @@ bool initXmlParser()
     userConfigMap = new map<string, userConfigItem>;
 
     if (configStructureMap == NULL) {
-        cerr << "parser error, cannot allocate enought space for configuration Map." << endl;
+        cerr << "Configurator: parser error, cannot allocate enought space for configuration Map." << endl;
         xmlCleanupParser();
         return EXIT_FAILURE;
     }
 
     if (userConfigMap == NULL) {
-        cerr << "parser error, cannot allocate enought space for User Configuration Map." << endl;
+        cerr << "Configurator: parser error, cannot allocate enought space for User Configuration Map." << endl;
         delete configStructureMap;
         xmlCleanupParser();
         return EXIT_FAILURE;
@@ -1416,7 +1415,7 @@ extern "C" int confXmlLoadConfiguration(char *patternFile, char *userFile, void 
         doc = xmlParseDoc((const xmlChar*)structurePatternFile.c_str());
         break;
     default:
-        cerr << "Error: Configurator: Unknown pattern type." << endl;
+        cerr << "Configurator: Error: Unknown pattern type." << endl;
         return EXIT_FAILURE;
     }
 
