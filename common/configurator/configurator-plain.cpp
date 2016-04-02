@@ -60,7 +60,7 @@ bool parseLine(const string &line)
  */
 bool loadFilePlain(const char *filePath)
 {
-   fstream file(filePath);
+   ifstream file(filePath);
    string line;
 
    if (file.good()) {
