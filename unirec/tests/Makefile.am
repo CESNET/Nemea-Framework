@@ -3,9 +3,9 @@ BUILT_SOURCES=fields.h fields.c
 fields.h fields.c: ${top_srcdir}/ur_processor.sh
 	${top_srcdir}/ur_processor.sh -i ${top_srcdir} -o ./
 
-check_PROGRAMS=test_basic test_creation  test_ipaddr  test_speed test_speed_o test_speed_ur test_speed_uro
+check_PROGRAMS=test_basic test_creation  test_ipaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro
 
-TESTS = test_basic test_creation  test_ipaddr  test_speed test_speed_o test_speed_ur test_speed_uro
+TESTS = test_basic test_creation  test_ipaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro
 
 AM_LDFLAGS=-static ../libunirec.la
 COM_CPPFLAGS=-I../../ -I../ -I${top_srcdir}/../../
@@ -18,6 +18,9 @@ test_creation_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_ipaddr_SOURCES=test_ipaddr.c fields.c
 test_ipaddr_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_iter_SOURCES=test_iter.c
+test_iter_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_speed_SOURCES=test_speed.c fields.c
 test_speed_CPPFLAGS=$(COM_CPPFLAGS)
