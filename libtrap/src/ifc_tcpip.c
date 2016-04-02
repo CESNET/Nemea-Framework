@@ -1109,7 +1109,6 @@ blocking_repeat:
    FD_SET(c->term_pipe[0], &disset);
    if (maxsd < c->term_pipe[0]) {
       maxsd = c->term_pipe[0];
-      VERBOSE(CL_VERBOSE_LIBRARY, "term_pipe disconnected");
    }
 
    for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
