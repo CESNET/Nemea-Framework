@@ -35,6 +35,7 @@ int main(int argc, char **argv)
        confPlainAddElement("var4", "int64_t", "123456", 0, 1) ||
        confPlainAddElement("optional_var5", "uint16_t", "65000", 0, 0)) {
       printf("Unable to add element.\n");
+      confPlainClearContext();
       return EXIT_FAILURE;
    }
 
