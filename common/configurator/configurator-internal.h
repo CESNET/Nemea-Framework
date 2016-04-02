@@ -181,6 +181,6 @@ void clearConfigStructureMap(map<string, userConfigItem> *configMap);
 void printUserMap(map<string, userConfigItem> *configMap);
 void printConfigMap(map<string, configStrucItem> *configMap);
 bool fillConfigStruct(map<string, configStrucItem> *patternMap, map<string, userConfigItem> *userMap);
-void getConfiguration(void *inputStruct, map<string, configStrucItem> *configureMap);
+bool getConfiguration(void *inputStruct, map<string, configStrucItem> *configureMap);
 
 #endif
