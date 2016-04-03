@@ -1,3 +1,6 @@
+2016-04-02 (Zdenek Rosa): unirec: README bugfix in iteration functions
+2016-04-02 (Zdenek Rosa): unirec: test for iteration function added
+
 2016-03-18 (Tomas Cejka): unirec: allow stdc constants for c++
 2016-03-18 (Tomas Jansky): unirec: changed type ur_field_id_t to int16_t, so it can be compared with UR_E_INVALID_NAME
 
