@@ -21,8 +21,9 @@ if you want to develop programs that use Unirec message format.
 %setup
 
 %build
-./configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --disable-tests -q
+./configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --docdir=%{_docdir} --disable-doxygen-pdf --disable-doxygen-ps --disable-tests -q
 make -j4
+make doc
 
 %install
 make DESTDIR=$RPM_BUILD_ROOT install -j4
@@ -38,4 +39,5 @@ ldconfig
 %{_bindir}/nemea/ur_processor.sh
 %{_bindir}/nemea/unirec_generate_fields_files.py
 %{_prefix}/include/unirec/*
+%{_docdir}/unirec/*
 
