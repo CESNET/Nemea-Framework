@@ -1,6 +1,5 @@
 SUBDIRS=python libtrap
 
-EXTRA_DIST=module/* module/m4/* libtrap/* python/*
 
 datafiles=libtrap/module_info_example.c \
 	  libtrap/Makefile.am \
@@ -18,9 +17,15 @@ datafiles=libtrap/module_info_example.c \
 	  python/README.md \
 	  python/python_example.py
 
+EXTRA_DIST=${datafiles}
+
 install-data-hook:
 	for i in ${datafiles}; do \
 	mkdir -p ${DESTDIR}/${datadir}/`dirname $$i`; \
-	cp $$i ${DESTDIR}/${datadir}/$$i; done  
+	cp ./${srcdir}/$$i ${DESTDIR}/${datadir}/$$i; done
+
+uninstall-local:
+	for i in ${datafiles}; do \
+	rm -f ${DESTDIR}/${datadir}/$$i; done
 
 ACLOCAL_AMFLAGS=-I m4
