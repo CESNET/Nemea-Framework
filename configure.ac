@@ -89,6 +89,7 @@ AC_CONFIG_FILES([Makefile
                  examples/libtrap/Makefile
                  examples/python/Makefile
 		 nemea.spec
+		 nemea-framework.spec
 		 create_module.sh])
 
 AC_CONFIG_SUBDIRS([libtrap common unirec])

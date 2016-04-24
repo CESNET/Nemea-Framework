@@ -1,0 +1,44 @@
+Name:	nemea-framework
+Version:	@VERSION@
+Release:	@RPM_RELEASE@
+Summary:	NEMEA Framework containing base libraries for NEMEA system
+URL: https://homeproj.cesnet.cz/rpm/liberouter/devel/
+Source: nemea-framework-@VERSION@.tar.gz
+License:	BSD
+Vendor: CESNET, z.s.p.o.
+Packager: @USERNAME@ <@USERMAIL@>
+BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+BuildArch: noarch
+Provides: nemea-framework
+Requires: libtrap nemea-common nemea-python nemea-pycommon
+
+
+%description
+Package that simplifies installation of libtrap, nemea-common and examples.
+
+%prep
+%setup
+
+%build
+./configure -q --disable-libtrap --disable-common --disable-pycommon --disable-unirec --disable-python --prefix=%{_prefix} --docdir=%{_docdir} --bindir=%{_bindir} --datarootdir=%{_datarootdir}/nemea
+make -j5
+
+
+%install
+make DESTDIR=$RPM_BUILD_ROOT install
+
+%package devel
+Summary: NEMEA Framework development package
+Group: Liberouter
+Requires: libtrap-devel nemea-common-devel unirec
+Provides: nemea-framework-devel
+
+%description devel
+This package contains header files for libtrap library. Install this package
+if you want to develop your own TRAP module.
+
+%files
+%{_bindir}/create_module.sh
+%{_datarootdir}/nemea
+
+%files devel
