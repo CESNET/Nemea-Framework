@@ -45,8 +45,9 @@ fi
 pkgdatadir=${datadir}/nemea
 PKGDATADIR=$(eval echo $(eval echo ${pkgdatadir}))
 AC_SUBST(PKGDATADIR)
-AC_DEFINE_DIR(PKGDATADIR, [pkgdatadir], [Path to configuration files])
-AC_DEFINE_DIR(SYSCONFDIR, [sysconfdir], [Path to configuration files])
+AC_DEFINE_DIR(DATADIR, [datadir], [Path to datadir files])
+AC_DEFINE_DIR(PKGDATADIR, [pkgdatadir], [Path to pkgdatadir files])
+AC_DEFINE_DIR(SYSCONFDIR, [sysconfdir], [Path to sysconfdir files])
 
 AC_SUBST(RPMBUILD)
 if test -z "$RPMBUILD"; then

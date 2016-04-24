@@ -34,14 +34,14 @@
 # otherwise) arising in any way out of the use of this software, even
 # if advised of the possibility of such damage.
 
-MODULES_PATH="@PKGDATADIR@"
+MODULES_PATH="@DATADIR@"
 
 if [ ! -d "$MODULES_PATH" ]; then
    echo "Error: Cannot find modules folder. Please specify variable MODULES_PATH in the script correctly."
    exit -1
 fi
 
-EXAMPLE_PATH="$MODULES_PATH/example"
+EXAMPLE_PATH="$MODULES_PATH/module"
 
 if [ ! -d "$EXAMPLE_PATH" ]; then
    echo "Error: Cannot folder with the example module. Please specify variable EXAMPLE_PATH in the script correctly."
@@ -65,14 +65,14 @@ echo "1) Choose a name for the module. It will also affect the name of the folde
 echo -n "Enter module name: "
 read name
 
-MODULE_PATH="$MODULES_PATH/$name"
+MODULE_PATH="$name"
 
 while [ -d "$MODULE_PATH" ]; do
    echo "This module/folder already exist, please choose another name."
    echo
    echo -n "Enter module name: "
    read name
-   MODULE_PATH="$MODULES_PATH/$name"
+   MODULE_PATH="$name"
 done
 
 echo
@@ -104,9 +104,9 @@ read outputs
 
 echo
 echo "6) Author's name and email will be placed in the source code documentation."
-echo -n "Author: "
+echo -n "6.1) Author (Name Surname): "
 read author
-echo -n "Email: "
+echo -n "6.2) E-mail address: "
 read email
 
 echo
@@ -188,10 +188,10 @@ echo "Creating $MODULE_PATH/Makefile.am"
 echo "$MAKEFILE" > "$MODULE_PATH/Makefile.am"
 
 echo "Copying m4 folder..."
-cp -r "$EXAMPLE_PATH/../m4" "$MODULE_PATH"
+cp -r "$EXAMPLE_PATH/m4" "$MODULE_PATH"
 
 echo "Copying aminclude.am..."
-cp -r "$EXAMPLE_PATH/../aminclude.am" "$MODULE_PATH"
+cp "$EXAMPLE_PATH/aminclude.am" "$MODULE_PATH"
 
 cd "$MODULE_PATH"
 echo "Running autoscan..."
@@ -208,7 +208,7 @@ AX_LIBTRAP_CHECK \
 AX_UNIREC_CHECK \
 AX_NEMEACOMMON_CHECK' \
        -e '/AC_INIT/ c\
-AC_INIT(['"$name"'], [1.0.0], [traffic-analysis@cesnet.cz])' configure.ac
+AC_INIT(['"$name"'], [1.0.0], ['"$email"'])' configure.ac
 
 echo "Running autoreconf..."
 autoreconf -i
@@ -219,3 +219,4 @@ echo
 make -j10  >/dev/null \
 && echo "Module $name has been created successfully at $MODULE_PATH." \
 || echo "Error while creating module $name, please report the bug to author."
+
