@@ -20,7 +20,7 @@ Package that simplifies installation of libtrap, nemea-common and examples.
 %setup
 
 %build
-./configure -q --disable-libtrap --disable-common --disable-pycommon --disable-unirec --disable-python --prefix=%{_prefix} --docdir=%{_docdir} --bindir=%{_bindir} --datarootdir=%{_datarootdir}/nemea
+./configure -q --disable-libtrap --disable-common --disable-pycommon --disable-unirec --disable-python --prefix=%{_prefix} --docdir=%{_docdir}/nemea --bindir=%{_bindir}/nemea --datarootdir=%{_datarootdir}/nemea
 make -j5
 
 
@@ -38,7 +38,7 @@ This package contains header files for libtrap library. Install this package
 if you want to develop your own TRAP module.
 
 %files
-%{_bindir}/create_module.sh
+%{_bindir}/nemea/create_module.sh
 %{_datarootdir}/nemea
 
 %files devel

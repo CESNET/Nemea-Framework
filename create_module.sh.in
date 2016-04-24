@@ -34,7 +34,7 @@
 # otherwise) arising in any way out of the use of this software, even
 # if advised of the possibility of such damage.
 
-MODULES_PATH="@PKGDATADIR@"
+MODULES_PATH="@DATADIR@"
 
 if [ ! -d "$MODULES_PATH" ]; then
    echo "Error: Cannot find modules folder. Please specify variable MODULES_PATH in the script correctly."
