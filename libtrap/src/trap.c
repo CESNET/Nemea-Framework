@@ -2590,6 +2590,9 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    json_t *in_ifc_cnts  = NULL;
    json_t *out_ifc_cnts = NULL;
 
+   uint32_t in_cnt = (ctx->num_ifc_in > 0) ? ctx->num_ifc_in : 0;
+   uint32_t out_cnt = (ctx->num_ifc_out > 0) ? ctx->num_ifc_out : 0;
+
    json_t *in_ifces_arr = json_array();
    if (in_ifces_arr == NULL) {
       VERBOSE(CL_ERROR, "Service thread - could not create json array while creating json string with counters.");
@@ -2603,7 +2606,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
 
    json_t *result_json = NULL;
 
-   for (x = 0; x < ctx->num_ifc_in; x++) {
+   for (x = 0; x < in_cnt; x++) {
       in_ifc_cnts = json_pack("{sIsI}", "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
       if (json_array_append_new(in_ifces_arr, in_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
@@ -2611,7 +2614,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       }
    }
 
-   for (x = 0; x < ctx->num_ifc_out; x++) {
+   for (x = 0; x < out_cnt; x++) {
       out_ifc_cnts = json_pack("{sIsIsIsI}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
@@ -2619,12 +2622,12 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       }
    }
 
-   result_json = json_pack("{soso}", "in", in_ifces_arr, "out", out_ifces_arr);
+   result_json = json_pack("{sisisoso}", "in_cnt", in_cnt, "out_cnt", out_cnt, "in", in_ifces_arr, "out", out_ifces_arr);
    if (result_json == NULL) {
       VERBOSE(CL_ERROR, "Service thread - could not create final json object while creating json string with counters.");
       goto clean_up;
    }
-   *data =  json_dumps(result_json, 0);
+   *data = json_dumps(result_json, 0);
    json_decref(result_json);
    return 0;
 
