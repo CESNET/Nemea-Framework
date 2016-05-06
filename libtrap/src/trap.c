@@ -2604,7 +2604,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    json_t *result_json = NULL;
 
    for (x = 0; x < ctx->num_ifc_in; x++) {
-      in_ifc_cnts = json_pack("{sisi}", "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
+      in_ifc_cnts = json_pack("{sIsI}", "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
       if (json_array_append_new(in_ifces_arr, in_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
@@ -2612,7 +2612,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    }
 
    for (x = 0; x < ctx->num_ifc_out; x++) {
-      out_ifc_cnts = json_pack("{sisisisi}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
+      out_ifc_cnts = json_pack("{sIsIsIsI}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
