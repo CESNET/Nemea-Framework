@@ -250,14 +250,17 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         # MongoDB output
        
         if mongocoll:
+            # We need to change IDEA message here, but we may need it unchanged
+            # later -> copy it (shallow copy is sufficient)
+            idea2 = idea.copy()
             # Convert timestamps from string to Date format
-            idea['DetectTime'] = datetime.strptime(idea['DetectTime'], "%Y-%m-%dT%H:%M:%SZ")
+            idea2['DetectTime'] = datetime.strptime(idea2['DetectTime'], "%Y-%m-%dT%H:%M:%SZ")
             for i in [ 'CreateTime', 'EventTime', 'CeaseTime' ]:
-                if idea.has_key(i):
-                    idea[i] = datetime.strptime(idea[i], "%Y-%m-%dT%H:%M:%SZ")
+                if idea2.has_key(i):
+                    idea2[i] = datetime.strptime(idea2[i], "%Y-%m-%dT%H:%M:%SZ")
 
             try:
-                mongocoll.insert(idea)
+                mongocoll.insert(idea2)
             except pymongo.errors.AutoReconnect:
                 sys.stderr.write(module_name+": Error: MongoDB connection failure.\n")
                 trap.stop = 1
