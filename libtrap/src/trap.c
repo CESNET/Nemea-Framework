@@ -1164,9 +1164,9 @@ char *get_module_name(void)
       return strdup("module");
    }
    rv = fread(buffer, 1, bufsize - 1, f);
-   if (rv >= 0) {
+   buffer[rv] = 0;
+   if (rv > 0) {
       p = buffer;
-      buffer[rv] = 0;
       /* skip to the next argument if this one matches regex /^python[23]?/ */
       ret = strstr(p, "python");
       if (ret != NULL && ((ret[6] == 0) || (ret[6] == '2') || (ret[6] == '3'))) {
