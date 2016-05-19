@@ -27,7 +27,7 @@ Structure of the data:
 
 Communication on the service interface socket uses following structure:
 
-```
+```c
 struct msg_header_s {
    uint8_t com; ///< Code of the command
    uint32_t data_size; ///< Data size of the buffer sent after the msg_header
@@ -42,11 +42,34 @@ Values used in *com* variable (10 based numbers):
 To get interface statistics, a client (for example supervisor) sends this structure with values {com = 10, data_size = 0} and module replies by sending the structure back with values {com = 12, data_size > 0} followed by buffer with statistics in JSON format.
 Structure of the data in the buffer is described below.
 
-There are two objects *in* and *out* describing input and output interfaces, each of them followed by array of records.
-A record of the *in* object contains input interface counters and a record of the *out* object contains output interface counters. Names of the attributes are shown in the example below. This example shows JSON data for a module with 3 input interfaces and 2 output interfaces.
+First two pairs (keys *in_cnt* and *out_cnt*) define number of input and output interfaces of the module.
+After these two pairs there are two objects *in* and *out* describing input and output interfaces, each of them followed by array of records.
+A record of the *in* object contains input interface counters and a record of the *out* object contains output interface counters. Names of the attributes are shown in the example below. This example shows JSON data for a module with 1 input interface and 2 output interfaces.
 Note: all counters are set to 0.
 
-```
-{"in": [{"messages": 0, "buffers": 0}, {"messages": 0, "buffers": 0}, {"messages": 0, "buffers": 0}],
- "out": [{"sent-messages": 0, "dropped-messages": 0, "buffers": 0, "autoflushes": 0}, {"sent-messages": 0, "dropped-messages": 0, "buffers": 0, "autoflushes": 0}]}
+```json
+{
+   "in_cnt":1,
+   "out_cnt":2,
+   "out":[
+      {
+         "sent-messages":0,
+         "dropped-messages":0,
+         "buffers":0,
+         "autoflushes":0
+      },
+      {
+         "sent-messages":0,
+         "dropped-messages":0,
+         "buffers":0,
+         "autoflushes":0
+      }
+   ],
+   "in":[
+      {
+         "messages":0,
+         "buffers":0
+      }
+   ]
+}
 ```
