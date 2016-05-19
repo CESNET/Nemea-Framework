@@ -45,8 +45,9 @@ fi
 pkgdatadir=${datadir}/nemea
 PKGDATADIR=$(eval echo $(eval echo ${pkgdatadir}))
 AC_SUBST(PKGDATADIR)
-AC_DEFINE_DIR(PKGDATADIR, [pkgdatadir], [Path to configuration files])
-AC_DEFINE_DIR(SYSCONFDIR, [sysconfdir], [Path to configuration files])
+AC_DEFINE_DIR(DATADIR, [datadir], [Path to datadir files])
+AC_DEFINE_DIR(PKGDATADIR, [pkgdatadir], [Path to pkgdatadir files])
+AC_DEFINE_DIR(SYSCONFDIR, [sysconfdir], [Path to sysconfdir files])
 
 AC_SUBST(RPMBUILD)
 if test -z "$RPMBUILD"; then
@@ -88,7 +89,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Makefile
                  examples/libtrap/Makefile
                  examples/python/Makefile
-		 nemea.spec
+		 nemea-framework.spec
 		 create_module.sh])
 
 AC_CONFIG_SUBDIRS([libtrap common unirec])
@@ -117,6 +118,7 @@ echo "Components:"
 echo "  libtrap................: `if [[ -z "$ENABLE_LIBTRAP_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  nemea-common...........: `if [[ -z "$ENABLE_NEMEACOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  python.................: `if [[ -z "$ENABLE_PYTHON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  pycommon...............: `if [[ -z "$ENABLE_PYCOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  unirec.................: `if [[ -z "$ENABLE_UNIREC_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo

@@ -45,6 +45,9 @@ clean-local: doxygen-clean
 	rm -rf doc/doxygen
 	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
 	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
+
+install-data-local:
+	mkdir -p "$(DESTDIR)$(docdir)/unirec" && cp -R doc/html/* "$(DESTDIR)$(docdir)/unirec" || echo "Documentation was not generated yet."
 else
 clean-local:
 	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true

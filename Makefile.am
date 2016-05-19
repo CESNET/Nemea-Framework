@@ -37,3 +37,20 @@ install-exec-hook:
 	@echo -e "\n\n"
 
 
+if MAKE_RPMS
+
+RPMDIR = RPMBUILD
+RPMFILENAME=$(PACKAGE_NAME)-$(VERSION)
+.PHONY: rpm
+rpm:
+	rm -rf "$(RPMDIR)/SOURCES/$(RPMFILENAME)"
+	mkdir -p $(RPMDIR)/BUILD/ $(RPMDIR)/SRPMS/ $(RPMDIR)/RPMS/ $(RPMDIR)/SOURCES
+	make ${AM_MAKEFLAGS} dist
+	cp $(RPMFILENAME).tar.gz RPMBUILD/SOURCES/
+	$(RPMBUILD) -ba nemea-framework.spec --define "_topdir `pwd`/$(RPMDIR)";
+
+rpm-clean:
+	rm -rf $(RPMDIR)
+else
+endif
+

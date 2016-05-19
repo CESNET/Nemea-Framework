@@ -46,13 +46,14 @@
 
 int prefix_tree_map_character_to_number(unsigned  char  letter)
 {
-   if (letter >= ' ' && letter <= '~') {
+   return letter;
+   /*if (letter >= ' ' && letter <= '~') {
       //numbers are on position 0 to 9 from 48 -57
       return (letter) -' ';
    } else {
       //printf("this letter canot be used in domain: %c, in dec %d\n", letter ,letter);
       return COUNT_OF_LETTERS_IN_DOMAIN-1;
-   }
+   }*/
 
 }
 

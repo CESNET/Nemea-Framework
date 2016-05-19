@@ -28,10 +28,12 @@ cp -r build/lib/* %{buildroot}%{_datadir}/nemea-pycommon
 %post
 cd %{_datadir}/nemea-pycommon
 python setup.py install --record=%{_datadir}/nemea-pycommon/py-installed.txt 2>/dev/null || true
+python2 setup.py install --record=%{_datadir}/nemea-pycommon/py2-installed.txt 2>/dev/null || true
 python3 setup.py install --record=%{_datadir}/nemea-pycommon/py3-installed.txt 2>/dev/null || true
 
 %postun
 cat %{_datadir}/nemea-pycommon/py-installed.txt |xargs rm -f
+cat %{_datadir}/nemea-pycommon/py2-installed.txt |xargs rm -f
 cat %{_datadir}/nemea-pycommon/py3-installed.txt |xargs rm -f
 
 

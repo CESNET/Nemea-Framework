@@ -35,7 +35,7 @@
 # ===========================================================================
 #
 
-path_to_logger=../../modules/logger/logger
+path_to_logger=./$srcdir/../../modules/logger/logger
 
 vp="AgAAAIoAAABpcGFkZHIgRFNUX0lQLGlwYWRkciBTUkNfSVAsdGltZSBUSU1FX0ZJUlNULHRpbWUg
 VElNRV9MQVNULHVpbnQzMiBQT1JUX0NOVCx1aW50MTYgRFNUX1BPUlQsdWludDE2IFNSQ19QT1JU
@@ -70,8 +70,8 @@ echo -n "$vp" | base64 -d > "$data"
 
 errors=0
 
-../examples/python/python_example.py -i "f:$data,f:$out" > orig-data-parsed.txt
-../examples/python/python_example.py -i "f:$out,b:" > processed-data-parsed.txt
+./$srcdir/../examples/python/python_example.py -i "f:$data,f:$out" > orig-data-parsed.txt
+./$srcdir/../examples/python/python_example.py -i "f:$out,b:" > processed-data-parsed.txt
 
 diff orig-data-parsed.txt <(echo -n "$expected" | base64 -d | gunzip) || {
    echo "Historically stored expected output does not match with the current one. Test failed."

@@ -50,7 +50,11 @@
 extern "C" {
 #endif
 
+#ifndef __STDC_LIMIT_MACROS
+#define __STDC_LIMIT_MACROS
+#endif
 #include <stdint.h>
+
 #include "ipaddr.h"
 #include "ur_time.h"
 #include "links.h"
@@ -62,11 +66,11 @@ extern "C" {
 #define UR_DEFAULT_LENGTH_OF_FIELD_NAME 128 /// Length of name (string) of a field
 #define UR_DEFAULT_LENGTH_OF_FIELD_TYPE 16 /// Length of type (string) of a field
 #define UR_INITIAL_SIZE_FIELDS_TABLE 5 ///< Initial size of free space in fields tables
-#define UR_FIELD_ID_MAX 65535       ///< Max ID of a field
+#define UR_FIELD_ID_MAX INT16_MAX       ///< Max ID of a field
 #define UR_FIELDS(...)        ///<  Definition of UniRec fields
 //Iteration constants
-#define UR_ITER_BEGIN 0xffff  ///< First value in iterating through the fields
-#define UR_ITER_END 0xffff    ///< Last value in iterating through the fields
+#define UR_ITER_BEGIN (-1)  ///< First value in iterating through the fields
+#define UR_ITER_END INT16_MAX    ///< Last value in iterating through the fields
 //default values
 #define UR_INVALID_OFFSET 0xffff ///< Default value of all offsets (value is not in the record)
 #define UR_NO_DYNAMIC_VALUES 0xffff    ///< Value of variable "first_dynamic" if no dynamic values are present
@@ -110,7 +114,7 @@ typedef enum {
    UR_TMPLT_DIRECTION_BI   ///< bidirection
 } ur_tmplt_direction;
 
-typedef uint16_t ur_field_id_t;  ///< Type of UniRec field identifiers
+typedef int16_t ur_field_id_t;  ///< Type of UniRec field identifiers
 typedef ur_field_id_t ur_iter_t; ///< Type for identifying iteration id through all fields
 
 /** \brief Linked list for undefined field ids
@@ -168,7 +172,7 @@ typedef struct field_spec_s {
 typedef struct {
    uint16_t *offset;       ///< Table of offsets
    uint16_t offset_size;   ///< size of offset table.
-   uint16_t *ids;    ///< Array of ids in template
+   int16_t *ids;    ///< Array of ids in template
    uint16_t first_dynamic; ///< First dynamic (variable-length) field. Index to the ids array
    uint16_t count;      ///< Count of fields in template
    uint16_t static_size;   ///< Size of static part

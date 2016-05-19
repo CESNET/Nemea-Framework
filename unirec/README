@@ -675,8 +675,8 @@ Returns ID of the next field or UR_ITER_END if no more fields are present.
 
 Example usage:
 ```
-ur_field_id_t id = UR_ITER_BEGIN
-while ((id = ur_iter_fields(&tmplt, id)) != UR_ITER_END) {
+ur_field_id_t id = UR_ITER_BEGIN;
+while ((id = ur_iter_fields(tmplt, id)) != UR_ITER_END) {
 ...
 }
 ```
@@ -700,7 +700,7 @@ Returns ID of the next field or UR_ITER_END if no more fields are present.
 Example usage:
 ```
 int i = 0;
-while ((id = ur_iter_fields(&tmplt, i++)) != UR_ITER_END) {
+while ((id = ur_iter_fields_record_order(tmplt, i++)) != UR_ITER_END) {
 ...
 }
 ```

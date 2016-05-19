@@ -794,7 +794,7 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx);
  *                      their parameters.
  * @return Error code (0 on success)
  */
-int trap_init(const trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
+int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
 {
    if ((trap_glob_ctx != NULL) && (trap_glob_ctx->initialized != 0)) {
       return trap_error(trap_glob_ctx, TRAP_E_INITIALIZED);
@@ -1164,9 +1164,9 @@ char *get_module_name(void)
       return strdup("module");
    }
    rv = fread(buffer, 1, bufsize - 1, f);
-   if (rv >= 0) {
+   buffer[rv] = 0;
+   if (rv > 0) {
       p = buffer;
-      buffer[rv] = 0;
       /* skip to the next argument if this one matches regex /^python[23]?/ */
       ret = strstr(p, "python");
       if (ret != NULL && ((ret[6] == 0) || (ret[6] == '2') || (ret[6] == '3'))) {
@@ -2134,7 +2134,7 @@ error:
  *
  * \return context, NULL when allocation failed.
  */
-trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
+trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
 {
    int i;
    if ((ifc_spec.types == NULL) || (ifc_spec.params == NULL)) {
@@ -2143,6 +2143,14 @@ trap_ctx_t *trap_ctx_init(const trap_module_info_t *module_info, trap_ifc_spec_t
    trap_ctx_priv_t *ctx = trap_create_ctx_t();
    if (ctx == NULL) {
       return NULL;
+   }
+   /* count number of interfaces */
+   if (module_info->num_ifc_in < 0 && module_info->num_ifc_out < 0) {
+      return NULL;
+   } else if (module_info->num_ifc_in < 0) {
+      module_info->num_ifc_in = strlen(ifc_spec.types) - module_info->num_ifc_out;
+   } else if (module_info->num_ifc_out < 0) {
+      module_info->num_ifc_out = strlen(ifc_spec.types) - module_info->num_ifc_in;
    }
    /* create mutex protecting session list */
    pthread_rwlockattr_t lock_attrs;
@@ -2582,6 +2590,9 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    json_t *in_ifc_cnts  = NULL;
    json_t *out_ifc_cnts = NULL;
 
+   uint32_t in_cnt = (ctx->num_ifc_in > 0) ? ctx->num_ifc_in : 0;
+   uint32_t out_cnt = (ctx->num_ifc_out > 0) ? ctx->num_ifc_out : 0;
+
    json_t *in_ifces_arr = json_array();
    if (in_ifces_arr == NULL) {
       VERBOSE(CL_ERROR, "Service thread - could not create json array while creating json string with counters.");
@@ -2595,28 +2606,28 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
 
    json_t *result_json = NULL;
 
-   for (x = 0; x < ctx->num_ifc_in; x++) {
-      in_ifc_cnts = json_pack("{sisi}", "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
+   for (x = 0; x < in_cnt; x++) {
+      in_ifc_cnts = json_pack("{sIsI}", "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
       if (json_array_append_new(in_ifces_arr, in_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
       }
    }
 
-   for (x = 0; x < ctx->num_ifc_out; x++) {
-      out_ifc_cnts = json_pack("{sisisisi}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
+   for (x = 0; x < out_cnt; x++) {
+      out_ifc_cnts = json_pack("{sIsIsIsI}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
       }
    }
 
-   result_json = json_pack("{soso}", "in", in_ifces_arr, "out", out_ifces_arr);
+   result_json = json_pack("{sisisoso}", "in_cnt", in_cnt, "out_cnt", out_cnt, "in", in_ifces_arr, "out", out_ifces_arr);
    if (result_json == NULL) {
       VERBOSE(CL_ERROR, "Service thread - could not create final json object while creating json string with counters.");
       goto clean_up;
    }
-   *data =  json_dumps(result_json, 0);
+   *data = json_dumps(result_json, 0);
    json_decref(result_json);
    return 0;
 

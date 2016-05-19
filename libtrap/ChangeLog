@@ -1,3 +1,11 @@
+2016-04-02 (Tomas Cejka): libtrap: ifc_tcpip: removed debug message
+2016-03-21 (Zdenek Rosa): libtrap: trap_ctx_init calculates number of specified interfaces.
+
+2016-03-20 (Tomas Jansky): libtrap: file interface: bugfix - now possible to create dump file
+2016-03-16 (Tomas Cejka): trap_stats: BUGFIX: vulnerability format string attack
+2016-03-13 (Tomas Jansky): libtrap: file ifc: updated error message
+2016-03-11 (Marek Svepes): libtrap: tools: bugfix: the buffer in trap_stats used for incoming json data was too small after realloc
+
 2016-02-24 (Tomas Cejka): Merge branch 'master' of https://github.com/CESNET/Nemea-Framework
 2016-02-24 (Tomas Cejka): examples: build should pass, distcheck still fails
 2016-02-24 (Marek Svepes): libtrap: tools: update of the trap_stats program for reading module's interface statistics
