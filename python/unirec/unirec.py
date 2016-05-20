@@ -113,14 +113,14 @@ def CreateTemplate(template_name, field_names, verbose=False):
     FIELDS = strFIELDS
     classdict = {'FIELDS': FIELDS, '_slots': _slots, '_field_types': _field_types, '_staticfmt': _staticfmt, 'minimalsize': minimalsize, 'staticsize': staticsize}
 
-    nonepart = ["self." + key + " = " + _field_types[key] + "()" for key in _field_types.keys()]
+    nonepart = ["self." + key + " = " + _field_types[key].__name__ + "()" for key in _field_types.keys()]
 
     index = 0
     staticpart = []
     for key in (x for x in _slots if FIELDS[x].size != -1):
         curr_type = _field_types[key]
         if hasattr(curr_type,  'fromUniRec'):
-            staticpart.append("self." + key + " = " + curr_type + ".fromUniRec(t[" + str(index) + "])")
+            staticpart.append("self." + key + " = " + curr_type.__name__ + ".fromUniRec(t[" + str(index) + "])")
         else:
             staticpart.append("self." + key + " = t[" + str(index) + "]")
         index += 1
@@ -132,21 +132,21 @@ def CreateTemplate(template_name, field_names, verbose=False):
         dynamicpart.append("self." + key + " = data[(start + " + str(minimalsize) + "):(start + length + " + str(minimalsize) + ")]")
         offset += 4
 
-    strinit = """
-        def init(self, data=None):
-            if data is None:
-            """ + "\n".join(nonepart) + """ 
-            elif isinstance(data, str) or isinstance(data, bytes):
-                t = struct.unpack_from(_staticfmt, data, 0)
-                """ + "\n".join(staticpart) + """
-                """ + "\n".join(dynamicpart) + """
-            else:
-                raise TypeError("%s() argument must be a string or None, not '%s'" % (__name__, type(data).__name__))
-        """
+    strinit = """def init(self, data=None):
+    if data is None:
+        """ + "\n        ".join(nonepart) + """ 
+    elif isinstance(data, str) or isinstance(data, bytes):
+        t = struct.unpack_from('""" + _staticfmt + """', data, 0)
+        """ + "\n        ".join(staticpart) + """
+        """ + "\n        ".join(dynamicpart) + """
+    else:
+        raise TypeError("%s() argument must be a string or None, not '%s'" % (__name__, type(data).__name__))
+    """
 
-    exec(strinit, {})
+    exec_scope = globals()
+    exec(strinit, exec_scope)
 
-    classdict['__init__'] = init
+    classdict['__init__'] = exec_scope['init']
 
     def length(self):
         return len(_slots)
