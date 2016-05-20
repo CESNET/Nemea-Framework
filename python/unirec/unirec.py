@@ -113,26 +113,38 @@ def CreateTemplate(template_name, field_names, verbose=False):
     FIELDS = strFIELDS
     classdict = {'FIELDS': FIELDS, '_slots': _slots, '_field_types': _field_types, '_staticfmt': _staticfmt, 'minimalsize': minimalsize, 'staticsize': staticsize}
 
-    def init(self, data=None):
-        if data is None:
-            for key in _field_types.keys():
-                self.__dict__[key] = _field_types[key].__new__(_field_types[key])
-        elif isinstance(data, str) or isinstance(data, bytes):
-            t = struct.unpack_from(_staticfmt, data, 0)
-            index = 0
-            # static unpacking
-            for key in (x for x in _slots if FIELDS[x].size != -1):
-                curr_type = _field_types[key]
-                self.__dict__[key] = curr_type.fromUniRec(t[index]) if hasattr(curr_type, 'fromUniRec') else t[index]
-                index += 1
-            # dynamic unpacking
-            offset = staticsize
-            for key in (x for x in _slots if FIELDS[x].size == -1):
-                start, length = struct.unpack_from("=HH", data, offset)
-                self.__dict__[key] = data[(minimalsize + start):(minimalsize + start + length)]
-                offset += 4
+    nonepart = ["self." + key + " = " + _field_types[key] + "()" for key in _field_types.keys()]
+
+    index = 0
+    staticpart = []
+    for key in (x for x in _slots if FIELDS[x].size != -1):
+        curr_type = _field_types[key]
+        if hasattr(curr_type,  'fromUniRec'):
+            staticpart.append("self." + key + " = " + curr_type + ".fromUniRec(t[" + str(index) + "])")
         else:
-            raise TypeError("%s() argument must be a string or None, not '%s'" % (__name__, type(data).__name__))
+            staticpart.append("self." + key + " = t[" + str(index) + "]")
+        index += 1
+
+    offset = minimalsize
+    dynamicpart = []
+    for key in (x for x in _slots if FIELDS[x].size == -1):
+        dynamicpart.append("start, length = struct.unpack_from('=HH', data, " + str(offset) +")")
+        dynamicpart.append("self." + key + " = data[(start + " + str(minimalsize) + "):(start + length + " + str(minimalsize) + ")]")
+        offset += 4
+
+    strinit = """
+        def init(self, data=None):
+            if data is None:
+            """ + "\n".join(nonepart) + """ 
+            elif isinstance(data, str) or isinstance(data, bytes):
+                t = struct.unpack_from(_staticfmt, data, 0)
+                """ + "\n".join(staticpart) + """
+                """ + "\n".join(dynamicpart) + """
+            else:
+                raise TypeError("%s() argument must be a string or None, not '%s'" % (__name__, type(data).__name__))
+        """
+
+    exec(strinit)
 
     classdict['__init__'] = init
 
