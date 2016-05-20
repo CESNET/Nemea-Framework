@@ -144,7 +144,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
                 raise TypeError("%s() argument must be a string or None, not '%s'" % (__name__, type(data).__name__))
         """
 
-    exec(strinit)
+    exec(strinit, {})
 
     classdict['__init__'] = init
 
