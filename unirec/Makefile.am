@@ -16,6 +16,7 @@ ur_values.h ur_values.c ur_values.py: process_values.py
 
 
 lib_LTLIBRARIES=libunirec.la
+libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
 libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr_cpp.h ipaddr.h links.h ur_time.h
 
