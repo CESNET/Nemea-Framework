@@ -16,20 +16,16 @@ ctx.init(sys.argv)
 print(ctx.getVerboseLevel())
 
 ctx.setRequiredFmt(0)
+ctx.ifcctl(0, True, 3, 1000000)
 
-def mainLoop():
-    global UR_Flow
-    for i in range(9000000):
-        a = ctx.recv(0)
-        if i == 0:
-            UR_Flow = unirec.CreateTemplate("UR_Flow", ctx.getDataFmt(0)[1])
-        rec = UR_Flow(a)
+try:
+    a = ctx.recv(0)
+    raise Exception("recv should have raised Timeout exception")
+except pytrap.TimeoutError:
+    print("Caught Timeout exception")
 
-
-#import cProfile
-#cProfile.run('mainLoop()')
-mainLoop()
 
 ctx.finalize()
+
 
 
