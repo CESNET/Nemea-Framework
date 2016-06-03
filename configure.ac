@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-framework], [2.0.0], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-framework], [2.0.1], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
