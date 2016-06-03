@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.7.5], [traffic-analysis@cesnet.cz])
+AC_INIT([libtrap], [0.7.6], [traffic-analysis@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([subdir-objects])

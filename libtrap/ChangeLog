@@ -1,3 +1,8 @@
+2016-05-19 (Marek Svepes): libtrap: doc: update of the service-ifc readme
+2016-05-13 (Tomas Cejka): libtrap: BUGFIX bad comparison and not-null-terminated string
+2016-05-06 (Marek Svepes): service ifc: changed format of the json message - added information about total input and output ifc number
+2016-05-06 (Marek Svepes): bugfix: service ifc: fixed overflow of the interfaces' counters
+
 2016-04-02 (Tomas Cejka): libtrap: ifc_tcpip: removed debug message
 2016-03-21 (Zdenek Rosa): libtrap: trap_ctx_init calculates number of specified interfaces.
 
