@@ -125,7 +125,7 @@ def CreateTemplate(template_name, field_names, verbose=False):
             staticpart.append("self." + key + " = t[" + str(index) + "]")
         index += 1
 
-    offset = minimalsize
+    offset = staticsize
     dynamicpart = []
     for key in (x for x in _slots if FIELDS[x].size == -1):
         dynamicpart.append("start, length = struct.unpack_from('=HH', data, " + str(offset) +")")
