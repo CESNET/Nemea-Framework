@@ -62,7 +62,7 @@
  * \name Default values
  *  Defines macros used by prefix tree
  * \{ */
-#define COUNT_OF_LETTERS_IN_DOMAIN 255 /*< Max count of letter in domain. */
+#define COUNT_OF_LETTERS_IN_DOMAIN 256 /*< Max count of letter in domain. */
 #define MAX_SIZE_OF_DOMAIN 256 /*< Max length of domain */
 #define MAX_SIZE_OF_DEGREE 5 /*< Max size of stored information  */
 #define ADD_TO_LIST_FROM_COUNT_OF_SEARCH 20 /*< Default number of histogram size. */
