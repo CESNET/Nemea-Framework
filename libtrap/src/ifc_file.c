@@ -314,6 +314,19 @@ neg_start:
    return TRAP_E_OK;
 }
 
+char *file_recv_ifc_get_id(void *priv)
+{
+   if (priv == NULL) {
+      return NULL;
+   }
+
+   file_private_t *config = (file_private_t *) priv;
+   if (config->filename == NULL) {
+      return NULL;
+   }
+   return config->filename;
+}
+
 /**
  * \brief Allocate and initiate file input interface.
  * This function is called by TRAP library to initialize one input interface.
@@ -384,6 +397,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    ifc->destroy = file_destroy;
    ifc->create_dump = file_create_dump;
    ifc->priv = priv;
+   ifc->get_id = file_recv_ifc_get_id;
 
    return TRAP_E_OK;
 }
@@ -476,6 +490,19 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
 int32_t file_get_client_count(void *priv)
 {
    return 1;
+}
+
+char *file_send_ifc_get_id(void *priv)
+{
+   if (priv == NULL) {
+      return NULL;
+   }
+
+   file_private_t *config = (file_private_t *) priv;
+   if (config->filename == NULL) {
+      return NULL;
+   }
+   return config->filename;
 }
 
 /**
@@ -607,6 +634,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    ifc->get_client_count = file_get_client_count;
    ifc->create_dump = file_create_dump;
    ifc->priv = priv;
+   ifc->get_id = file_send_ifc_get_id;
 
    return TRAP_E_OK;
 }
