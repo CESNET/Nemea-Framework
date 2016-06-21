@@ -75,8 +75,6 @@ while not trap.stop:
    rec = UR_Flow(data)
    print(rec)
 
-   assert(data == rec.serialize()) # Check that serialization works fine
-
    # Send data to output interface
    try:
       rec2 = UR_Flow2()
