@@ -21,8 +21,8 @@ ctx.ifcctl(0, True, 3, 1000000)
 try:
     a = ctx.recv(0)
     raise Exception("recv should have raised Timeout exception")
-except pytrap.TimeoutError:
-    print("Caught Timeout exception")
+except pytrap.TrapError as e:
+    print("Caught Timeout exception: {0}".format(type(e)))
 
 
 ctx.finalize()

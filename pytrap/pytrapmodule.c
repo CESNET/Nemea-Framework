@@ -21,6 +21,8 @@ static PyObject *TimeoutError;
 
 static PyObject *TrapFMTChanged;
 
+static PyObject *TrapFMTMismatch;
+
 static int
 local_trap_init(int argc, char **argv, trap_module_info_t *module_info, int ifcin, int ifcout)
 {
@@ -117,6 +119,9 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     } else if (ret == TRAP_E_BAD_IFC_INDEX) {
         PyErr_SetString(TrapError, "Bad index of IFC.");
+        return NULL;
+    } else if (ret == TRAP_E_FORMAT_MISMATCH) {
+        PyErr_SetString(TrapFMTMismatch, "Format mismatch, incompatible data format of sender and receiver.");
         return NULL;
     }
     data = PyBytes_FromStringAndSize(in_rec, in_rec_size);
@@ -265,7 +270,7 @@ pytrap_getInIFCState(PyObject *self, PyObject *args)
         PyErr_SetString(TrapError, "Not initialized.");
         return NULL;
     }
-    
+
     return PyLong_FromLong(state);
 }
 
@@ -520,17 +525,21 @@ initpytrap(void)
     if (PyType_Ready(&pytrap_TrapContext) < 0)
         INITERROR;
 
-    TimeoutError = PyErr_NewException("pytrap.TimeoutError", NULL, NULL);
+    TrapError = PyErr_NewException("pytrap.TrapError", NULL, NULL);
+    Py_INCREF(TrapError);
+    PyModule_AddObject(m, "TrapError", TrapError);
+
+    TimeoutError = PyErr_NewException("pytrap.TimeoutError", TrapError, NULL);
     Py_INCREF(TimeoutError);
     PyModule_AddObject(m, "TimeoutError", TimeoutError);
 
-    TrapError = PyErr_NewException("pytrap.error", NULL, NULL);
-    Py_INCREF(TrapError);
-    PyModule_AddObject(m, "error", TrapError);
-
-    TrapFMTChanged = PyErr_NewException("pytrap.FormatChanged", NULL, NULL);
+    TrapFMTChanged = PyErr_NewException("pytrap.FormatChanged", TrapError, NULL);
     Py_INCREF(TrapFMTChanged);
     PyModule_AddObject(m, "FormatChanged", TrapFMTChanged);
+
+    TrapFMTMismatch = PyErr_NewException("pytrap.FormatMismatch", TrapError, NULL);
+    Py_INCREF(TrapFMTChanged);
+    PyModule_AddObject(m, "FormatMismatch", TrapFMTMismatch);
 
     Py_INCREF(&pytrap_TrapContext);
     PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
