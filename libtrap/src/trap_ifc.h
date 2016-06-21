@@ -170,6 +170,7 @@ typedef struct trap_input_ifc_s {
     * by standard way using trap_ctx_ifcctl().
     */
    char datatimeout_fixed;
+   char ifc_type;                  ///< Type of interface
 
    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
 
