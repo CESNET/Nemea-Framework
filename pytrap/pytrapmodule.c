@@ -19,6 +19,8 @@ static PyObject *TrapError;
 
 static PyObject *TimeoutError;
 
+static PyObject *TrapFMTChanged;
+
 static int
 local_trap_init(int argc, char **argv, trap_module_info_t *module_info, int ifcin, int ifcout)
 {
@@ -102,6 +104,7 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
     const void *in_rec;
     uint16_t in_rec_size;
     PyObject *data;
+    PyObject *attr;
 
     static char *kwlist[] = {"ifcidx", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "i", kwlist, &ifcidx)) {
@@ -117,7 +120,12 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
     data = PyBytes_FromStringAndSize(in_rec, in_rec_size);
-
+    if (ret == TRAP_E_FORMAT_CHANGED) {
+        attr = Py_BuildValue("s", "data");
+        PyObject_SetAttr(TrapFMTChanged, attr, data);
+        PyErr_SetString(TrapFMTChanged, "Format changed.");
+        return NULL;
+    }
     return data;
 }
 
@@ -231,8 +239,9 @@ pytrap_setRequiredFmt(PyObject *self, PyObject *args, PyObject *keywds)
     const char *fmtspec = "";
 
     static char *kwlist[] = {"ifcidx", "data_type", "fmtspec", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|bs", kwlist, &ifcidx, &data_type, &fmtspec))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i|bs", kwlist, &ifcidx, &data_type, &fmtspec)) {
         return NULL;
+    }
 
     trap_set_required_fmt(ifcidx, data_type, fmtspec);
 
@@ -256,10 +265,11 @@ pytrap_getInIFCState(PyObject *self, PyObject *args)
         PyErr_SetString(TrapError, "Not initialized.");
         return NULL;
     }
-
+    
     return PyLong_FromLong(state);
 }
 
+/*
 static PyObject *
 pytrap_createModuleInfo(PyObject *self, PyObject *args)
 {
@@ -275,6 +285,7 @@ pytrap_updateModuleParam(PyObject *self, PyObject *args)
 
     Py_RETURN_NONE;
 }
+*/
 
 static PyObject *
 pyunirec_timestamp(PyObject *self, PyObject *args)
@@ -335,7 +346,10 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    bytes: Received data.\n\n"
         "Raises:\n"
         "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
-        "    TrapError: Bad index given.\n"},
+        "    TrapError: Bad index given.\n"
+        "    FormatChanged: Data format was changed, it is necessary to\n"
+        "        update template.  The received data is in `data` attribute\n"
+        "        of the FormatChanged instance.\n"},
 
     {"send",        (PyCFunction) pytrap_send, METH_VARARGS | METH_KEYWORDS,
         "Send data via TRAP interface.\n\n"
@@ -366,22 +380,55 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Args:\n"
         "    ifcidx (int): Index of IFC.\n\n"
         "Returns:\n"
-        "    (int, string)\n\n"
+        "    Tuple(int, string): Type of format and specifier (see setRequiredFmt()).\n\n"
         },
 
-    {"terminate",   pytrap_terminate, METH_VARARGS, "Terminate TRAP"},
-    {"finalize",    pytrap_finalize, METH_VARARGS, "Free allocated memory"},
-    {"sendFlush",   pytrap_sendFlush, METH_VARARGS, "Force sending buffer for IFC with ifcidx index."},
+    {"terminate",   pytrap_terminate, METH_VARARGS,
+        "Terminate TRAP."},
+
+    {"finalize",    pytrap_finalize, METH_VARARGS,
+        "Free allocated memory."},
+
+    {"sendFlush",   pytrap_sendFlush, METH_VARARGS,
+        "Force sending buffer for IFC with ifcidx index.\n\n"
+        "Args:\n"
+        "    ifcidx (int): Index of IFC.\n\n"
+        },
 
     {"setDataFmt",  (PyCFunction) pytrap_setDataFmt, METH_VARARGS | METH_KEYWORDS,
-        "setDataFmt(ifcidx, [type, spec]), where ifcidx is number, type can be one of the module's constants (FMT_RAW, FMT_UNIREC), spec is string"},
+        "Set data format for output IFC.\n\n"
+        "Args:\n"
+        "    ifcidx (int): Index of IFC.\n"
+        "    type (Optional[int]): Type of format (FMT_RAW, FMT_UNIREC), FMT_UNIREC if missing.\n"
+        "    spec (Optional[string]): Specifier of data format, \"\" if missing.\n"
+        },
 
-    {"setVerboseLevel", pytrap_setVerboseLevel, METH_VARARGS, "setVerboseLevel(int), where int is the verbose level."},
-    {"getVerboseLevel", pytrap_getVerboseLevel, METH_VARARGS, "getVerboseLevel() -> int, current verbose level."},
-    {"getInIFCState",   pytrap_getInIFCState, METH_VARARGS, "getInIFCState(int) -> int, returns one of module's constants () for IFC with ifcidx index. It can raise TrapError exception when bad index is passed or TRAP is not initialized."},
+    {"setVerboseLevel", pytrap_setVerboseLevel, METH_VARARGS,
+        "Set the verbose level of TRAP.\n\n"
+        "Args:\n"
+        "    level (int): Level of verbosity, 0 by default, the higher value the more verbose.\n"
+        },
 
+    {"getVerboseLevel", pytrap_getVerboseLevel, METH_VARARGS,
+        "Get current verbose level.\n\n"
+        "Returns:\n"
+        "    int: Level of verbosity.\n"
+        },
+
+    {"getInIFCState",   pytrap_getInIFCState, METH_VARARGS,
+        "Get the state of input IFC.\n\n"
+        "Args:\n"
+        "    ifcidx (int): Index of IFC.\n\n"
+        "Returns:\n"
+        "    int: One of module's constants (FMTS_WAITING, FMTS_OK, FMTS_MISMATCH, FMTS_CHANGED).\n\n"
+        "Raises:\n"
+        "    TrapError: Bad index is passed or TRAP is not initialized.\n"
+        },
+
+    /*
     {"createModuleInfo",    pytrap_createModuleInfo, METH_VARARGS, ""},
     {"updateModuleParam",   pytrap_updateModuleParam, METH_VARARGS, ""},
+    */
     {NULL, NULL, 0, NULL}
 };
 
@@ -480,6 +527,10 @@ initpytrap(void)
     TrapError = PyErr_NewException("pytrap.error", NULL, NULL);
     Py_INCREF(TrapError);
     PyModule_AddObject(m, "error", TrapError);
+
+    TrapFMTChanged = PyErr_NewException("pytrap.FormatChanged", NULL, NULL);
+    Py_INCREF(TrapFMTChanged);
+    PyModule_AddObject(m, "FormatChanged", TrapFMTChanged);
 
     Py_INCREF(&pytrap_TrapContext);
     PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
