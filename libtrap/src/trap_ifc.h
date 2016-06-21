@@ -137,11 +137,23 @@ typedef void (*ifc_create_dump_func_t)(void *p, uint32_t i, const char *d);
 typedef int32_t (*ifc_get_client_count_func_t)(void *p);
 
 /**
+ * Get identifier of the interface
+ *
+ * \param[in] priv   pointer to IFC's private memory allocated by constructor
+ * \returns pointer to char (private memory of the ifc - do not free!).
+ * TCP and UNIXSOCKET ifces return port and name of socket, file ifc returns name of the file,
+ * GENERATOR and BLACKHOLE ifces return NULL.
+ */
+typedef char * (*ifc_get_id_func_t)(void *priv);
+
+
+/**
  * @}
  */
 
 /** Struct to hold an instance of some input interface. */
 typedef struct trap_input_ifc_s {
+   ifc_get_id_func_t get_id;       ///< Pointer to get_id function
    ifc_recv_func_t recv;           ///< Pointer to receive function
    ifc_terminate_func_t terminate; ///< Pointer to terminate function
    ifc_destroy_func_t destroy;     ///< Pointer to destructor function
@@ -158,6 +170,7 @@ typedef struct trap_input_ifc_s {
     * by standard way using trap_ctx_ifcctl().
     */
    char datatimeout_fixed;
+   char ifc_type;                  ///< Type of interface
 
    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
 
@@ -195,6 +208,7 @@ typedef struct trap_input_ifc_s {
 
 /** Struct to hold an instance of some output interface. */
 typedef struct trap_output_ifc_s {
+   ifc_get_id_func_t get_id;       ///< Pointer to get_id function
    ifc_disconn_clients_func_t disconn_clients; ///< Pointer to disconnect_clients function
    ifc_send_func_t send;           ///< Pointer to send function
    ifc_terminate_func_t terminate; ///< Pointer to terminate function

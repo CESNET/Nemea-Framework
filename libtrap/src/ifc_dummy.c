@@ -101,6 +101,11 @@ void generator_destroy(void *priv)
    }
 }
 
+char *generator_ifc_get_id(void *priv)
+{
+   return NULL;
+}
+
 int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc)
 {
    generator_private_t *priv = NULL;
@@ -159,6 +164,7 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    ifc->destroy = generator_destroy;
    ifc->create_dump = create_dump;
    ifc->priv = priv;
+   ifc->get_id = generator_ifc_get_id;
 
    return TRAP_E_OK;
 failure:
@@ -196,6 +202,11 @@ int32_t blackhole_get_client_count(void *priv)
    return 1;
 }
 
+char *blackhole_ifc_get_id(void *priv)
+{
+   return NULL;
+}
+
 int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *ifc)
 {
    ifc->send = blackhole_send;
@@ -204,6 +215,7 @@ int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *
    ifc->get_client_count = blackhole_get_client_count;
    ifc->create_dump = create_dump;
    ifc->priv = NULL;
+   ifc->get_id = blackhole_ifc_get_id;
    return TRAP_E_OK;
 }
 

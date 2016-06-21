@@ -2258,6 +2258,7 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
       }
       ctx->in_ifc_list[i].buffer_full = 0;
       ctx->in_ifc_list[i].buffer_pointer = ctx->in_ifc_list[i].buffer;
+      ctx->in_ifc_list[i].ifc_type = ifc_spec.types[i];
 
       /* call input IFC constructor */
       if (trapifc_in_construct(ctx, &ifc_spec, i) == EXIT_FAILURE) {
@@ -2295,6 +2296,7 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
       }
       ctx->out_ifc_list[i].timeout = TRAP_IFC_TIMEOUT;
       ctx->out_ifc_list[i].bufferswitch = 1;
+      ctx->out_ifc_list[i].ifc_type = ifc_spec.types[ctx->num_ifc_in + i];
 
       /* call output IFC constructor */
       if (trapifc_out_construct(ctx, &ifc_spec, i) == EXIT_FAILURE) {
@@ -2586,6 +2588,8 @@ int service_send_data(int sock_d, uint32_t size, void **data)
 int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
 {
    uint x = 0;
+   char *ifc_id = NULL;
+   char none_ifc_id[] = "none";
 
    json_t *in_ifc_cnts  = NULL;
    json_t *out_ifc_cnts = NULL;
@@ -2607,7 +2611,11 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    json_t *result_json = NULL;
 
    for (x = 0; x < in_cnt; x++) {
-      in_ifc_cnts = json_pack("{sIsI}", "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
+      ifc_id = ctx->in_ifc_list[x].get_id(ctx->in_ifc_list[x].priv);
+      if (ifc_id == NULL) {
+         ifc_id = none_ifc_id;
+      }
+      in_ifc_cnts = json_pack("{sssisIsI}", "ifc_id", ifc_id, "ifc_type", (int) (ctx->in_ifc_list[x].ifc_type), "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
       if (json_array_append_new(in_ifces_arr, in_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
@@ -2615,7 +2623,11 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
    }
 
    for (x = 0; x < out_cnt; x++) {
-      out_ifc_cnts = json_pack("{sIsIsIsI}", "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
+      ifc_id = ctx->out_ifc_list[x].get_id(ctx->out_ifc_list[x].priv);
+      if (ifc_id == NULL) {
+         ifc_id = none_ifc_id;
+      }
+      out_ifc_cnts = json_pack("{sssisIsIsIsI}", "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type), "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;

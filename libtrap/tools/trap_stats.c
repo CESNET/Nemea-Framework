@@ -112,6 +112,9 @@ int decode_cnts_from_json(char **data)
    json_t *in_ifc_cnts  = NULL;
    json_t *out_ifc_cnts = NULL;
    json_t *cnt = NULL;
+   char ifc_type;
+   const char *ifc_id = NULL;
+   uint32_t ifc_cnt = 0;
 
    /***********************************/
 
@@ -130,6 +133,14 @@ int decode_cnts_from_json(char **data)
     }
 
 
+   cnt = json_object_get(json_struct, "in_cnt");
+   if (cnt == NULL) {
+      printf("[ERROR] Could not get key \"in_cnt\" from root json object.\n");
+      json_decref(json_struct);
+      return -1;
+   }
+   ifc_cnt = json_integer_value(cnt);
+
    // Get value of the key "in" from json root elem (it should be an array of json objects - every object contains counters of one input interface)
    in_ifces_arr = json_object_get(json_struct, "in");
    if (in_ifces_arr == NULL) {
@@ -144,7 +155,7 @@ int decode_cnts_from_json(char **data)
       return -1;
    }
 
-   printf("Input interfaces:\n");
+   printf("Input interfaces: %d\n", ifc_cnt);
    json_array_foreach(in_ifces_arr, arr_idx, in_ifc_cnts) {
       if (json_is_object(in_ifc_cnts) == 0) {
          printf("[ERROR] Counters of an input interface are not a json object in received json structure.\n");
@@ -169,10 +180,39 @@ int decode_cnts_from_json(char **data)
       }
       ifc_cnts[buffers_idx] = json_integer_value(cnt);
 
-      printf("\tIFC %d> RM: %" PRIu64 ", RB: %" PRIu64 "\n", (int) arr_idx, ifc_cnts[msg_idx], ifc_cnts[buffers_idx]);
+      cnt = json_object_get(in_ifc_cnts, "ifc_type");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"ifc_type\" from an input interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_type = (char)(json_integer_value(cnt));
+
+      cnt = json_object_get(in_ifc_cnts, "ifc_id");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"ifc_id\" from an input interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_id = json_string_value(cnt);
+      if (ifc_id == NULL) {
+         printf("[ERROR] Could not get string value of key \"ifc_id\" from an input interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+
+      printf("\tID: %s, TYPE: %c, RM: %" PRIu64 ", RB: %" PRIu64 "\n", ifc_id, ifc_type, ifc_cnts[msg_idx], ifc_cnts[buffers_idx]);
       memset(ifc_cnts, 0, 2 * sizeof(uint64_t));
    }
 
+
+   cnt = json_object_get(json_struct, "out_cnt");
+   if (cnt == NULL) {
+      printf("[ERROR] Could not get key \"out_cnt\" from root json object.\n");
+      json_decref(json_struct);
+      return -1;
+   }
+   ifc_cnt = json_integer_value(cnt);
 
    // Get value of the key "out" from json root elem (it should be an array of json objects - every object contains counters of one output interface)
    out_ifces_arr = json_object_get(json_struct, "out");
@@ -188,7 +228,7 @@ int decode_cnts_from_json(char **data)
       return -1;
    }
 
-   printf("Output interfaces:\n");
+   printf("Output interfaces: %d\n", ifc_cnt);
    json_array_foreach(out_ifces_arr, arr_idx, out_ifc_cnts) {
       if (json_is_object(out_ifc_cnts) == 0) {
          printf("[ERROR] Counters of an output interface are not a json object in received json structure.\n");
@@ -228,7 +268,28 @@ int decode_cnts_from_json(char **data)
       }
       ifc_cnts[af_idx] = json_integer_value(cnt);
 
-      printf("\tIFC %d> SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", (int) arr_idx, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
+      cnt = json_object_get(out_ifc_cnts, "ifc_type");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"ifc_type\" from an output interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_type = (char)(json_integer_value(cnt));
+
+      cnt = json_object_get(out_ifc_cnts, "ifc_id");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"ifc_id\" from an output interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_id = json_string_value(cnt);
+      if (ifc_id == NULL) {
+         printf("[ERROR] Could not get string value of key \"ifc_id\" from an output interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+
+      printf("\tID: %s, TYPE: %c, SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", ifc_id, ifc_type, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
       memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
    }
 

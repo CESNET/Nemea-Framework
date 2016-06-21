@@ -553,6 +553,19 @@ exit:
    return;
 }
 
+char *tcpip_recv_ifc_get_id(void *priv)
+{
+   if (priv == NULL) {
+      return NULL;
+   }
+
+   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
+   if (config->dest_port == NULL) {
+      return NULL;
+   }
+   return config->dest_port;
+}
+
 /**
  * \brief Constructor of input TCP/IP IFC module.
  * This function is called by TRAP library to initialize one input interface.
@@ -655,6 +668,7 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    ifc->terminate = tcpip_receiver_terminate;
    ifc->create_dump = tcpip_receiver_create_dump;
    ifc->priv = config;
+   ifc->get_id = tcpip_recv_ifc_get_id;
 
 #ifndef ENABLE_NEGOTIATION
    if (config->connected == 0) {
@@ -1442,6 +1456,18 @@ void server_disconnect_all_clients(void *priv)
    pthread_mutex_unlock(&c->lock);
 }
 
+char *tcpip_send_ifc_get_id(void *priv)
+{
+   if (priv == NULL) {
+      return NULL;
+   }
+
+   tcpip_sender_private_t *config = (tcpip_sender_private_t *) priv;
+   if (config->server_port == NULL) {
+      return NULL;
+   }
+   return config->server_port;
+}
 
 /**
  * \brief Constructor of output TCP/IP IFC module.
@@ -1574,6 +1600,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    ifc->get_client_count = tcpip_sender_get_client_count;
    ifc->create_dump = tcpip_sender_create_dump;
    ifc->priv = priv;
+   ifc->get_id = tcpip_send_ifc_get_id;
 
    return result;
 
