@@ -196,16 +196,6 @@ AC_DEFINE([USE_URANDOM], [1],
   [Define to 1 if /dev/urandom should be used for seeding the hash function])
 fi
 
-AC_ARG_ENABLE([windows-cryptoapi],
-  [AS_HELP_STRING([--disable-windows-cryptoapi],
-    [Don't use CryptGenRandom to seed the hash function])],
-  [use_windows_cryptoapi=$enableval], [use_windows_cryptoapi=yes])
-
-if test "x$use_windows_cryptoapi" = xyes; then
-AC_DEFINE([USE_WINDOWS_CRYPTOAPI], [1],
-  [Define to 1 if CryptGenRandom should be used for seeding the hash function])
-fi
-
 AC_ARG_ENABLE([initial-hashtable-order],
   [AS_HELP_STRING([--enable-initial-hashtable-order=VAL],
     [Number of buckets new object hashtables contain is 2 raised to this power. The default is 3, so empty hashtables contain 2^3 = 8 buckets.])],
