@@ -5,6 +5,9 @@ is to allow native calls of base TRAP functionality (used by NEMEA modules).
 
 # Installation
 
+Development package of Python is required (python-devel, python3-devel etc.
+according to your OS distribution).  It contains needed header files.
+
 Run as root:
 
 ```
