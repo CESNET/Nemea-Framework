@@ -17,6 +17,7 @@ libnemea_common_la_SOURCES=configurator/configurator.cpp \
 			   fast_hash_filter/fast_hash_filter.c \
 			   fast_hash_filter/fhf_hashes.h \
 			   b_plus_tree/b_plus_tree.c \
+			   b_plus_tree/b_plus_tree_internal.h \
 			   prefix_tree/prefix_tree.c \
                            super_fast_hash/super_fast_hash.c
 libnemea_common_la_LDFLAGS = -version-info 2:0:1
