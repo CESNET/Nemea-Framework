@@ -94,7 +94,7 @@ typedef struct bpt_nd_ext_leaf_t {
  * \param[in] index_from position in array of source.
  * \param[in] size_of_key size of key to copy.
  */
-void copy_key(void *to, int index_to, void *from, int index_from, int size_of_key);
+void bpt_copy_key(void *to, int index_to, void *from, int index_from, int size_of_key);
 
 /*!
  * \brief Creates bpt_nd_t structure
