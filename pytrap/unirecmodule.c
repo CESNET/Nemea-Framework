@@ -26,9 +26,12 @@ typedef struct {
 static PyObject *
 UnirecTime_compare(PyObject *a, PyObject *b, int op)
 {
+    PyObject *result;
+
     //int PyObject_IsInstance(PyObject *inst, PyObject *cls)
     if (a->ob_type != &pytrap_UnirecTime || b->ob_type != &pytrap_UnirecTime) {
-        return Py_NotImplemented;
+        result = Py_NotImplemented;
+        goto out;
     }
 
     pytrap_unirectime *ur_a = (pytrap_unirectime *) a;
@@ -36,20 +39,24 @@ UnirecTime_compare(PyObject *a, PyObject *b, int op)
 
     switch (op) {
     case Py_EQ:
-        return (ur_a->timestamp == ur_b->timestamp ? Py_True : Py_False);
+        result = (ur_a->timestamp == ur_b->timestamp ? Py_True : Py_False);
     case Py_NE:
-        return (ur_a->timestamp != ur_b->timestamp ? Py_True : Py_False);
+        result = (ur_a->timestamp != ur_b->timestamp ? Py_True : Py_False);
     case Py_LE:
-        return (ur_a->timestamp <= ur_b->timestamp ? Py_True : Py_False);
+        result = (ur_a->timestamp <= ur_b->timestamp ? Py_True : Py_False);
     case Py_GE:
-        return (ur_a->timestamp >= ur_b->timestamp ? Py_True : Py_False);
+        result = (ur_a->timestamp >= ur_b->timestamp ? Py_True : Py_False);
     case Py_LT:
-        return (ur_a->timestamp < ur_b->timestamp ? Py_True : Py_False);
+        result = (ur_a->timestamp < ur_b->timestamp ? Py_True : Py_False);
     case Py_GT:
-        return (ur_a->timestamp > ur_b->timestamp ? Py_True : Py_False);
+        result = (ur_a->timestamp > ur_b->timestamp ? Py_True : Py_False);
     default:
-        return Py_NotImplemented;
+        result = Py_NotImplemented;
     }
+
+out:
+    Py_INCREF(result);
+    return result;
 }
 
 static PyMethodDef pytrap_unirectime_methods[] = {
@@ -72,12 +79,6 @@ UnirecTime_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     return (PyObject *) self;
-}
-
-static void
-UnirecTime_dealloc(pytrap_unirectime *self)
-{
-    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static PyObject *
@@ -103,7 +104,7 @@ static PyTypeObject pytrap_UnirecTime = {
     "pytrap.UnirecTime",          /* tp_name */
     sizeof(pytrap_unirectime),    /* tp_basicsize */
     0,                         /* tp_itemsize */
-    (destructor) UnirecTime_dealloc,                         /* tp_dealloc */
+    0,                         /* tp_dealloc */
     0,                         /* tp_print */
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
@@ -154,9 +155,12 @@ typedef struct {
 static PyObject *
 UnirecIPAddr_compare(PyObject *a, PyObject *b, int op)
 {
+    PyObject *result;
+
     //int PyObject_IsInstance(PyObject *inst, PyObject *cls)
     if (a->ob_type != &pytrap_UnirecIPAddr || b->ob_type != &pytrap_UnirecIPAddr) {
-        return Py_NotImplemented;
+        result = Py_NotImplemented;
+        goto out;
     }
 
     pytrap_unirecipaddr *ur_a = (pytrap_unirecipaddr *) a;
@@ -171,20 +175,24 @@ UnirecIPAddr_compare(PyObject *a, PyObject *b, int op)
 
     switch (op) {
     case Py_EQ:
-        return (res == 0 ? Py_True : Py_False);
+        result = (res == 0 ? Py_True : Py_False);
     case Py_NE:
-        return (res != 0 ? Py_True : Py_False);
+        result = (res != 0 ? Py_True : Py_False);
     case Py_LE:
-        return (res <= 0 ? Py_True : Py_False);
+        result = (res <= 0 ? Py_True : Py_False);
     case Py_GE:
-        return (res >= 0 ? Py_True : Py_False);
+        result = (res >= 0 ? Py_True : Py_False);
     case Py_LT:
-        return (res < 0 ? Py_True : Py_False);
+        result = (res < 0 ? Py_True : Py_False);
     case Py_GT:
-        return (res > 0 ? Py_True : Py_False);
+        result = (res > 0 ? Py_True : Py_False);
     default:
-        return Py_NotImplemented;
+        result = Py_NotImplemented;
     }
+
+out:
+    Py_INCREF(result);
+    return result;
 }
 
 static PyMethodDef pytrap_unirecipaddr_methods[] = {
