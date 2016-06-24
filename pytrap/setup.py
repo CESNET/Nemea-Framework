@@ -1,7 +1,7 @@
 from distutils.core import setup, Extension
 
 pytrapmodule = Extension('pytrap',
-                    sources = ['pytrapmodule.c'],
+                    sources = ['pytrapmodule.c', 'unirecmodule.c', 'fields.c'],
                     libraries = ['trap', 'unirec'])
 
 setup(name = 'pytrap',

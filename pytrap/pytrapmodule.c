@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int init_unirectemplate(PyObject *m);
+
 static trap_module_info_t *module_info = NULL;
 static ur_template_t *in_tmplt = NULL;
 
@@ -15,7 +17,7 @@ static ur_template_t *in_tmplt = NULL;
 
 #define MODULE_PARAMS(PARAM)
 
-static PyObject *TrapError;
+PyObject *TrapError;
 
 static PyObject *TimeoutError;
 
@@ -205,16 +207,17 @@ pytrap_setDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject *
 pytrap_getDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    uint32_t ifcidx;
     uint8_t data_type;
+    uint32_t ifcidx = 0;
     const char *fmtspec = "";
 
     static char *kwlist[] = {"ifcidx", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i", kwlist, &ifcidx))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i", kwlist, &ifcidx)) {
         return NULL;
+    }
 
     trap_get_data_fmt(TRAPIFC_INPUT, ifcidx, &data_type, &fmtspec);
-    return Py_BuildValue("(iy)", data_type, fmtspec);
+    return Py_BuildValue("(is)", data_type, strdup(fmtspec));
 }
 
 static PyObject *
@@ -328,11 +331,6 @@ pyunirec_ipaddr(PyObject *self, PyObject *args)
     return NULL;
 }
 
-typedef struct {
-    PyObject_HEAD
-        trap_ctx_t *trap_ctx;
-} pytrap_context;
-
 static PyMethodDef pytrap_TrapContext_methods[] = {
     {"init",        (PyCFunction) pytrap_init, METH_VARARGS | METH_KEYWORDS,
         "Initialization of TRAP.\n\n"
@@ -380,7 +378,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    type (int): Type of format given by a module's constant (FMT_RAW, FMT_UNIREC)\n"
         "    spec (string): Specifier of data format (e.g. UniRec specifier for FMT_UNIREC).\n"},
 
-    {"getDataFmt",  (PyCFunction) pytrap_getDataFmt, METH_VARARGS,
+    {"getDataFmt",  (PyCFunction) pytrap_getDataFmt, METH_VARARGS | METH_KEYWORDS,
         "Get data format that was negotiated via input IFC.\n\n"
         "Args:\n"
         "    ifcidx (int): Index of IFC.\n\n"
@@ -440,7 +438,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
 static PyTypeObject pytrap_TrapContext = {
     PyVarObject_HEAD_INIT(NULL, 0)
         "pytrap.TrapCtx",          /* tp_name */
-    sizeof(pytrap_context),    /* tp_basicsize */
+    0,    /* tp_basicsize */
     0,                         /* tp_itemsize */
     0,                         /* tp_dealloc */
     0,                         /* tp_print */
@@ -543,6 +541,10 @@ initpytrap(void)
 
     Py_INCREF(&pytrap_TrapContext);
     PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
+
+    if (init_unirectemplate(m) == EXIT_FAILURE) {
+        INITERROR;
+    }
 
     PyModule_AddIntConstant(m, "FMT_RAW", TRAP_FMT_RAW);
     PyModule_AddIntConstant(m, "FMT_UNIREC", TRAP_FMT_UNIREC);
