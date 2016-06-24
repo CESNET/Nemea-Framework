@@ -92,6 +92,12 @@ UnirecTime_str(pytrap_unirectime *self)
 #endif
 }
 
+long
+UnirecTime_hash(pytrap_unirectime *o)
+{
+    return (long) o->timestamp;
+}
+
 static PyTypeObject pytrap_UnirecTime = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.UnirecTime",          /* tp_name */
@@ -106,7 +112,7 @@ static PyTypeObject pytrap_UnirecTime = {
     0,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
-    0,                         /* tp_hash  */
+    (hashfunc) UnirecTime_hash,                         /* tp_hash  */
     0,                         /* tp_call */
     (reprfunc) UnirecTime_str,                         /* tp_str */
     0,                         /* tp_getattro */
@@ -216,6 +222,16 @@ UnirecIPAddr_str(pytrap_unirecipaddr *self)
 #endif
 }
 
+long
+UnirecIPAddr_hash(pytrap_unirecipaddr *o)
+{
+    if (ip_is4(&o->ip)) {
+        return (long) o->ip.ui32[2];
+    } else {
+        return (long) (o->ip.ui64[0] ^ o->ip.ui64[1]);
+    }
+}
+
 static PyTypeObject pytrap_UnirecIPAddr = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.UnirecIPAddr",          /* tp_name */
@@ -230,7 +246,7 @@ static PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
-    0,                         /* tp_hash  */
+    (hashfunc) UnirecIPAddr_hash,                         /* tp_hash  */
     0,                         /* tp_call */
     (reprfunc) UnirecIPAddr_str,                         /* tp_str */
     0,                         /* tp_getattro */
