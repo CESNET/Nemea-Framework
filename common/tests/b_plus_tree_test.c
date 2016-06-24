@@ -44,6 +44,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <stdint.h>
+#include <time.h>
 #include "../include/b_plus_tree.h"
 
 
@@ -124,9 +126,7 @@ int check_search_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
    int ret_val = 0;
    uint32_t i;
    b_value_t *value_pt;
-   b_key_t *key_pt;
    double time_diff;
-   c_leaf_node *leaf;
    struct timespec start_time = {0,0}, end_time = {0,0};
    clock_gettime(CLOCK_MONOTONIC, &start_time);
    i = 0;
@@ -135,9 +135,9 @@ int check_search_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
    }
    while (i < test_count) {
       //value from bplus item structure
-      value_pt = b_plus_tree_search(tree, &(pairs[i].key));
+      value_pt = bpt_search(tree, &(pairs[i].key));
       if (value_pt == NULL) {
-         fprintf(stderr, "ERROR during searching item in the tree by function b_plus_tree_search.\n");
+         fprintf(stderr, "ERROR during searching item in the tree by function bpt_search.\n");
          ret_val = -3;
          goto exit_label2;
       }
@@ -165,7 +165,7 @@ exit_label2:
 int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
 {
    int ret_val = 0;
-   b_plus_tree_item *b_item = NULL;
+   bpt_list_item_t *b_item = NULL;
    int is_there_next = 0;
    uint32_t i;
    b_value_t *value_pt;
@@ -173,7 +173,7 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
    double time_diff;
    struct timespec start_time = {0,0}, end_time = {0,0};
    clock_gettime(CLOCK_MONOTONIC, &start_time);
-   b_item = b_plus_tree_create_list_item(tree);
+   b_item = bpt_list_init(tree);
    if (b_item == NULL) {
       fprintf(stderr,"ERROR during initializing list iterator structure\n");
       ret_val = -1;
@@ -183,7 +183,7 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
    while (i < test_count && pairs[i].deleted == 1) {
       i++;
    }
-   is_there_next = b_plus_tree_get_list(tree, b_item);
+   is_there_next = bpt_list_start(tree, b_item);
    while (is_there_next == 1) {
       //value from bplus item structure
       value_pt = b_item->value;
@@ -219,7 +219,7 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
          i++;
       }
       //next item
-      is_there_next = b_plus_tree_get_next_item_from_list(tree, b_item);
+      is_there_next = bpt_list_item_next(tree, b_item);
    }
 
    while (i < test_count && pairs[i].deleted == 1) {
@@ -232,7 +232,7 @@ int check_sort_of_items(test_pair_t *pairs, void *tree, uint32_t test_count)
 
 exit_label:
    if (b_item != NULL) {
-      b_plus_tree_destroy_list_item(b_item);
+      bpt_list_clean(b_item);
       b_item = NULL;
    }
    if (ret_val >= 0) {
@@ -260,7 +260,7 @@ int run_tests(int test_count, int tree_size_leaf)
    b_key_t key_st;
    b_key_t *key_pt = NULL;
    b_value_t *value_pt = NULL;
-   b_plus_tree_item *b_item = NULL;
+   bpt_list_item_t *b_item = NULL;
    //allocate structures for testing
    pairs = malloc(test_count * sizeof(test_pair_t));
    if (pairs == NULL) {
@@ -296,7 +296,7 @@ int run_tests(int test_count, int tree_size_leaf)
    // Sort pairs on random value for delete
    qsort(pairs_sorted_random_for_delete, test_count, sizeof(test_pair_t*), &compare_random_delete_value_in_pairs);
    //initialize tree
-   tree = b_plus_tree_initialize(tree_size_leaf, &compare_key, sizeof(b_value_t), sizeof(b_key_t));
+   tree = bpt_init(tree_size_leaf, &compare_key, sizeof(b_value_t), sizeof(b_key_t));
    if (tree == NULL) {
       fprintf(stderr,"ERROR during initializing b_plus_tree\n");
       ret_val = -1;
@@ -307,7 +307,7 @@ int run_tests(int test_count, int tree_size_leaf)
    clock_gettime(CLOCK_MONOTONIC, &start_time);
    for (i = 0; i < test_count; i++) {
       key_st.key = pairs[i].key;
-      value_pt = b_plus_tree_insert_item(tree, &key_st);
+      value_pt = bpt_insert(tree, &key_st);
       if (value_pt == NULL) {
          fprintf(stderr,"ERROR during insertion. Key %u, value %lu \n", pairs[i].key, pairs[i].value);
          ret_val = -2;
@@ -345,7 +345,7 @@ int run_tests(int test_count, int tree_size_leaf)
       if (rand_del % 2 == 0) {
          //delete
          key_st.key = pairs_sorted_random_for_delete[i]->key;
-         if (b_plus_tree_delete_item(tree, &key_st) != 1) {
+         if (bpt_item_del(tree, &key_st) != 1) {
             //deleting error
             fprintf(stderr,"ERROR, deleting item from tree. Key: %u\n", key_st.key);
             ret_val = -6;
@@ -381,7 +381,7 @@ int run_tests(int test_count, int tree_size_leaf)
    //delete items during iterating the list of items.
    printf("TEST - Delete approximately 50%% remaining items during iteration the sorted list of items.\n");
    clock_gettime(CLOCK_MONOTONIC, &start_time);
-   b_item = b_plus_tree_create_list_item(tree);
+   b_item = bpt_list_init(tree);
    if (b_item == NULL) {
       fprintf(stderr,"ERROR during initializing list iterator structure\n");
       ret_val = -1;
@@ -392,7 +392,7 @@ int run_tests(int test_count, int tree_size_leaf)
    while (i < test_count && pairs[i].deleted == 1) {
       i++;
    }
-   is_there_next = b_plus_tree_get_list(tree, b_item);
+   is_there_next = bpt_list_start(tree, b_item);
    while (is_there_next == 1) {
       //value from bplus item structure
       value_pt = b_item->value;
@@ -422,12 +422,12 @@ int run_tests(int test_count, int tree_size_leaf)
       rand_del = rand();
       if (rand_del % 2 == 0) {
          //delete
-         is_there_next = b_plus_tree_delete_item_from_list(tree, b_item);
+         is_there_next = bpt_list_item_del(tree, b_item);
          pairs[i].deleted = 1;
          count_of_deleted_items++;
       } else {
          //next item in tree
-         is_there_next = b_plus_tree_get_next_item_from_list(tree, b_item);
+         is_there_next = bpt_list_item_next(tree, b_item);
       }
       //next item in testing structure
       i++;
@@ -464,11 +464,11 @@ int run_tests(int test_count, int tree_size_leaf)
 
 exit_label:
    if (b_item != NULL) {
-      b_plus_tree_destroy_list_item(b_item);
+      bpt_list_clean(b_item);
       b_item = NULL;
    }
    if (tree != NULL) {
-      b_plus_tree_destroy(tree);
+      bpt_clean(tree);
       tree = NULL;
    }
    if (pairs != NULL) {
