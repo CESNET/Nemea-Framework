@@ -8,10 +8,9 @@ ctx.init(sys.argv)
 ctx.setRequiredFmt(0)
 
 class URWrapper:
-    def __init__(self, tmpl, spec):
+    def __init__(self, tmpl):
         self._tmpl = tmpl
-        d = [v[(v.find(" ")+1):] for v in spec.split(",")]
-        self._urdict = dict(zip(d, range(len(d))))
+        self._urdict = tmpl.getFieldsDict()
         self._numfields = len(self._urdict)
 
     def setData(self, data):
@@ -33,7 +32,7 @@ try:
 except pytrap.FormatChanged as e:
     fmt = ctx.getDataFmt(0)
     u = pytrap.UnirecTemplate(fmt[1])
-    rec = URWrapper(u, fmt[1])
+    rec = URWrapper(u)
     a = e.data
     del(e)
 
@@ -50,6 +49,11 @@ for i in ["SRC_IP", "DST_IP", "SRC_PORT", "DST_PORT"]:
 print("\nIteration over all fields")
 for i in rec:
     print(i)
+
+print("\nPrint values, ids and names of fields")
+urd = u.getFieldsDict()
+print("\n".join(["{0} ({2})\t=\t{1}".format(i, rec.__getattr__(i), urd[i]) for i in urd]))
+
 
 ctx.finalize()
 
