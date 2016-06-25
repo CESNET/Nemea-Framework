@@ -389,8 +389,30 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
     Py_RETURN_NONE;
 }
 
+PyObject *
+UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
+{
+    PyObject *d = PyDict_New();
+    PyObject *key;
+    int i;
+
+    if (d != NULL) {
+        for (i = 0; i < self->urtmplt->count; i++) {
+#if PY_MAJOR_VERSION >= 3
+            key = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[i]));
+#else
+            key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
+#endif
+            PyDict_SetItem(d, key, PyLong_FromLong(self->urtmplt->ids[i]));
+        }
+        return d;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS, ""},
+        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS, ""},
         {NULL, NULL, 0, NULL}
 };
 
@@ -441,6 +463,20 @@ static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
+PyObject *
+UnirecTemplate_str(pytrap_unirectemplate *self)
+{
+    char *s = ur_template_string_delimiter(self->urtmplt, ',');
+    PyObject *result;
+#if PY_MAJOR_VERSION >= 3
+    result = PyUnicode_FromFormat("(%s)", s);
+#else
+    result = PyString_FromFormat("(%s)", s);
+#endif
+    free(s);
+    return result;
+}
+
 static PyTypeObject pytrap_UnirecTemplate = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.UnirecTemplate",          /* tp_name */
@@ -457,7 +493,7 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_as_mapping */
     0,                         /* tp_hash  */
     0,                         /* tp_call */
-    0,                         /* tp_str */
+    (reprfunc) UnirecTemplate_str,                         /* tp_str */
     0,                         /* tp_getattro */
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
