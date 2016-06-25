@@ -312,37 +312,37 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
 
     switch (ur_get_type(field_id)) {
     case UR_TYPE_UINT8:
-        return Py_BuildValue("B", *(uint8_t *)value);
+        return Py_BuildValue("B", *(uint8_t *) value);
         break;
     case UR_TYPE_UINT16:
-        return Py_BuildValue("H", *(uint16_t *)value);
+        return Py_BuildValue("H", *(uint16_t *) value);
         break;
     case UR_TYPE_UINT32:
-        return Py_BuildValue("I", *(uint32_t *)value);
+        return Py_BuildValue("I", *(uint32_t *) value);
         break;
     case UR_TYPE_UINT64:
-        return Py_BuildValue("K", *(uint64_t *)value);
+        return Py_BuildValue("K", *(uint64_t *) value);
         break;
     case UR_TYPE_INT8:
-        return Py_BuildValue("c", *(int8_t *)value);
+        return Py_BuildValue("c", *(int8_t *) value);
         break;
     case UR_TYPE_INT16:
-        return Py_BuildValue("h", *(int16_t *)value);
+        return Py_BuildValue("h", *(int16_t *) value);
         break;
     case UR_TYPE_INT32:
-        return Py_BuildValue("i", *(int32_t *)value);
+        return Py_BuildValue("i", *(int32_t *) value);
         break;
     case UR_TYPE_INT64:
-        return Py_BuildValue("L", *(int64_t *)value);
+        return Py_BuildValue("L", *(int64_t *) value);
         break;
     case UR_TYPE_CHAR:
-        return Py_BuildValue("b", *(char *)value);
+        return Py_BuildValue("b", *(char *) value);
         break;
     case UR_TYPE_FLOAT:
-        return Py_BuildValue("f", *(float *)value);
+        return Py_BuildValue("f", *(float *) value);
         break;
     case UR_TYPE_DOUBLE:
-        return Py_BuildValue("d", *(double *)value);
+        return Py_BuildValue("d", *(double *) value);
         break;
     case UR_TYPE_IP:
         {
