@@ -458,8 +458,8 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         }
         break;
     case UR_TYPE_CHAR:
-        if (!PyArg_ParseTuple(valueObj, "b", (char *) value)) {
-        }
+        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
+        return NULL;
         break;
     case UR_TYPE_FLOAT:
         floatval = PyFloat_AsDouble(valueObj);
@@ -547,9 +547,32 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
 }
 
 static PyMethodDef pytrap_unirectemplate_methods[] = {
-        {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS, ""},
-        {"set", (PyCFunction) UnirecTemplate_set, METH_VARARGS | METH_KEYWORDS, ""},
-        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS, ""},
+        {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS,
+            "Get value of the field from the UniRec message.\n\n"
+            "Args:\n"
+            "    field_id (int): Field ID.\n"
+            "    data (bytes): Data - UniRec message.\n"
+            "Returns:\n"
+            "    (object): Retrieved value of the field (depends on UniRec template).\n"
+        },
+
+        {"set", (PyCFunction) UnirecTemplate_set, METH_VARARGS | METH_KEYWORDS,
+            "Set value of the field in the UniRec message.\n\n"
+            "Args:\n"
+            "    field_id (int): Field ID.\n"
+            "    data (bytes): Data - UniRec message.\n"
+            "    value (object): New value of the field (depends on UniRec template).\n\n"
+            "Raises:\n"
+            "    TypeError: Bad object type of value was given.\n"
+            "    ValueError: Bad value was given.\n"
+        },
+
+        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS,
+            "Get set of fields of the template.\n\n"
+            "Returns:\n"
+            "    Dict(str,int): Dictionary of field_id with field name as a key.\n"
+        },
+
         {NULL, NULL, 0, NULL}
 };
 
