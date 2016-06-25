@@ -7,5 +7,6 @@ pytrapmodule = Extension('pytrap',
 setup(name = 'pytrap',
        version = '1.0',
        description = 'This is a demo package',
-       ext_modules = [pytrapmodule])
+       ext_modules = [pytrapmodule],
+       py_modules = ['URWrapper'])
 
