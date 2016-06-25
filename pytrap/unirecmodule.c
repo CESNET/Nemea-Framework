@@ -389,6 +389,142 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
     Py_RETURN_NONE;
 }
 
+static PyObject *
+UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    uint32_t field_id;
+    PyObject *dataObj, *valueObj;
+    char *data;
+    Py_ssize_t data_size;
+    PY_LONG_LONG longval;
+    double floatval;
+
+    static char *kwlist[] = {"field_id", "data", "value", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!O", kwlist, &field_id, &PyBytes_Type, &dataObj, &valueObj)) {
+        return NULL;
+    }
+
+    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+
+    void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
+
+    switch (ur_get_type(field_id)) {
+    case UR_TYPE_UINT8:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((uint8_t *) value) = (uint8_t) longval;
+        }
+        break;
+    case UR_TYPE_UINT16:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((uint16_t *) value) = (uint16_t) longval;
+        }
+        break;
+    case UR_TYPE_UINT32:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((uint32_t *) value) = (uint32_t) longval;
+        }
+        break;
+    case UR_TYPE_UINT64:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((uint64_t *) value) = (uint64_t) longval;
+        }
+        break;
+    case UR_TYPE_INT8:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((int8_t *) value) = (int8_t) longval;
+        }
+        break;
+    case UR_TYPE_INT16:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((int16_t *) value) = (int16_t) longval;
+        }
+        break;
+    case UR_TYPE_INT32:
+        longval = PyLong_AsLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((int32_t *) value) = (int32_t) longval;
+        }
+        break;
+    case UR_TYPE_INT64:
+        longval = PyLong_AsLongLong(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((int64_t *) value) = (int64_t) longval;
+        }
+        break;
+    case UR_TYPE_CHAR:
+        if (!PyArg_ParseTuple(valueObj, "b", (char *) value)) {
+        }
+        break;
+    case UR_TYPE_FLOAT:
+        floatval = PyFloat_AsDouble(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((float *) value) = (float) floatval;
+        }
+        break;
+    case UR_TYPE_DOUBLE:
+        floatval = PyFloat_AsDouble(valueObj);
+        if (PyErr_Occurred() == NULL) {
+            *((double *) value) = floatval;
+        }
+        break;
+    case UR_TYPE_IP:
+        if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecIPAddr)) {
+            pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *) valueObj);
+            ip_addr_t *dest = (ip_addr_t *) value;
+            dest->ui64[0] = src->ip.ui64[0];
+            dest->ui64[1] = src->ip.ui64[1];
+        }
+        break;
+    case UR_TYPE_TIME:
+        if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecTime)) {
+            pytrap_unirectime *src = ((pytrap_unirectime *) valueObj);
+            *((ur_time_t *) value) = src->timestamp;
+        }
+        break;
+    case UR_TYPE_STRING:
+        {
+            Py_ssize_t size;
+            char *str;
+#if PY_MAJOR_VERSION >= 3
+            if (!PyUnicode_Check(valueObj)) {
+                PyErr_SetString(PyExc_TypeError, "String object expected.");
+                return NULL;
+            }
+            str = PyUnicode_AsUTF8AndSize(valueObj, &size);
+#else
+            if (!PyString_Check(valueObj)) {
+                PyErr_SetString(PyExc_TypeError, "String object expected.");
+                return NULL;
+            }
+            if (PyString_AsStringAndSize(valueObj, &str, &size) == -1) {
+                return NULL;
+            }
+#endif
+            if (str != NULL) {
+                /* TODO check return value */
+                ur_set_var(self->urtmplt, data, field_id, str, size);
+            }
+        }
+        break;
+    case UR_TYPE_BYTES:
+        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
+        return NULL;
+    default:
+        {
+            PyErr_SetString(PyExc_TypeError, "Unknown UniRec field type.");
+            return NULL;
+        }
+        break;
+    } // case (field type)
+    Py_RETURN_NONE;
+}
+
 PyObject *
 UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
 {
@@ -412,6 +548,7 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
 
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS, ""},
+        {"set", (PyCFunction) UnirecTemplate_set, METH_VARARGS | METH_KEYWORDS, ""},
         {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS, ""},
         {NULL, NULL, 0, NULL}
 };

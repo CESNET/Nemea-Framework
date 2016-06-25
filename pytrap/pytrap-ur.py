@@ -27,3 +27,32 @@ print("UnirecIPAddr")
 t = pytrap.UnirecIPAddr("192.168.0.1")
 print(t)
 
+
+import pdb
+#pdb.set_trace()
+print("\n\nSetters")
+
+a.set(2, data, int(1234))
+print("GET 2")
+print(a.get(2, data))
+a.set(2, data, int(1))
+print("GET 2")
+print(a.get(2, data))
+a.set(2, data, int(222))
+print("GET 2")
+print(a.get(2, data))
+
+newtime = pytrap.UnirecTime(1234, 0)
+a.set(1, data, newtime)
+print("GET 1")
+print(a.get(1, data))
+
+newip = pytrap.UnirecIPAddr("192.168.3.1")
+a.set(0, data, newip)
+print("GET 0")
+print(a.get(0, data))
+
+print(a.set(4, data, "ahoj"))
+print("GET 4")
+print(a.get(4, data))
+
