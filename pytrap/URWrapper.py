@@ -32,3 +32,6 @@ Args:
         """Return number of UniRec fields in the template."""
         return self._numfields
 
+    def strRecord(self):
+        return "\n".join(["{0} ({2})\t=\t{1}".format(i, self.__getattr__(i), self._urdict[i]) for i in self._urdict])
+
