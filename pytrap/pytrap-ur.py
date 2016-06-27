@@ -22,6 +22,11 @@ print(a.get(4, data))
 print("UnirecTime")
 t = pytrap.UnirecTime(1466701316, 123)
 print(t)
+print(t.getSeconds())
+print(t.getMiliSeconds())
+print(t.getTimeAsFloat())
+print(type(t.getTimeAsFloat()))
+
 
 print("UnirecIPAddr")
 t = pytrap.UnirecIPAddr("192.168.0.1")

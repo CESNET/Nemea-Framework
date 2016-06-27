@@ -59,7 +59,43 @@ out:
     return result;
 }
 
+static PyObject *
+UnirecTime_getSeconds(pytrap_unirectime *self)
+{
+    return PyLong_FromLong(ur_time_get_sec(self->timestamp));
+}
+
+static PyObject *
+UnirecTime_getMiliSeconds(pytrap_unirectime *self)
+{
+    return PyLong_FromLong(ur_time_get_msec(self->timestamp));
+}
+
+static PyObject *
+UnirecTime_getTimeAsFloat(pytrap_unirectime *self)
+{
+    double t = (double) ur_time_get_sec(self->timestamp);
+    t += (double) ur_time_get_msec(self->timestamp) / 1000;
+    return PyFloat_FromDouble(t);
+}
+
 static PyMethodDef pytrap_unirectime_methods[] = {
+    {"getSeconds", (PyCFunction) UnirecTime_getSeconds, METH_NOARGS,
+        "Get number of seconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (long): Retrieved number of seconds.\n"
+    },
+    {"getMiliSeconds", (PyCFunction) UnirecTime_getMiliSeconds, METH_NOARGS,
+        "Get number of seconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (long): Retrieved number of seconds.\n"
+    },
+    {"getTimeAsFloat", (PyCFunction) UnirecTime_getTimeAsFloat, METH_NOARGS,
+        "Get number of seconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (double): Retrieved timestamp as floiting point number.\n"
+    },
+
     {NULL, NULL, 0, NULL}
 };
 
