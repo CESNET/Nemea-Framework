@@ -80,11 +80,20 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
     Py_ssize_t data_size;
 
     static char *kwlist[] = {"ifcidx", "data", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!", kwlist, &ifcidx, &PyBytes_Type, &dataObj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO", kwlist, &ifcidx, &dataObj)) {
         return NULL;
     }
 
-    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    if (PyByteArray_Check(dataObj)) {
+        data_size = PyByteArray_Size(dataObj);
+        data = PyByteArray_AsString(dataObj);
+    } else if (PyBytes_Check(dataObj)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+        return NULL;
+    }
+
     if (data_size > 0xFFFF) {
         PyErr_SetString(TrapError, "Data length is out of range (0-65535)");
         return NULL;
@@ -126,7 +135,7 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
         PyErr_SetString(TrapFMTMismatch, "Format mismatch, incompatible data format of sender and receiver.");
         return NULL;
     }
-    data = PyBytes_FromStringAndSize(in_rec, in_rec_size);
+    data = PyByteArray_FromStringAndSize(in_rec, in_rec_size);
     if (ret == TRAP_E_FORMAT_CHANGED) {
         attr = Py_BuildValue("s", "data");
         PyObject_SetAttr(TrapFMTChanged, attr, data);
@@ -291,7 +300,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Args:\n"
         "    ifcidx (int): Index of input IFC.\n\n"
         "Returns:\n"
-        "    bytes: Received data.\n\n"
+        "    bytearray: Received data.\n\n"
         "Raises:\n"
         "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
         "    TrapError: Bad index given.\n"
@@ -303,7 +312,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Send data via TRAP interface.\n\n"
         "Args:\n"
         "    ifcidx (int): Index of output IFC.\n"
-        "    bytes (bytes): Data to send.\n\n"
+        "    bytes (bytearray or bytes): Data to send.\n\n"
         "Raises:\n"
         "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
         "    TrapError: Bad size or bad index given.\n"},

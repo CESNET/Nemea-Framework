@@ -553,11 +553,11 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-    if (PyObject_IsInstance(dataObj, (PyObject *) &PyBytes_Type)) {
-        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
-    } else if (PyByteArray_Check(dataObj)) {
+    if (PyByteArray_Check(dataObj)) {
         //data_size = PyByteArray_Size(dataObj);
         data = PyByteArray_AsString(dataObj);
+    } else if (PyBytes_Check(dataObj)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
     } else {
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
@@ -683,11 +683,11 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
             Py_ssize_t size;
             char *str;
 
-            if (PyObject_IsInstance(valueObj, (PyObject *) &PyBytes_Type)) {
-                PyBytes_AsStringAndSize(valueObj, &str, &size);
-            } else if (PyByteArray_Check(valueObj)) {
+            if (PyByteArray_Check(valueObj)) {
                 size = PyByteArray_Size(valueObj);
                 str = PyByteArray_AsString(valueObj);
+            } else if (PyBytes_Check(valueObj)) {
+                PyBytes_AsStringAndSize(valueObj, &str, &size);
             } else {
                 PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
                 return NULL;
@@ -722,10 +722,10 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-    if (PyObject_IsInstance(dataObj, (PyObject *) &PyBytes_Type)) {
-        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
-    } else if (PyByteArray_Check(dataObj)) {
+    if (PyByteArray_Check(dataObj)) {
         data = PyByteArray_AsString(dataObj);
+    } else if (PyBytes_Check(dataObj)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
     } else {
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
@@ -767,11 +767,11 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
         return NULL;
     }
 
-    if (PyObject_IsInstance(dataObj, (PyObject *) &PyBytes_Type)) {
-        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
-    } else if (PyByteArray_Check(dataObj)) {
+    if (PyByteArray_Check(dataObj)) {
         data_size = PyByteArray_Size(dataObj);
         data = PyByteArray_AsString(dataObj);
+    } else if (PyBytes_Check(dataObj)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
     } else {
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
@@ -809,7 +809,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Get value of the field from the UniRec message.\n\n"
             "Args:\n"
             "    field_id (int): Field ID.\n"
-            "    data (bytes): Data - UniRec message.\n"
+            "    data (bytearray or bytes): Data - UniRec message.\n"
             "Returns:\n"
             "    (object): Retrieved value of the field (depends on UniRec template).\n"
         },
@@ -818,7 +818,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Set value of the field in the UniRec message.\n\n"
             "Args:\n"
             "    field_id (int): Field ID.\n"
-            "    data (bytes): Data - UniRec message.\n"
+            "    data (bytearray or bytes): Data - UniRec message.\n"
             "    value (object): New value of the field (depends on UniRec template).\n\n"
             "Raises:\n"
             "    TypeError: Bad object type of value was given.\n"
@@ -828,7 +828,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"setData", (PyCFunction) UnirecTemplate_setData, METH_VARARGS | METH_KEYWORDS,
             "Set data for attribute access.\n\n"
             "Args:\n"
-            "    data (bytes): Data - UniRec message.\n"
+            "    data (bytearray or bytes): Data - UniRec message.\n"
         },
 
         {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS,
@@ -842,7 +842,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Args:\n"
             "    dyn_size (int): Maximal size of variable data (in total).\n\n"
             "Returns:\n"
-            "    ByteArray: Allocated memory that can be filled in using get().\n"
+            "    bytearray: Allocated memory that can be filled in using get().\n"
         },
 
         {NULL, NULL, 0, NULL}
