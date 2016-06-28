@@ -28,8 +28,8 @@ UnirecTime_compare(PyObject *a, PyObject *b, int op)
 {
     PyObject *result;
 
-    //int PyObject_IsInstance(PyObject *inst, PyObject *cls)
-    if (a->ob_type != &pytrap_UnirecTime || b->ob_type != &pytrap_UnirecTime) {
+    if (!PyObject_IsInstance(a, (PyObject *) &pytrap_UnirecTime) ||
+             !PyObject_IsInstance(b, (PyObject *) &pytrap_UnirecTime)) {
         result = Py_NotImplemented;
         goto out;
     }
@@ -40,16 +40,22 @@ UnirecTime_compare(PyObject *a, PyObject *b, int op)
     switch (op) {
     case Py_EQ:
         result = (ur_a->timestamp == ur_b->timestamp ? Py_True : Py_False);
+        break;
     case Py_NE:
         result = (ur_a->timestamp != ur_b->timestamp ? Py_True : Py_False);
+        break;
     case Py_LE:
         result = (ur_a->timestamp <= ur_b->timestamp ? Py_True : Py_False);
+        break;
     case Py_GE:
         result = (ur_a->timestamp >= ur_b->timestamp ? Py_True : Py_False);
+        break;
     case Py_LT:
         result = (ur_a->timestamp < ur_b->timestamp ? Py_True : Py_False);
+        break;
     case Py_GT:
         result = (ur_a->timestamp > ur_b->timestamp ? Py_True : Py_False);
+        break;
     default:
         result = Py_NotImplemented;
     }
@@ -270,8 +276,8 @@ UnirecIPAddr_compare(PyObject *a, PyObject *b, int op)
 {
     PyObject *result;
 
-    //int PyObject_IsInstance(PyObject *inst, PyObject *cls)
-    if (a->ob_type != &pytrap_UnirecIPAddr || b->ob_type != &pytrap_UnirecIPAddr) {
+    if (!PyObject_IsInstance(a, (PyObject *) &pytrap_UnirecIPAddr) ||
+             !PyObject_IsInstance(b, (PyObject *) &pytrap_UnirecIPAddr)) {
         result = Py_NotImplemented;
         goto out;
     }
@@ -279,26 +285,27 @@ UnirecIPAddr_compare(PyObject *a, PyObject *b, int op)
     pytrap_unirecipaddr *ur_a = (pytrap_unirecipaddr *) a;
     pytrap_unirecipaddr *ur_b = (pytrap_unirecipaddr *) b;
 
-    char str1[INET6_ADDRSTRLEN];
-    char str2[INET6_ADDRSTRLEN];
-    ip_to_str(&ur_a->ip, str1);
-    ip_to_str(&ur_b->ip, str2);
-
     int res = ip_cmp(&ur_a->ip, &ur_b->ip);
 
     switch (op) {
     case Py_EQ:
         result = (res == 0 ? Py_True : Py_False);
+        break;
     case Py_NE:
         result = (res != 0 ? Py_True : Py_False);
+        break;
     case Py_LE:
         result = (res <= 0 ? Py_True : Py_False);
+        break;
     case Py_GE:
         result = (res >= 0 ? Py_True : Py_False);
+        break;
     case Py_LT:
         result = (res < 0 ? Py_True : Py_False);
+        break;
     case Py_GT:
         result = (res > 0 ? Py_True : Py_False);
+        break;
     default:
         result = Py_NotImplemented;
     }
