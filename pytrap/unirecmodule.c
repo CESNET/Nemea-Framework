@@ -153,24 +153,19 @@ UnirecTime_nb_add(PyObject *a, PyObject *b)
     pytrap_unirectime *ur_a = (pytrap_unirectime *) a;
     msec = ur_time_get_msec(ur_a->timestamp);
     sec = ur_time_get_sec(ur_a->timestamp);
-
     if (PyObject_IsInstance(b, (PyObject *) &pytrap_UnirecTime)) {
         pytrap_unirectime *ur_b = (pytrap_unirectime *) b;
         msec += ur_time_get_msec(ur_b->timestamp);
         sec += ur_time_get_sec(ur_b->timestamp) + (msec / 1000);
         msec %= 1000;
     } else if (PyLong_Check(b)) {
-        /* TODO seconds or miliseconds? That is a question */
         int64_t tmp_b = PyLong_AsLong(b);
-        if (tmp_b >= 0) {
-            msec += tmp_b;
-            sec += msec / 1000;
-            msec %= 1000;
-        } else {
-            msec += sec * 1000 + tmp_b;
-            sec = msec / 1000;
-            msec %= 1000;
-        }
+        sec += tmp_b;
+#if PY_MAJOR_VERSION < 3
+    } else if (PyInt_Check(b)) {
+        int64_t tmp_b = PyInt_AsLong(b);
+        sec += tmp_b;
+#endif
     } else {
         PyErr_SetString(PyExc_TypeError, "Unsupported type for this operation.");
         return NULL;
@@ -181,6 +176,15 @@ UnirecTime_nb_add(PyObject *a, PyObject *b)
     return (PyObject *) ur_a;
 }
 
+static PyObject *
+UnirecTime_nb_float(pytrap_unirectime *self)
+{
+    double res = (double) ur_time_get_sec(self->timestamp);
+    res += (double) ur_time_get_msec(self->timestamp) / 1000;
+    return PyFloat_FromDouble(res);
+}
+
+#if PY_MAJOR_VERSION >= 3
 static PyNumberMethods UnirecTime_numbermethods = {
      (binaryfunc) UnirecTime_nb_add, /* binaryfunc nb_add; */
      0, /* binaryfunc nb_subtract; */
@@ -200,8 +204,8 @@ static PyNumberMethods UnirecTime_numbermethods = {
      0, /* binaryfunc nb_or; */
      0, /* unaryfunc nb_int; */
      0, /* void *nb_reserved; */
-     0, /* unaryfunc nb_float; */
-     0, /* binaryfunc nb_inplace_add; */
+     (unaryfunc) UnirecTime_nb_float, /* unaryfunc nb_float; */
+     (binaryfunc) UnirecTime_nb_add, /* binaryfunc nb_inplace_add; */
      0, /* binaryfunc nb_inplace_subtract; */
      0, /* binaryfunc nb_inplace_multiply; */
      0, /* binaryfunc nb_inplace_remainder; */
@@ -217,6 +221,49 @@ static PyNumberMethods UnirecTime_numbermethods = {
      0, /* binaryfunc nb_inplace_true_divide; */
      0 /* unaryfunc nb_index; */
 };
+#else
+static PyNumberMethods UnirecTime_numbermethods = {
+     (binaryfunc) UnirecTime_nb_add, /* binaryfunc nb_add; */
+     0, /* binaryfunc nb_subtract; */
+     0, /* binaryfunc nb_multiply; */
+     0, /* binaryfunc nb_divide; */
+     0, /* binaryfunc nb_remainder; */
+     0, /* binaryfunc nb_divmod; */
+     0, /* ternaryfunc nb_power; */
+     0, /* unaryfunc nb_negative; */
+     0, /* unaryfunc nb_positive; */
+     0, /* unaryfunc nb_absolute; */
+     0, /* inquiry nb_nonzero; */
+     0, /* unaryfunc nb_invert; */
+     0, /* binaryfunc nb_lshift; */
+     0, /* binaryfunc nb_rshift; */
+     0, /* binaryfunc nb_and; */
+     0, /* binaryfunc nb_xor; */
+     0, /* binaryfunc nb_or; */
+     0, /* coercion nb_coerce; */
+     0, /* unaryfunc nb_int; */
+     0, /* unaryfunc nb_long; */
+     (unaryfunc) UnirecTime_nb_float, /* unaryfunc nb_float; */
+     0, /* unaryfunc nb_oct; */
+     0, /* unaryfunc nb_hex; */
+     (binaryfunc) UnirecTime_nb_add, /* binaryfunc nb_inplace_add; */
+     0, /* binaryfunc nb_inplace_subtract; */
+     0, /* binaryfunc nb_inplace_multiply; */
+     0, /* binaryfunc nb_inplace_divide; */
+     0, /* binaryfunc nb_inplace_remainder; */
+     0, /* ternaryfunc nb_inplace_power; */
+     0, /* binaryfunc nb_inplace_lshift; */
+     0, /* binaryfunc nb_inplace_rshift; */
+     0, /* binaryfunc nb_inplace_and; */
+     0, /* binaryfunc nb_inplace_xor; */
+     0, /* binaryfunc nb_inplace_or; */
+     0, /* binaryfunc nb_floor_divide; */
+     0, /* binaryfunc nb_true_divide; */
+     0, /* binaryfunc nb_inplace_floor_divide; */
+     0, /* binaryfunc nb_inplace_true_divide; */
+     0, /* unaryfunc nb_index; */
+};
+#endif
 
 static PyTypeObject pytrap_UnirecTime = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -239,6 +286,9 @@ static PyTypeObject pytrap_UnirecTime = {
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
+#if PY_MAJOR_VERSION < 3
+        Py_TPFLAGS_CHECKTYPES |
+#endif
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
     "Class for UniRec timestamp storage and base data access.",         /* tp_doc */
     0,                         /* tp_traverse */
