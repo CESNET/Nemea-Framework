@@ -459,11 +459,6 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
         {
             pytrap_unirecipaddr *new_ip = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
             memcpy(&new_ip->ip, value, sizeof(ip_addr_t));
-            //ip_addr_t *ip_p = (ip_addr_t *) value;
-            //new_ip->ip.ui32[0] = htonl(ip_p->ui32[3]);
-            //new_ip->ip.ui32[1] = htonl(ip_p->ui32[2]);
-            //new_ip->ip.ui32[2] = htonl(ip_p->ui32[1]);
-            //new_ip->ip.ui32[3] = htonl(ip_p->ui32[0]);
             return (PyObject *) new_ip;
         }
     case UR_TYPE_TIME:
