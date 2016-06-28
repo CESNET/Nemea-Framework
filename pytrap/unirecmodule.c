@@ -665,6 +665,25 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *dataObj;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwlist, &PyBytes_Type, &dataObj)) {
+        return NULL;
+    }
+
+    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    self->data = data;
+    self->data_size = data_size;
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS,
             "Get value of the field from the UniRec message.\n\n"
@@ -684,6 +703,12 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Raises:\n"
             "    TypeError: Bad object type of value was given.\n"
             "    ValueError: Bad value was given.\n"
+        },
+
+        {"setData", (PyCFunction) UnirecTemplate_setData, METH_VARARGS | METH_KEYWORDS,
+            "Set data for attribute access.\n\n"
+            "Args:\n"
+            "    data (bytes): Data - UniRec message.\n"
         },
 
         {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS,
