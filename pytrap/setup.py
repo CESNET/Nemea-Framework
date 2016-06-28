@@ -6,7 +6,9 @@ pytrapmodule = Extension('pytrap',
 
 setup(name = 'pytrap',
        version = '1.0',
-       description = 'This is a demo package',
-       ext_modules = [pytrapmodule],
-       py_modules = ['URWrapper'])
+       description = 'The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.',
+       author = 'Tomas Cejka',
+       author_email = 'cejkat@cesnet.cz',
+       url = 'https://github.com/CESNET/Nemea-Framework',
+       ext_modules = [pytrapmodule])
 
