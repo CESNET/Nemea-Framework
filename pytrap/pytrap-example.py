@@ -1,36 +1,34 @@
 #!/usr/bin/env python3
 
-import pytrap
-import unirec
 import sys
-import pdb
+import pytrap
+from URWrapper import URWrapper
 
-
-#UR_Flow = unirec.CreateTemplate("UR_Flow", b"ipaddr DST_IP,ipaddr SRC_IP,double EVENT_SCALE,time TIME_FIRST,time TIME_LAST,uint16 DST_PORT,uint16 SRC_PORT,uint8 EVENT_TYPE,uint8 PROTOCOL")
-UR_Flow = unirec.CreateTemplate("UR_Flow", b"double EVENT_SCALE,time TIME_FIRST,time TIME_LAST,uint16 DST_PORT,uint16 SRC_PORT,uint8 EVENT_TYPE,uint8 PROTOCOL")
 
 ctx = pytrap.TrapCtx()
-
 ctx.init(sys.argv)
-#pytrap.setVerboseLevel(2)
-print(ctx.getVerboseLevel())
-
-ctx.setRequiredFmt(0)
+ctx.setRequiredFmt(0, pytrap.FMT_UNIREC, "ipaddr SRC_IP")
 
 def mainLoop():
-    global UR_Flow
-    for i in range(9000000):
+    num = 0
+    numport = 0
+    while True:
         try:
             a = ctx.recv(0)
         except pytrap.FormatChanged as e:
-            UR_Flow = unirec.CreateTemplate("UR_Flow", ctx.getDataFmt(0)[1])
+            UR_Flow = pytrap.UnirecTemplate(ctx.getDataFmt(0)[1])
+            rec = URWrapper(UR_Flow)
             a = e.data
             del(e)
-        rec = UR_Flow(a)
+        rec.setData(a)
+        if rec.SRC_PORT == 22 or rec.DST_PORT == 22:
+            numport += 1
+        if len(a) <= 1:
+            break
+        num = num + 1
+    print("SSH src port count: {}".format(numport))
+    print("Total flows processed: {}".format(num))
 
-
-#import cProfile
-#cProfile.run('mainLoop()')
 mainLoop()
 
 ctx.finalize()

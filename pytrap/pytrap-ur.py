@@ -3,6 +3,10 @@ import pytrap
 a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT")
 data = b'\x00\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x01\xff\xff\xff\xff\x01\x00\x00\x00\xe3\x2b\x6c\x57\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x06\x00abcdef'
 
+print(len(a))
+print(a)
+print(a.getFieldsDict())
+
 print("GET 0")
 print(a.get(0, data))
 
