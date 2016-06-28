@@ -550,33 +550,29 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
     Py_ssize_t data_size;
 
     static char *kwlist[] = {"field_id", "data", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!", kwlist, &field_id, &PyBytes_Type, &dataObj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO", kwlist, &field_id, &dataObj)) {
         return NULL;
     }
 
-    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    if (PyObject_IsInstance(dataObj, (PyObject *) &PyBytes_Type)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else if (PyByteArray_Check(dataObj)) {
+        //data_size = PyByteArray_Size(dataObj);
+        data = PyByteArray_AsString(dataObj);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+        return NULL;
+    }
 
     return UnirecTemplate_get_local(self, data, field_id);
 
 }
 
-static PyObject *
-UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+static inline PyObject *
+UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_id, PyObject *valueObj)
 {
-    uint32_t field_id;
-    PyObject *dataObj, *valueObj;
-    char *data;
-    Py_ssize_t data_size;
     PY_LONG_LONG longval;
     double floatval;
-
-    static char *kwlist[] = {"field_id", "data", "value", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!O", kwlist, &field_id, &PyBytes_Type, &dataObj, &valueObj)) {
-        return NULL;
-    }
-
-    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
-
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
 
     switch (ur_get_type(field_id)) {
@@ -684,8 +680,26 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         }
         break;
     case UR_TYPE_BYTES:
-        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
-        return NULL;
+        {
+            Py_ssize_t size;
+            char *str;
+
+            if (PyObject_IsInstance(valueObj, (PyObject *) &PyBytes_Type)) {
+                PyBytes_AsStringAndSize(valueObj, &str, &size);
+            } else if (PyByteArray_Check(valueObj)) {
+                size = PyByteArray_Size(valueObj);
+                str = PyByteArray_AsString(valueObj);
+            } else {
+                PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+                return NULL;
+            }
+
+            if (str != NULL) {
+                /* TODO check return value */
+                ur_set_var(self->urtmplt, data, field_id, str, size);
+            }
+        }
+        break;
     default:
         {
             PyErr_SetString(PyExc_TypeError, "Unknown UniRec field type.");
@@ -694,6 +708,31 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         break;
     } // case (field type)
     Py_RETURN_NONE;
+}
+
+static PyObject *
+UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    uint32_t field_id;
+    PyObject *dataObj, *valueObj;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"field_id", "data", "value", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IOO", kwlist, &field_id, &dataObj, &valueObj)) {
+        return NULL;
+    }
+
+    if (PyObject_IsInstance(dataObj, (PyObject *) &PyBytes_Type)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else if (PyByteArray_Check(dataObj)) {
+        data = PyByteArray_AsString(dataObj);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+        return NULL;
+    }
+
+    return UnirecTemplate_set_local(self, data, field_id, valueObj);
 }
 
 PyObject *
@@ -725,15 +764,45 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
     Py_ssize_t data_size;
 
     static char *kwlist[] = {"data", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwlist, &PyBytes_Type, &dataObj)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist, &dataObj)) {
         return NULL;
     }
 
-    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    if (PyObject_IsInstance(dataObj, (PyObject *) &PyBytes_Type)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else if (PyByteArray_Check(dataObj)) {
+        data_size = PyByteArray_Size(dataObj);
+        data = PyByteArray_AsString(dataObj);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+        return NULL;
+    }
+
     self->data = data;
     self->data_size = data_size;
 
     Py_RETURN_NONE;
+}
+
+static PyObject *
+UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    char *data;
+    uint32_t data_size = 0;
+
+    static char *kwlist[] = {"dyn_size", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|H", kwlist, &data_size)) {
+        return NULL;
+    }
+    data_size += ur_rec_fixlen_size(self->urtmplt);
+    if (data_size >= UR_MAX_SIZE) {
+        PyErr_SetString(TrapError, "Max size of message is 65535 bytes.");
+        return NULL;
+    }
+    data = ur_create_record(self->urtmplt, (uint16_t) data_size);
+    PyObject *res = PyByteArray_FromStringAndSize(data, (uint16_t) data_size);
+    free(data);
+    return res;
 }
 
 static PyMethodDef pytrap_unirectemplate_methods[] = {
@@ -767,6 +836,14 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Get set of fields of the template.\n\n"
             "Returns:\n"
             "    Dict(str,int): Dictionary of field_id with field name as a key.\n"
+        },
+
+        {"createMessage", (PyCFunction) UnirecTemplate_createMessage, METH_VARARGS | METH_KEYWORDS,
+            "Create a message that can be filled in with values according to the template.\n\n"
+            "Args:\n"
+            "    dyn_size (int): Maximal size of variable data (in total).\n\n"
+            "Returns:\n"
+            "    ByteArray: Allocated memory that can be filled in using get().\n"
         },
 
         {NULL, NULL, 0, NULL}
@@ -861,6 +938,23 @@ UnirecTemplate_getAttr(pytrap_unirectemplate *self, PyObject *attr)
     return UnirecTemplate_get_local(self, self->data, field_id);
 }
 
+static int
+UnirecTemplate_setAttr(pytrap_unirectemplate *self, PyObject *attr, PyObject *value)
+{
+    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, attr);
+    if (v == NULL) {
+        return PyObject_GenericSetAttr((PyObject *) self, attr, value);
+    }
+    int32_t field_id;
+    field_id = (int32_t) PyLong_AsLong(v);
+
+    if (UnirecTemplate_set_local(self, self->data, field_id, value) == NULL) {
+        return EXIT_FAILURE;
+    } else {
+        return EXIT_SUCCESS;
+    }
+}
+
 Py_ssize_t UnirecTemplate_len(pytrap_unirectemplate *o)
 {
    return PyDict_Size((PyObject *) o->urdict);
@@ -897,7 +991,7 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_call */
     (reprfunc) UnirecTemplate_str,                         /* tp_str */
     (getattrofunc) UnirecTemplate_getAttr,                         /* tp_getattro */
-    0,                         /* tp_setattro */
+    (setattrofunc) UnirecTemplate_setAttr,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */

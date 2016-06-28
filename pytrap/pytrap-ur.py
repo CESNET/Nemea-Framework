@@ -86,3 +86,24 @@ print(a.set(4, data, "ahoj"))
 print("GET 4")
 print(a.get(4, data))
 
+print("\n\nSet value via attribute.\n")
+a.ABC = 666
+print(a.ABC)
+a.SRC_IP = pytrap.UnirecIPAddr("147.32.1.1")
+print(a.SRC_IP)
+a.TIME_FIRST = pytrap.UnirecTime(666, 0)
+print(a.TIME_FIRST)
+
+print("\n\nNew message")
+nm = a.createMessage(20)
+print(nm)
+a.setData(nm)
+a.set(4, nm, "my long text")
+print(a.TEXT)
+a.TEXT = "different text"
+print(a.TEXT)
+a.STREAMBYTES = bytearray(b"he\x01\x01")
+print(a.STREAMBYTES)
+a.STREAMBYTES = bytes(b"\xca\xfe")
+print(a.STREAMBYTES)
+
