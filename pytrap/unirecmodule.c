@@ -529,8 +529,10 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
         }
         break;
     case UR_TYPE_BYTES:
-        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
-        return NULL;
+        {
+            Py_ssize_t value_size = ur_get_var_len(self->urtmplt, data, field_id);
+            return PyByteArray_FromStringAndSize(value, value_size);
+        }
         break;
     default:
         PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");

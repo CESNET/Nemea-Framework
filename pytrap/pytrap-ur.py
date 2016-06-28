@@ -1,7 +1,9 @@
 # coding: utf-8
 import pytrap
-a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT")
-data = b'\x00\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x01\xff\xff\xff\xff\x01\x00\x00\x00\xe3\x2b\x6c\x57\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x06\x00abcdef'
+a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+data = b'\x00\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x01\xff\xff\xff\xff\x01\x00\x00\x00\xe3\x2b\x6c\x57\x00\x00\x00\x01\x00\x00\x00\x02\x06\x00\x04\x00\x00\x00\x06\x00abcdef\xde\xad\xfe\xed'
+
+a.setData(data)
 
 print(len(a))
 print(a)
@@ -21,7 +23,13 @@ print(a.get(3, data))
 
 print("GET 4")
 print(a.get(4, data))
+print(a.TEXT)
 
+print("GET 5")
+print(type(a.get(5, data)))
+stream = a.get(5, data)
+print(" ".join([hex(i) for i in stream]))
+print(a.STREAMBYTES)
 
 print("UnirecTime")
 t = pytrap.UnirecTime(1466701316, 123)
