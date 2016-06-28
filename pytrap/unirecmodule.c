@@ -411,23 +411,14 @@ static PyTypeObject pytrap_UnirecIPAddr = {
 typedef struct {
     PyObject_HEAD
     ur_template_t *urtmplt;
-} pytrap_unirectemplate;
-
-static PyObject *
-UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
-{
-    uint32_t field_id;
-    PyObject *dataObj;
     char *data;
     Py_ssize_t data_size;
+    PyDictObject *urdict;
+} pytrap_unirectemplate;
 
-    static char *kwlist[] = {"field_id", "data", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!", kwlist, &field_id, &PyBytes_Type, &dataObj)) {
-        return NULL;
-    }
-
-    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
-
+static inline PyObject *
+UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_id)
+{
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
 
     switch (ur_get_type(field_id)) {
@@ -493,20 +484,33 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         }
         break;
     case UR_TYPE_BYTES:
-        /* TODO not implemented */
+        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
+        return NULL;
         break;
     default:
-        {
-            // Unknown type - print the value in hex
-            //int size = ur_get_len(templates[index], rec, id);
-            //fprintf(file, "0x");
-            //for (int i = 0; i < size; i++) {
-            //    fprintf(file, "%02x", ((unsigned char*)value)[i]);
-            //}
-        }
-        break;
+        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
+        return NULL;
     } // case (field type)
     Py_RETURN_NONE;
+}
+
+static PyObject *
+UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    int32_t field_id;
+    PyObject *dataObj;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"field_id", "data", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!", kwlist, &field_id, &PyBytes_Type, &dataObj)) {
+        return NULL;
+    }
+
+    PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+
+    return UnirecTemplate_get_local(self, data, field_id);
+
 }
 
 static PyObject *
@@ -730,6 +734,9 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
+        self->data = NULL;
+        self->data_size = 0;
+        self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
     }
 
     return (PyObject *) self;
@@ -738,6 +745,7 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
     //fprintf(stderr, "dealloc()\n");
+    Py_DECREF(self->urdict);
     ur_free_template(self->urtmplt);
     Py_DECREF(self);
     Py_TYPE(self)->tp_free((PyObject *) self);
@@ -757,6 +765,48 @@ UnirecTemplate_str(pytrap_unirectemplate *self)
     return result;
 }
 
+/*
+TODO
+class URWrapper:
+    def __iter__(self):
+        for i in range(self._numfields):
+            yield self._tmpl.get(i, self._data)
+
+    def strRecord(self):
+        return "\n".join(["{0} ({2})\t=\t{1}".format(i, self.__getattr__(i), self._urdict[i]) for i in self._urdict])
+*/
+
+static PyObject *
+UnirecTemplate_getAttr(pytrap_unirectemplate *self, PyObject *attr)
+{
+    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, attr);
+    if (v == NULL) {
+        return PyObject_GenericGetAttr((PyObject *) self, attr);
+    }
+    int32_t field_id;
+    field_id = (int32_t) PyLong_AsLong(v);
+
+    return UnirecTemplate_get_local(self, self->data, field_id);
+}
+
+Py_ssize_t UnirecTemplate_len(pytrap_unirectemplate *o)
+{
+   return PyDict_Size((PyObject *) o->urdict);
+}
+
+static PySequenceMethods UnirecTemplate_seqmethods = {
+    (lenfunc) UnirecTemplate_len, /* lenfunc sq_length; */
+    0, /* binaryfunc sq_concat; */
+    0, /* ssizeargfunc sq_repeat; */
+    0, /* ssizeargfunc sq_item; */
+    0, /* void *was_sq_slice; */
+    0, /* ssizeobjargproc sq_ass_item; */
+    0, /* void *was_sq_ass_slice; */
+    0, /* objobjproc sq_contains; */
+    0, /* binaryfunc sq_inplace_concat; */
+    0 /* ssizeargfunc sq_inplace_repeat; */
+};
+
 static PyTypeObject pytrap_UnirecTemplate = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.UnirecTemplate",          /* tp_name */
@@ -769,12 +819,12 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_reserved */
     0,                         /* tp_repr */
     0,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
+    &UnirecTemplate_seqmethods,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     0,                         /* tp_hash  */
     0,                         /* tp_call */
     (reprfunc) UnirecTemplate_str,                         /* tp_str */
-    0,                         /* tp_getattro */
+    (getattrofunc) UnirecTemplate_getAttr,                         /* tp_getattro */
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
