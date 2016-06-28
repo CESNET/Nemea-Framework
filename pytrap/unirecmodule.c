@@ -219,7 +219,7 @@ static PyNumberMethods UnirecTime_numbermethods = {
      0, /* binaryfunc nb_true_divide; */
      0, /* binaryfunc nb_inplace_floor_divide; */
      0, /* binaryfunc nb_inplace_true_divide; */
-     0 /* unaryfunc nb_index; */
+     0  /* unaryfunc nb_index; */
 };
 #else
 static PyNumberMethods UnirecTime_numbermethods = {
@@ -267,47 +267,47 @@ static PyNumberMethods UnirecTime_numbermethods = {
 
 static PyTypeObject pytrap_UnirecTime = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "pytrap.UnirecTime",          /* tp_name */
-    sizeof(pytrap_unirectime),    /* tp_basicsize */
-    0,                         /* tp_itemsize */
-    0,                         /* tp_dealloc */
-    0,                         /* tp_print */
-    0,                         /* tp_getattr */
-    0,                         /* tp_setattr */
-    0,                         /* tp_reserved */
-    0,                         /* tp_repr */
-    &UnirecTime_numbermethods,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
-    0,                         /* tp_as_mapping */
-    (hashfunc) UnirecTime_hash,                         /* tp_hash  */
-    0,                         /* tp_call */
-    (reprfunc) UnirecTime_str,                         /* tp_str */
-    0,                         /* tp_getattro */
-    0,                         /* tp_setattro */
-    0,                         /* tp_as_buffer */
+    "pytrap.UnirecTime", /* tp_name */
+    sizeof(pytrap_unirectime), /* tp_basicsize */
+    0, /* tp_itemsize */
+    0, /* tp_dealloc */
+    0, /* tp_print */
+    0, /* tp_getattr */
+    0, /* tp_setattr */
+    0, /* tp_reserved */
+    0, /* tp_repr */
+    &UnirecTime_numbermethods, /* tp_as_number */
+    0, /* tp_as_sequence */
+    0, /* tp_as_mapping */
+    (hashfunc) UnirecTime_hash, /* tp_hash  */
+    0, /* tp_call */
+    (reprfunc) UnirecTime_str, /* tp_str */
+    0, /* tp_getattro */
+    0, /* tp_setattro */
+    0, /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
 #if PY_MAJOR_VERSION < 3
         Py_TPFLAGS_CHECKTYPES |
 #endif
-        Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Class for UniRec timestamp storage and base data access.",         /* tp_doc */
-    0,                         /* tp_traverse */
-    0,                         /* tp_clear */
-    (richcmpfunc) UnirecTime_compare,                         /* tp_richcompare */
-    0,                         /* tp_weaklistoffset */
-    0,                         /* tp_iter */
-    0,                         /* tp_iternext */
-    pytrap_unirectime_methods,             /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,                         /* tp_init */
-    0,                         /* tp_alloc */
-    UnirecTime_new,                         /* tp_new */
+        Py_TPFLAGS_BASETYPE, /* tp_flags */
+    "Class for UniRec timestamp storage and base data access.", /* tp_doc */
+    0, /* tp_traverse */
+    0, /* tp_clear */
+    (richcmpfunc) UnirecTime_compare, /* tp_richcompare */
+    0, /* tp_weaklistoffset */
+    0, /* tp_iter */
+    0, /* tp_iternext */
+    pytrap_unirectime_methods, /* tp_methods */
+    0, /* tp_members */
+    0, /* tp_getset */
+    0, /* tp_base */
+    0, /* tp_dict */
+    0, /* tp_descr_get */
+    0, /* tp_descr_set */
+    0, /* tp_dictoffset */
+    0, /* tp_init */
+    0, /* tp_alloc */
+    UnirecTime_new, /* tp_new */
 };
 
 
@@ -520,7 +520,6 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
     case UR_TYPE_STRING:
         {
             Py_ssize_t value_size = ur_get_var_len(self->urtmplt, data, field_id);
-            //fprintf(stderr, "varlensize: %lu\n", value_size);
 #if PY_MAJOR_VERSION >= 3
             return PyUnicode_FromStringAndSize(value, value_size);
 #else
@@ -854,10 +853,9 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     pytrap_unirectemplate *self;
     const char *spec;
-    // TODO fix this
+    // TODO return error string of failure during unirec template init
     //char *errstring;
 
-    //fprintf(stderr, "alloc()\n");
     self = (pytrap_unirectemplate *) type->tp_alloc(type, 0);
     if (self != NULL) {
         static char *kwlist[] = {"spec", NULL};
@@ -866,14 +864,13 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             return NULL;
         }
         self->urtmplt = NULL;
-        //fprintf(stderr, "spec received: %s\n", spec);
         int ret;
         if ((ret = ur_define_set_of_fields(spec)) != UR_OK) {
-            /* TODO handle error */
-            fprintf(stderr, "ur_define_set_of_fields error\n");
+            PyErr_SetString(TrapError, "ur_define_set_of_fields() failed.");
+            Py_DECREF(self);
+            return NULL;
         }
-        //fprintf(stderr, "ur_define_set_of_fields %i\n", ret);
-        /* TODO fix this */
+        /* XXX errstring */
         //self->urtmplt = ur_create_template(spec, &errstring);
         self->urtmplt = ur_create_template_from_ifc_spec(spec);
         if (self->urtmplt == NULL) {
@@ -893,7 +890,6 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
-    //fprintf(stderr, "dealloc()\n");
     Py_DECREF(self->urdict);
     ur_free_template(self->urtmplt);
     Py_DECREF(self);

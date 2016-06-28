@@ -259,7 +259,6 @@ pytrap_setRequiredFmt(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject *
 pytrap_getInIFCState(PyObject *self, PyObject *args)
 {
-    printf("%s NOT IMPLEMENTED\n", __func__);
     uint32_t ifcidx = 0;
 
     if (!PyArg_ParseTuple(args, "i", &ifcidx))
@@ -275,60 +274,6 @@ pytrap_getInIFCState(PyObject *self, PyObject *args)
     }
 
     return PyLong_FromLong(state);
-}
-
-/*
-static PyObject *
-pytrap_createModuleInfo(PyObject *self, PyObject *args)
-{
-    printf("%s NOT IMPLEMENTED\n", __func__);
-
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-pytrap_updateModuleParam(PyObject *self, PyObject *args)
-{
-    printf("%s NOT IMPLEMENTED\n", __func__);
-
-    Py_RETURN_NONE;
-}
-*/
-
-static PyObject *
-pyunirec_timestamp(PyObject *self, PyObject *args)
-{
-    const char *bytes;
-    int size;
-    if (!PyArg_ParseTuple(args, "s#", &bytes, &size))
-        return NULL;
-
-    if (size == 8) {
-        return Py_BuildValue("l", *((uint64_t *) bytes));
-    }
-
-    return NULL;
-}
-
-static PyObject *
-pyunirec_ipaddr(PyObject *self, PyObject *args)
-{
-    const char *bytes;
-    int size;
-    ip_addr_t *ip;
-    if (!PyArg_ParseTuple(args, "s#", &bytes, &size))
-        return NULL;
-
-    if (size == 16) {
-        ip = (ip_addr_t *) bytes;
-        if (ip_is4(ip)) {
-            return Py_BuildValue("(I)", ip->ui32[2]);
-        } else {
-            return Py_BuildValue("(IIII)", ip->ui32[0], ip->ui32[1], ip->ui32[2], ip->ui32[3]);
-        }
-    }
-
-    return NULL;
 }
 
 static PyMethodDef pytrap_TrapContext_methods[] = {
@@ -428,65 +373,53 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    TrapError: Bad index is passed or TRAP is not initialized.\n"
         },
 
-    /*
-    {"createModuleInfo",    pytrap_createModuleInfo, METH_VARARGS, ""},
-    {"updateModuleParam",   pytrap_updateModuleParam, METH_VARARGS, ""},
-    */
     {NULL, NULL, 0, NULL}
 };
 
 static PyTypeObject pytrap_TrapContext = {
     PyVarObject_HEAD_INIT(NULL, 0)
-        "pytrap.TrapCtx",          /* tp_name */
-    0,    /* tp_basicsize */
-    0,                         /* tp_itemsize */
-    0,                         /* tp_dealloc */
-    0,                         /* tp_print */
-    0,                         /* tp_getattr */
-    0,                         /* tp_setattr */
-    0,                         /* tp_reserved */
-    0,                         /* tp_repr */
-    0,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
-    0,                         /* tp_as_mapping */
-    0,                         /* tp_hash  */
-    0,                         /* tp_call */
-    0,                         /* tp_str */
-    0,                         /* tp_getattro */
-    0,                         /* tp_setattro */
-    0,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT |
-        Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "libtrap context",         /* tp_doc */
-    0,                         /* tp_traverse */
-    0,                         /* tp_clear */
-    0,                         /* tp_richcompare */
-    0,                         /* tp_weaklistoffset */
-    0,                         /* tp_iter */
-    0,                         /* tp_iternext */
-    pytrap_TrapContext_methods,             /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,                         /* tp_init */
-    0,                         /* tp_alloc */
-    0,                         /* tp_new */
+    "pytrap.TrapCtx", /* tp_name */
+    0, /* tp_basicsize */
+    0, /* tp_itemsize */
+    0, /* tp_dealloc */
+    0, /* tp_print */
+    0, /* tp_getattr */
+    0, /* tp_setattr */
+    0, /* tp_reserved */
+    0, /* tp_repr */
+    0, /* tp_as_number */
+    0, /* tp_as_sequence */
+    0, /* tp_as_mapping */
+    0, /* tp_hash  */
+    0, /* tp_call */
+    0, /* tp_str */
+    0, /* tp_getattro */
+    0, /* tp_setattro */
+    0, /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    "libtrap context", /* tp_doc */
+    0, /* tp_traverse */
+    0, /* tp_clear */
+    0, /* tp_richcompare */
+    0, /* tp_weaklistoffset */
+    0, /* tp_iter */
+    0, /* tp_iternext */
+    pytrap_TrapContext_methods, /* tp_methods */
+    0, /* tp_members */
+    0, /* tp_getset */
+    0, /* tp_base */
+    0, /* tp_dict */
+    0, /* tp_descr_get */
+    0, /* tp_descr_set */
+    0, /* tp_dictoffset */
+    0, /* tp_init */
+    0, /* tp_alloc */
+    0  /* tp_new */
 };
-
 
 static PyMethodDef pytrap_methods[] = {
-    {"TimeStampFromUR",     pyunirec_timestamp, METH_VARARGS, "Convert RAW data to UniRec field (long)."},
-    {"IPFromUR",    pyunirec_ipaddr, METH_VARARGS, "Convert RAW data to UniRec field (list of bytes)."},
     {NULL, NULL, 0, NULL}
 };
-
-
-
-
 
 #if PY_MAJOR_VERSION >= 3
 
@@ -516,13 +449,16 @@ initpytrap(void)
 #else
     m = Py_InitModule("pytrap", pytrap_methods);
 #endif
-    if (m == NULL)
+    if (m == NULL) {
         INITERROR;
+    }
 
     pytrap_TrapContext.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&pytrap_TrapContext) < 0)
+    if (PyType_Ready(&pytrap_TrapContext) < 0) {
         INITERROR;
+    }
 
+    /* Add Exceptions into pytrap module */
     TrapError = PyErr_NewException("pytrap.TrapError", NULL, NULL);
     Py_INCREF(TrapError);
     PyModule_AddObject(m, "TrapError", TrapError);
@@ -542,10 +478,12 @@ initpytrap(void)
     Py_INCREF(&pytrap_TrapContext);
     PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
 
+    /* Initialize UniRec part of pytrap */
     if (init_unirectemplate(m) == EXIT_FAILURE) {
         INITERROR;
     }
 
+    /* Add constants into pytrap module */
     PyModule_AddIntConstant(m, "FMT_RAW", TRAP_FMT_RAW);
     PyModule_AddIntConstant(m, "FMT_UNIREC", TRAP_FMT_UNIREC);
 
@@ -557,9 +495,6 @@ initpytrap(void)
     PyModule_AddIntConstant(m, "CTL_AUTOFLUSH", TRAPCTL_AUTOFLUSH_TIMEOUT);
     PyModule_AddIntConstant(m, "CTL_BUFFERFLUSH", TRAPCTL_BUFFERSWITCH);
     PyModule_AddIntConstant(m, "CTL_TIMEOUT", TRAPCTL_SETTIMEOUT);
-
-
-
 
 #if PY_MAJOR_VERSION >= 3
     return m;
