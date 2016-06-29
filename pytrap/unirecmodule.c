@@ -469,6 +469,10 @@ typedef struct {
 static inline PyObject *
 UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_id)
 {
+    if (data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
+    }
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
 
     switch (ur_get_type(field_id)) {
@@ -570,6 +574,10 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
 static inline PyObject *
 UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_id, PyObject *valueObj)
 {
+    if (data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
+    }
     PY_LONG_LONG longval;
     double floatval;
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
