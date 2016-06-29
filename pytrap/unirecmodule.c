@@ -463,6 +463,7 @@ typedef struct {
     ur_template_t *urtmplt;
     char *data;
     Py_ssize_t data_size;
+    PyObject *data_obj; // Pointer to object containing the data we are pointing to
     PyDictObject *urdict;
 } pytrap_unirectemplate;
 
@@ -788,6 +789,9 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
     self->data = data;
     self->data_size = data_size;
 
+    self->data_obj = dataObj;
+    Py_INCREF(dataObj); // Increment refCount for the original object, so it's not free'd
+
     Py_RETURN_NONE;
 }
 
@@ -890,6 +894,7 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         self->data = NULL;
         self->data_size = 0;
+        self->data_obj = NULL;
         self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
     }
 
@@ -900,6 +905,7 @@ static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
     Py_DECREF(self->urdict);
     ur_free_template(self->urtmplt);
+    Py_XDECREF(self->data_obj); // Allow to free the original data object
     Py_DECREF(self);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
