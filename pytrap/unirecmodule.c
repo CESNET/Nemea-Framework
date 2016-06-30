@@ -786,11 +786,16 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
         return NULL;
     }
 
+    if (self->data != NULL) {
+        /* decrease refCount of the previously stored data */
+        Py_DECREF(&self->data_obj);
+    }
     self->data = data;
     self->data_size = data_size;
 
     self->data_obj = dataObj;
-    Py_INCREF(dataObj); // Increment refCount for the original object, so it's not free'd
+    /* Increment refCount for the original object, so it's not free'd */
+    Py_INCREF(&self->data_obj);
 
     Py_RETURN_NONE;
 }
