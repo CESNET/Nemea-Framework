@@ -804,6 +804,59 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     return res;
 }
 
+static PyTypeObject pytrap_UnirecTemplate;
+
+static PyObject *
+UnirecTemplate_copy(pytrap_unirectemplate *self)
+{
+    pytrap_unirectemplate *n;
+    n = (pytrap_unirectemplate *) pytrap_UnirecTemplate.tp_alloc(&pytrap_UnirecTemplate, 0);
+
+    char *s = ur_template_string_delimiter(self->urtmplt, ',');
+    n->urtmplt = ur_create_template_from_ifc_spec(s);
+    free(s);
+    if (n->urtmplt == NULL) {
+        PyErr_SetString(TrapError, "Creation of UniRec template failed.");
+        Py_DECREF(n);
+        return NULL;
+    }
+    n->data = NULL;
+    n->data_size = 0;
+    n->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(n);
+    return (PyObject *) n;
+}
+
+static PyObject *
+UnirecTemplate_strRecord(pytrap_unirectemplate *self)
+{
+    if (self->data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+    }
+
+    PyObject *l = PyList_New(0);
+    PyObject *i;
+    PyObject *format = PyUnicode_FromString("format");
+    PyObject *keyval;
+    PyObject *val;
+
+    ur_field_id_t id = UR_ITER_BEGIN;
+    while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
+        i = PyUnicode_FromFormat("%s = {}", ur_get_name(self->urtmplt->ids[id]), "value");
+        val = UnirecTemplate_get_local(self, self->data, id);
+        keyval =  PyObject_CallMethodObjArgs(i, format, val, NULL);
+        PyList_Append(l, keyval);
+        Py_DECREF(i);
+        Py_DECREF(val);
+        Py_DECREF(keyval);
+    }
+    PyObject *delim = PyUnicode_FromString(", ");
+    PyObject *join = PyUnicode_FromString("join");
+    PyObject *result =  PyObject_CallMethodObjArgs(delim, join, l, NULL);
+    Py_DECREF(delim);
+    Py_DECREF(join);
+    return result;
+}
+
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS,
             "Get value of the field from the UniRec message.\n\n"
@@ -843,6 +896,18 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    dyn_size (int): Maximal size of variable data (in total).\n\n"
             "Returns:\n"
             "    bytearray: Allocated memory that can be filled in using set().\n"
+        },
+
+        {"copy", (PyCFunction) UnirecTemplate_copy, METH_NOARGS,
+            "Create a new instance with the same format specifier without data.\n\n"
+            "Returns:\n"
+            "    UnirecTemplate: New copy of object (not just reference).\n"
+        },
+
+        {"strRecord", (PyCFunction) UnirecTemplate_strRecord, METH_NOARGS,
+            "Get values of record in readable format.\n\n"
+            "Returns:\n"
+            "    str: String in key=value format.\n"
         },
 
         {NULL, NULL, 0, NULL}
