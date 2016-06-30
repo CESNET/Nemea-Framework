@@ -2458,8 +2458,8 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       break;
    case TRAPCTL_BUFFERSWITCH:
       en_dis_switch = (char) va_arg(ap, int);
-      VERBOSE(CL_VERBOSE_BASIC, "%s ifc %d: Set buffer enabled to %d.",
-              ifcdir2str(type), (int)ifcidx, (int) en_dis_switch);
+      VERBOSE(CL_VERBOSE_BASIC, "%s ifc %d: Set buffer switch to %s.",
+              ifcdir2str(type), (int)ifcidx, ((int) en_dis_switch ? "ON" : "OFF"));
       if (type == TRAPIFC_OUTPUT) {
          pthread_mutex_lock(&c->out_ifc_list[ifcidx].ifc_mtx);
          if (c->out_ifc_list[ifcidx].bufferswitch_fixed == 0) {
