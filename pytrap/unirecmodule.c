@@ -465,6 +465,10 @@ typedef struct {
     Py_ssize_t data_size;
     PyObject *data_obj; // Pointer to object containing the data we are pointing to
     PyDictObject *urdict;
+
+    /* for iteration */
+    Py_ssize_t iter_index;
+    Py_ssize_t field_count;
 } pytrap_unirectemplate;
 
 static inline PyObject *
@@ -823,6 +827,19 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
 
 static PyTypeObject pytrap_UnirecTemplate;
 
+static pytrap_unirectemplate *
+UnirecTemplate_init(pytrap_unirectemplate *self)
+{
+    self->data = NULL;
+    self->data_size = 0;
+    self->data_obj = NULL;
+    self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
+
+    self->iter_index = 0;
+    self->field_count = PyDict_Size((PyObject *) self->urdict);
+    return self;
+}
+
 static PyObject *
 UnirecTemplate_copy(pytrap_unirectemplate *self)
 {
@@ -837,9 +854,9 @@ UnirecTemplate_copy(pytrap_unirectemplate *self)
         Py_DECREF(n);
         return NULL;
     }
-    n->data = NULL;
-    n->data_size = 0;
-    n->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(n);
+
+    n = UnirecTemplate_init(n);
+
     return (PyObject *) n;
 }
 
@@ -962,10 +979,7 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
-        self->data = NULL;
-        self->data_size = 0;
-        self->data_obj = NULL;
-        self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
+        self = UnirecTemplate_init(self);
     }
 
     return (PyObject *) self;
@@ -1037,7 +1051,29 @@ UnirecTemplate_setAttr(pytrap_unirectemplate *self, PyObject *attr, PyObject *va
 
 Py_ssize_t UnirecTemplate_len(pytrap_unirectemplate *o)
 {
-   return PyDict_Size((PyObject *) o->urdict);
+   return o->field_count;
+}
+
+static PyObject *
+UnirecTemplate_next(pytrap_unirectemplate *self)
+{
+    PyObject *name;
+    PyObject *value;
+
+    if (self->iter_index < self->field_count) {
+#if PY_MAJOR_VERSION >= 3
+        name = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
+#else
+        name = PyString_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
+#endif
+        value = UnirecTemplate_get_local(self, self->data, self->urtmplt->ids[self->iter_index]);
+        self->iter_index++;
+        return Py_BuildValue("(OO)", name, value);
+    }
+
+    self->iter_index = 0;
+    PyErr_SetNone(PyExc_StopIteration);
+    return NULL;
 }
 
 static PySequenceMethods UnirecTemplate_seqmethods = {
@@ -1080,8 +1116,8 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
     0,                         /* tp_weaklistoffset */
-    0,                         /* tp_iter */
-    0,                         /* tp_iternext */
+    PyObject_SelfIter,         /* tp_iter */
+    (iternextfunc) UnirecTemplate_next,                         /* tp_iternext */
     pytrap_unirectemplate_methods,             /* tp_methods */
     0,                         /* tp_members */
     0,                         /* tp_getset */
