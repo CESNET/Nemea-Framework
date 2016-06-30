@@ -21,6 +21,8 @@ PyObject *TrapError;
 
 static PyObject *TimeoutError;
 
+static PyObject *TrapTerminated;
+
 static PyObject *TrapFMTChanged;
 
 static PyObject *TrapFMTMismatch;
@@ -105,6 +107,9 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
     } else if (ret == TRAP_E_BAD_IFC_INDEX) {
         PyErr_SetString(TrapError, "Bad index of IFC.");
         return NULL;
+    } else if (ret == TRAP_E_TERMINATED) {
+        PyErr_SetString(TrapTerminated, "IFC was terminated.");
+        return NULL;
     }
 
     Py_RETURN_NONE;
@@ -133,6 +138,9 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     } else if (ret == TRAP_E_FORMAT_MISMATCH) {
         PyErr_SetString(TrapFMTMismatch, "Format mismatch, incompatible data format of sender and receiver.");
+        return NULL;
+    } else if (ret == TRAP_E_TERMINATED) {
+        PyErr_SetString(TrapTerminated, "IFC was terminated.");
         return NULL;
     }
     data = PyByteArray_FromStringAndSize(in_rec, in_rec_size);
@@ -483,6 +491,10 @@ initpytrap(void)
     TrapFMTMismatch = PyErr_NewException("pytrap.FormatMismatch", TrapError, NULL);
     Py_INCREF(TrapFMTChanged);
     PyModule_AddObject(m, "FormatMismatch", TrapFMTMismatch);
+
+    TrapTerminated = PyErr_NewException("pytrap.Terminated", TrapError, NULL);
+    Py_INCREF(TrapFMTChanged);
+    PyModule_AddObject(m, "Terminated", TrapTerminated);
 
     Py_INCREF(&pytrap_TrapContext);
     PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
