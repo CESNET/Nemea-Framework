@@ -88,9 +88,9 @@ diff orig-data-parsed.txt processed-data-parsed.txt || {
 }
 
 if [ -x "$path_to_logger" ]; then
-"$path_to_logger" -i "f:$data" > logger-orig.txt
-"$path_to_logger" -i "f:$out" > logger-processed.txt
-diff logger-orig.txt logger-processed.txt || {
+"$path_to_logger" -t -i "f:$data" > logger-orig.txt
+"$path_to_logger" -t -i "f:$out" > logger-processed.txt
+diff -u logger-orig.txt logger-processed.txt || {
    echo "Logger verification of python output data failed. Test failed."
    ((errors++))
 }
