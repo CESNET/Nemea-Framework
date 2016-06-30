@@ -135,6 +135,18 @@ UnirecTime_str(pytrap_unirectime *self)
 #endif
 }
 
+static PyObject *
+UnirecTime_repr(pytrap_unirectime *self)
+{
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat("UnirecTime(%u, %u)", ur_time_get_sec(self->timestamp),
+        ur_time_get_msec(self->timestamp));
+#else
+    return PyString_FromFormat("UnirecTime(%u, %u)", ur_time_get_sec(self->timestamp),
+        ur_time_get_msec(self->timestamp));
+#endif
+}
+
 long
 UnirecTime_hash(pytrap_unirectime *o)
 {
@@ -275,7 +287,7 @@ static PyTypeObject pytrap_UnirecTime = {
     0, /* tp_getattr */
     0, /* tp_setattr */
     0, /* tp_reserved */
-    0, /* tp_repr */
+    (reprfunc) UnirecTime_repr, /* tp_repr */
     &UnirecTime_numbermethods, /* tp_as_number */
     0, /* tp_as_sequence */
     0, /* tp_as_mapping */
@@ -389,6 +401,18 @@ UnirecIPAddr_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+UnirecIPAddr_repr(pytrap_unirecipaddr *self)
+{
+    char str[INET6_ADDRSTRLEN];
+    ip_to_str(&self->ip, str);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat("UnirecIPAddr('%s')", str);
+#else
+    return PyString_FromFormat("UnirecIPAddr('%s')", str);
+#endif
+}
+
+static PyObject *
 UnirecIPAddr_str(pytrap_unirecipaddr *self)
 {
     char str[INET6_ADDRSTRLEN];
@@ -420,7 +444,7 @@ static PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
-    0,                         /* tp_repr */
+    (reprfunc) UnirecIPAddr_repr, /* tp_repr */
     0,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
