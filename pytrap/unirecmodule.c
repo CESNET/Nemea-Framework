@@ -842,7 +842,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Args:\n"
             "    dyn_size (int): Maximal size of variable data (in total).\n\n"
             "Returns:\n"
-            "    bytearray: Allocated memory that can be filled in using get().\n"
+            "    bytearray: Allocated memory that can be filled in using set().\n"
         },
 
         {NULL, NULL, 0, NULL}
