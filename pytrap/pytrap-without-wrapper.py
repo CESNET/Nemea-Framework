@@ -13,7 +13,7 @@ def mainLoop():
     numport = 0
     while True:
         try:
-            a = ctx.recv(0)
+            a = ctx.recv()
         except pytrap.FormatChanged as e:
             recTmpl = pytrap.UnirecTemplate(ctx.getDataFmt(0)[1])
             a = e.data

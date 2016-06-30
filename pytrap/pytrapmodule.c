@@ -21,6 +21,8 @@ PyObject *TrapError;
 
 static PyObject *TimeoutError;
 
+static PyObject *TrapTerminated;
+
 static PyObject *TrapFMTChanged;
 
 static PyObject *TrapFMTMismatch;
@@ -74,13 +76,13 @@ pytrap_init(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject *
 pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    uint32_t ifcidx;
+    uint32_t ifcidx = 0;
     PyObject *dataObj;
     char *data;
     Py_ssize_t data_size;
 
-    static char *kwlist[] = {"ifcidx", "data", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO", kwlist, &ifcidx, &dataObj)) {
+    static char *kwlist[] = {"data", "ifcidx", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O|I", kwlist, &dataObj, &ifcidx)) {
         return NULL;
     }
 
@@ -105,6 +107,9 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
     } else if (ret == TRAP_E_BAD_IFC_INDEX) {
         PyErr_SetString(TrapError, "Bad index of IFC.");
         return NULL;
+    } else if (ret == TRAP_E_TERMINATED) {
+        PyErr_SetString(TrapTerminated, "IFC was terminated.");
+        return NULL;
     }
 
     Py_RETURN_NONE;
@@ -113,14 +118,14 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject *
 pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    uint32_t ifcidx;
+    uint32_t ifcidx = 0;
     const void *in_rec;
     uint16_t in_rec_size;
     PyObject *data;
     PyObject *attr;
 
     static char *kwlist[] = {"ifcidx", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i", kwlist, &ifcidx)) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|I", kwlist, &ifcidx)) {
         return NULL;
     }
 
@@ -133,6 +138,9 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     } else if (ret == TRAP_E_FORMAT_MISMATCH) {
         PyErr_SetString(TrapFMTMismatch, "Format mismatch, incompatible data format of sender and receiver.");
+        return NULL;
+    } else if (ret == TRAP_E_TERMINATED) {
+        PyErr_SetString(TrapTerminated, "IFC was terminated.");
         return NULL;
     }
     data = PyByteArray_FromStringAndSize(in_rec, in_rec_size);
@@ -148,13 +156,13 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject *
 pytrap_ifcctl(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    uint32_t dir_in;
+    int32_t dir_in;
     uint32_t request;
     uint32_t ifcidx;
     uint32_t value;
 
     static char *kwlist[] = {"ifcidx", "dir_in", "request", "value", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ipii", kwlist, &ifcidx, &dir_in, &request, &value)) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO!ii", kwlist, &ifcidx, &PyBool_Type, &dir_in, &request, &value)) {
         return NULL;
     }
 
@@ -187,7 +195,7 @@ pytrap_sendFlush(PyObject *self, PyObject *args)
 {
     uint32_t ifcidx = 0;
 
-    if (!PyArg_ParseTuple(args, "i", &ifcidx)) {
+    if (!PyArg_ParseTuple(args, "|i", &ifcidx)) {
         return NULL;
     }
 
@@ -298,7 +306,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
     {"recv",        (PyCFunction) pytrap_recv, METH_VARARGS | METH_KEYWORDS,
         "Receive data via TRAP interface.\n\n"
         "Args:\n"
-        "    ifcidx (int): Index of input IFC.\n\n"
+        "    ifcidx (Optional[int]): Index of input IFC.\n\n"
         "Returns:\n"
         "    bytearray: Received data.\n\n"
         "Raises:\n"
@@ -306,23 +314,25 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    TrapError: Bad index given.\n"
         "    FormatChanged: Data format was changed, it is necessary to\n"
         "        update template.  The received data is in `data` attribute\n"
-        "        of the FormatChanged instance.\n"},
+        "        of the FormatChanged instance.\n"
+        "    Terminated: The TRAP IFC was terminated.\n"},
 
     {"send",        (PyCFunction) pytrap_send, METH_VARARGS | METH_KEYWORDS,
         "Send data via TRAP interface.\n\n"
         "Args:\n"
-        "    ifcidx (int): Index of output IFC.\n"
         "    bytes (bytearray or bytes): Data to send.\n\n"
+        "    ifcidx (Optional[int]): Index of output IFC.\n"
         "Raises:\n"
         "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
-        "    TrapError: Bad size or bad index given.\n"},
+        "    TrapError: Bad size or bad index given.\n"
+        "    Terminated: The TRAP IFC was terminated.\n"},
 
     {"ifcctl",      (PyCFunction) pytrap_ifcctl, METH_VARARGS | METH_KEYWORDS,
         "Change settings of TRAP IFC.\n\n"
         "Args:\n"
         "    ifcidx (int): Index of IFC.\n"
         "    dir_in (bool): If True, input IFC will be modified, output IFC otherwise.\n"
-        "    request (int): Type of request given by a module's constant (CTL_AUTOFLUSH, CTL_BUFFERFLUSH, CTL_TIMEOUT).\n"
+        "    request (int): Type of request given by a module's constant (CTL_AUTOFLUSH, CTL_BUFFERSWITCH, CTL_TIMEOUT).\n"
         "    value (int): Parameter value of the chosen `request`.\n"},
 
     {"setRequiredFmt",  (PyCFunction) pytrap_setRequiredFmt, METH_VARARGS | METH_KEYWORDS,
@@ -349,7 +359,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
     {"sendFlush",   pytrap_sendFlush, METH_VARARGS,
         "Force sending buffer for IFC with ifcidx index.\n\n"
         "Args:\n"
-        "    ifcidx (int): Index of IFC.\n\n"
+        "    ifcidx (Optional[int]): Index of IFC.\n\n"
         },
 
     {"setDataFmt",  (PyCFunction) pytrap_setDataFmt, METH_VARARGS | METH_KEYWORDS,
@@ -484,6 +494,10 @@ initpytrap(void)
     Py_INCREF(TrapFMTChanged);
     PyModule_AddObject(m, "FormatMismatch", TrapFMTMismatch);
 
+    TrapTerminated = PyErr_NewException("pytrap.Terminated", TrapError, NULL);
+    Py_INCREF(TrapFMTChanged);
+    PyModule_AddObject(m, "Terminated", TrapTerminated);
+
     Py_INCREF(&pytrap_TrapContext);
     PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
 
@@ -502,7 +516,7 @@ initpytrap(void)
     PyModule_AddIntConstant(m, "FMTS_CHANGED", FMT_CHANGED);
 
     PyModule_AddIntConstant(m, "CTL_AUTOFLUSH", TRAPCTL_AUTOFLUSH_TIMEOUT);
-    PyModule_AddIntConstant(m, "CTL_BUFFERFLUSH", TRAPCTL_BUFFERSWITCH);
+    PyModule_AddIntConstant(m, "CTL_BUFFERSWITCH", TRAPCTL_BUFFERSWITCH);
     PyModule_AddIntConstant(m, "CTL_TIMEOUT", TRAPCTL_SETTIMEOUT);
 
 #if PY_MAJOR_VERSION >= 3
