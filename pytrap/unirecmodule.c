@@ -377,7 +377,45 @@ out:
     return result;
 }
 
+static PyObject *
+UnirecIPAddr_isIPv4(pytrap_unirecipaddr *self)
+{
+    PyObject *result;
+    if (ip_is4(&self->ip)) {
+        result = Py_True;
+    } else {
+        result = Py_False;
+    }
+    Py_INCREF(result);
+    return result;
+}
+
+static PyObject *
+UnirecIPAddr_isIPv6(pytrap_unirecipaddr *self)
+{
+    PyObject *result;
+    if (ip_is4(&self->ip)) {
+        result = Py_False;
+    } else {
+        result = Py_True;
+    }
+    Py_INCREF(result);
+    return result;
+}
+
 static PyMethodDef pytrap_unirecipaddr_methods[] = {
+    {"isIPv4", (PyCFunction) UnirecIPAddr_isIPv4, METH_NOARGS,
+        "Check if the address is IPv4.\n\n"
+        "Returns:\n"
+        "    bool: True if the address is IPv4.\n"
+        },
+
+    {"isIPv6", (PyCFunction) UnirecIPAddr_isIPv6, METH_NOARGS,
+        "Check if the address is IPv6.\n\n"
+        "Returns:\n"
+        "    bool: True if the address is IPv6.\n"
+        },
+
     {NULL, NULL, 0, NULL}
 };
 
