@@ -128,11 +128,11 @@ static PyObject *
 UnirecTime_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     pytrap_unirectime *self;
-    uint32_t secs, msecs;
+    uint32_t secs, msecs = 0;
 
     self = (pytrap_unirectime *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        if (!PyArg_ParseTuple(args, "II", &secs, &msecs)) {
+        if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
             Py_DECREF(self);
             return NULL;
         }
