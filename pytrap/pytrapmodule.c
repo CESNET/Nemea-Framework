@@ -509,6 +509,7 @@ initpytrap(void)
     /* Add constants into pytrap module */
     PyModule_AddIntConstant(m, "FMT_RAW", TRAP_FMT_RAW);
     PyModule_AddIntConstant(m, "FMT_UNIREC", TRAP_FMT_UNIREC);
+    PyModule_AddIntConstant(m, "FMT_JSON", TRAP_FMT_JSON);
 
     PyModule_AddIntConstant(m, "FMTS_WAITING", FMT_WAITING);
     PyModule_AddIntConstant(m, "FMTS_OK", FMT_OK);
