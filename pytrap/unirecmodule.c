@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <datetime.h>
 #include <structmember.h>
 #include <libtrap/trap.h>
 #include <unirec/unirec.h>
@@ -85,6 +86,19 @@ UnirecTime_getTimeAsFloat(pytrap_unirectime *self)
     return PyFloat_FromDouble(t);
 }
 
+static PyObject *
+UnirecTime_toDatetime(pytrap_unirectime *self)
+{
+    PyObject *result;
+    const struct tm *t;
+    time_t ts = ur_time_get_sec(self->timestamp);
+    t = gmtime(&ts);
+    result = PyDateTime_FromDateAndTime(1900 + t->tm_year, t->tm_mon, t->tm_mday,
+                                        t->tm_hour, t->tm_min, t->tm_sec,
+                                        ur_time_get_msec(self->timestamp) * 1000);
+    return result;
+}
+
 static PyMethodDef pytrap_unirectime_methods[] = {
     {"getSeconds", (PyCFunction) UnirecTime_getSeconds, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
@@ -99,7 +113,12 @@ static PyMethodDef pytrap_unirectime_methods[] = {
     {"getTimeAsFloat", (PyCFunction) UnirecTime_getTimeAsFloat, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
         "Returns:\n"
-        "    (double): Retrieved timestamp as floiting point number.\n"
+        "    (double): Retrieved timestamp as floating point number.\n"
+    },
+    {"toDatetime", (PyCFunction) UnirecTime_toDatetime, METH_NOARGS,
+        "Get timestamp as a datetime object.\n\n"
+        "Returns:\n"
+        "    (datetime): Retrieved timestamp as datetime.\n"
     },
 
     {NULL, NULL, 0, NULL}
@@ -1224,6 +1243,7 @@ int init_unirectemplate(PyObject *m)
     Py_INCREF(&pytrap_UnirecTemplate);
     PyModule_AddObject(m, "UnirecTemplate", (PyObject *) &pytrap_UnirecTemplate);
 
+    PyDateTime_IMPORT;
 
     return EXIT_SUCCESS;
 }
