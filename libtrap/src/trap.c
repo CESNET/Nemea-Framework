@@ -2478,12 +2478,20 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       VERBOSE(CL_VERBOSE_BASIC, "%s ifc %d: Setting timeout to %d.",
               ifcdir2str(type), (int)ifcidx, datatimeout);
       if (type == TRAPIFC_OUTPUT) {
-         if (c->out_ifc_list[ifcidx].datatimeout_fixed == 0) {
-            c->out_ifc_list[ifcidx].datatimeout = datatimeout;
+         if (&c->out_ifc_list[ifcidx] != NULL) {
+            if (c->out_ifc_list[ifcidx].datatimeout_fixed == 0) {
+               c->out_ifc_list[ifcidx].datatimeout = datatimeout;
+            }
+         } else {
+            VERBOSE(CL_ERROR, "There is no output IFC with this index. Bad index passed.");
          }
       } else if (type == TRAPIFC_INPUT) {
-         if (c->in_ifc_list[ifcidx].datatimeout_fixed == 0) {
-            c->in_ifc_list[ifcidx].datatimeout = datatimeout;
+         if (&c->in_ifc_list[ifcidx] != NULL) {
+            if (c->in_ifc_list[ifcidx].datatimeout_fixed == 0) {
+               c->in_ifc_list[ifcidx].datatimeout = datatimeout;
+            }
+         } else {
+            VERBOSE(CL_ERROR, "There is no input IFC with this index. Bad index passed.");
          }
       }
       break;
