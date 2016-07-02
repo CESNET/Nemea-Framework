@@ -1,4 +1,5 @@
 #include <Python.h>
+#include <datetime.h>
 #include <structmember.h>
 #include <libtrap/trap.h>
 #include <unirec/unirec.h>
@@ -85,6 +86,19 @@ UnirecTime_getTimeAsFloat(pytrap_unirectime *self)
     return PyFloat_FromDouble(t);
 }
 
+static PyObject *
+UnirecTime_toDatetime(pytrap_unirectime *self)
+{
+    PyObject *result;
+    const struct tm *t;
+    time_t ts = ur_time_get_sec(self->timestamp);
+    t = gmtime(&ts);
+    result = PyDateTime_FromDateAndTime(1900 + t->tm_year, t->tm_mon, t->tm_mday,
+                                        t->tm_hour, t->tm_min, t->tm_sec,
+                                        ur_time_get_msec(self->timestamp) * 1000);
+    return result;
+}
+
 static PyMethodDef pytrap_unirectime_methods[] = {
     {"getSeconds", (PyCFunction) UnirecTime_getSeconds, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
@@ -99,7 +113,12 @@ static PyMethodDef pytrap_unirectime_methods[] = {
     {"getTimeAsFloat", (PyCFunction) UnirecTime_getTimeAsFloat, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
         "Returns:\n"
-        "    (double): Retrieved timestamp as floiting point number.\n"
+        "    (double): Retrieved timestamp as floating point number.\n"
+    },
+    {"toDatetime", (PyCFunction) UnirecTime_toDatetime, METH_NOARGS,
+        "Get timestamp as a datetime object.\n\n"
+        "Returns:\n"
+        "    (datetime): Retrieved timestamp as datetime.\n"
     },
 
     {NULL, NULL, 0, NULL}
@@ -109,11 +128,11 @@ static PyObject *
 UnirecTime_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     pytrap_unirectime *self;
-    uint32_t secs, msecs;
+    uint32_t secs, msecs = 0;
 
     self = (pytrap_unirectime *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        if (!PyArg_ParseTuple(args, "II", &secs, &msecs)) {
+        if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
             Py_DECREF(self);
             return NULL;
         }
@@ -131,6 +150,18 @@ UnirecTime_str(pytrap_unirectime *self)
         ur_time_get_msec(self->timestamp));
 #else
     return PyString_FromFormat("%u.%03u", ur_time_get_sec(self->timestamp),
+        ur_time_get_msec(self->timestamp));
+#endif
+}
+
+static PyObject *
+UnirecTime_repr(pytrap_unirectime *self)
+{
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat("UnirecTime(%u, %u)", ur_time_get_sec(self->timestamp),
+        ur_time_get_msec(self->timestamp));
+#else
+    return PyString_FromFormat("UnirecTime(%u, %u)", ur_time_get_sec(self->timestamp),
         ur_time_get_msec(self->timestamp));
 #endif
 }
@@ -275,7 +306,7 @@ static PyTypeObject pytrap_UnirecTime = {
     0, /* tp_getattr */
     0, /* tp_setattr */
     0, /* tp_reserved */
-    0, /* tp_repr */
+    (reprfunc) UnirecTime_repr, /* tp_repr */
     &UnirecTime_numbermethods, /* tp_as_number */
     0, /* tp_as_sequence */
     0, /* tp_as_mapping */
@@ -365,7 +396,45 @@ out:
     return result;
 }
 
+static PyObject *
+UnirecIPAddr_isIPv4(pytrap_unirecipaddr *self)
+{
+    PyObject *result;
+    if (ip_is4(&self->ip)) {
+        result = Py_True;
+    } else {
+        result = Py_False;
+    }
+    Py_INCREF(result);
+    return result;
+}
+
+static PyObject *
+UnirecIPAddr_isIPv6(pytrap_unirecipaddr *self)
+{
+    PyObject *result;
+    if (ip_is4(&self->ip)) {
+        result = Py_False;
+    } else {
+        result = Py_True;
+    }
+    Py_INCREF(result);
+    return result;
+}
+
 static PyMethodDef pytrap_unirecipaddr_methods[] = {
+    {"isIPv4", (PyCFunction) UnirecIPAddr_isIPv4, METH_NOARGS,
+        "Check if the address is IPv4.\n\n"
+        "Returns:\n"
+        "    bool: True if the address is IPv4.\n"
+        },
+
+    {"isIPv6", (PyCFunction) UnirecIPAddr_isIPv6, METH_NOARGS,
+        "Check if the address is IPv6.\n\n"
+        "Returns:\n"
+        "    bool: True if the address is IPv6.\n"
+        },
+
     {NULL, NULL, 0, NULL}
 };
 
@@ -386,6 +455,18 @@ UnirecIPAddr_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
     }
     return EXIT_SUCCESS;
 
+}
+
+static PyObject *
+UnirecIPAddr_repr(pytrap_unirecipaddr *self)
+{
+    char str[INET6_ADDRSTRLEN];
+    ip_to_str(&self->ip, str);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat("UnirecIPAddr('%s')", str);
+#else
+    return PyString_FromFormat("UnirecIPAddr('%s')", str);
+#endif
 }
 
 static PyObject *
@@ -420,7 +501,7 @@ static PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
-    0,                         /* tp_repr */
+    (reprfunc) UnirecIPAddr_repr, /* tp_repr */
     0,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
@@ -463,12 +544,21 @@ typedef struct {
     ur_template_t *urtmplt;
     char *data;
     Py_ssize_t data_size;
+    PyObject *data_obj; // Pointer to object containing the data we are pointing to
     PyDictObject *urdict;
+
+    /* for iteration */
+    Py_ssize_t iter_index;
+    Py_ssize_t field_count;
 } pytrap_unirectemplate;
 
 static inline PyObject *
 UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_id)
 {
+    if (data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
+    }
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
 
     switch (ur_get_type(field_id)) {
@@ -570,6 +660,10 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
 static inline PyObject *
 UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_id, PyObject *valueObj)
 {
+    if (data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
+    }
     PY_LONG_LONG longval;
     double floatval;
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
@@ -777,8 +871,16 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
         return NULL;
     }
 
+    if (self->data != NULL) {
+        /* decrease refCount of the previously stored data */
+        Py_DECREF(&self->data_obj);
+    }
     self->data = data;
     self->data_size = data_size;
+
+    self->data_obj = dataObj;
+    /* Increment refCount for the original object, so it's not free'd */
+    Py_INCREF(&self->data_obj);
 
     Py_RETURN_NONE;
 }
@@ -802,6 +904,72 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     PyObject *res = PyByteArray_FromStringAndSize(data, (uint16_t) data_size);
     free(data);
     return res;
+}
+
+static PyTypeObject pytrap_UnirecTemplate;
+
+static pytrap_unirectemplate *
+UnirecTemplate_init(pytrap_unirectemplate *self)
+{
+    self->data = NULL;
+    self->data_size = 0;
+    self->data_obj = NULL;
+    self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
+
+    self->iter_index = 0;
+    self->field_count = PyDict_Size((PyObject *) self->urdict);
+    return self;
+}
+
+static PyObject *
+UnirecTemplate_copy(pytrap_unirectemplate *self)
+{
+    pytrap_unirectemplate *n;
+    n = (pytrap_unirectemplate *) pytrap_UnirecTemplate.tp_alloc(&pytrap_UnirecTemplate, 0);
+
+    char *s = ur_template_string_delimiter(self->urtmplt, ',');
+    n->urtmplt = ur_create_template_from_ifc_spec(s);
+    free(s);
+    if (n->urtmplt == NULL) {
+        PyErr_SetString(TrapError, "Creation of UniRec template failed.");
+        Py_DECREF(n);
+        return NULL;
+    }
+
+    n = UnirecTemplate_init(n);
+
+    return (PyObject *) n;
+}
+
+static PyObject *
+UnirecTemplate_strRecord(pytrap_unirectemplate *self)
+{
+    if (self->data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+    }
+
+    PyObject *l = PyList_New(0);
+    PyObject *i;
+    PyObject *format = PyUnicode_FromString("format");
+    PyObject *keyval;
+    PyObject *val;
+
+    ur_field_id_t id = UR_ITER_BEGIN;
+    while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
+        i = PyUnicode_FromFormat("%s = {}", ur_get_name(self->urtmplt->ids[id]), "value");
+        val = UnirecTemplate_get_local(self, self->data, id);
+        keyval =  PyObject_CallMethodObjArgs(i, format, val, NULL);
+        PyList_Append(l, keyval);
+        Py_DECREF(i);
+        Py_DECREF(val);
+        Py_DECREF(keyval);
+    }
+    PyObject *delim = PyUnicode_FromString(", ");
+    PyObject *join = PyUnicode_FromString("join");
+    PyObject *result =  PyObject_CallMethodObjArgs(delim, join, l, NULL);
+    Py_DECREF(delim);
+    Py_DECREF(join);
+    return result;
 }
 
 static PyMethodDef pytrap_unirectemplate_methods[] = {
@@ -842,7 +1010,19 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Args:\n"
             "    dyn_size (int): Maximal size of variable data (in total).\n\n"
             "Returns:\n"
-            "    bytearray: Allocated memory that can be filled in using get().\n"
+            "    bytearray: Allocated memory that can be filled in using set().\n"
+        },
+
+        {"copy", (PyCFunction) UnirecTemplate_copy, METH_NOARGS,
+            "Create a new instance with the same format specifier without data.\n\n"
+            "Returns:\n"
+            "    UnirecTemplate: New copy of object (not just reference).\n"
+        },
+
+        {"strRecord", (PyCFunction) UnirecTemplate_strRecord, METH_NOARGS,
+            "Get values of record in readable format.\n\n"
+            "Returns:\n"
+            "    str: String in key=value format.\n"
         },
 
         {NULL, NULL, 0, NULL}
@@ -880,9 +1060,7 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
-        self->data = NULL;
-        self->data_size = 0;
-        self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
+        self = UnirecTemplate_init(self);
     }
 
     return (PyObject *) self;
@@ -892,6 +1070,7 @@ static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
     Py_DECREF(self->urdict);
     ur_free_template(self->urtmplt);
+    Py_XDECREF(self->data_obj); // Allow to free the original data object
     Py_DECREF(self);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
@@ -953,7 +1132,29 @@ UnirecTemplate_setAttr(pytrap_unirectemplate *self, PyObject *attr, PyObject *va
 
 Py_ssize_t UnirecTemplate_len(pytrap_unirectemplate *o)
 {
-   return PyDict_Size((PyObject *) o->urdict);
+   return o->field_count;
+}
+
+static PyObject *
+UnirecTemplate_next(pytrap_unirectemplate *self)
+{
+    PyObject *name;
+    PyObject *value;
+
+    if (self->iter_index < self->field_count) {
+#if PY_MAJOR_VERSION >= 3
+        name = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
+#else
+        name = PyString_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
+#endif
+        value = UnirecTemplate_get_local(self, self->data, self->urtmplt->ids[self->iter_index]);
+        self->iter_index++;
+        return Py_BuildValue("(OO)", name, value);
+    }
+
+    self->iter_index = 0;
+    PyErr_SetNone(PyExc_StopIteration);
+    return NULL;
 }
 
 static PySequenceMethods UnirecTemplate_seqmethods = {
@@ -996,8 +1197,8 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
     0,                         /* tp_weaklistoffset */
-    0,                         /* tp_iter */
-    0,                         /* tp_iternext */
+    PyObject_SelfIter,         /* tp_iter */
+    (iternextfunc) UnirecTemplate_next,                         /* tp_iternext */
     pytrap_unirectemplate_methods,             /* tp_methods */
     0,                         /* tp_members */
     0,                         /* tp_getset */
@@ -1042,6 +1243,7 @@ int init_unirectemplate(PyObject *m)
     Py_INCREF(&pytrap_UnirecTemplate);
     PyModule_AddObject(m, "UnirecTemplate", (PyObject *) &pytrap_UnirecTemplate);
 
+    PyDateTime_IMPORT;
 
     return EXIT_SUCCESS;
 }
