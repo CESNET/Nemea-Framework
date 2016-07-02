@@ -521,6 +521,11 @@ initpytrap(void)
     PyModule_AddIntConstant(m, "CTL_BUFFERSWITCH", TRAPCTL_BUFFERSWITCH);
     PyModule_AddIntConstant(m, "CTL_TIMEOUT", TRAPCTL_SETTIMEOUT);
 
+    PyModule_AddIntConstant(m, "TIMEOUT_WAIT", TRAP_WAIT);
+    PyModule_AddIntConstant(m, "TIMEOUT_NOWAIT", TRAP_NO_WAIT);
+    PyModule_AddIntConstant(m, "TIMEOUT_HALFWAIT", TRAP_HALFWAIT);
+    PyModule_AddIntConstant(m, "TIMEOUT_NOAUTOFLUSH", TRAP_NO_AUTO_FLUSH);
+
 #if PY_MAJOR_VERSION >= 3
     return m;
 #endif
