@@ -156,7 +156,7 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
 static PyObject *
 pytrap_ifcctl(PyObject *self, PyObject *args, PyObject *keywds)
 {
-    int32_t dir_in;
+    PyObject *dir_in;
     uint32_t request;
     uint32_t ifcidx;
     uint32_t value;
@@ -166,7 +166,8 @@ pytrap_ifcctl(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    trap_ifcctl((dir_in?TRAPIFC_INPUT:TRAPIFC_OUTPUT), ifcidx, request, value);
+    trap_ifcctl((PyObject_IsTrue((PyObject *) dir_in) ? TRAPIFC_INPUT : TRAPIFC_OUTPUT),
+                ifcidx, request, value);
 
     Py_RETURN_NONE;
 }
