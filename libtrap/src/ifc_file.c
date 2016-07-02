@@ -185,7 +185,6 @@ int open_next_file(file_private_t *c)
 int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
    size_t loaded;
-   long int current_position, remaining_bytes;
 
    /* header of message inside the buffer */
    uint16_t *m_head = data;
@@ -269,47 +268,11 @@ neg_start:
       return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: unable to read");
    }
 
-   current_position = ftell(config->fd);
-   if (current_position < 0) {
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: ftell failed in file: %s", config->filename);
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: ftell failed");
-   }
-
-   if (fseek(config->fd, 0L, SEEK_END) < 0) {
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: fseek failed in file: %s", config->filename);
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fseek failed");
-   }
-
-   remaining_bytes = ftell(config->fd);
-   if (remaining_bytes < 0) {
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: ftell failed in file: %s", config->filename);
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: ftell failed");
-   }
-
-   remaining_bytes -= current_position;
-   if (fseek(config->fd, current_position, SEEK_SET) < 0) {
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: fseek failed in file: %s", config->filename);
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fseek failed");
-   }
-
    /* Reads (*size) bytes from the file */
-   if (remaining_bytes < (*size)) {
-      VERBOSE(CL_ERROR, "INPUT FILE IFC: Attempting to read %"PRIu32" bytes from file: %s, but there are only %ld bytes remaining. Read %ld bytes instead.", (*size), config->filename, remaining_bytes, remaining_bytes);
-      loaded = fread(data, 1, remaining_bytes, config->fd);
-
-      if (loaded != remaining_bytes) {
-         VERBOSE(CL_ERROR, "INPUT FILE IFC: loaded incorrect number of bytes from file: %s", config->filename);
-         return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fread failed");
-      }
-   } else {
-      loaded = fread(data, 1, (*size), config->fd);
-
-      if (loaded != (*size)) {
-         VERBOSE(CL_ERROR, "INPUT FILE IFC: loaded incorrect number of bytes from file: %s", config->filename);
-         return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: fread failed");         
-      }
+   loaded = fread(data, 1, (*size), config->fd);
+   if (loaded != (*size)) {
+         VERBOSE(CL_ERROR, "INPUT FILE IFC: read incorrect number of bytes from file: %s. Attempted to read %d bytes, but the actuall count of bytes read was %zu.", config->filename, (*size), loaded);
    }
-
 
    return TRAP_E_OK;
 }
