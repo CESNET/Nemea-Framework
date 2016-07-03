@@ -2785,31 +2785,6 @@ void *service_thread_routine(void *arg)
                      cl->sd = -1;
                      continue;
                   }
-
-                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_recv_message:  ");
-                     for (y=0; y<g_ctx->num_ifc_in; ++y) {
-                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_recv_message[y]);
-                     }
-                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_recv_buffer:  ");
-                     for (y=0; y<g_ctx->num_ifc_in; ++y) {
-                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_recv_buffer[y]);
-                     }
-                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_send_message:  ");
-                     for (y=0;y<g_ctx->num_ifc_out; ++y) {
-                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_send_message[y]);
-                     }
-                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_send_buffer:  ");
-                     for (y=0; y<g_ctx->num_ifc_out; ++y) {
-                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_send_buffer[y]);
-                     }
-                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_autoflush:  ");
-                     for (y=0; y<g_ctx->num_ifc_out; ++y) {
-                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_autoflush[y]);
-                     }
-                     VERBOSE(CL_VERBOSE_ADVANCED,"counter_dropped_message:  ");
-                     for (y=0; y<g_ctx->num_ifc_out; ++y) {
-                        VERBOSE(CL_VERBOSE_ADVANCED,"%"PRIu64"  ", g_ctx->counter_dropped_message[y]);
-                     }
                }
             }
          }
