@@ -2,7 +2,6 @@
 import sys
 import pdb
 import pytrap
-from URWrapper import URWrapper
 
 ctx = pytrap.TrapCtx()
 ctx.init(sys.argv)
@@ -13,20 +12,20 @@ try:
     a = ctx.recv(0)
 except pytrap.FormatChanged as e:
     fmt = ctx.getDataFmt(0)
-    u = pytrap.UnirecTemplate(fmt[1])
-    rec = URWrapper(u)
+    rec = pytrap.UnirecTemplate(fmt[1])
     a = e.data
     del(e)
-
+print(rec)
 rec.setData(a)
 print("\nDirect access using index")
 for i in range(len(rec)):
-    print(u.get(i, a))
+    print(rec.get(i, a))
 
 print("\nAttribute access")
 print(rec.SRC_IP)
 for i in ["SRC_IP", "DST_IP", "SRC_PORT", "DST_PORT"]:
-    v = rec.__getattr__(i)
+    v = getattr(rec, i)
+    print(v)
 
 print("\nIteration over all fields")
 for i in rec:
@@ -35,6 +34,11 @@ for i in rec:
 print("\nPrint values, ids and names of fields")
 print(rec.strRecord())
 
+print("\nDict from all fields")
+d = {}
+for k, v in rec:
+    d[k] = str(v)
+print(d)
 
 ctx.finalize()
 
