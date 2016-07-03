@@ -182,7 +182,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         except pytrap.FormatMismatch:
             sys.stderr.write(module_name+": Error: input data format mismatch\n")#Required: "+str((req_type,req_format))+"\nReceived: "+str(trap.get_data_fmt(trap.IFC_INPUT, 0))+"\n")
             break
-        except trap.FormatChanged as e:
+        except pytrap.FormatChanged as e:
             # TODO: This should be handled by trap.recv transparently
             # Get negotiated input data format
             (fmttype, fmtspec) = trap.getDataFmt(0)
@@ -257,7 +257,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                 mongocoll.insert(idea2)
             except pymongo.errors.AutoReconnect:
                 sys.stderr.write(module_name+": Error: MongoDB connection failure.\n")
-                trap.stop = 1
+                stop = True
 
         # Warden output
         if wardenclient:
