@@ -3212,10 +3212,12 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d)
       }
    }
 
-   memcpy(buffer, hello_msg_header, sizeof(hello_msg_header_t));
+   hello_msg_header_t tmp = *hello_msg_header;
+   tmp.data_fmt_spec_size = htonl(hello_msg_header->data_fmt_spec_size);
+
+   memcpy(buffer, &tmp, sizeof(hello_msg_header_t));
    size = sizeof(hello_msg_header_t);
    p = buffer;
-
 
    VERBOSE(CL_VERBOSE_LIBRARY, "Step 1: sending hello msg header...   ");
    if (ifc_type == TRAP_IFC_TYPE_FILE) {
@@ -3340,6 +3342,8 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       neg_result = NEG_RES_FAILED;
       goto in_neg_exit;
    } else {
+      hello_msg_header->data_fmt_spec_size = ntohl(hello_msg_header->data_fmt_spec_size);
+
       VERBOSE(CL_VERBOSE_LIBRARY, "OK");
       VERBOSE(CL_VERBOSE_LIBRARY, "sender's data_type: %"PRIu8, hello_msg_header->data_type);
       VERBOSE(CL_VERBOSE_LIBRARY, "sender's data_fmt_spec_size: %"PRIu32, hello_msg_header->data_fmt_spec_size);
