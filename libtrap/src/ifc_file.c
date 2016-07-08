@@ -402,9 +402,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    priv->filename = priv->files[0];
 
    /* Sets mode and filename */
-   priv->mode[0] = 'r';
-   priv->mode[1] = 'b';
-   priv->mode[2] = '\0';
+   strcpy(priv->mode, "rb");
 
    /* Attempts to open the file */
    priv->fd = fopen(priv->filename, priv->mode);
@@ -604,7 +602,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    priv->file_cnt = 0;
    priv->filename = dest = NULL;
    /* Set default mode */
-   strcpy(priv->mode, "ab\0");
+   strcpy(priv->mode, "ab");
 
    /* Parse file name */
    length = strcspn(params, ":");
