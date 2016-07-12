@@ -2146,6 +2146,7 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
    }
    /* count number of interfaces */
    if (module_info->num_ifc_in < 0 && module_info->num_ifc_out < 0) {
+   	trap_free_ctx_t(&ctx);
       return NULL;
    } else if (module_info->num_ifc_in < 0) {
       module_info->num_ifc_in = strlen(ifc_spec.types) - module_info->num_ifc_out;
