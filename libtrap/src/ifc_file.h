@@ -5,7 +5,7 @@
  * \date 2015
  */
 /*
- * Copyright (C) 2015 CESNET
+ * Copyright (C) 2015, 2016 CESNET
  *
  * LICENSE TERMS
  *
@@ -48,12 +48,18 @@
 typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
    FILE *fd;
+   char **files;
    char *filename;
    char mode[3];
    char is_terminated;
    uint8_t neg_initialized;
+   time_t starting_time;
+   size_t filename_base_length;
+   size_t file_index;
    uint32_t file_cnt;
    uint32_t ifc_idx;
+   uint32_t file_change_size;
+   uint32_t file_change_time;
 } file_private_t;
 
 /** Create file receive interface (input ifc).
