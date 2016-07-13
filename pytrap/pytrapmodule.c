@@ -489,6 +489,7 @@ static PyMethodDef pytrap_methods[] = {
 "\n" \
 "    # 100 is the maximal total size of fields with variable length\n" \
 "    data = rec.createMessage(100)\n" \
+"    rec.DST_PORT = 80\n" \
 "\n" \
 "For more details, see docstring of the classes and methods.\n"
 

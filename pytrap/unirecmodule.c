@@ -903,6 +903,17 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     data = ur_create_record(self->urtmplt, (uint16_t) data_size);
     PyObject *res = PyByteArray_FromStringAndSize(data, (uint16_t) data_size);
     free(data);
+
+    if (self->data != NULL) {
+        /* decrease refCount of the previously stored data */
+        Py_DECREF(&self->data_obj);
+    }
+    self->data_size = PyByteArray_Size(res);
+    self->data = PyByteArray_AsString(res);
+    self->data_obj = res;
+    /* Increment refCount for the original object, so it's not free'd */
+    Py_INCREF(&self->data_obj);
+
     return res;
 }
 
@@ -1011,7 +1022,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"createMessage", (PyCFunction) UnirecTemplate_createMessage, METH_VARARGS | METH_KEYWORDS,
             "Create a message that can be filled in with values according to the template.\n\n"
             "Args:\n"
-            "    dyn_size (int): Maximal size of variable data (in total).\n\n"
+            "    dyn_size (Optional[int]): Maximal size of variable data (in total) (default: 0).\n\n"
             "Returns:\n"
             "    bytearray: Allocated memory that can be filled in using set().\n"
         },
