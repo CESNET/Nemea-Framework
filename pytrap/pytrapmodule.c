@@ -447,12 +447,57 @@ static PyMethodDef pytrap_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#define DOCSTRING_MODULE "TRAP extension for python3 (pytrap).\n\n" \
+"This module can be used to write NEMEA module.  It consists of\n" \
+"two main classes: *TrapCtx* and *UnirecTemplate*.  *TrapCtx*\n" \
+"contains communication interface, actually, it is a wrapper\n" \
+"for libtrap.  *UnirecTemplate* can be used for data access and\n" \
+"manipulation.  It uses UniRec macros and functions in order to\n" \
+"retrieve value of a field and to store value into data message.\n" \
+"\n" \
+"Simple example for receive and send messages:\n" \
+"\n" \
+"    import pytrap\n" \
+"    c = pytrap.TrapCtx()\n" \
+"    c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
+"    fmtspec = \"ipaddr SRC_IP\"\n" \
+"    c.setRequiredFmt(0, pytrap.FMT_UNIREC, fmtspec)\n" \
+"    c.setDataFmt(0, pytrap.FMT_UNIREC, fmtspec)\n" \
+"    rec = pytrap.UnirecTemplate(fmtspec)\n" \
+"    try:\n" \
+"        data = c.recv()\n" \
+"    except pytrap.FormatChanged as e:\n" \
+"        fmttype, fmtspec = c.getDataFmt(0)\n" \
+"        c.setDataFmt(0, fmttype, fmtspec)\n" \
+"        rec = pytrap.UnirecTemplate(fmtspec)\n" \
+"        data = e.data\n" \
+"    rec.setData(data)\n" \
+"    print(rec.strRecord())\n" \
+"    c.send(data)\n" \
+"    c.finalize()\n" \
+"\n" \
+"Simple example for data access using rec - UnirecTemplate instance:\n" \
+"\n" \
+"    print(rec.SRC_IP)\n" \
+"    rec.SRC_IP = pytrap.UnirecIPAddr(\"127.0.0.1\")\n" \
+"    print(getattr(rec, \"SRC_IP\"))\n" \
+"    rec.TIME_FIRST = pytrap.UnirecTime(12345678)\n" \
+"    print(rec.TIME_FIRST)\n" \
+"    print(rec.TIME_FIRST.toDatetime())\n" \
+"\n" \
+"Simple example for creation of new message of UnirecTemplate:\n" \
+"\n" \
+"    # 100 is the maximal total size of fields with variable length\n" \
+"    data = rec.createMessage(100)\n" \
+"\n" \
+"For more details, see docstring of the classes and methods.\n"
+
 #if PY_MAJOR_VERSION >= 3
 
 static struct PyModuleDef pytrapmodule = {
     PyModuleDef_HEAD_INIT,
     "pytrap",   /* name of module */
-    "TRAP extension for python3.", /* module documentation, may be NULL */
+    DOCSTRING_MODULE,
     -1,   /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
     pytrap_methods, NULL, NULL, NULL, NULL
 };
@@ -473,7 +518,7 @@ initpytrap(void)
 #if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&pytrapmodule);
 #else
-    m = Py_InitModule("pytrap", pytrap_methods);
+    m = Py_InitModule3("pytrap", pytrap_methods, DOCSTRING_MODULE);
 #endif
     if (m == NULL) {
         INITERROR;
