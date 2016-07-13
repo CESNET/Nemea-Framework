@@ -14,7 +14,7 @@ static trap_module_info_t *module_info = NULL;
 static ur_template_t *in_tmplt = NULL;
 
 #define MODULE_BASIC_INFO(BASIC) \
-    BASIC("Example module","example.",1,0)
+    BASIC("NEMEA module", "Module uses pytrap, it should handle help on its own.", 1, 0)
 
 #define MODULE_PARAMS(PARAM)
 
@@ -236,7 +236,7 @@ pytrap_getDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
     const char *fmtspec = "";
 
     static char *kwlist[] = {"ifcidx", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "i", kwlist, &ifcidx)) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|i", kwlist, &ifcidx)) {
         return NULL;
     }
 
@@ -305,15 +305,15 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Initialization of TRAP.\n\n"
         "Args:\n"
         "    argv (list[str]): Arguments of the process.\n"
-        "    ifcin (Optional[int]): `ifcin` is a number of input IFC.\n"
-        "    ifcout (Optional[int]): `ifcout` is a number of output IFC.\n\n"
+        "    ifcin (Optional[int]): `ifcin` is a number of input IFC (default: 1).\n"
+        "    ifcout (Optional[int]): `ifcout` is a number of output IFC (default: 0).\n\n"
         "Raises:\n"
         "    TrapError: Initialization failed.\n"},
 
     {"recv",        (PyCFunction) pytrap_recv, METH_VARARGS | METH_KEYWORDS,
         "Receive data via TRAP interface.\n\n"
         "Args:\n"
-        "    ifcidx (Optional[int]): Index of input IFC.\n\n"
+        "    ifcidx (Optional[int]): Index of input IFC (default: 0).\n\n"
         "Returns:\n"
         "    bytearray: Received data.\n\n"
         "Raises:\n"
@@ -328,7 +328,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Send data via TRAP interface.\n\n"
         "Args:\n"
         "    bytes (bytearray or bytes): Data to send.\n\n"
-        "    ifcidx (Optional[int]): Index of output IFC.\n"
+        "    ifcidx (Optional[int]): Index of output IFC (default: 0).\n"
         "Raises:\n"
         "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
         "    TrapError: Bad size or bad index given.\n"
@@ -346,13 +346,13 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Set required data format for input IFC.\n\n"
         "Args:\n"
         "    ifcidx (int): Index of IFC.\n"
-        "    type (int): Type of format given by a module's constant (FMT_RAW, FMT_UNIREC)\n"
-        "    spec (string): Specifier of data format (e.g. UniRec specifier for FMT_UNIREC).\n"},
+        "    type (Optional[int]): Type of format: FMT_RAW, FMT_UNIREC (default: FMT_UNIREC)\n"
+        "    spec (Optional[string]): Specifier of data format (UniRec specifier for FMT_UNIREC type) (default: \"\").\n"},
 
     {"getDataFmt",  (PyCFunction) pytrap_getDataFmt, METH_VARARGS | METH_KEYWORDS,
         "Get data format that was negotiated via input IFC.\n\n"
         "Args:\n"
-        "    ifcidx (int): Index of IFC.\n\n"
+        "    ifcidx (Optional[int]): Index of IFC (default: 0).\n\n"
         "Returns:\n"
         "    Tuple(int, string): Type of format and specifier (see setRequiredFmt()).\n\n"
         },
@@ -366,21 +366,21 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
     {"sendFlush",   pytrap_sendFlush, METH_VARARGS,
         "Force sending buffer for IFC with ifcidx index.\n\n"
         "Args:\n"
-        "    ifcidx (Optional[int]): Index of IFC.\n\n"
+        "    ifcidx (Optional[int]): Index of IFC (default: 0).\n\n"
         },
 
     {"setDataFmt",  (PyCFunction) pytrap_setDataFmt, METH_VARARGS | METH_KEYWORDS,
         "Set data format for output IFC.\n\n"
         "Args:\n"
         "    ifcidx (int): Index of IFC.\n"
-        "    type (Optional[int]): Type of format (FMT_RAW, FMT_UNIREC), FMT_UNIREC if missing.\n"
-        "    spec (Optional[string]): Specifier of data format, \"\" if missing.\n"
+        "    type (Optional[int]): Type of format (FMT_RAW, FMT_UNIREC), (default: FMT_UNIREC).\n"
+        "    spec (Optional[string]): Specifier of data format (default: \"\").\n"
         },
 
     {"setVerboseLevel", pytrap_setVerboseLevel, METH_VARARGS,
         "Set the verbose level of TRAP.\n\n"
         "Args:\n"
-        "    level (int): Level of verbosity, 0 by default, the higher value the more verbose.\n"
+        "    level (int): Level of verbosity the higher value the more verbose (default: -1).\n"
         },
 
     {"getVerboseLevel", pytrap_getVerboseLevel, METH_VARARGS,
