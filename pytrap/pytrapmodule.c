@@ -299,8 +299,8 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Initialization of TRAP.\n\n"
         "Args:\n"
         "    argv (list[str]): Arguments of the process.\n"
-        "    ifcin (Optional[in]): `ifcin` is a number of input IFC.\n"
-        "    ifcout (Optional[in]): `ifcout` is a number of output IFC.\n\n"
+        "    ifcin (Optional[int]): `ifcin` is a number of input IFC.\n"
+        "    ifcout (Optional[int]): `ifcout` is a number of output IFC.\n\n"
         "Raises:\n"
         "    TrapError: Initialization failed.\n"},
 
