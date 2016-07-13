@@ -6,6 +6,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 int init_unirectemplate(PyObject *m);
 
@@ -16,6 +17,8 @@ static ur_template_t *in_tmplt = NULL;
     BASIC("Example module","example.",1,0)
 
 #define MODULE_PARAMS(PARAM)
+
+TRAP_DEFAULT_SIGNAL_HANDLER((void) 0)
 
 PyObject *TrapError;
 
@@ -35,6 +38,9 @@ local_trap_init(int argc, char **argv, trap_module_info_t *module_info, int ifci
     module_info->num_ifc_out = ifcout;
 
     TRAP_DEFAULT_INITIALIZATION(argc, argv, *module_info);
+
+    TRAP_REGISTER_DEFAULT_SIGNAL_HANDLER();
+
     return 0;
 }
 
