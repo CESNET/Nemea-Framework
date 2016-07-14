@@ -236,6 +236,7 @@ int file_recv(void *priv, void *data, uint32_t *size, int timeout)
    char *next_file = NULL;
    /* header of message inside the buffer */
    uint16_t *m_head = data;
+   uint32_t data_size = 0;
 
    file_private_t *config = (file_private_t*) priv;
 
@@ -287,8 +288,7 @@ neg_start:
 #endif
 
    /* Reads 4 bytes from the file, determining the length of bytes to be read to @param[out] data */
-   loaded = fread(size, sizeof(uint32_t), 1, config->fd);
-
+   loaded = fread(&data_size, sizeof(uint32_t), 1, config->fd);
    if (loaded != 1) {
       if (feof(config->fd)) {
          next_file = get_next_file(priv);
@@ -314,6 +314,7 @@ neg_start:
       }
    }
 
+   *size = ntohl(data_size);
    /* Reads (*size) bytes from the file */
    loaded = fread(data, 1, (*size), config->fd);
    if (loaded != (*size)) {
@@ -467,9 +468,7 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
 {
    int ret_val = 0;
    file_private_t *config = (file_private_t*) priv;
-   const trap_buffer_header_t *data_struct = (trap_buffer_header_t *) data;
    size_t written;
-   uint32_t size_little_e;
 
    if (config->is_terminated) {
       return trap_error(config->ctx, TRAP_E_TERMINATED);
@@ -497,19 +496,9 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
    }
 #endif
 
-   /* Converts data_length to host byte order (little endian) */
-   size_little_e = ntohl(data_struct->data_length);
-
-   /* Writes data_length to the file in host file order (lexpanded_filenamesittle endian) */
-   written = fwrite(&size_little_e, sizeof(uint32_t), 1, config->fd);
-   if (written != 1) {
-      VERBOSE(CL_ERROR, "OUTPUT FILE IFC: unable to write to file: %s", config->filename);
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "FILE_SENDER: unable to write");
-   }
-
    /* Writes data_length bytes to the file */
-   written = fwrite(data_struct->data, 1, size_little_e, config->fd);
-   if (written != size_little_e) {
+   written = fwrite(data, 1, size, config->fd);
+   if (written != size) {
       VERBOSE(CL_ERROR, "OUTPUT FILE IFC: unable to write to file: %s", config->filename);
       return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "OUTPUT FILE IFC: unable to write");
    }
