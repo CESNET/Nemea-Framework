@@ -235,7 +235,7 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
 
    if (ctx->in_ifc_list[ifc_idx].buffer_full > 0) {
       /* get message from buffer */
-      (*size) = *((uint16_t *) ctx->in_ifc_list[ifc_idx].buffer_pointer);
+      (*size) = ntohs(*((uint16_t *) ctx->in_ifc_list[ifc_idx].buffer_pointer));
       (*data) = (ctx->in_ifc_list[ifc_idx].buffer_pointer + sizeof(*size));
       /* decrease buffer_full size by returned payload and its header */
       ctx->in_ifc_list[ifc_idx].buffer_full -= (*size + sizeof(*size));
@@ -266,7 +266,7 @@ static void insert_into_buffer(trap_output_ifc_t *priv, const void *data, const 
    assert(priv->buffer_index <= (TRAP_IFC_MESSAGEQ_SIZE - sizeof(trap_buffer_header_t)));
    if (priv->buffer_occupied == 0) {
       uint16_t *msize = (uint16_t *) &priv->buffer[priv->buffer_index];
-      (*msize) = size;
+      (*msize) = htons(size);
       memcpy((void *) (msize + 1), data, size);
       priv->buffer_index += size + sizeof size;
    }
