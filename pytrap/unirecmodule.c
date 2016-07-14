@@ -85,6 +85,25 @@ UnirecTime_getTimeAsFloat(pytrap_unirectime *self)
     t += (double) ur_time_get_msec(self->timestamp) / 1000;
     return PyFloat_FromDouble(t);
 }
+static PyObject *
+UnirecTime_now(pytrap_unirectime *self)
+{
+    pytrap_unirectime *result;
+    struct timeval t;
+
+    result = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
+    if (result != NULL) {
+        if (gettimeofday(&t, NULL) == 0) {
+            result->timestamp = ur_time_from_sec_msec(t.tv_sec, t.tv_usec / 1000);
+        } else {
+            PyErr_SetString(TrapError, "Could not get current time.");
+        }
+    } else {
+        PyErr_SetString(PyExc_MemoryError, "Could not allocate UnirecTime.");
+    }
+
+    return (PyObject *) result;
+}
 
 static PyObject *
 UnirecTime_toDatetime(pytrap_unirectime *self)
@@ -119,6 +138,11 @@ static PyMethodDef pytrap_unirectime_methods[] = {
         "Get timestamp as a datetime object.\n\n"
         "Returns:\n"
         "    (datetime): Retrieved timestamp as datetime.\n"
+    },
+    {"now", (PyCFunction) UnirecTime_now, METH_STATIC,
+        "Get UnirecTime instance of current time.\n\n"
+        "Returns:\n"
+        "    (UnirecTime): Current date and time.\n"
     },
 
     {NULL, NULL, 0, NULL}
