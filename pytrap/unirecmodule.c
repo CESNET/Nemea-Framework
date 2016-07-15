@@ -925,6 +925,67 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
     Py_RETURN_NONE;
 }
 
+static inline PyObject *
+UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *field_name;
+    uint32_t field_id;
+    
+    static char *kwlist[] = {"field_name", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O", kwlist, &field_name)) {
+        return NULL;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    if (!PyUnicode_Check(field_name))
+#else
+    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
+#endif
+    {
+        PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
+        return NULL;
+    }
+    
+    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, field_name);
+    if (v == NULL) {
+        PyErr_SetString(TrapError, "Field name was not found.");
+        return NULL;
+    }
+    field_id = (int32_t) PyLong_AsLong(v);
+    
+    switch (ur_get_type(field_id)) {
+    case UR_TYPE_UINT8:
+    case UR_TYPE_UINT16:
+    case UR_TYPE_UINT32:
+    case UR_TYPE_UINT64:
+    case UR_TYPE_INT8:
+    case UR_TYPE_INT16:
+    case UR_TYPE_INT32:
+    case UR_TYPE_INT64:
+    case UR_TYPE_CHAR:
+        return (PyObject *) &PyInt_Type;
+    case UR_TYPE_FLOAT:
+    case UR_TYPE_DOUBLE:
+        return (PyObject *) &PyFloat_Type;
+    case UR_TYPE_IP:
+        return (PyObject *) &pytrap_UnirecIPAddr;
+    case UR_TYPE_TIME:
+        return (PyObject *) &pytrap_UnirecTime;
+    case UR_TYPE_STRING:
+#if PY_MAJOR_VERSION >= 3
+        return (PyObject *) &PyUnicode_Type;
+#else
+        return (PyObject *) &PyString_Type;
+#endif
+    case UR_TYPE_BYTES:
+        return (PyObject *) &PyByteArray_Type;
+    default:
+        PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
 {
@@ -1113,6 +1174,14 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Get set of fields of the template.\n\n"
             "Returns:\n"
             "    Dict(str,int): Dictionary of field_id with field name as a key.\n"
+        },
+
+        {"getFieldType", (PyCFunction) UnirecTemplate_getFieldType, METH_VARARGS | METH_KEYWORDS,
+            "Get type of given field.\n\n"
+            "Args:\n"
+            "    field_name (str): Field name.\n\n"
+            "Returns:\n"
+            "    type: Type object (e.g. int, str or pytrap.UnirecIPAddr).\n"
         },
 
         {"createMessage", (PyCFunction) UnirecTemplate_createMessage, METH_VARARGS | METH_KEYWORDS,
