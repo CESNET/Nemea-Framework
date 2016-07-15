@@ -1282,17 +1282,6 @@ UnirecTemplate_str(pytrap_unirectemplate *self)
     return result;
 }
 
-/*
-TODO
-class URWrapper:
-    def __iter__(self):
-        for i in range(self._numfields):
-            yield self._tmpl.get(i, self._data)
-
-    def strRecord(self):
-        return "\n".join(["{0} ({2})\t=\t{1}".format(i, self.__getattr__(i), self._urdict[i]) for i in self._urdict])
-*/
-
 static PyObject *
 UnirecTemplate_getAttr(pytrap_unirectemplate *self, PyObject *attr)
 {
