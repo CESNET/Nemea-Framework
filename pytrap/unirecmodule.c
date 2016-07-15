@@ -828,6 +828,18 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
 }
 
 static PyObject *
+UnirecTemplate_getData(pytrap_unirectemplate *self)
+{
+    if (self->data_obj == NULL) {
+        PyErr_SetString(TrapError, "No data was set - use setData before.");
+        return NULL;
+    }
+
+    Py_INCREF(self->data_obj);
+    return self->data_obj;
+}
+
+static PyObject *
 UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
 {
     uint32_t field_id;
@@ -897,14 +909,14 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
 
     if (self->data != NULL) {
         /* decrease refCount of the previously stored data */
-        Py_DECREF(&self->data_obj);
+        Py_DECREF(self->data_obj);
     }
     self->data = data;
     self->data_size = data_size;
 
     self->data_obj = dataObj;
     /* Increment refCount for the original object, so it's not free'd */
-    Py_INCREF(&self->data_obj);
+    Py_INCREF(self->data_obj);
 
     Py_RETURN_NONE;
 }
@@ -926,17 +938,17 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     }
     data = ur_create_record(self->urtmplt, (uint16_t) data_size);
     PyObject *res = PyByteArray_FromStringAndSize(data, (uint16_t) data_size);
-    free(data);
 
     if (self->data != NULL) {
         /* decrease refCount of the previously stored data */
-        Py_DECREF(&self->data_obj);
+        Py_DECREF(self->data_obj);
     }
+    self->data_obj = res;
     self->data_size = PyByteArray_Size(res);
     self->data = PyByteArray_AsString(res);
-    self->data_obj = res;
     /* Increment refCount for the original object, so it's not free'd */
-    Py_INCREF(&self->data_obj);
+    Py_INCREF(self->data_obj);
+    free(data);
 
     return res;
 }
@@ -1029,6 +1041,12 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Raises:\n"
             "    TypeError: Bad object type of value was given.\n"
             "    ValueError: Bad value was given.\n"
+        },
+
+        {"getData", (PyCFunction) UnirecTemplate_getData, METH_NOARGS,
+            "Get data that was already set using setData.\n\n"
+            "Returns:\n"
+            "    bytearray: Data - UniRec message.\n"
         },
 
         {"setData", (PyCFunction) UnirecTemplate_setData, METH_VARARGS | METH_KEYWORDS,
