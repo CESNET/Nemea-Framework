@@ -8,5 +8,5 @@ rpm:
 
 .PHONY: clean
 clean:
-	rm -rf RPMBUILD
+	rm -rf RPMBUILD dist build
 

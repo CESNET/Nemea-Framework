@@ -1,25 +1,28 @@
 %global srcname nemea-pytrap
-%global sum The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.
+%global sum Python extension for NEMEA modules.
 
 Name:           python-%{srcname}
 Version:        %(grep version setup.py | sed "s/^.*'\([^']*\)'.*/\1/")
 Release:        1%{?dist}
 Summary:        %{sum}
-
+Group:		Liberouter
+Vendor:		CESNET, z.s.p.o.
+Packager: %(git config --get user.name) <%(git config --get user.email)>
 License:        BSD
 URL:            https://pypi.python.org/pypi/%{srcname}
 Source0:        https://pypi.python.org/packages/source/e/%{srcname}/%{srcname}-%{version}.tar.gz
-BuildRequires:  python2-devel python3-devel
+Requires:	libtrap
+BuildRequires:  python2-devel python3-devel libtrap-devel unirec
 
 %description
-An python module which provides a convenient example.
+The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.
 
 %package python-%{srcname}
 Summary:        %{sum}
 %{?python_provide:%python_provide python-%{srcname}}
 
 %description python-%{srcname}
-An python module which provides a convenient example.
+The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.
 
 
 %package -n python3-%{srcname}
