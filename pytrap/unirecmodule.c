@@ -1071,7 +1071,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Returns:\n"
             "    (object): Retrieved value of the field (depends on UniRec template).\n\n"
             "Raises:\n"
-            "    PyExc_TypeError: Data argument must be bytearray or bytes.\n"
+            "    TypeError: Data argument must be bytearray or bytes.\n"
         },
 
         {"get", (PyCFunction) UnirecTemplate_getByName, METH_VARARGS | METH_KEYWORDS,
@@ -1082,6 +1082,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Returns:\n"
             "    (object): Retrieved value of the field (depends on UniRec template).\n\n"
             "Raises:\n"
+            "    TypeError: Data argument must be bytearray or bytes.\n"
             "    TrapError: Field name was not found.\n"
         },
 
