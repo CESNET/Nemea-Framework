@@ -655,15 +655,15 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
 }
 
 static PyObject *
-UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+UnirecTemplate_getByID(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
 {
     int32_t field_id;
     PyObject *dataObj;
     char *data;
     Py_ssize_t data_size;
 
-    static char *kwlist[] = {"field_id", "data", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IO", kwlist, &field_id, &dataObj)) {
+    static char *kwlist[] = {"data", "field_id", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OI", kwlist, &dataObj, &field_id)) {
         return NULL;
     }
 
@@ -678,7 +678,47 @@ UnirecTemplate_get(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
     }
 
     return UnirecTemplate_get_local(self, data, field_id);
+}
 
+static PyObject *
+UnirecTemplate_getByName(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    int32_t field_id;
+    PyObject *dataObj, *field_name;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", "field_name", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OO", kwlist, &dataObj, &field_name)) {
+        return NULL;
+    }
+
+    if (PyByteArray_Check(dataObj)) {
+        //data_size = PyByteArray_Size(dataObj);
+        data = PyByteArray_AsString(dataObj);
+    } else if (PyBytes_Check(dataObj)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+        return NULL;
+    }
+#if PY_MAJOR_VERSION >= 3
+    if (!PyUnicode_Check(field_name))
+#else
+    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
+#endif
+    {
+        PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
+        return NULL;
+    }
+
+    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, field_name);
+    if (v == NULL) {
+        PyErr_SetString(TrapError, "Field name was not found.");
+        return NULL;
+    }
+    field_id = (int32_t) PyLong_AsLong(v);
+    return UnirecTemplate_get_local(self, data, field_id);
 }
 
 static inline PyObject *
@@ -1023,13 +1063,26 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 }
 
 static PyMethodDef pytrap_unirectemplate_methods[] = {
-        {"get", (PyCFunction) UnirecTemplate_get, METH_VARARGS | METH_KEYWORDS,
+        {"getByID", (PyCFunction) UnirecTemplate_getByID, METH_VARARGS | METH_KEYWORDS,
             "Get value of the field from the UniRec message.\n\n"
             "Args:\n"
-            "    field_id (int): Field ID.\n"
             "    data (bytearray or bytes): Data - UniRec message.\n"
+            "    field_id (int): Field ID (use getFieldsDict()).\n"
             "Returns:\n"
-            "    (object): Retrieved value of the field (depends on UniRec template).\n"
+            "    (object): Retrieved value of the field (depends on UniRec template).\n\n"
+            "Raises:\n"
+            "    PyExc_TypeError: Data argument must be bytearray or bytes.\n"
+        },
+
+        {"get", (PyCFunction) UnirecTemplate_getByName, METH_VARARGS | METH_KEYWORDS,
+            "Get value of the field from the UniRec message.\n\n"
+            "Args:\n"
+            "    data (bytearray or bytes): Data - UniRec message.\n"
+            "    field_name (str): Field name.\n"
+            "Returns:\n"
+            "    (object): Retrieved value of the field (depends on UniRec template).\n\n"
+            "Raises:\n"
+            "    TrapError: Field name was not found.\n"
         },
 
         {"set", (PyCFunction) UnirecTemplate_set, METH_VARARGS | METH_KEYWORDS,
