@@ -1258,8 +1258,12 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
-    Py_DECREF(self->urdict);
-    ur_free_template(self->urtmplt);
+    if (self->urdict) {
+        Py_DECREF(self->urdict);
+    }
+    if (self->urtmplt) {
+        ur_free_template(self->urtmplt);
+    }
     Py_XDECREF(self->data_obj); // Allow to free the original data object
     Py_DECREF(self);
     Py_TYPE(self)->tp_free((PyObject *) self);
