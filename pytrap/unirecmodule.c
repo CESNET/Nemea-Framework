@@ -1065,14 +1065,13 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 static inline int32_t
 UnirecTemplate_get_field_id(pytrap_unirectemplate *self, PyObject *name)
 {
-    int32_t field_id;
     PyObject *v = PyDict_GetItem((PyObject *) self->urdict, name);
 
     if (v == NULL) {
         return UR_ITER_END;
     }
 
-    field_id = (int32_t) PyLong_AsLong(v);
+    int32_t field_id = (int32_t) PyLong_AsLong(v);
 
     return field_id;
 }
@@ -1136,11 +1135,11 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
 
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"getFieldType", (PyCFunction) UnirecTemplate_getFieldType, METH_VARARGS,
-            "Get type of the UniRec field.\n\n"
+            "Get type of given field.\n\n"
             "Args:\n"
-            "    field_name (str): Field name.\n"
+            "    field_name (str): Field name.\n\n"
             "Returns:\n"
-            "    (object): Field type.\n\n"
+            "    type: Type object (e.g. int, str or pytrap.UnirecIPAddr).\n"
         },
 
         {"getByID", (PyCFunction) UnirecTemplate_getByID, METH_VARARGS | METH_KEYWORDS,
