@@ -1,1 +1,1 @@
-include *.c *.h README
+include *.c *.h README COPYING
