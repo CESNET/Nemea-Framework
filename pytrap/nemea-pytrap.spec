@@ -1,5 +1,6 @@
 %global srcname nemea-pytrap
 %global sum Python extension for NEMEA modules.
+%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 
 Name:           python-%{srcname}
 Version:        %(grep version setup.py | sed "s/^.*'\([^']*\)'.*/\1/")
@@ -12,7 +13,7 @@ License:        BSD
 URL:            https://pypi.python.org/pypi/%{srcname}
 Source0:        https://pypi.python.org/packages/source/e/%{srcname}/%{srcname}-%{version}.tar.gz
 Requires:	libtrap
-BuildRequires:  python2-devel python3-devel libtrap-devel unirec
+BuildRequires:  python2-devel libtrap-devel unirec
 
 %description
 The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.
@@ -34,18 +35,18 @@ An python module which provides a convenient example.
 
 
 %prep
-%autosetup -n %{srcname}-%{version}
+%setup -n %{srcname}-%{version}
 
 %build
-%py2_build
-%py3_build
+%{__python} setup.py build
+%{__python3} setup.py build
 
 %install
 # Must do the python2 install first because the scripts in /usr/bin are
 # overwritten with every setup.py install, and in general we want the
 # python3 version to be the default.
-%py2_install
-%py3_install
+%{__python} setup.py install --skip-build --root %{buildroot}
+%{__python3} setup.py install --skip-build --root %{buildroot}
 
 # Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
 %files -n python-%{srcname}
