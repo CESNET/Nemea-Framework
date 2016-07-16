@@ -20,7 +20,6 @@ The pytrap module is a native Python extension that allows for writing NEMEA mod
 
 %package python-%{srcname}
 Summary:        %{sum}
-%{?python_provide:%python_provide python-%{srcname}}
 
 %description python-%{srcname}
 The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.
@@ -28,7 +27,6 @@ The pytrap module is a native Python extension that allows for writing NEMEA mod
 
 %package -n python3-%{srcname}
 Summary:        %{sum}
-%{?python_provide:%python_provide python3-%{srcname}}
 
 %description -n python3-%{srcname}
 An python module which provides a convenient example.
@@ -48,19 +46,11 @@ An python module which provides a convenient example.
 %{__python} setup.py install --skip-build --root %{buildroot}
 %{__python3} setup.py install --skip-build --root %{buildroot}
 
-# Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
 %files -n python-%{srcname}
 %doc README
 %{python_sitearch}/*
 
-#%{_bindir}/sample-exec-2.7
-#%license COPYING
-
 %files -n python3-%{srcname}
 %doc README
 %{python3_sitearch}/*
-
-#%license COPYING
-#%{_bindir}/sample-exec
-#%{_bindir}/sample-exec-3.4
 
