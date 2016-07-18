@@ -5,6 +5,10 @@ compiler:
   - gcc
 os:
   - linux
+python:
+  - 2.7
+  - 3.4
+  - 3.5
 
 
 branches:
@@ -50,6 +54,7 @@ addons:
 before_install:
    - sudo apt-get update
    - sudo apt-get -y install gdb
+   - pyenv versions
 
 before_script:
    # Set core file pattern to executable.core.pid
@@ -59,7 +64,7 @@ before_script:
    - ulimit -c unlimited -S
 
 script:
-  - ./bootstrap.sh && ./configure && make clean && sudo make install &&
+  - pyenv global 2.7.6 && ./bootstrap.sh && ./configure && make clean && sudo make install &&
     (cd pytrap && sudo python setup.py install;) && make check ||
       { find . \( -name '*.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1; }
   - for i in $(find -name '*core*'); do
