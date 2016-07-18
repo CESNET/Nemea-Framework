@@ -29,6 +29,8 @@ addons:
       - libxml2
       - python
       - python-dev
+      - pip
+      - pyenv
   coverity_scan:
     project:
       name: "CESNET/Nemea-Framework"
