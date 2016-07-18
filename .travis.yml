@@ -29,8 +29,7 @@ addons:
       - libxml2
       - python
       - python-dev
-      - pip
-      - pyenv
+      - python-pip
   coverity_scan:
     project:
       name: "CESNET/Nemea-Framework"
@@ -39,11 +38,6 @@ addons:
     build_command_prepend: "./bootstrap.sh; ./configure; make clean"
     build_command:   "make -j 4"
     branch_pattern: coverity
-
-install:
-   - pyenv install 2.7.10 3.4.2
-   - pyenv versions
-   - pyenv global 2.7.10
 
 script:
   - python -c 'import sys; print(sys.path)'
