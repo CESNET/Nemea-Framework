@@ -74,9 +74,9 @@ AC_ARG_ENABLE([unirec], AC_HELP_STRING([--disable-unirec], [Disable UniRec.]),
         [AM_CONDITIONAL([ENABLE_UNIREC], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_UNIREC], [true])])
 
-AC_ARG_ENABLE([python], AC_HELP_STRING([--disable-python], [Disable python wrappers.]),
-        [AM_CONDITIONAL([ENABLE_PYTHON], [test "x$enableval" = xyes])],
-        [AM_CONDITIONAL([ENABLE_PYTHON], [true])])
+AC_ARG_ENABLE([pytrap], AC_HELP_STRING([--disable-pytrap], [Disable pytrap extension.]),
+        [AM_CONDITIONAL([ENABLE_PYTRAP], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_PYTRAP], [true])])
 
 AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.]),
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
@@ -84,8 +84,7 @@ AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.
 
 AC_CONFIG_FILES([Makefile
 		 pycommon/Makefile
-		 python/Makefile
-		 python/unirec/Makefile
+		 pytrap/Makefile
                  examples/Makefile
                  examples/libtrap/Makefile
                  examples/python/Makefile

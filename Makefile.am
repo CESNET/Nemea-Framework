@@ -10,9 +10,9 @@ endif
 if ENABLE_NEMEACOMMON
 SUBDIRS+=common
 endif
-if ENABLE_PYTHON
-SUBDIRS+=python
-PYTHON_SUBDIRS+=python
+if ENABLE_PYTRAP
+SUBDIRS+=pytrap
+PYTHON_SUBDIRS+=pytrap
 endif
 if ENABLE_PYCOMMON
 SUBDIRS+=pycommon
