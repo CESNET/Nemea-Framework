@@ -2,7 +2,7 @@ language: c
 dist: trusty
 sudo: required
 compiler:
-  - clang
+  - gcc
 os:
   - linux
 
