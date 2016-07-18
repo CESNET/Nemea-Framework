@@ -10,3 +10,4 @@ rpm:
 clean:
 	rm -rf RPMBUILD dist build
 
+TESTS = test.sh

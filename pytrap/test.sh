@@ -35,6 +35,9 @@
 # ===========================================================================
 #
 
+# Check import pytrap, skip this test on import error
+python -c 'import pytrap' 2>/dev/null || exit 77
+
 path_to_logger=./$srcdir/../../modules/logger/logger
 
 vp="H4sIAOwfilcAA8WW24/bRBSHJ0VIqKjcKqBcCqZUgKDxzozHM56uBM0m6WJtuvHaTukCxfgWiNRu
