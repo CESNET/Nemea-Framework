@@ -1,4 +1,7 @@
 .PHONY: rpm
+
+EXTRA_DIST=MANIFEST.in fields.c fields.h README README.md test.sh nemea-pytrap.spec setup.py pytrapmodule.c unirecmodule.c
+
 rpm:
 	mkdir -p RPMBUILD/SOURCES
 	python setup.py sdist
