@@ -42,7 +42,8 @@ addons:
 script:
   - python -c 'import sys; print(sys.path)'
   - python -V
+  - pyenv versions || echo "pyenv not found"
   - ./bootstrap.sh && ./configure --prefix=/tmp/nemea && make clean && make install &&
-    (cd pytrap && python setup.py install;)
+    (cd pytrap && sudo python setup.py install;)
   - (cd pytrap && ./test.sh;)
 
