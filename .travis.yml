@@ -43,7 +43,7 @@ script:
   - python -c 'import sys; print(sys.path)'
   - python -V
   - pyenv versions || echo "pyenv not found"
-  - ./bootstrap.sh && ./configure --prefix=/tmp/nemea && make clean && make install &&
+  - ./bootstrap.sh && ./configure --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && sudo python setup.py install;)
   - (cd pytrap && ./test.sh;)
 
