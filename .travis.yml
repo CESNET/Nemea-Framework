@@ -54,6 +54,9 @@ addons:
 before_install:
    - sudo apt-get update
    - sudo apt-get -y install gdb
+
+install:
+   - pyenv install 2.7.10
    - pyenv versions
 
 before_script:
@@ -64,7 +67,7 @@ before_script:
    - ulimit -c unlimited -S
 
 script:
-  - pyenv global 2.7.6 && ./bootstrap.sh && ./configure && make clean && sudo make install &&
+  - pyenv global 2.7.10 && ./bootstrap.sh && ./configure && make clean && sudo make install &&
     (cd pytrap && sudo python setup.py install;) && make check ||
       { find . \( -name '*.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1; }
   - for i in $(find -name '*core*'); do
