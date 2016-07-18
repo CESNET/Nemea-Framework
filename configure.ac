@@ -116,7 +116,7 @@ echo
 echo "Components:"
 echo "  libtrap................: `if [[ -z "$ENABLE_LIBTRAP_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  nemea-common...........: `if [[ -z "$ENABLE_NEMEACOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
-echo "  python.................: `if [[ -z "$ENABLE_PYTHON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+echo "  pytrap.................: `if [[ -z "$ENABLE_PYTRAP_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  pycommon...............: `if [[ -z "$ENABLE_PYCOMMON_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  unirec.................: `if [[ -z "$ENABLE_UNIREC_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "  examples...............: `if [[ -z "$ENABLE_EXAMPLES_TRUE" ]]; then echo enabled; else echo disabled; fi`"
