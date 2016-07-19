@@ -69,6 +69,9 @@ class DataTypesTime(unittest.TestCase):
         res3 = pytrap.UnirecTime(466701316, 123)
         self.assertEqual(t + (-1000000000), res3)
 
+        self.assertEqual(res1.format(), "2016-06-23T17:02:06Z")
+        self.assertEqual(res1.format("%d.%m.%Y"), "23.06.2016")
+
 class DataAccessGetTest(unittest.TestCase):
     def runTest(self):
         import pytrap

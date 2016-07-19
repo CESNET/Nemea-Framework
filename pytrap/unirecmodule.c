@@ -118,6 +118,38 @@ UnirecTime_toDatetime(pytrap_unirectime *self)
     return result;
 }
 
+static PyObject *
+UnirecTime_format(pytrap_unirectime *self, PyObject *args)
+{
+    PyObject *fmt = NULL;
+    if (!PyArg_ParseTuple(args, "|O", &fmt)) {
+        return NULL;
+    }
+    PyObject *dt = UnirecTime_toDatetime(self);
+
+    if (fmt != NULL) {
+#if PY_MAJOR_VERSION >= 3
+        if (!PyUnicode_Check(fmt))
+#else
+        if (!PyUnicode_Check(fmt) && !PyString_Check(fmt))
+#endif
+        {
+            PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
+            return NULL;
+        }
+    } else {
+        fmt = PyUnicode_FromString("%FT%TZ");
+    }
+    PyObject *strftime = PyUnicode_FromString("strftime");
+
+    PyObject *result = PyObject_CallMethodObjArgs(dt, strftime, fmt, NULL);
+    //Py_DECREF(strftime);
+    //Py_DECREF(fmt);
+    //Py_DECREF(dt);
+    //Py_INCREF(result);
+    return result;
+}
+
 static PyMethodDef pytrap_unirectime_methods[] = {
     {"getSeconds", (PyCFunction) UnirecTime_getSeconds, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
@@ -138,6 +170,13 @@ static PyMethodDef pytrap_unirectime_methods[] = {
         "Get timestamp as a datetime object.\n\n"
         "Returns:\n"
         "    (datetime): Retrieved timestamp as datetime.\n"
+    },
+    {"format", (PyCFunction) UnirecTime_format, METH_VARARGS,
+        "Get timestamp as a datetime object.\n\n"
+        "Args:\n"
+        "    format (Optional[str]): Formatting string, same as for datetime.strftime (default: \"%FT%TZ\").\n\n"
+        "Returns:\n"
+        "    (str): Formatted timestamp as string.\n"
     },
     {"now", (PyCFunction) UnirecTime_now, METH_STATIC,
         "Get UnirecTime instance of current time.\n\n"
