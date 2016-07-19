@@ -1167,6 +1167,7 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 {
     if (self->data == NULL) {
         PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
     }
 
     PyObject *l = PyList_New(0);
