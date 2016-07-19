@@ -1187,7 +1187,7 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
         PyList_Append(l, keyval);
         Py_DECREF(i);
         Py_DECREF(val);
-        Py_DECREF(keyval);
+        Py_XDECREF(keyval);
     }
     PyObject *delim = PyUnicode_FromString(", ");
     PyObject *join = PyUnicode_FromString("join");
