@@ -148,22 +148,20 @@ static PyMethodDef pytrap_unirectime_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-static PyObject *
-UnirecTime_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+int
+UnirecTime_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
 {
-    pytrap_unirectime *self;
+    pytrap_unirectime *s = (pytrap_unirectime *) self;
     uint32_t secs, msecs = 0;
 
-    self = (pytrap_unirectime *) type->tp_alloc(type, 0);
-    if (self != NULL) {
+    if (s != NULL) {
         if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
-            Py_DECREF(self);
-            return NULL;
+            return EXIT_FAILURE;
         }
-        self->timestamp = ur_time_from_sec_msec(secs, msecs);
+        s->timestamp = ur_time_from_sec_msec(secs, msecs);
     }
 
-    return (PyObject *) self;
+    return EXIT_SUCCESS;
 }
 
 static PyObject *
@@ -360,9 +358,9 @@ static PyTypeObject pytrap_UnirecTime = {
     0, /* tp_descr_get */
     0, /* tp_descr_set */
     0, /* tp_dictoffset */
-    0, /* tp_init */
+    (initproc) UnirecTime_init, /* tp_init */
     0, /* tp_alloc */
-    UnirecTime_new, /* tp_new */
+    PyType_GenericNew, /* tp_new */
 };
 
 
