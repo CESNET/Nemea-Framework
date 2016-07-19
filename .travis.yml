@@ -5,6 +5,9 @@ compiler:
 os:
   - linux
 
+python:
+  - 2.7.10
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -45,7 +48,6 @@ install:
 script:
   - pyenv global 2.7.10
   - export PATH=$(pyenv prefix)/bin:$PATH
-  - pip install -e ".[test]"
   - ./bootstrap.sh && ./configure --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && $(pyenv which python) setup.py install;)
   - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
