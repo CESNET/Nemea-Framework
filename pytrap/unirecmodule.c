@@ -106,6 +106,44 @@ UnirecTime_now(pytrap_unirectime *self)
 }
 
 static PyObject *
+UnirecTime_fromDatetime(pytrap_unirectime *self, PyObject *args)
+{
+    pytrap_unirectime *result;
+    PyObject *dt;
+
+    if (!PyArg_ParseTuple(args, "O", &dt)) {
+        return NULL;
+    }
+    if (!PyDateTime_CheckExact(dt)) {
+        return NULL;
+    }
+
+    PyObject *strftime = PyUnicode_FromString("strftime");
+    PyObject *utformat = PyUnicode_FromString("%s");
+    PyObject *secsObj =  PyObject_CallMethodObjArgs(dt, strftime, utformat, NULL);
+#if PY_MAJOR_VERSION >= 3
+    PyObject *secsLong = PyLong_FromUnicodeObject(secsObj, 10);
+#else
+    PyObject *secsLong = PyNumber_Long(secsObj);
+#endif
+    uint32_t secs = (uint32_t) PyLong_AsLong(secsLong);
+    uint32_t microsec = PyDateTime_DATE_GET_MICROSECOND(dt);
+    Py_DECREF(strftime);
+    Py_DECREF(utformat);
+    Py_DECREF(secsObj);
+    Py_DECREF(secsLong);
+
+    result = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
+    if (result != NULL) {
+        result->timestamp = ur_time_from_sec_msec(secs, microsec / 1000);
+    } else {
+        PyErr_SetString(PyExc_MemoryError, "Could not allocate UnirecTime.");
+    }
+
+    return (PyObject *) result;
+}
+
+static PyObject *
 UnirecTime_toDatetime(pytrap_unirectime *self)
 {
     PyObject *result;
@@ -151,6 +189,11 @@ UnirecTime_format(pytrap_unirectime *self, PyObject *args)
 }
 
 static PyMethodDef pytrap_unirectime_methods[] = {
+    {"fromDatetime", (PyCFunction) UnirecTime_fromDatetime, METH_STATIC | METH_VARARGS,
+        "Get UnirecTime from a datetime object.\n\n"
+        "Returns:\n"
+        "    (UnirecTime): Retrieved timestamp.\n"
+    },
     {"getSeconds", (PyCFunction) UnirecTime_getSeconds, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
         "Returns:\n"
