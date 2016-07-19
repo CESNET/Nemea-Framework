@@ -140,7 +140,7 @@ c_types["int64"] = "int64_t";
 c_types["float"] = "float";
 c_types["double"] = "double";
 c_types["ipaddr"] = "ip_addr_t";
-c_types["time"] = "time_t";
+c_types["time"] = "ur_time_t";
 c_types["string"] = "char";
 c_types["bytes"] = "char";
 
