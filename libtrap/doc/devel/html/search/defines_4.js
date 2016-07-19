@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['neg_5fres_5fcont',['NEG_RES_CONT',['../ifc__tcpip_8h.html#ace5d606263806672a058c84561dc47bd',1,'ifc_tcpip.h']]],
-  ['neg_5fres_5ffailed',['NEG_RES_FAILED',['../ifc__tcpip_8h.html#af66581d55a468424f235f4de6af21246',1,'ifc_tcpip.h']]],
-  ['neg_5fres_5ffmt_5fmismatch',['NEG_RES_FMT_MISMATCH',['../ifc__tcpip_8h.html#af6f7169cf725db37670c874b4a9c5d07',1,'ifc_tcpip.h']]],
-  ['neg_5fres_5ffmt_5fsubset',['NEG_RES_FMT_SUBSET',['../ifc__tcpip_8h.html#ad12f764cb28879b9a433bce9806ead0d',1,'ifc_tcpip.h']]],
-  ['neg_5fres_5ffmt_5funknown',['NEG_RES_FMT_UNKNOWN',['../ifc__tcpip_8h.html#a026208bea8d654c030ca91c035652369',1,'ifc_tcpip.h']]]
+  ['sem_5fpshared',['SEM_PSHARED',['../trap_8c.html#a4075f52717436f85b78556ab2ce0a49b',1,'trap.c']]],
+  ['send_5fdata',['SEND_DATA',['../trap_8c.html#a7a5458fe1bcdcc9871a50d236a808bc3',1,'trap.c']]],
+  ['service_5fget_5fcom',['SERVICE_GET_COM',['../trap__internal_8h.html#a86478bb24d5a308d79f0425b0eedf54b',1,'trap_internal.h']]],
+  ['service_5fok_5freply',['SERVICE_OK_REPLY',['../trap__internal_8h.html#a1bccd80a7d96b96e9c01bdf6c18f039e',1,'trap_internal.h']]],
+  ['service_5fset_5fcom',['SERVICE_SET_COM',['../trap__internal_8h.html#a0f4ca0b39a8bbce034c63b8cbb227ba1',1,'trap_internal.h']]]
 ];

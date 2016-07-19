@@ -1,0 +1,39 @@
+digraph "src/trap_error.c"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="src/trap_error.c",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node1 -> Node2 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="trap_error.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$trap__error_8h.html",tooltip="Error handling for TRAP. "];
+  Node2 -> Node3 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="stdarg.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node2 -> Node4 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="stdio.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node2 -> Node5 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="string.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node2 -> Node6 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 [label="trap_internal.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$trap__internal_8h.html",tooltip="Internal functions and macros for libtrap Verbose and debug macros from libcommlbr. "];
+  Node6 -> Node7 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node7 [label="config.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node6 -> Node4 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node6 -> Node8 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node8 [label="pthread.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node6 -> Node9 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 [label="../include/libtrap\l/trap.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$trap_8h.html",tooltip="Interface of TRAP library. "];
+  Node9 -> Node10 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node10 [label="stdint.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node9 -> Node3 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node9 -> Node11 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node11 [label="trap_module_info.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node9 -> Node12 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node12 [label="jansson.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node6 -> Node13 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 [label="trap_ifc.h",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$trap__ifc_8h.html",tooltip="Interface of TRAP interfaces. "];
+  Node13 -> Node10 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 -> Node14 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node14 [label="sys/time.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node13 -> Node8 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node13 -> Node15 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node15 [label="semaphore.h",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node2 -> Node9 [color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+}

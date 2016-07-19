@@ -21,10 +21,11 @@ var searchData=
   ['service_5fset_5fcom',['SERVICE_SET_COM',['../trap__internal_8h.html#a0f4ca0b39a8bbce034c63b8cbb227ba1',1,'trap_internal.h']]],
   ['service_5fthread',['service_thread',['../structtrap__ctx__priv__s.html#a8679c035870a267754ced49a2d3260e9',1,'trap_ctx_priv_s']]],
   ['service_5fthread_5finitialized',['service_thread_initialized',['../structtrap__ctx__priv__s.html#a7e6b71dab19372c5baac9a9a8a6d27bd',1,'trap_ctx_priv_s']]],
-  ['service_5fthread_5froutine',['service_thread_routine',['../group__supervisor.html#ga4668784add2f8dd0be139f964d89cb10',1,'trap.c']]],
+  ['service_5fthread_5froutine',['service_thread_routine',['../group__supervisor.html#ga5f455505997f558e3f975b54a55aa65d',1,'trap.c']]],
   ['simple_20api',['Simple API',['../group__simpleapi.html',1,'']]],
   ['socket_5ftype',['socket_type',['../structtcpip__sender__private__s.html#a19976c4d73b748dfd0a402fbe1d4a512',1,'tcpip_sender_private_s::socket_type()'],['../structtcpip__receiver__private__s.html#a9b9f68cd09485b9b2a50d012d9519edc',1,'tcpip_receiver_private_s::socket_type()']]],
   ['somebody_5ftimedout',['SOMEBODY_TIMEDOUT',['../group__tcpip__sender.html#ggac9d2a14d5f36c214bfd88d8bcc67c259a25e04f87fe3a613f0f16d41e7d402e8f',1,'ifc_tcpip.c']]],
+  ['starting_5ftime',['starting_time',['../structfile__private__s.html#af01b67ca25569558283de89ffffd5d24',1,'file_private_s']]],
   ['supervisor_20monitoring_20feature',['Supervisor monitoring feature',['../group__supervisor.html',1,'']]],
   ['specifier_20of_20trap_20interfaces',['Specifier of TRAP interfaces',['../group__trapifcspec.html',1,'']]]
 ];

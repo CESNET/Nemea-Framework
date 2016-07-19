@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['params',['params',['../structtrap__service__thread__arg__s.html#a192c73d6f5dfbb6fdcf538f525c72103',1,'trap_service_thread_arg_s::params()'],['../structtrap__ifc__spec__s.html#a67f46fe3c5ea43d1c8894ce9b8f551ab',1,'trap_ifc_spec_s::params()']]],
+  ['params',['params',['../structtrap__ifc__spec__s.html#a67f46fe3c5ea43d1c8894ce9b8f551ab',1,'trap_ifc_spec_s']]],
   ['pending_5fbytes',['pending_bytes',['../structclient__s.html#a70807d3454b3edc69da68944c5361f82',1,'client_s']]],
   ['print_5faligned',['print_aligned',['../trap_8c.html#a682459a46e96db216ba53576cec54040',1,'trap.c']]],
   ['print_5faligned_5fmultiline',['print_aligned_multiline',['../trap_8c.html#a64b9357a0c937d4f20e3b7f259174f75',1,'trap.c']]],

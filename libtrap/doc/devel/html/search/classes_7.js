@@ -8,6 +8,5 @@ var searchData=
   ['trap_5fifc_5fspec_5fs',['trap_ifc_spec_s',['../structtrap__ifc__spec__s.html',1,'']]],
   ['trap_5finput_5fifc_5fs',['trap_input_ifc_s',['../structtrap__input__ifc__s.html',1,'']]],
   ['trap_5fmulti_5fresult',['trap_multi_result',['../structtrap__multi__result.html',1,'']]],
-  ['trap_5foutput_5fifc_5fs',['trap_output_ifc_s',['../structtrap__output__ifc__s.html',1,'']]],
-  ['trap_5fservice_5fthread_5farg_5fs',['trap_service_thread_arg_s',['../structtrap__service__thread__arg__s.html',1,'']]]
+  ['trap_5foutput_5fifc_5fs',['trap_output_ifc_s',['../structtrap__output__ifc__s.html',1,'']]]
 ];
