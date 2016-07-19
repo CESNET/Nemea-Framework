@@ -4,7 +4,7 @@ Format of TRAP interface specifier (IFC_SPEC):
 TRAP interface specifier is an argument of `-i` option used by every NEMEA module.
 It specifies a configuration of module's TRAP interfaces (IFC), i.e. what kind of IFC to use and where to connect.
 
-Parameters of individual IFCs are separated by comma `,`, e.g. `<IFC 1>,<IFC 2>,...,<IFC N>`.
+Configurations of individual IFCs are separated by comma `,`, e.g. `<IFC 1>,<IFC 2>,...,<IFC N>`.
 Input IFCs must be specified first, output IFCs follow.
 The number of input and output IFCs depends on the specific module (you should be able to find it in the module's help or README).
 
@@ -29,17 +29,17 @@ connected to one output interface, every input interface will get the same data.
 
 Parameters when used as INPUT interface:
 ```
-<hostname or ip>,<port>
+<hostname or ip>:<port>
 ```
 
 Parameters when used as OUTPUT interface:
 ```
-<port>,<max_num_of_clients>
+<port>:<max_num_of_clients>
 ```
 Maximal number of connected clients (input interfaces) is optional (64 by default).
 
-UNIX socket ('u')
------------------
+UNIX domain socket ('u')
+------------------------
 
 Communicates through a UNIX socket. Output interface creates a socket and listens,
 input interface connects to it. There may be more than one input interfaces
@@ -53,7 +53,7 @@ Socket name can be any string usable as a file name.
 
 Parameters when used as OUTPUT interface:
 ```
-<socket_name>,<max_num_of_clients>
+<socket_name>:<max_num_of_clients>
 ```
 Socket name can be any string usable as a file name.
 Maximal number of connected clients (input interfaces) is optional (64 by default).
@@ -111,9 +111,9 @@ my_module with 1 input interface and 2 output interfaces:
 ```
 ./my_module -i "t:localhost:12345,b:,t:23456:5"
 ```
-The input interface will connect to localhost:12345. The first output
+The input interface will connect to localhost:12345 (TCP). The first output
 interface is unused (all data send there will be dropped), the second output
-interface will provide data on port 23456, to which another module can connect
+interface will provide data on TCP port 23456, to which another module can connect
 its input interface.
 
 nfdump_reader module that reads nfdump file and drops records via Blackhole IFC type:
