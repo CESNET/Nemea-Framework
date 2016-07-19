@@ -29,6 +29,7 @@ addons:
       - python
       - python-dev
       - python-pip
+      - python-setuptools
   coverity_scan:
     project:
       name: "CESNET/Nemea-Framework"
@@ -44,6 +45,7 @@ install:
 script:
   - pyenv global 2.7.10
   - export PATH=$(pyenv prefix)/bin:$PATH
+  - pip install -e ".[test]"
   - ./bootstrap.sh && ./configure --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && $(pyenv which python) setup.py install;)
   - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
