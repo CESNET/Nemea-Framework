@@ -112,7 +112,7 @@ UnirecTime_toDatetime(pytrap_unirectime *self)
     const struct tm *t;
     time_t ts = ur_time_get_sec(self->timestamp);
     t = gmtime(&ts);
-    result = PyDateTime_FromDateAndTime(1900 + t->tm_year, t->tm_mon, t->tm_mday,
+    result = PyDateTime_FromDateAndTime(1900 + t->tm_year, t->tm_mon + 1, t->tm_mday,
                                         t->tm_hour, t->tm_min, t->tm_sec,
                                         ur_time_get_msec(self->timestamp) * 1000);
     return result;
