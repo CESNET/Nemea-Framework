@@ -68,7 +68,7 @@ cat > "$val_h_file" <<ENDTEXT
 #define _UR_VALUES_H_
 
 /************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/
-/* Edit "values" file and run process_values.py script to add UniRec values. */
+/* Edit "values" file and run ur_values.sh script to add UniRec values.      */
 /*****************************************************************************/
 
 #include <stdint.h>
@@ -89,7 +89,7 @@ ENDTEXT
 #####################
 cat > "$val_py_file" <<ENDTEXT
 #************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************
-# Edit "values" file and run process_values.py script to add UniRec values.
+# Edit "values" file and run ur_values.sh script to add UniRec values.
 ENDTEXT
 
 ####################
@@ -97,7 +97,7 @@ ENDTEXT
 ####################
 cat > "$val_c_file" <<ENDTEXT
 /************* THIS IS AUTOMATICALLY GENERATED FILE, DO NOT EDIT *************/
-/* Edit "values" file and run process_values.py script to add UniRec values. */
+/* Edit "values" file and run ur_values.sh script to add UniRec values.      */
 
 #include "ur_values.h"
 
