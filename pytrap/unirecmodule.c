@@ -181,10 +181,7 @@ UnirecTime_format(pytrap_unirectime *self, PyObject *args)
     PyObject *strftime = PyUnicode_FromString("strftime");
 
     PyObject *result = PyObject_CallMethodObjArgs(dt, strftime, fmt, NULL);
-    //Py_DECREF(strftime);
-    //Py_DECREF(fmt);
-    //Py_DECREF(dt);
-    //Py_INCREF(result);
+    Py_DECREF(strftime);
     return result;
 }
 
@@ -1053,9 +1050,11 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
             key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
 #endif
             PyDict_SetItem(d, key, PyLong_FromLong(self->urtmplt->ids[i]));
+            Py_DECREF(key);
         }
         return d;
     }
+    Py_DECREF(d);
     Py_RETURN_NONE;
 }
 
@@ -1395,7 +1394,6 @@ static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
         ur_free_template(self->urtmplt);
     }
     Py_XDECREF(self->data_obj); // Allow to free the original data object
-    Py_DECREF(self);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
