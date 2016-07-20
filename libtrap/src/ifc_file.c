@@ -144,14 +144,13 @@ char *create_filename_from_time(void *priv)
    file_private_t *config = (file_private_t*) priv;
    config->starting_time = time(NULL);
    config->file_index = 0;
-   char *new_filename = (char*) calloc(config->filename_base_length + 15, sizeof(char));
+   char *new_filename = (char*) calloc(config->filename_base_length + 14, sizeof(char));
    if (!new_filename) {
       return NULL;
    }
 
    strncpy(new_filename, config->filename, config->filename_base_length);
    strftime(new_filename + config->filename_base_length, 14, ".%Y%m%d%H%M", localtime(&config->starting_time));
-   new_filename[config->filename_base_length + 13] = '_';
 
    return new_filename;
 }
@@ -161,11 +160,11 @@ char *create_next_filename(void *priv)
    file_private_t *config = (file_private_t*) priv;
    char *new_filename = NULL;
    char tmp;
-   int offset = (config->file_change_time) ? 14 : 0;
+   int offset = (config->file_change_time) ? 13 : 0;
 
    tmp = config->filename[config->filename_base_length + offset];
    config->filename[config->filename_base_length + offset] = '\0';
-   if (asprintf(&new_filename, "%s%zu", config->filename, config->file_index) < 0) {
+   if (asprintf(&new_filename, "%s.%zu", config->filename, config->file_index) < 0) {
       return NULL;
    }
 
@@ -691,7 +690,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             buffer = NULL;
          }
 
-         if (asprintf(&buffer, "%s%zu", priv->filename, priv->file_index) < 0) {
+         if (asprintf(&buffer, "%s.%zu", priv->filename, priv->file_index) < 0) {
             VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC: asprintf failed.");
             free(priv->filename);
             free(priv);
