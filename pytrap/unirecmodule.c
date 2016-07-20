@@ -1191,6 +1191,8 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
     PyObject *result =  PyObject_CallMethodObjArgs(delim, join, l, NULL);
     Py_DECREF(delim);
     Py_DECREF(join);
+    Py_DECREF(format);
+    Py_DECREF(l);
     return result;
 }
 
