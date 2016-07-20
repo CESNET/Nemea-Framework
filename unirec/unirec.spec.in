@@ -35,9 +35,8 @@ ldconfig
 %{_libdir}/pkgconfig/unirec.pc
 %{_libdir}/libunirec.a
 %{_libdir}/libunirec.la
-%{_bindir}/nemea/process_values.py
+%{_bindir}/nemea/ur_values.sh
 %{_bindir}/nemea/ur_processor.sh
-%{_bindir}/nemea/unirec_generate_fields_files.py
 %{_prefix}/include/unirec/*
 %{_docdir}/unirec/*
 
