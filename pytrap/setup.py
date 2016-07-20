@@ -12,5 +12,8 @@ setup(name = 'nemea-pytrap',
        url = 'https://github.com/CESNET/Nemea-Framework',
        license = 'BSD',
        test_suite = "test.unirectemplate_unittest",
+       build_requires = ["libtrap-devel", "unirec"],
+       requires = ["libtrap"],
+       provides = "nemea_pytrap",
        ext_modules = [pytrapmodule])
 
