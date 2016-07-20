@@ -34,12 +34,6 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
-AC_CHECK_PROG(PYTHON, python, python, [""])
-AC_SUBST(PYTHON)
-
-if test "x$PYTHON" = "x"; then
-	AC_MSG_ERROR([Python not found.])
-fi
 
 AC_C_INLINE
 

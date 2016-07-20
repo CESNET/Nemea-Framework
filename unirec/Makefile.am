@@ -11,8 +11,8 @@ RPMDIR=RPMBUILD
 
 BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
 
-ur_values.h ur_values.c ur_values.py: process_values.py
-	$(PYTHON) ${top_srcdir}/process_values.py -i ${top_srcdir}
+ur_values.h ur_values.c ur_values.py: ur_values.sh
+	${top_srcdir}/ur_values.sh -i ${top_srcdir}
 
 
 lib_LTLIBRARIES=libunirec.la
@@ -32,9 +32,9 @@ unirecinclude_HEADERS=unirec.h \
 		     ur_time.h \
 		     ur_values.h
 
-bin_SCRIPTS=unirec_generate_fields_files.py process_values.py ur_processor.sh
+bin_SCRIPTS=ur_values.sh ur_processor.sh
 
-EXTRA_DIST=values unirec_generate_fields_files.py process_values.py ur_processor.sh
+EXTRA_DIST=values ur_values.sh ur_processor.sh
 
 include doxygen.am
 
