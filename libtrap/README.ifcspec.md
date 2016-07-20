@@ -61,7 +61,7 @@ File interface ('f')
 --------------------
 
 Input interface reads data from given files, output interface can store data to multiple files.
-Value of `~` can be used to specify the file to be used in the interface. E.g. `~/nemea/data.trapcap`.
+Value of `~` can be used to specify the file for the interface. E.g. `~/nemea/data.trapcap`.
 
 Input interface:
 Files to be read by input interface can be specified with globbing.
