@@ -1,0 +1,13 @@
+digraph "TCP/IP and UNIX socket communication interface module"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir=LR;
+  Node2 [label="TCPIP output IFC",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__tcpip__sender.html"];
+  Node0 [label="TCP/IP and UNIX socket\l communication interface\l module",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black"];
+  Node1 [label="TRAP communication\l module interface",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__trap__ifc.html"];
+  Node3 [label="TCPIP input IFC",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$group__tcpip__receiver.html"];
+  Node1->Node0 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node2 [shape=plaintext, dir="back", style="solid"];
+  Node0->Node3 [shape=plaintext, dir="back", style="solid"];
+}

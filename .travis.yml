@@ -5,6 +5,9 @@ compiler:
 os:
   - linux
 
+python:
+  - 2.7.10
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -29,6 +32,7 @@ addons:
       - python
       - python-dev
       - python-pip
+      - python-setuptools
   coverity_scan:
     project:
       name: "CESNET/Nemea-Framework"
@@ -46,5 +50,5 @@ script:
   - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && $(pyenv which python) setup.py install;)
-  - make check
+  - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
 

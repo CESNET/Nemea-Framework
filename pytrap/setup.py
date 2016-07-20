@@ -11,5 +11,6 @@ setup(name = 'nemea-pytrap',
        author_email = 'cejkat@cesnet.cz',
        url = 'https://github.com/CESNET/Nemea-Framework',
        license = 'BSD',
+       test_suite = "test.unirectemplate_unittest",
        ext_modules = [pytrapmodule])
 

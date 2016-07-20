@@ -36,7 +36,10 @@
 #
 
 # Check import pytrap, skip this test on import error
+
 python -c 'import pytrap' 2>/dev/null || exit 77
+
+python setup.py test || exit $?
 
 path_to_logger=./$srcdir/../../modules/logger/logger
 

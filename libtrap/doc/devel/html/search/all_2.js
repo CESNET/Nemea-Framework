@@ -3,6 +3,7 @@ var searchData=
   ['backup_5fbuffer',['backup_buffer',['../structtcpip__sender__private__s.html#ae82f3e46b51cce1908d8321b71ceda22',1,'tcpip_sender_private_s::backup_buffer()'],['../group__tcpip__sender.html#ggaf04b911ad265af7e9f2871d48cb9ba76a65673a8b72b76e8ff280b5d0730beaec',1,'BACKUP_BUFFER():&#160;ifc_tcpip_internal.h']]],
   ['blackhole_5fdestroy',['blackhole_destroy',['../ifc__dummy_8c.html#ac56203fa44517d4715c2a3217106ced2',1,'ifc_dummy.c']]],
   ['blackhole_5fget_5fclient_5fcount',['blackhole_get_client_count',['../ifc__dummy_8c.html#a3a87d918cf7dc8762ca7b7c175e66afd',1,'ifc_dummy.c']]],
+  ['blackhole_5fifc_5fget_5fid',['blackhole_ifc_get_id',['../ifc__dummy_8c.html#ad8ce96b416b251a97c0018dfe2d755be',1,'ifc_dummy.c']]],
   ['blackhole_5fsend',['blackhole_send',['../ifc__dummy_8c.html#aa0a23602e05ba3cb2ea2fada56e78d3f',1,'ifc_dummy.c']]],
   ['blackhole_5fterminate',['blackhole_terminate',['../ifc__dummy_8c.html#ab392f3cf1b0144994ee015604f4dc216',1,'ifc_dummy.c']]],
   ['buffer',['buffer',['../structclient__s.html#a81a7cfcfe10fdf65a2fd1abc5a42b2e9',1,'client_s::buffer()'],['../structtrap__input__ifc__s.html#a87780edf8780e7716d55f54071a5fa76',1,'trap_input_ifc_s::buffer()'],['../structtrap__output__ifc__s.html#a3860b137767201bea387a336e140e746',1,'trap_output_ifc_s::buffer()']]],

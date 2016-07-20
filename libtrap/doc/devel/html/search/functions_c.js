@@ -6,5 +6,5 @@ var searchData=
   ['server_5fsocket_5fopen',['server_socket_open',['../group__tcpip__sender.html#gaf8253ffec1871584621b3dc838055d87',1,'ifc_tcpip.c']]],
   ['service_5fget_5fdata',['service_get_data',['../group__supervisor.html#ga260e9f14321268444cab75b214a82811',1,'trap.c']]],
   ['service_5fsend_5fdata',['service_send_data',['../group__supervisor.html#ga8a8ad4e5c6ac70d1d8dece93d58da755',1,'trap.c']]],
-  ['service_5fthread_5froutine',['service_thread_routine',['../group__supervisor.html#ga4668784add2f8dd0be139f964d89cb10',1,'trap.c']]]
+  ['service_5fthread_5froutine',['service_thread_routine',['../group__supervisor.html#ga5f455505997f558e3f975b54a55aa65d',1,'trap.c']]]
 ];

@@ -106,19 +106,94 @@ UnirecTime_now(pytrap_unirectime *self)
 }
 
 static PyObject *
+UnirecTime_fromDatetime(pytrap_unirectime *self, PyObject *args)
+{
+    pytrap_unirectime *result;
+    PyObject *dt;
+
+    if (!PyArg_ParseTuple(args, "O", &dt)) {
+        return NULL;
+    }
+    if (!PyDateTime_CheckExact(dt)) {
+        return NULL;
+    }
+
+    PyObject *strftime = PyUnicode_FromString("strftime");
+    PyObject *utformat = PyUnicode_FromString("%s");
+    PyObject *secsObj =  PyObject_CallMethodObjArgs(dt, strftime, utformat, NULL);
+#if PY_MAJOR_VERSION >= 3
+    PyObject *secsLong = PyLong_FromUnicodeObject(secsObj, 10);
+#else
+    PyObject *secsLong = PyNumber_Long(secsObj);
+#endif
+    uint32_t secs = (uint32_t) PyLong_AsLong(secsLong);
+    uint32_t microsec = PyDateTime_DATE_GET_MICROSECOND(dt);
+    Py_DECREF(strftime);
+    Py_DECREF(utformat);
+    Py_DECREF(secsObj);
+    Py_DECREF(secsLong);
+
+    result = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
+    if (result != NULL) {
+        result->timestamp = ur_time_from_sec_msec(secs, microsec / 1000);
+    } else {
+        PyErr_SetString(PyExc_MemoryError, "Could not allocate UnirecTime.");
+    }
+
+    return (PyObject *) result;
+}
+
+static PyObject *
 UnirecTime_toDatetime(pytrap_unirectime *self)
 {
     PyObject *result;
     const struct tm *t;
     time_t ts = ur_time_get_sec(self->timestamp);
     t = gmtime(&ts);
-    result = PyDateTime_FromDateAndTime(1900 + t->tm_year, t->tm_mon, t->tm_mday,
+    result = PyDateTime_FromDateAndTime(1900 + t->tm_year, t->tm_mon + 1, t->tm_mday,
                                         t->tm_hour, t->tm_min, t->tm_sec,
                                         ur_time_get_msec(self->timestamp) * 1000);
     return result;
 }
 
+static PyObject *
+UnirecTime_format(pytrap_unirectime *self, PyObject *args)
+{
+    PyObject *fmt = NULL;
+    if (!PyArg_ParseTuple(args, "|O", &fmt)) {
+        return NULL;
+    }
+    PyObject *dt = UnirecTime_toDatetime(self);
+
+    if (fmt != NULL) {
+#if PY_MAJOR_VERSION >= 3
+        if (!PyUnicode_Check(fmt))
+#else
+        if (!PyUnicode_Check(fmt) && !PyString_Check(fmt))
+#endif
+        {
+            PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
+            return NULL;
+        }
+    } else {
+        fmt = PyUnicode_FromString("%FT%TZ");
+    }
+    PyObject *strftime = PyUnicode_FromString("strftime");
+
+    PyObject *result = PyObject_CallMethodObjArgs(dt, strftime, fmt, NULL);
+    //Py_DECREF(strftime);
+    //Py_DECREF(fmt);
+    //Py_DECREF(dt);
+    //Py_INCREF(result);
+    return result;
+}
+
 static PyMethodDef pytrap_unirectime_methods[] = {
+    {"fromDatetime", (PyCFunction) UnirecTime_fromDatetime, METH_STATIC | METH_VARARGS,
+        "Get UnirecTime from a datetime object.\n\n"
+        "Returns:\n"
+        "    (UnirecTime): Retrieved timestamp.\n"
+    },
     {"getSeconds", (PyCFunction) UnirecTime_getSeconds, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
         "Returns:\n"
@@ -139,6 +214,13 @@ static PyMethodDef pytrap_unirectime_methods[] = {
         "Returns:\n"
         "    (datetime): Retrieved timestamp as datetime.\n"
     },
+    {"format", (PyCFunction) UnirecTime_format, METH_VARARGS,
+        "Get timestamp as a datetime object.\n\n"
+        "Args:\n"
+        "    format (Optional[str]): Formatting string, same as for datetime.strftime (default: \"%FT%TZ\").\n\n"
+        "Returns:\n"
+        "    (str): Formatted timestamp as string.\n"
+    },
     {"now", (PyCFunction) UnirecTime_now, METH_STATIC,
         "Get UnirecTime instance of current time.\n\n"
         "Returns:\n"
@@ -148,22 +230,20 @@ static PyMethodDef pytrap_unirectime_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-static PyObject *
-UnirecTime_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+int
+UnirecTime_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
 {
-    pytrap_unirectime *self;
+    pytrap_unirectime *s = (pytrap_unirectime *) self;
     uint32_t secs, msecs = 0;
 
-    self = (pytrap_unirectime *) type->tp_alloc(type, 0);
-    if (self != NULL) {
+    if (s != NULL) {
         if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
-            Py_DECREF(self);
-            return NULL;
+            return EXIT_FAILURE;
         }
-        self->timestamp = ur_time_from_sec_msec(secs, msecs);
+        s->timestamp = ur_time_from_sec_msec(secs, msecs);
     }
 
-    return (PyObject *) self;
+    return EXIT_SUCCESS;
 }
 
 static PyObject *
@@ -360,9 +440,9 @@ static PyTypeObject pytrap_UnirecTime = {
     0, /* tp_descr_get */
     0, /* tp_descr_set */
     0, /* tp_dictoffset */
-    0, /* tp_init */
+    (initproc) UnirecTime_init, /* tp_init */
     0, /* tp_alloc */
-    UnirecTime_new, /* tp_new */
+    PyType_GenericNew, /* tp_new */
 };
 
 
@@ -680,6 +760,20 @@ UnirecTemplate_getByID(pytrap_unirectemplate *self, PyObject *args, PyObject *ke
     return UnirecTemplate_get_local(self, data, field_id);
 }
 
+static inline int32_t
+UnirecTemplate_get_field_id(pytrap_unirectemplate *self, PyObject *name)
+{
+    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, name);
+
+    if (v == NULL) {
+        return UR_ITER_END;
+    }
+
+    int32_t field_id = (int32_t) PyLong_AsLong(v);
+
+    return field_id;
+}
+
 static PyObject *
 UnirecTemplate_getByName(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
 {
@@ -702,6 +796,7 @@ UnirecTemplate_getByName(pytrap_unirectemplate *self, PyObject *args, PyObject *
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
     }
+
 #if PY_MAJOR_VERSION >= 3
     if (!PyUnicode_Check(field_name))
 #else
@@ -712,12 +807,11 @@ UnirecTemplate_getByName(pytrap_unirectemplate *self, PyObject *args, PyObject *
         return NULL;
     }
 
-    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, field_name);
-    if (v == NULL) {
-        PyErr_SetString(TrapError, "Field name was not found.");
+    field_id = UnirecTemplate_get_field_id(self, field_name);
+    if (field_id == UR_ITER_END) {
+        PyErr_SetString(TrapError, "Field was not found.");
         return NULL;
     }
-    field_id = (int32_t) PyLong_AsLong(v);
     return UnirecTemplate_get_local(self, data, field_id);
 }
 
@@ -880,15 +974,15 @@ UnirecTemplate_getData(pytrap_unirectemplate *self)
 }
 
 static PyObject *
-UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+UnirecTemplate_setByID(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
 {
     uint32_t field_id;
     PyObject *dataObj, *valueObj;
     char *data;
     Py_ssize_t data_size;
 
-    static char *kwlist[] = {"field_id", "data", "value", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "IOO", kwlist, &field_id, &dataObj, &valueObj)) {
+    static char *kwlist[] = {"data", "field_name", "value", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OIO", kwlist, &dataObj, &field_id, &valueObj)) {
         return NULL;
     }
 
@@ -901,6 +995,46 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
+    return UnirecTemplate_set_local(self, data, field_id, valueObj);
+}
+
+static PyObject *
+UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *dataObj, *valueObj, *field_name;
+    int32_t field_id;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", "field_name", "value", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "OOO", kwlist, &dataObj, &field_name, &valueObj)) {
+        return NULL;
+    }
+
+    if (PyByteArray_Check(dataObj)) {
+        data = PyByteArray_AsString(dataObj);
+    } else if (PyBytes_Check(dataObj)) {
+        PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+        return NULL;
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    if (!PyUnicode_Check(field_name))
+#else
+    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
+#endif
+    {
+        PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
+        return NULL;
+    }
+
+    field_id = UnirecTemplate_get_field_id(self, field_name);
+    if (field_id == UR_ITER_END) {
+        PyErr_SetString(TrapError, "Field was not found.");
+        return NULL;
+    }
     return UnirecTemplate_set_local(self, data, field_id, valueObj);
 }
 
@@ -1033,6 +1167,7 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 {
     if (self->data == NULL) {
         PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
     }
 
     PyObject *l = PyList_New(0);
@@ -1052,7 +1187,7 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
         PyList_Append(l, keyval);
         Py_DECREF(i);
         Py_DECREF(val);
-        Py_DECREF(keyval);
+        Py_XDECREF(keyval);
     }
     PyObject *delim = PyUnicode_FromString(", ");
     PyObject *join = PyUnicode_FromString("join");
@@ -1060,20 +1195,6 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
     Py_DECREF(delim);
     Py_DECREF(join);
     return result;
-}
-
-static inline int32_t
-UnirecTemplate_get_field_id(pytrap_unirectemplate *self, PyObject *name)
-{
-    PyObject *v = PyDict_GetItem((PyObject *) self->urdict, name);
-
-    if (v == NULL) {
-        return UR_ITER_END;
-    }
-
-    int32_t field_id = (int32_t) PyLong_AsLong(v);
-
-    return field_id;
 }
 
 static PyObject *
@@ -1165,15 +1286,26 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    TrapError: Field name was not found.\n"
         },
 
-        {"set", (PyCFunction) UnirecTemplate_set, METH_VARARGS | METH_KEYWORDS,
+        {"setByID", (PyCFunction) UnirecTemplate_setByID, METH_VARARGS | METH_KEYWORDS,
             "Set value of the field in the UniRec message.\n\n"
             "Args:\n"
-            "    field_id (int): Field ID.\n"
             "    data (bytearray or bytes): Data - UniRec message.\n"
+            "    field_id (int): Field ID.\n"
             "    value (object): New value of the field (depends on UniRec template).\n\n"
             "Raises:\n"
             "    TypeError: Bad object type of value was given.\n"
-            "    ValueError: Bad value was given.\n"
+            "    TrapError: Field was not found.\n"
+        },
+
+        {"set", (PyCFunction) UnirecTemplate_set, METH_VARARGS | METH_KEYWORDS,
+            "Set value of the field in the UniRec message.\n\n"
+            "Args:\n"
+            "    data (bytearray or bytes): Data - UniRec message.\n"
+            "    field_name (str): Field name.\n"
+            "    value (object): New value of the field (depends on UniRec template).\n\n"
+            "Raises:\n"
+            "    TypeError: Bad object type of value was given.\n"
+            "    TrapError: Field was not found.\n"
         },
 
         {"getData", (PyCFunction) UnirecTemplate_getData, METH_NOARGS,
