@@ -55,9 +55,10 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([memset strchr])
+AC_CHECK_FUNCS([memset strchr memmove])
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
+AC_FUNC_REALLOC
 AC_FUNC_MKTIME
 
 RPM_RELEASE=1
