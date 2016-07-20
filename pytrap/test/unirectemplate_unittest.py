@@ -161,3 +161,54 @@ class DataAccessSetTest(unittest.TestCase):
         a.ABC = int(4294967296)
         self.assertEqual(a.ABC, int(0))
 
+
+class TemplateTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+        data = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x01\xff\xff\xff\xff\xc8\x76\xbe\xff\xe3\x2b\x6c\x57\x00\x00\x00\x01\x00\x00\x00\x02\x06\x00\x04\x00\x00\x00\x06\x00abcdef\xde\xad\xfe\xed')
+        a.setData(data)
+        tc = a.strRecord()
+        for i in range(100):
+            self.assertEqual(tc, a.strRecord())
+
+class Template2Test(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+        a.createMessage(100)
+        self.assertEqual(a.getFieldsDict(), {'SRC_IP': 0, 'STREAMBYTES': 5, 'TEXT': 4, 'TIME_FIRST': 1, 'ABC': 2, 'BCD': 3})
+        a.SRC_IP = pytrap.UnirecIPAddr("1.2.3.4")
+        a.TIME_FIRST = pytrap.UnirecTime(123456)
+        a.ABC = 1234
+        a.BCD = 54321
+        a.STREAMBYTES = bytearray(b"streamtext")
+        a.TEXT = "stringmuj text"
+        tc = a.strRecord()
+        for i in range(100):
+            self.assertEqual(tc, a.strRecord())
+        a = pytrap.UnirecTemplate("ipaddr DST_IP,time TIME_FIRST,uint32 BCD,string TEXT2,bytes STREAMBYTES")
+        self.assertEqual(a.getFieldsDict(), {'BCD': 3, 'DST_IP': 6, 'TIME_FIRST': 1, 'STREAMBYTES': 5, 'TEXT2': 7})
+        try:
+            a.DST_IP = pytrap.UnirecIPAddr("4.4.4.4")
+        except:
+            pass
+        else:
+            self.fail("Data was not set, this should raise exception.")
+        a.createMessage(100)
+        try:
+            a.SRC_IP = pytrap.UnirecIPAddr("4.4.4.4")
+        except:
+            pass
+        else:
+            self.fail("This template has no SRC_IP.")
+        a.DST_IP = pytrap.UnirecIPAddr("4.4.4.4")
+        a.STREAMBYTES = bytearray(b"hello")
+        valdict = {}
+        for name, value in a:
+            valdict[name] = value
+        self.assertEqual(valdict, {'STREAMBYTES': bytearray(b'hello'), 'DST_IP': pytrap.UnirecIPAddr('4.4.4.4'),
+                                    'TIME_FIRST': pytrap.UnirecTime(0), 'TEXT2': '', 'BCD': 0})
+
+
+

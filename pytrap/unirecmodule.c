@@ -1178,10 +1178,7 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 
     ur_field_id_t id = UR_ITER_BEGIN;
     while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
-        if (!ur_is_present(self->urtmplt, id)) {
-            continue;
-        }
-        i = PyUnicode_FromFormat("%s = {0}", ur_get_name(self->urtmplt->ids[id]), "value");
+        i = PyUnicode_FromFormat("%s = {0}", ur_get_name(id), "value");
         val = UnirecTemplate_get_local(self, self->data, id);
         keyval =  PyObject_CallMethodObjArgs(i, format, val, NULL);
         PyList_Append(l, keyval);
