@@ -60,19 +60,60 @@ Can be used as OUTPUT interface only. Does nothing, everything sent to this inte
 File interface ('f')
 --------------------
 
-Input interface reads data from given file, output interface stores data to a given file.
+Input interface reads data from given files, output interface can store data to multiple files.
+Value of `~` can be used to specify the file to be used in the interface. E.g. `~/nemea/data.trapcap`.
 
-Parameters when used as INPUT interface:
+Input interface:
+Files to be read by input interface can be specified with globbing.
+E.g. lets say, we have multiple data files captured on 18th of April, with names like data.041809, data.041810 etc. where the last two digits indicate the hour of data capture.
+Following syntax can be used:
 ```
-<file_name>
+<file_name> 	// e.g. data.041809 - reads data only from file "data.041809"
+<file_name*> 	// e.g. data.0418* - reads data from all files in directory that were captured on 18th of April.
 ```
+Name of file (path to the file) must be specified.
+Input file interface can also read from /dev/stdin.
 
-Parameters when used as OUTPUT interface:
+Output interface:
 ```
-<file_name>:<mode>
+<file_name>:<mode>:<time=>:<size=>
 ```
-Mode is optional. There are two possible modes: `a` - append (default), `w` - write. Mode 'append' writes data at the end of the specified file, mode write overwrites the specified file.
+Name of file (path to the file) must be specified.
 
+Mode is optional. There are two types of mode: `a` - append, `w` - write.
+Mode append is set as default, if no mode is specified.
+Mode append writes data at the end of specified file, mode write overwrites specified file.
+
+If parameter `time=` is set, the output interface will split captured data to individual files as often, as value of this parameter indicates.
+Output interface assumes the value of parameter `time=` is in minutes.
+If parameter `time=` is set, the output interface creates unique file name for each file according to current timestamp in formate: filename.YYYYmmddHHMM
+Parameter `time=` is optional and is not set by default.
+
+If parameter `size=` is set, the output interface will split captured data to individual files after size of current file exceeds given threshold.
+Output interface assumes the value of parameter `size=` is in MB.
+If parameter `size=` is set, numeric suffix as added to original file name for each file in ascending order starting with 0.
+Parameter `size=` is optional and is not set by default.
+
+Example:
+```
+-i "f:~/nemea/data.trapcap:w"					// stores all captured data to one file (overwrites current file if it exists)
+-i "f:~/nemea/data.trapcap:w:time=30"			// creates individual files each 30 minutes, e.g. "data.trapcap.201604180930", "data.trapcap.201604181000" etc.
+-i "f:~/nemea/data.trapcap:w:size=100"			// creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.0", then "data.trapcap.1" etc.
+-i "f:~/nemea/data.trapcap:w:time=30:size=100"	// creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.0" etc. and after 30 minutes, "data.trapcap.201604181000"
+```
+Output file interface and negotiation:
+Whenever new formate of data is created, output interface creates new file with numeric suffix
+Example: `-i "f:~/nemea/data.trapcap:w"` following sequence of files will be created if data format change: data.trapcap, data.trapcap.0, data.trapcap.1 etc.
+
+When mode `a` is specified, the interface finds first non-existing file in which it writes data.
+Example: 
+Assume we have already files "data.trapcap" and "data.trapcap.0", the following command:
+```
+-i "f:~/nemea/data.trapcap:a"
+```
+checks for existing files and first captured data will be stored to file "data.trapcap.1".
+
+Output file interface can also write data to /dev/stdout and /dev/null, however mode `w` must be specified.
 
 Common IFC parameters
 =====================
