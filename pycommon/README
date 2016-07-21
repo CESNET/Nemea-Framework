@@ -1,0 +1,16 @@
+# About pycommon
+
+The pycommon module contains functionality for NEMEA modules written in python.
+Currently, it is used by reporter modules.
+
+# Installation
+
+Run as root:
+
+```
+python setup.py install
+```
+
+Note: for different versions of python, it is needed to perform this command
+separately for each of them.
+
