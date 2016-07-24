@@ -455,22 +455,21 @@ static PyMethodDef pytrap_methods[] = {
 "manipulation.  It uses UniRec macros and functions in order to\n" \
 "retrieve value of a field and to store value into data message.\n" \
 "\n" \
-"Simple example for receive and send messages:\n" \
+"Simple example to receive and send one message:\n" \
 "\n" \
 "    import pytrap\n" \
 "    c = pytrap.TrapCtx()\n" \
 "    c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
 "    fmtspec = \"ipaddr SRC_IP\"\n" \
 "    c.setRequiredFmt(0, pytrap.FMT_UNIREC, fmtspec)\n" \
-"    c.setDataFmt(0, pytrap.FMT_UNIREC, fmtspec)\n" \
 "    rec = pytrap.UnirecTemplate(fmtspec)\n" \
 "    try:\n" \
 "        data = c.recv()\n" \
 "    except pytrap.FormatChanged as e:\n" \
-"        fmttype, fmtspec = c.getDataFmt(0)\n" \
-"        c.setDataFmt(0, fmttype, fmtspec)\n" \
 "        rec = pytrap.UnirecTemplate(fmtspec)\n" \
 "        data = e.data\n" \
+"    fmttype, fmtspec = c.getDataFmt(0)\n" \
+"    c.setDataFmt(0, fmttype, fmtspec)\n" \
 "    rec.setData(data)\n" \
 "    print(rec.strRecord())\n" \
 "    c.send(data)\n" \
@@ -491,6 +490,10 @@ static PyMethodDef pytrap_methods[] = {
 "    data = rec.createMessage(100)\n" \
 "    rec.DST_PORT = 80\n" \
 "\n" \
+"createMessage() should be called just at the beginning of program\n" \
+"or when format change is needed.\n\n" \
+"There is a complete example module:\n" \
+"https://github.com/CESNET/Nemea-Framework/tree/master/examples/python\n\n" \
 "For more details, see docstring of the classes and methods.\n"
 
 #if PY_MAJOR_VERSION >= 3
