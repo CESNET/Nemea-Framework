@@ -40,6 +40,7 @@ AM_CONDITIONAL([GCC], [test x$GCC = xyes])
 
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 AC_CHECK_PROG(GIT, git, git, [""])
 
 if test -n "$GIT"; then
@@ -183,6 +184,8 @@ fi
 RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
+
+AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
 
 
 # Features libjansson
