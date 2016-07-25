@@ -1,6 +1,5 @@
-libtrap (0.7.6-1) UNRELEASED; urgency=low
+libtrap (0.7.6-1) RELEASE; urgency=low
 
-  * Initial release. Closes: #nnnn
-    <nnnn is the bug number of your ITP>
+  * release of debian package
 
- -- Travis CI User <travis@localhost>  Sun, 24 Jul 2016 23:24:56 +0000
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 24 Jul 2016 23:24:56 +0000

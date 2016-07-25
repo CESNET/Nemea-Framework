@@ -1,7 +1,7 @@
 Source: libtrap
 Section: unknown
 Priority: extra
-Maintainer: Travis CI User <travis@localhost>
+Maintainer: Tomas Cejka <cejkat@cesnet.cz>
 Build-Depends: autotools-dev,
 	debhelper (>=9)
 Standards-Version: 3.9.5

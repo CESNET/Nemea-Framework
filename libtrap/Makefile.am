@@ -10,7 +10,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtrap.pc
 
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = README README.ifcspec.md mdconvert.sh doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian debian/*.install
+EXTRA_DIST = README README.ifcspec.md mdconvert.sh doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian debian/libtrap.install debian/libtrap-dev.install
 
 include aminclude.am
 
