@@ -10,7 +10,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtrap.pc
 
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = README README.ifcspec.md mdconvert.sh doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian
+EXTRA_DIST = README README.ifcspec.md mdconvert.sh doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian debian/*.install
 
 include aminclude.am
 
@@ -50,7 +50,7 @@ else
 endif
 
 deb-clean:
-	rm -rf libtrap_*.build libtrap_*.changes libtrap_*.deb libtrap_*.orig.tar.gz libtrap-*.tar.gz libtrap-@VERSION@
+	rm -rf libtrap_*.build libtrap_*.changes libtrap_*.deb libtrap-dev_*.deb libtrap_*.orig.tar.gz libtrap-*.tar.gz libtrap-@VERSION@
 
 changelog:
 	echo -e "This will insert history into ChangeLog file and open NEWS in vim.\nC-c to interrupt."; \
