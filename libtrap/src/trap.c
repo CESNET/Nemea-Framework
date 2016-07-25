@@ -2648,12 +2648,17 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       VERBOSE(CL_ERROR, "Service thread - could not create final json object while creating json string with counters.");
       goto clean_up;
    }
+
    *data = json_dumps(result_json, 0);
    json_decref(result_json);
+   if (*data == NULL) {
+      return -1;
+   }
    return 0;
 
 
 clean_up:
+   *data = NULL;
    return -1;
 }
 
@@ -2671,7 +2676,7 @@ void *service_thread_routine(void *arg)
    struct timeval tv;
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
-   int ret_val, y, supervisor_sd;
+   int ret_val, supervisor_sd;
    trap_output_ifc_t *service_ifc = (trap_output_ifc_t *) calloc(1, sizeof(trap_output_ifc_t));
    tcpip_sender_private_t *priv;
    int i; /* loop var */
@@ -2682,12 +2687,6 @@ void *service_thread_routine(void *arg)
    int maxfd;
 
    trap_ctx_priv_t *g_ctx = (trap_ctx_priv_t *) arg;
-
-
-   /** \todo add missing counter */
-
-   int num_ints_tosend = TRAP_IN_IFC_COUNTERS * g_ctx->num_ifc_in + TRAP_OUT_IFC_COUNTERS * g_ctx->num_ifc_out;
-   uint64_t *data = (uint64_t *) calloc(num_ints_tosend, sizeof(uint64_t));
 
    // service_sock_spec size is length of "service_PID" where PID is max 10 chars (8 + 10 + 1 zero terminating)
    char service_sock_spec[19];
@@ -2771,12 +2770,15 @@ void *service_thread_routine(void *arg)
                            cl->sd = -1;
                            continue;
                         }
-
                         if (service_send_data(supervisor_sd, header->data_size, (void **) &json_data) != TRAP_E_OK) {
                            VERBOSE(CL_VERBOSE_LIBRARY, "[ERROR] Service could not send data.")
                            close(cl->sd);
                            cl->sd = -1;
                            continue;
+                        }
+                        if (json_data != NULL) {
+                           free(json_data);
+                           json_data = NULL;
                         }
                      }
                   } else {
@@ -2816,8 +2818,11 @@ accept_success:
    }
 
 exit_service_thread:
+   if (json_data != NULL) {
+      free(json_data);
+      json_data = NULL;
+   }
    free(header);
-   free(data);
    service_ifc->terminate(service_ifc->priv);
    service_ifc->destroy(service_ifc->priv);
    free(service_ifc);
