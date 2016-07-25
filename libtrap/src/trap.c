@@ -2676,7 +2676,7 @@ void *service_thread_routine(void *arg)
    struct timeval tv;
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
-   int ret_val, y, supervisor_sd;
+   int ret_val, supervisor_sd;
    trap_output_ifc_t *service_ifc = (trap_output_ifc_t *) calloc(1, sizeof(trap_output_ifc_t));
    tcpip_sender_private_t *priv;
    int i; /* loop var */
@@ -2687,12 +2687,6 @@ void *service_thread_routine(void *arg)
    int maxfd;
 
    trap_ctx_priv_t *g_ctx = (trap_ctx_priv_t *) arg;
-
-
-   /** \todo add missing counter */
-
-   int num_ints_tosend = TRAP_IN_IFC_COUNTERS * g_ctx->num_ifc_in + TRAP_OUT_IFC_COUNTERS * g_ctx->num_ifc_out;
-   uint64_t *data = (uint64_t *) calloc(num_ints_tosend, sizeof(uint64_t));
 
    // service_sock_spec size is length of "service_PID" where PID is max 10 chars (8 + 10 + 1 zero terminating)
    char service_sock_spec[19];
@@ -2829,7 +2823,6 @@ exit_service_thread:
       json_data = NULL;
    }
    free(header);
-   free(data);
    service_ifc->terminate(service_ifc->priv);
    service_ifc->destroy(service_ifc->priv);
    free(service_ifc);
