@@ -2648,12 +2648,17 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       VERBOSE(CL_ERROR, "Service thread - could not create final json object while creating json string with counters.");
       goto clean_up;
    }
+
    *data = json_dumps(result_json, 0);
    json_decref(result_json);
+   if (*data == NULL) {
+      return -1;
+   }
    return 0;
 
 
 clean_up:
+   *data = NULL;
    return -1;
 }
 
@@ -2771,12 +2776,15 @@ void *service_thread_routine(void *arg)
                            cl->sd = -1;
                            continue;
                         }
-
                         if (service_send_data(supervisor_sd, header->data_size, (void **) &json_data) != TRAP_E_OK) {
                            VERBOSE(CL_VERBOSE_LIBRARY, "[ERROR] Service could not send data.")
                            close(cl->sd);
                            cl->sd = -1;
                            continue;
+                        }
+                        if (json_data != NULL) {
+                           free(json_data);
+                           json_data = NULL;
                         }
                      }
                   } else {
@@ -2816,6 +2824,10 @@ accept_success:
    }
 
 exit_service_thread:
+   if (json_data != NULL) {
+      free(json_data);
+      json_data = NULL;
+   }
    free(header);
    free(data);
    service_ifc->terminate(service_ifc->priv);
