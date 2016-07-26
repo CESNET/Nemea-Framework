@@ -1,0 +1,4 @@
+version 1.5.0
+   * change of b+ tree API
+   * bugfixes:
+      - prefix tree: number of children
