@@ -10,7 +10,7 @@
 %endif
 
 Name:	python-%{pypi_name}
-Version: 1.0.5
+Version: 1.0.6
 Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
