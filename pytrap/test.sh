@@ -17,7 +17,7 @@
 #      without specific prior written permission.
 #
 # ALTERNATIVELY, provided that this notice is retained in full, this product
-# may be distributed under the terms of the GNU General Public License ()GPL)
+# may be distributed under the terms of the GNU General Public License (GPL)
 # version 2 or later, in which case the provisions of the GPL apply INSTEAD OF
 # those given above.
 #
@@ -25,10 +25,10 @@
 # including, but not limited to, the implied warranties of merchantability
 # and fitness for a particular purpose are disclaimed. In no event shall the
 # company or contributors be liable for any direct, indirect, incidental,
-# special, exemplary, or consequential damages ()including, but not limited to,
+# special, exemplary, or consequential damages (including, but not limited to,
 # procurement of substitute goods or services; loss of use, data, or profits;
 # or business interruption) however caused and on any theory of liability,
-# whether in contract, strict liability, or tort ()including negligence or
+# whether in contract, strict liability, or tort (including negligence or
 # otherwise) arising in any way out of the use of this software, even if
 # advised of the possibility of such damage.
 #
@@ -43,7 +43,8 @@ python setup.py test || exit $?
 
 path_to_logger=./$srcdir/../../modules/logger/logger
 
-vp="H4sIAOwfilcAA8WW24/bRBSHJ0VIqKjcKqBcCqZUgKDxzozHM56uBM0m6WJtuvHaTukCxfgWiNRu
+input="
+H4sIAOwfilcAA8WW24/bRBSHJ0VIqKjcKqBcCqZUgKDxzozHM56uBM0m6WJtuvHaTukCxfgWiNRu
 lm5a1KpQKt5AQoLCC0gIVPWZv6G0qhAPwAuqEFJB4q3ioiL1GY6deOO46e4iluKRc3LO+DLfOfOb
 8QaUHKX3Oot+FB1Sao7rmdaOgefY1cQ73FnocaZMzbt1J3Ma5uyMN2W63m6z3qjt6HUOxopr7qmD
 bztuzm9UwE1u0qhiVaozdbf/DMLTl1lN2818x7S8Pc60585b9XzMcStuy/GqzdowDCNbvtVQaqad
@@ -66,39 +67,43 @@ Gy+ethLWzA618OyJAfN9aaOghX2ghTZo4Qho4bNrtKAbU+PFkOuA7TxgXA/LAeGw5UVxmYUBF4bQ
 8mpgUhPG/6OG/i7yZmFm/Hb8mVaSncyu18xYwy6yPl8Ka1glWWFmfLftx/mENbPDmWFf+WerpC7G
 r5K5uNAowUYcl7VYkz73jTLjIiSSRPnNJPlGpP/JvBCrzYvxKwZ8Nu4ffD7uv8Erhm4IGWp+FAjY
 Gn0m2jSKRRBSwzeYiK7/SVWYFysxX0j94wXmhbvefjlhzey6acFYSQvGv/mMLDKX0N/YG/VEhA8A
-AA=="
+AA==
+"
 
-expected="H4sIACsgilcAA+WZbW/bNhDH3+9T+P0qhc9HBhgQxVYMoW6sSnKxvBL0QAMBtrpA0g3dp98xipNZ
-kZSoSdy4M2BA5p0o6vjD/e/oWZrlUTz5bUKF8ilhPuPCp5S+m6TJtLEwCr5Co6KN4fQiC1Mclxx/
-LKLz9/lplOVnUbiY4Sh5N8miDyH+TtKsmZdITpjgODW7NS6CTlscTN+HmZsbZ57hyuJl4vwkUTht
-GsX5h3SeZxdxiIPGNENpFmSrNJ8uZ25UkNul79w6i5L2IuNkmS2ny4V7GOCypnF+tgjm6e0rLLcX
-2aK5cI+aBotFOMvjIMkucPTq8ssxA6GpAQIn1/bq2q/+ufeMzudPdc2j2c3aFVWaKaVPMDI57kaO
-u5E3u+E80/AjummQYpKE8yjNwqSxJOHHVYjxWiUROjRjqzRM8mAenmd3Q5+iAK/x6oj55Gg1i9u7
-fuzC9cvs+5kQoEcyYUQ/E872AkwwQv4HTMg9MUFw1HD0aCFBBfgUpK/ZLhIKYAQSxk0ru5HY2vqR
-gKenCbFXJAgRVAjJiKHC7eRuqProAFDEfXtvaBgxpJJQqUKSWpRrWDtkGGXGEFuWhV7vkEIn0fmn
-KAufC8kOBscu9LuMMCHRSDsg4cyXrbTBR6UNx4Hg/Yw42wEyQrUU95yAMietaPVhQgmhfb4NIZxo
-sS5JVdWlsQKjpLiinDk8aqoMfy1C/gNBByK9aYRRNBjZYkSPKTccB7JHWra2A2SE/NrOIzuxGkok
-k7tM0nlLAwpVsiw4LaGytdUui0jJLPB1qYjFwO0/lTgD1z7oNic3L4BFgmiXpQ7nUZzoAb3Rg3rT
-UYLILkxa9QdIrl+TEsEI1tOE4OaRx2uQYe9bLlw0wBigFD3xQ8UJ7hfxDfgPahGuiSGD1Yh77M6T
-dkAJvtaXm2pT2ysvvfzizYtr+3fxzfsQe/j0ydnv6dFfvvQVCXwsE31CeD9Zdyt8DlGajaxgsFzr
-JerG9uJE4UuJvRAlzBOq2mHvhqi1Wa+FgMqzUpXWFsrDNFOiBJa3YKkHYKFmUfNUro7vY7kDV7z5
-41u1+TPdfP1cx5vLz9dR7KUxenFCvVVwhHD4yA83bJgq1aLqcT1TbT0bmaeYHqBKD1J1cHqmxuuZ
-6tIzCxYxq2yJlU9N1hJKw6xCPSuUsKX9AXr2KCfMtDkR4zjhtOeYZWsb4IQeFifbWI3gpH3LW6p7
-nqdSXI3lpL/u4cN99vepFGdS70mlpD4dI1Od7g0ZGmQplKy8kirsq2vriapUoIH36pQw2M8erk49
-6LvYSK54f29+Y/t58s+L9V1v4wjnmVUyGcmJpP2cONtL5x9FAfbUd8GYKrnTu+ECOKNEW+txy02h
-Cu0JBRU1tO5tv9xxMXsr2afde+2h+lEDqqaGT48PLPu8WPUjNZiKF3UJ2EwXAtastlBWTBdaQP16
-x4P92edxldJtTsZmH/e3RB8nzvbzcLKN1RiV0l2c/Khj5DYn/wIs88nqtR4AAA=="
+expected="
+H4sIAKQrl1cAA+WZa2/aSBSGv++v8DdabezM/cxEqhQHHGSVBNc21eaT5csgIW1D1aS76v76HYNT
+wiXY3FJIkSKZ4Z3M+PjRec8Zd6I48QPrgzW4H33TuR+4RfHtXQsz4WBEHEKZgzFuvT+zorC9Skkw
+OMKIBX4SXt3FXmR0nOIzq+fffkyu/Di59r1ex4yiMyv2bzzzPYzin/8tHn3R78yiiFNEGD2zCCXv
+K2XPrRcGbvujF5ermjU75p6CflhO4kiYBSM/SG6ibhLfBZ4ZVGo6FMVuPIiSdr9TjjKEpzc5N7Xj
+h4vbD8J+3G/3e+ViYPbYDpLrntuNqpvrP13EvelFuVTb7fW8ThK4YXxnRlsPo68XBJjEChBcPuqH
+Ryf/rzXT+rfd5uLEL3fWYkhgIYkQ8tIEKDGPLzGPLymfSqWNvE+lUAJnVuh1/Sj2wuq30Ps08Ezc
+BqFfSqrRQeSFidv1buNng599t/xmLs+Jg84HncBawOWijF3rj87h2GIgd2BLsYZsTYR7YIsg9Puw
+xX8lW8iIFDUTatDCDBwM3JFkES0BsB1aymgw5vVozYQvowXN0xZ7XbQQYpgxTpDCrKRhLo5rKAMQ
+qPx7eUrFmkI5h1ykHBUsG8KwRI9gohTSWZbK4QJx2PJvP/uxtx/Y5vi5KJ/DWtYI40aLG8BGicOX
+0hjdNo1NEGK0IWsT4SmyhiVnM95AqMv5UK7BDSOEX1RXpFEk2TBDeV5kSjMTLEEFpqTErMBC0UOT
+9oyeetQapzWCjVDxJdbkluXYBCHewDJnwlNkDf25mNeeB7ImsVk/M9vqSRVwWPAspTiDXBdallmN
+c6KBDjOBtInf0aS2UkelA7KOt8mdUkPycvmv6A68yaY+Ktf76IoSja/CbaE+A07lQWljBJnOBSED
+AGpSo9Xon/gqgwJKAcZGaz6YXZrnjRwFzopajUqkUE21Vi4+v948cO73YjTOx4V+sKPRV7ubPup/
+0x/2TWCbPVjXf0Xn/zjcEch1TE3tIETXETrb6SHJlGSHCs/UwM3InAr3TqYJAHsdMplq1D3U6Csy
+h2o4ZAxyW3ORaZ0K26S9zNh7VgEqVgBq3Bir5nxOW4NVkAbjv3/k4y/R+Pt9EYxH949+YEeBkVGE
+7YF7bphyDIVUkTo6xXo6N/dpsezTO+RNIpvSKdfTeXo+Lbbx6cVJFa0atME115mpDAs05JApooXx
+6VQwnenj8emNeSNqmTe2PW8UNzimmwnX8IZPjLcqkJvxtjTpKOvCA7svFbvw1rAupDXnK9u5LyVc
+vpb7cnm1mf2unlARJoFnTPDczrAQWBTaZnkmQAJd479MUZBv3H9X9MlkBz5pwzOZqfAN5cO99snH
+dQR46G4E7cAbxw15mwj3nQ8FBnitPhk260ZW6yu+gBKMpNY21VSlIpU2E5BjhYs17XL5AoQcVzas
+6ZV/eXUomrq1qHkbcmrZcK/VIZegcpoWGSBEUwZDUmjIciJTyaA4/DF142y4ufvKZd52yYYADXmb
+CN8Qb1UgN3TfxUlH8lpkibf/AfgoaPqlIgAA
+"
 
 
 data="`mktemp`"
 out="`mktemp`"
 
-echo -n "$vp" | base64 -d | gunzip > "$data"
+echo -n "$input" | base64 -d | gunzip > "$data"
 
 errors=0
 
-./$srcdir/../examples/python/python_example.py -i "f:$data,f:$out:w" > orig-data-parsed.txt
-./$srcdir/../examples/python/python_example.py -i "f:$out,b:" > processed-data-parsed.txt
+./$srcdir/../examples/python/python_example.py -i "f:$data,f:$out:w" | sed 's/ \([0-9]*\)L,/ \1,/g' > orig-data-parsed.txt
+./$srcdir/../examples/python/python_example.py -i "f:$out,b:" | sed 's/ \([0-9]*\)L,/ \1,/g' > processed-data-parsed.txt
 
 diff orig-data-parsed.txt <(echo -n "$expected" | base64 -d | gunzip) || {
    echo "Historically stored expected output does not match with the current one. Test failed."
