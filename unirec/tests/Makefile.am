@@ -1,7 +1,9 @@
 BUILT_SOURCES=fields.h fields.c
 
-fields.h fields.c: ${top_srcdir}/ur_processor.sh
+fields.h: ${top_srcdir}/ur_processor.sh
 	${top_srcdir}/ur_processor.sh -i ${top_srcdir} -o ./
+
+fields.c: fields.h
 
 check_PROGRAMS=test_basic test_creation  test_ipaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro
 

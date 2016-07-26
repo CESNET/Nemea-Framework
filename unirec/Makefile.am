@@ -11,8 +11,12 @@ RPMDIR=RPMBUILD
 
 BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
 
-ur_values.h ur_values.c ur_values.py: ur_values.sh
+ur_values.h: ur_values.sh
 	${top_srcdir}/ur_values.sh -i ${top_srcdir}
+
+ur_values.c: ur_values.h
+
+ur_values.py: ur_values.h
 
 
 lib_LTLIBRARIES=libunirec.la
