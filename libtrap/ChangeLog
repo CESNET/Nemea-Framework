@@ -1,3 +1,33 @@
+2016-07-26 (Václav Bartoš): libtrap doc: README.ifcspec.md (file ifc) improved
+2016-07-25 (Tomas Cejka): libtrap: deb: tune list of files in packages and add doc
+2016-07-25 (Marek Svepes): libtrap: code maintenance - removed unused variables in service interface routine
+2016-07-25 (Marek Svepes): libtrap: bugfix: increasing memory leak in service interface - buffer for JSON data was not freed
+2016-07-25 (Miroslav Kalina): libtrap: deb: generate development package
+2016-07-25 (Tomas Cejka): libtrap: deb: add debian into build system
+2016-07-25 (Tomas Cejka): libtrap: add debian/ for deb package generation
+2016-07-20 (Tomas Jansky): libtrap: README: changed sentence
+2016-07-20 (Tomas Jansky): libtrap: improved documentation of file interface
+2016-07-20 (Tomas Jansky): libtrap: file ifc: improved file names generated when splitting according to parametr size
+2016-07-19 (Václav Bartoš): libtrap doc: README.ifcspec.md improved
+2016-07-19 (Václav Bartoš): libtrap doc: README.ifcspec.md improved
+2016-07-19 (Václav Bartoš): libtrap doc: README.ifcspec.md improved
+2016-07-19 (Tomas Cejka): libtrap: update published doxygen doc
+2016-07-14 (Tomas Jansky): libtrap: changed byte order of small headers inside buffer to network byte order
+2016-07-14 (Tomas Jansky): libtrap: file ifc: data in file are now stored in host byte order
+2016-07-12 (Tomas Jansky): libtrap: BUGFIX: resource leak during trap context initialization
+2016-07-08 (Jiri Havranek): libtrap: set byte order of hello messages to network byte order
+2016-07-08 (Tomas Jansky): libtrap: file ifc: simplified code
+2016-07-08 (Tomas Jansky): libtrap: file ifc: output ifc - added optional parameter [size] and [time], input ifc - set of files to be read is specified with globbing
+2016-07-04 (Tomas Cejka): libtrap: cleanup debug output
+2016-07-03 (Tomas Cejka): btrap: check ifcidx instead of content of array
+2016-07-02 (Tomas Cejka): libtrap: BUGFIX: check IFC list for NULL
+2016-07-02 (Tomas Jansky): libtrap: file_ifc: added possibility to read from /dev/stdin
+2016-06-30 (Tomas Cejka): libtrap: improved debug message
+2016-06-21 (Marek Svepes): libtrap: removed win32 source code definitions, includes etc. from libjansson
+2016-06-21 (Marek Svepes): libtrap: doc: update of service-ifc README according to changes in JSON data sent via service ifc
+2016-06-21 (Marek Svepes): libtrap: tools: update of "trap_stats" program according to changes of JSON data sent via service ifc
+2016-06-21 (Marek Svepes): libtrap: service-ifc: added "ifc_type" and "ifc_id" items to JSON data sent via service interface
+2016-06-20 (Marek Svepes): libtrap: added callback function "get_id()" for interfaces
 2016-05-19 (Marek Svepes): libtrap: doc: update of the service-ifc readme
 2016-05-13 (Tomas Cejka): libtrap: BUGFIX bad comparison and not-null-terminated string
 2016-05-06 (Marek Svepes): service ifc: changed format of the json message - added information about total input and output ifc number

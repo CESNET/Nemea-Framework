@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libtrap.la
-libtrap_la_LDFLAGS = -version-info 3:4:2
+libtrap_la_LDFLAGS = -version-info 4:0:3
 libtrap_la_SOURCES = trap.c trap_error.c ifc_dummy.c ifc_tcpip.c trap_internal.c ifc_tcpip_internal.h ifc_file.c ifc_file.h help_trapifcspec.c \
    third-party/libjansson/dump.c \
    third-party/libjansson/error.c \
