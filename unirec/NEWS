@@ -1,0 +1,7 @@
+version 2.2.3
+   * update spec file dependencies and debug package
+   * replaced python processor with bash&awk for ur_values
+   * bugfixes:
+      - ur_processor used bad type of timestamps
+      - fixed multiple execution of ur_processor.sh in tests
+
