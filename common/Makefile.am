@@ -20,7 +20,7 @@ libnemea_common_la_SOURCES=configurator/configurator.cpp \
 			   b_plus_tree/b_plus_tree_internal.h \
 			   prefix_tree/prefix_tree.c \
                            super_fast_hash/super_fast_hash.c
-libnemea_common_la_LDFLAGS = -version-info 2:0:1
+libnemea_common_la_LDFLAGS = -version-info 3:0:0
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = nemea-common.pc
