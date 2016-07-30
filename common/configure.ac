@@ -46,7 +46,21 @@ AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 
 
 m4_include([m4/ax_libxml2_check.m4])
-AX_LIBXML2_CHECK()
+AC_ARG_WITH([libxml2],
+	AC_HELP_STRING([--without-libxml2],[Disable libxml2 dependent components.]),
+	[
+	if test x$withval = xyes; then
+		AX_LIBXML2_CHECK()
+		AM_CONDITIONAL([WITH_LIBXML2], [true])
+	else
+		AM_CONDITIONAL([WITH_LIBXML2], [false])
+	fi
+	],
+	[
+	AX_LIBXML2_CHECK()
+	AM_CONDITIONAL([WITH_LIBXML2], [true])
+	]
+)
 
 # Checks for libraries.
 
