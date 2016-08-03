@@ -51,7 +51,7 @@ after_success:
 script:
   - pyenv global 2.7.10
   - export PATH=$(pyenv prefix)/bin:$PATH
-  - ./bootstrap.sh && ./configure --prefix=/usr && make clean && sudo make install &&
+  - ./bootstrap.sh && ./configure -q --enable-debug CFLAGS=-coverage --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && $(pyenv which python) setup.py install;)
   - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
 
