@@ -45,6 +45,9 @@ addons:
 install:
    - pyenv install 2.7.10
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 script:
   - pyenv global 2.7.10
   - export PATH=$(pyenv prefix)/bin:$PATH
