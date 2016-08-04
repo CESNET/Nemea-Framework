@@ -1,4 +1,5 @@
-LDADD=-L../ -lnemea-common -lrt
+AM_LDFLAGS=-static ../libnemea-common.la
+LDADD=-lrt
 
 check_PROGRAMS=b_plus_tree_test prefix_tree_test
 TESTS=b_plus_tree_test prefix_tree_test
