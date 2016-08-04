@@ -54,3 +54,5 @@ Coverity Scan: [![Coverity Scan Build Status](https://scan.coverity.com/projects
 
 CodeCov: [![codecov.io](https://codecov.io/github/CESNET/Nemea-Framework/coverage.svg?branch=master)](https://codecov.io/github/CESNET/Nemea-Framework?branch=master)
 
+Ohloh: [![Ohloh Project Status](https://www.openhub.net/p/nemea-framework/widgets/project_thin_badge.gif)](https://www.openhub.net/p/nemea-framework)
+
