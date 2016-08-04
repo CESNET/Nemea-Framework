@@ -46,6 +46,8 @@ cd pycommon; sudo python setup.py install
 Project status:
 ===============
 
+License: [![BSD license](https://img.shields.io/badge/License-BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 Travis CI build: [![Build Status](https://travis-ci.org/CESNET/Nemea-Framework.svg?branch=master)](https://travis-ci.org/CESNET/Nemea-Framework)
 
 Coverity Scan: [![Coverity Scan Build Status](https://scan.coverity.com/projects/6189/badge.svg)](https://scan.coverity.com/projects/6189)
