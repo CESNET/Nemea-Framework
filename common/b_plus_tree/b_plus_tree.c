@@ -737,12 +737,12 @@ void bpt_ndin_check(bpt_nd_t *check, bpt_t *btree)
    }
 }
 
-bpt_nd_t *bpt_nd_leftmost_leaf(bpt_nd_t * item)
+bpt_nd_t *bpt_nd_leftmost_leaf(bpt_nd_t * inner)
 {
-   while (item->state_extend == EXTEND_INNER) {
-      item = ((bpt_nd_ext_inner_t *) item->extend)->child[0];
+   while (inner->state_extend == EXTEND_INNER) {
+      inner = ((bpt_nd_ext_inner_t *) inner->extend)->child[0];
    }
-   return item;
+   return inner;
 }
 
 void *bpt_search_or_insert(bpt_t *btree, void *key)
