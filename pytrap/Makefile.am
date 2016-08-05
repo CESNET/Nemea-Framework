@@ -11,6 +11,16 @@ rpm:
 
 .PHONY: clean
 clean:
-	rm -rf RPMBUILD dist build
+	rm -rf RPMBUILD dist build *.trs test.sh.log test-suite.log *.so *.egg-info coverage.info
 
 TESTS = test.sh
+
+.PHONY: coverage
+coverage:
+	CFLAGS=-coverage python setup.py build_ext --inplace
+	CFLAGS=-coverage python3 setup.py build_ext --inplace
+	python setup.py test
+	python3 setup.py test || echo "Skipped python3 tests"
+	@lcov --capture --directory . --output-file coverage.info 2>/dev/null && \
+	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"
+
