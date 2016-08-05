@@ -74,6 +74,17 @@ class DataTypesTime(unittest.TestCase):
         for i in range(10):
             self.assertEqual(res1.format("%d.%m.%Y"), "23.06.2016")
 
+        from datetime import datetime
+        now = pytrap.UnirecTime.now()
+        now2 = datetime.utcnow()
+        delta = now2 - now.toDatetime()
+        self.assertTrue(delta.total_seconds() <= 1, "Now returns delayed time {0}.".format(str(delta)))
+
+        # convert datetime to UnirecTime and compare it
+        now = pytrap.UnirecTime.fromDatetime(now2)
+        self.assertTrue(abs(now.getSeconds() - int(now2.strftime("%s")) <= 1))
+
+
 class DataAccessGetTest(unittest.TestCase):
     def runTest(self):
         import pytrap
