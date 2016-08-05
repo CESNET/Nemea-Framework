@@ -11,7 +11,7 @@ rpm:
 
 .PHONY: clean
 clean:
-	rm -rf RPMBUILD dist build *.trs test.sh.log test-suite.log *.so *.egg-info coverage.info
+	rm -rf RPMBUILD dist build *.trs test.sh.log test-suite.log *.so *.egg-info coverage.info out/
 
 TESTS = test.sh
 
