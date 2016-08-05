@@ -1,5 +1,8 @@
 import unittest
 import doctest
+import sys
+if sys.version_info > (3,):
+    long = int
 
 class DeviceTest(unittest.TestCase):
     def runTest(self):
@@ -35,6 +38,24 @@ class DataTypesIPAddr(unittest.TestCase):
         self.assertEqual(repr(ip1), "UnirecIPAddr('fd7c:e770:9b8a::465')", "IP address is not equal to its repr().")
         self.assertFalse(ip1.isIPv4(), "IPv6 was not recognized.")
         self.assertTrue(ip1.isIPv6(), "IPv6 was recognized as IPv4.")
+
+        d = dict()
+        i1 = pytrap.UnirecIPAddr("0:0:0:1::")
+        i2 = pytrap.UnirecIPAddr("::1")
+        i3 = pytrap.UnirecIPAddr("8.8.8.8")
+        d[i1] = 1
+        d[i2] = 2
+        d[i3] = 3
+        self.assertEqual(d[i3], 3)
+        self.assertEqual(d[i1], 1)
+        self.assertEqual(d[i2], 2)
+        i4 = pytrap.UnirecIPAddr("8.8.4.4")
+        try:
+            print(d[i4])
+            self.fail("IP address shouldn't be in dict")
+        except:
+            pass
+
 
 
 class DataTypesTime(unittest.TestCase):
@@ -223,5 +244,75 @@ class Template2Test(unittest.TestCase):
         self.assertEqual(valdict, {'STREAMBYTES': bytearray(b'hello'), 'DST_IP': pytrap.UnirecIPAddr('4.4.4.4'),
                                     'TIME_FIRST': pytrap.UnirecTime(0), 'TEXT2': '', 'BCD': 0})
 
+
+class Template3Test(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr IP,time TIME,uint64 U64,uint32 U32,uint16 U16,uint8 U8,int64 I64,int32 I32,int16 I16,int8 I8,float FL,double DB,char CHR,string TEXT,bytes STREAMBYTES")
+        a.createMessage(100)
+        a.IP = pytrap.UnirecIPAddr("1.2.3.4")
+        a.TIME = pytrap.UnirecTime(123456)
+        a.U64 = 0x100000000
+        a.U32 = 0x10000
+        a.U16 = 0x100
+        a.U8 = 0x1
+        a.I64 = -1
+        a.I32 = -1
+        a.I16 = -1
+        a.I8 = -1
+        a.FL = 1.234
+        a.DB = 1.234
+        #a.CHR = "a"
+        a.TEXT = "text"
+        a.STREAMBYTES = b"streambytes"
+
+        self.assertTrue(a.IP == pytrap.UnirecIPAddr("1.2.3.4"))
+        self.assertTrue(a.TIME == pytrap.UnirecTime(123456))
+        self.assertTrue(a.U64 == 0x100000000)
+        self.assertTrue(a.U32 == 0x10000)
+        self.assertTrue(a.U16 == 0x100)
+        self.assertTrue(a.U8 == 0x1)
+        self.assertTrue(a.I64 == -1)
+        self.assertTrue(a.I32 == -1)
+        self.assertTrue(a.I16 == -1)
+        self.assertTrue(a.I8 == b'\xff')
+        self.assertTrue(1.234 - a.FL < 1e-7)
+        self.assertTrue(a.DB == 1.234)
+        #self.assertTrue(a.CHR == "a")
+        self.assertTrue(a.TEXT == "text")
+        self.assertTrue(a.STREAMBYTES == b"streambytes")
+
+        # Check types
+        self.assertEqual(type(a.IP), pytrap.UnirecIPAddr)
+        self.assertEqual(type(a.TIME), pytrap.UnirecTime)
+        self.assertEqual(type(a.U64), long)
+        self.assertEqual(type(a.U32), int)
+        self.assertEqual(type(a.U16), int)
+        self.assertEqual(type(a.U8), int)
+        self.assertEqual(type(a.I64), long)
+        self.assertEqual(type(a.I32), int)
+        self.assertEqual(type(a.I16), int)
+        self.assertEqual(type(a.I8), bytes)
+        self.assertEqual(type(a.CHR), int)
+        self.assertEqual(type(a.FL), float)
+        self.assertEqual(type(a.DB), float)
+        self.assertEqual(type(a.TEXT), str)
+        self.assertEqual(type(a.STREAMBYTES), bytearray)
+
+        self.assertEqual(a.getFieldType("IP"), pytrap.UnirecIPAddr)
+        self.assertEqual(a.getFieldType("TIME"), pytrap.UnirecTime)
+        self.assertEqual(a.getFieldType("U64"), long)
+        self.assertEqual(a.getFieldType("U32"), long)
+        self.assertEqual(a.getFieldType("U16"), long)
+        self.assertEqual(a.getFieldType("U8"), long)
+        self.assertEqual(a.getFieldType("I64"), long)
+        self.assertEqual(a.getFieldType("I32"), long)
+        self.assertEqual(a.getFieldType("I16"), long)
+        self.assertEqual(a.getFieldType("I8"), long)
+        self.assertEqual(a.getFieldType("CHR"), long)
+        self.assertEqual(a.getFieldType("FL"), float)
+        self.assertEqual(a.getFieldType("DB"), float)
+        self.assertEqual(a.getFieldType("TEXT"), str)
+        self.assertEqual(a.getFieldType("STREAMBYTES"), bytearray)
 
 
