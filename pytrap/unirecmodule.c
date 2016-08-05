@@ -218,7 +218,7 @@ static PyMethodDef pytrap_unirectime_methods[] = {
         "Returns:\n"
         "    (str): Formatted timestamp as string.\n"
     },
-    {"now", (PyCFunction) UnirecTime_now, METH_STATIC,
+    {"now", (PyCFunction) UnirecTime_now, METH_STATIC | METH_NOARGS,
         "Get UnirecTime instance of current time.\n\n"
         "Returns:\n"
         "    (UnirecTime): Current date and time.\n"

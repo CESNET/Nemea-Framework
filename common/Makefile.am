@@ -2,12 +2,15 @@ SUBDIRS=. include
 if ENABLE_TESTS
 SUBDIRS+=tests
 endif
+if WITH_LIBXML2
+xmlsources=configurator/configurator.cpp \
+	   configurator/configurator-internal.h
+
+endif
 
 RPMDIR=RPMBUILD
 lib_LTLIBRARIES=libnemea-common.la
-libnemea_common_la_SOURCES=configurator/configurator.cpp \
-                           configurator/configurator-internal.h \
-                           cuckoo_hash/cuckoo_hash.c \
+libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
 			   cuckoo_hash/hashes.h \
 			   cuckoo_hash_v2/cuckoo_hash_v2.c \
 			   cuckoo_hash_v2/hashes_v2.c \
@@ -19,7 +22,9 @@ libnemea_common_la_SOURCES=configurator/configurator.cpp \
 			   b_plus_tree/b_plus_tree.c \
 			   b_plus_tree/b_plus_tree_internal.h \
 			   prefix_tree/prefix_tree.c \
-                           super_fast_hash/super_fast_hash.c
+                          super_fast_hash/super_fast_hash.c \
+			   ${xmlsources}
+
 libnemea_common_la_LDFLAGS = -version-info 3:0:0
 
 pkgconfigdir = $(libdir)/pkgconfig

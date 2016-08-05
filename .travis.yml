@@ -45,10 +45,13 @@ addons:
 install:
    - pyenv install 2.7.10
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 script:
   - pyenv global 2.7.10
   - export PATH=$(pyenv prefix)/bin:$PATH
-  - ./bootstrap.sh && ./configure --prefix=/usr && make clean && sudo make install &&
-    (cd pytrap && $(pyenv which python) setup.py install;)
+  - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
+    (cd pytrap && make coverage && $(pyenv which python) setup.py install;)
   - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
 

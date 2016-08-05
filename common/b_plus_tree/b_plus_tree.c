@@ -46,7 +46,7 @@
 #include "b_plus_tree_internal.h"
 inline void bpt_copy_key(void *to, int index_to, void *from, int index_from, int size_of_key)
 {
-   memcpy((char*)to + (index_to * size_of_key), (char*)from + (index_from * size_of_key),
+   memcpy((char *) to + (index_to * size_of_key), (char *) from + (index_from * size_of_key),
           size_of_key);
 }
 
@@ -111,7 +111,7 @@ int bpt_nd_index_key(void *key, bpt_nd_t *node, bpt_t *btree)
 {
    int i;
    for (i = 0; i < node->count - 1; i++) {
-      if (btree->compare((char*)(node->key) + (i * btree->size_of_key), key) == 0) {
+      if (btree->compare((char *) (node->key) + (i * btree->size_of_key), key) == 0) {
          return i;
       }
    }
@@ -130,7 +130,7 @@ inline bpt_nd_t *bpt_nd_parent(bpt_nd_t *node)
 
 inline void *bpt_nd_key_on_index(bpt_nd_t *node, int index, int size_of_key)
 {
-   return (char*)(node->key) + (index - 1) * size_of_key;
+   return (char*) (node->key) + (index - 1) * size_of_key;
 }
 
 bpt_nd_t *bpt_ndlf_init(int m, int size_of_value, int size_of_key)
@@ -201,10 +201,10 @@ int bpt_ndlf_insert(void *key, bpt_nd_t *node, bpt_t *btree,
    }
    //find position of new item
    i = node->count - 2; //index of last item
-   while (i >= 0 && btree->compare((char*)(node->key) + (i * btree->size_of_key), key) > 0) {
+   while (i >= 0 && btree->compare((char *) (node->key) + (i * btree->size_of_key), key) > 0) {
       //node->key[i + 1] = node->key[i];
-      memcpy((char*)(node->key) + (i + 1) * btree->size_of_key,
-             (char*)(node->key) + (i) * btree->size_of_key,
+      memcpy((char*) (node->key) + (i + 1) * btree->size_of_key,
+             (char*) (node->key) + (i) * btree->size_of_key,
              btree->size_of_key);
       leaf->value[i + 1] = leaf->value[i];
       i--;
@@ -256,7 +256,7 @@ int bpt_ndin_insert(void *add, bpt_nd_t * left, bpt_nd_t * right, bpt_nd_t * nod
 
    inner = (bpt_nd_ext_inner_t *) node->extend;
    i = node->count - 2;
-   while (i >= 0 && btree->compare((char*)(node->key) + i * btree->size_of_key, add) > 0) {
+   while (i >= 0 && btree->compare((char *) (node->key) + i * btree->size_of_key, add) > 0) {
       //key[i + 1] = key[i];
       bpt_copy_key(node->key, i + 1, node->key, i, btree->size_of_key);
       inner->child[i + 2] = inner->child[i + 1];
@@ -390,7 +390,7 @@ void bpt_ndin_insert_to_new_node(void *key, bpt_nd_t *left, bpt_nd_t *right,
          ((bpt_nd_ext_inner_t *) right_par->extend)->child[i]->parent = right_par;
       }
       righest_node_in_left_node = bpt_nd_rightmost_leaf(((bpt_nd_ext_inner_t *) par->extend)->child[cut]);
-      bpt_ndin_insert_to_new_node((char*)(righest_node_in_left_node->key) + (righest_node_in_left_node->count - 2) * btree->size_of_key, par, right_par, btree);
+      bpt_ndin_insert_to_new_node((char *) (righest_node_in_left_node->key) + (righest_node_in_left_node->count - 2) * btree->size_of_key, par, right_par, btree);
    }
 }
 
@@ -407,7 +407,7 @@ bpt_nd_t *bpt_search_leaf(void *key, bpt_t *btree)
       bpt_nd_ext_inner_t *pos2 = (bpt_nd_ext_inner_t *) pos->extend;
       go_right = 0;
       for (i = 0; i < pos->count - 1; i++) {
-         result = btree->compare(key, (char*)(pos->key) + i * btree->size_of_key);
+         result = btree->compare(key, (char *) (pos->key) + i * btree->size_of_key);
          if ((result <= 0)) {
             pos = pos2->child[i];
             go_right = 1;
@@ -470,7 +470,7 @@ void *bpt_search_or_insert_inner(void *key, bpt_t *btree, int search)
    r_leaf->right = leaf_to_insert->right;
    r_leaf->left = node_to_insert;
    leaf_to_insert->right = r_node;
-   bpt_ndin_insert_to_new_node((char*)(node_to_insert->key) + (node_to_insert->count - 2) * btree->size_of_key, node_to_insert, r_node, btree);
+   bpt_ndin_insert_to_new_node((char *) (node_to_insert->key) + (node_to_insert->count - 2) * btree->size_of_key, node_to_insert, r_node, btree);
    return added_or_found_value;
 }
 
@@ -737,12 +737,12 @@ void bpt_ndin_check(bpt_nd_t *check, bpt_t *btree)
    }
 }
 
-bpt_nd_t *bpt_nd_leftmost_leaf(bpt_nd_t * item)
+bpt_nd_t *bpt_nd_leftmost_leaf(bpt_nd_t *inner)
 {
-   while (item->state_extend == EXTEND_INNER) {
-      item = ((bpt_nd_ext_inner_t *) item->extend)->child[0];
+   while (inner->state_extend == EXTEND_INNER) {
+      inner = ((bpt_nd_ext_inner_t *) inner->extend)->child[0];
    }
-   return item;
+   return inner;
 }
 
 void *bpt_search_or_insert(bpt_t *btree, void *key)
