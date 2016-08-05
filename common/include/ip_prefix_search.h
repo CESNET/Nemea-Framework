@@ -55,10 +55,7 @@
 #include <string.h>
 #include <ctype.h>
 
-/* If isn't install unirec.h, copy ipaddr.h and inline.h to source directory */
-//#include "ipaddr.h"
-
-#include <unirec/unirec.h>
+#include <unirec/ipaddr.h>
 
 /* Deafault size of data pointer array */
 #define DATASLOTS 8
