@@ -56,7 +56,7 @@
 
 /*!
  * \name Type of node
- *  Used to identify if the node is leaf or inner node.
+ *  It is used to identify if the node is leaf or inner node.
  * \{ */
 #define EXTEND_LEAF 1
 #define EXTEND_INNER 0
@@ -66,250 +66,293 @@
 
 
 /*!
- * \brief Structure - B+ tree - inner node structure
- * Structure used to keep information about inner node.
+ * \brief B+ tree inner node structure
+ * Structure is used to keep information about inner node.
  */
 typedef struct bpt_nd_ext_inner_t {
-   bpt_nd_t **child;      /*< pointer to descendats */
+   bpt_nd_t **child;   /*< pointer to descendants */
 
 } bpt_nd_ext_inner_t;
 
 /*!
- * \brief Structure - B+ tree - leaf node structure
- * Structure used to keep information about leaf node.
+ * \brief B+ tree leaf node structure
+ * Structure is used to keep information about leaf node.
  */
 typedef struct bpt_nd_ext_leaf_t {
-   bpt_nd_t *left;     /*< linked list, left value */
-   bpt_nd_t *right;    /*< linked list, right value */
+   bpt_nd_t *left;   /*< pointer to left leaf */
+   bpt_nd_t *right;  /*< pointer to right leaf */
    void **value;     /*< array of values */
 } bpt_nd_ext_leaf_t;
 
 
 /*!
  * \brief Copy key
- * Function which copy key from certain poineter to another.
- * \param[in] to poineter to destination.
- * \param[in] index_to position in array of destination.
- * \param[in] from poineter of source.
- * \param[in] index_from position in array of source.
+ * Function copies key from key array to another key array.
+ * Indexes in array have to be specified.
+ * \param[in] to pointer to destination array.
+ * \param[in] index_to position in destination array.
+ * \param[in] from pointer of source array.
+ * \param[in] index_from position in source array.
  * \param[in] size_of_key size of key to copy.
  */
 void bpt_copy_key(void *to, int index_to, void *from, int index_from, int size_of_key);
 
 /*!
- * \brief Creates bpt_nd_t structure
- * Function which allocs memory for bpt_nd_t structure.
- * \param[in] size_of_key size of key to allocate memory.
- * \param[in] m count of keys to allocate.
- * \return pointer to created stucture
+ * \brief Initialization of node
+ * Function creates bpt_nd_t structure and prepares
+ * it for usage.
+ * \param[in] size_of_key size of key.
+ * \param[in] m count of keys in one node.
+ * \return pointer to bpt_nd_t structure or NULL in case of error.
  */
 bpt_nd_t *bpt_nd_init(int size_of_key, int m);
 
 /*!
  * \brief Destroy bpt_nd_t structure
- * \param[in] node pointer to node
+ * \param[in] node pointer to bpt_nd_t structure
  */
 void bpt_nd_clean(bpt_nd_t *node);
 
 /*!
- * \brief is key in node
- * \param[in] key
- * \param[in] node
- * \param[in] btree pointer to b tree
- * \return 1 ON SUCCESS, OTHERWISE 0
+ * \brief Is key in node?
+ * Function tests if the node is already inserted in
+ * the node.
+ * \param[in] key key to test.
+ * \param[in] node pointer to the node.
+ * \param[in] btree pointer to B+ tree.
+ * \return 1 ON SUCCESS, 0 OTHERWISE.
  */
 unsigned char bpt_nd_key(void *key, bpt_nd_t *node, bpt_t *btree);
 
 /*!
- * \brief Find index in node
- * \param[in] key
- * \param[in] node
- * \param[in] btree pointer to b tree
- * \return index or -1 if key is not in node
+ * \brief Search key in node.
+ * Function searches key in node and returns it's index.
+ * \param[in] key key to search.
+ * \param[in] node pointer to the node.
+ * \param[in] btree pointer to B+ tree.
+ * \return index or -1 if key is not in the node.
  */
 int bpt_nd_index_key(void *key, bpt_nd_t *node, bpt_t *btree);
 
 /*!
- * \brief If node if leaf
- * \param[in] node
- * \return 1 ON SUCCESS, OTHERWISE 0
+ * \brief Is the node leaf?
+ * Function tests if the node is leaf.
+ * \param[in] node pointer to the node.
+ * \return 1 ON SUCCESS, 0 OTHERWISE.
  */
 unsigned char bpt_nd_leaf(bpt_nd_t *node);
 
 /*!
- * \brief Get parent of node
- * \param[in] node
- * \return parent of node or NULL if does not have
+ * \brief Parent of node
+ * Function returns parent of given node.
+ * \param[in] node pointer to the node.
+ * \return parent of node or NULL if node is root
  */
 bpt_nd_t *bpt_nd_parent(bpt_nd_t *node);
 
 /*!
- * \brief Return key from item
- * \param[in] node
- * \param[in] index index in leaf
- * \param[in] size_of_key size of key in B
- * \return poiter to key
+ * \brief Key on index
+ * Function returns key on given index in given node.
+ * \param[in] node pointer to the node.
+ * \param[in] index index of key.
+ * \param[in] size_of_key size of key
+ * \return pointer to key
  */
 void *bpt_nd_key_on_index(bpt_nd_t *node, int index, int size_of_key);
 
 /*!
- * \brief Creates bpt_nd_ext_leaf_t structure
- * Function which allocs memory for bpt_nd_ext_leaf_t which extends bpt_nd_t structure.
- * \param[in] m count of keys and values to allocate.
- * \param[in] size_of_value size of value to allocate memory.
- * \param[in] size_of_key size of key to allocate memory.
- * \return pointer to created bpt_nd_t stucture
+ * \brief Initialization of leaf node
+ * Function creates bpt_nd_t structure extended by structure bpt_nd_ext_leaf_t (leaf).
+ * \param[in] m count of keys in node.
+ * \param[in] size_of_value size of value.
+ * \param[in] size_of_key size of key.
+ * \return pointer to bpt_nd_t structure or NULL in case of error.
  */
 bpt_nd_t *bpt_ndlf_init(int m, int size_of_value, int size_of_key);
 
 /*!
- * \brief Return value from item
- * \param[in] node
+ * \brief Value on index
+ * Function returns value on given index in given leaf structure.
+ * \param[in] node pointer to leaf structure
  * \param[in] index index in leaf
- * \return poiter to key
+ * \return pointer to value
  */
 void *bpt_ndlf_get_val(bpt_nd_ext_leaf_t *node, int index);
 
 /*!
- * \brief Next leaf
+ * \brief Following leaf
+ * Function returns following leaf that is connected to actual leaf.
+ * Given node has to be leaf!
  * \param[in] node leaf
- * \return poiter to next leaf or NULL if not exists
+ * \return pointer to leaf or NULL if the actual leaf is last.
  */
 bpt_nd_t *bpt_ndlf_next(bpt_nd_t *node);
 
 /*!
- * \brief Delete item from node on specific index
- * \param[in] node leaf
- * \param[in] index item to delete
- * \param[in] size_of_key size of key in B
- * \return count of items in leaf
+ * \brief Delete item on index
+ * Function remove item from given leaf on given index.
+ * \param[in] node Pointer to leaf.
+ * \param[in] index index in leaf.
+ * \param[in] size_of_key size of key.
+ * \return updated count of items in leaf.
  */
 int bpt_ndlf_del_item(bpt_nd_t *node, int index, int size_of_key);
 
 /*!
- * \brief Add key and value to the leaf.
- * \param[in] key key
- * \param[in] node leaf
- * \param[in] btree pointer to tree
- * \param[in] pointer to memory of item
- * \return index in leaf, -1 on error
+ * \brief Insert item to leaf.
+ * Function insert key to the leaf and sets output parameter
+ * to point to value.
+ * \param[in] key key to insert.
+ * \param[in] node pointer to leaf node.
+ * \param[in] btree pointer to B+ tree
+ * \param[in] return_value pointer to value
+ * \return index in leaf, -1 if there is no space for new item.
  */
 int bpt_ndlf_insert(void *key, bpt_nd_t *node, bpt_t *btree,
                               void **return_value);
 
 /*!
- * \brief Creates bpt_nd_ext_inner_t structure
- * Function which allocs memory for bpt_nd_ext_inner_t which extends bpt_nd_t structure.
- * \param[in] size_of_key size of key to allocate memory.
- * \param[in] m count of keys and values to allocate.
- * \return pointer to created bpt_nd_t stucture
+ * \brief Initialization of inner node
+ * Function creates bpt_nd_t structure extended by structure bpt_nd_ext_inner_t (inner extension).
+ * \param[in] size_of_key size of key.
+ * \param[in] m count of keys in node.
+ * \return pointer to bpt_nd_t structure or NULL in case of error.
+
  */
 bpt_nd_t *bpt_ndin_init(int size_of_key, int m);
 
 /*!
- * \brief Get child on index
- * \param[in] node
- * \param[in] index index of child
- * \return pointer to child
+ * \brief Child on index
+ * Function returns child on given index in given node.
+ * Node has to be inner node not leaf!
+ * \param[in] node pointer to inner node.
+ * \param[in] index index of child.
+ * \return pointer to child node.
  */
 bpt_nd_t *bpt_ndin_child(bpt_nd_t *node, int index);
 
 /*!
- * \brief Add key to inner node
- * \param[in] add key to add
- * \param[in] left left brother
- * \param[in] right right brother
- * \param[in] node node to insert key
- * \param[in] btree pointer to tree
- * \return count of descendants
+ * \brief Insert key to inner node.
+ * Function inserts key to right position in inner node,moves child nodes and
+ * inserts given left and right child nodes.
+ * This function does not solve overloading of node.
+ * \param[in] add key to insert.
+ * \param[in] left pointer to left descendant of inserted key.
+ * \param[in] right pointer to right descendant of inserted key.
+ * \param[in] node pointer to inner node where the key is inserted.
+ * \param[in] btree pointer to B+ tree.
+ * \return actualized count of descendants.
  */
 int bpt_ndin_insert(void *add, bpt_nd_t *left, bpt_nd_t *right, bpt_nd_t *node,
                         bpt_t *btree);
 
 /*!
- * \brief Recursive function to delete all nodes
- * \param[in] del node to delete
+ * \brief Recursive deletion of nodes
+ * Recursive function to delete all descendant nodes from given node.
+ * \param[in] del pointer to node.
  */
 void bpt_del_all(bpt_nd_t *del);
 
 /*!
- * \brief Search item in tree
- * \param[in] key to search
- * \param[in] val pointer to leaf where will be the key
- * \param[in] btree pointer to tree
- * \return index of item in leaf
+ * \brief Search leaf and index in B+ tree
+ * Function searches leaf and index of given key in B+ tree.
+ * If the key is not in the tree the return value is -1 and pointer
+ * to leaf is not set.
+ * \param[in] key key to search.
+ * \param[out] val pointer to searched leaf.
+ * \param[in] btree pointer to B+ tree
+ * \return index of item in leaf or -1.
  */
 int bpt_search_leaf_and_index(void *key, bpt_nd_ext_leaf_t **val, bpt_t *btree);
 
 /*!
- * \brief Find index of child in parent
- * \param[in] son node to find index of
- * \return index of nide in parent
+ * \brief Index in parent node
+ * Function returns position of given node in it's parent node.
+ * In the case the node is root, the return value is -1.
+ * \param[in] son pointer to node.
+ * \return index in parent node or -1.
  */
 int bpt_nd_index_in_parent(bpt_nd_t *son);
 
 /*!
- * \brief Add key to inner node. For spliting node
- * \param[in] add key to add
- * \param[in] left left brother
- * \param[in] right right brother
- * \param[in] btree pointer to tree
+ * \brief Insert key to new node.
+ * Function creates new node and inserts given key and it's
+ * descendants to it. New node is connected to parent of left or right brother.
+ * It is used in case of overloading the node and if the right and left
+ * rotation can't be done.
+ * \param[in] add key to insrt.
+ * \param[in] left pointer to left brother.
+ * \param[in] right pointer to right brother.
+ * \param[in] btree pointer to B+ tree.
  */
 void bpt_ndin_insert_to_new_node(void *key, bpt_nd_t *left, bpt_nd_t *right,
                                bpt_t *btree);
 
 /*!
- * \brief Search leaf where shuld be item.
- * \param[in] key to search
- * \param[in] btree pointer to tree
- * \return leaf where should be item
+ * \brief Search leaf in B+ tree
+ * Function returns appropriate leaf node where the key should be.
+ * It can be use to search the value or insert new item.
+ * \param[in] key to search.
+ * \param[in] btree pointer to B+ tree.
+ * \return pointer to leaf node.
  */
 bpt_nd_t *bpt_search_leaf(void *key, bpt_t *btree);
 
 /*!
- * \brief Find or Insert key, return pointer to item
- * \param[in] key to insert
- * \param[in] btree pointer to tree
- * \param[in] search 1 - return fouded or inserted value, 0 - return value just when the key was inserted, otherwise NULL
- * \return pointer to value
+ * \brief Search or insert item
+ * Inner function of B+ tree to insert or search item.
+ * Operation is specified by argument "search".
+ * \param[in] key key to insert.
+ * \param[in] btree pointer to B+ tree
+ * \param[in] search operation: 1 - search or insert , 0 - search but not insert.
+ * \return pointer to value or NULL.
  */
 void *bpt_search_or_insert_inner(void *key, bpt_t *btree, int search);
 
 /*!
- * \brief Found the most right leaf and return it
- * \param[in] inner node where to seach
- * \return pointer to leaf
- */
-bpt_nd_t *bpt_nd_rightmost_leaf(bpt_nd_t *inner);
-
-/*!
- * \brief check key and key in parent, it there is problem, repair it
- * \param[in] node to check
- * \param[in] btree pointer to tree
+ * \brief Update parent key
+ * Function checks and updates key in parent node (if new key is inserted,
+ * it can change the key in parent too).
+ * \param[in] node pointer to node.
+ * \param[in] btree pointer to B+ tree.
  */
 void bpt_nd_check(bpt_nd_t *node, bpt_t *btree);
 
 /*!
- * \brief Delete item from tree, know leaf
- * \param[in] btree pointer to tree
- * \param[in] index item to delete
- * \param[in] leaf_del leaf where is item
- * \return 1 ON SUCCESS, OTHERWISE 0
+ * \brief Delete item specified by leaf and index
+ * Function removes the item specified by leaf and index in leaf.
+ * \param[in] btree pointer to B+ tree
+ * \param[in] index index of item to delete
+ * \param[in] leaf_del pointer to leaf.
+ * \return 1 ON SUCCESS, 0 OTHERWISE.
  */
 int bpt_ndlf_delete_from_tree(int index, bpt_nd_t *leaf_del, bpt_t *btree);
 
 /*!
- * \brief check node if has the rigth value, not small and not big
- * \param[in] check node to check
- * \param[in] btree pointer to tree
+ * \brief Node items count checker
+ * Function checks if the node has allowed count of items
+ * (count > MIN and count < MAX). If not, it has to be modified by
+ * one of the action: left rotation, right rotation, spliting node,
+ * merging nodes.
+ * \param[in] check pointer to node
+ * \param[in] btree pointer to B+ tree
  */
 void bpt_ndin_check(bpt_nd_t *check, bpt_t *btree);
 
 /*!
- * \brief Found the rightest leaf and return it
- * \param[in] inner node where to seach
- * \return pointer to leaf
+ * \brief The rightmost leaf in subtree
+ * Function finds the rightmost leaf and returns it.
+ * \param[in] inner pointer to inner node (subtree).
+ * \return pointer to leaf.
  */
-bpt_nd_t *bpt_nd_leftmost_leaf(bpt_nd_t *item);
+bpt_nd_t *bpt_nd_rightmost_leaf(bpt_nd_t *inner);
+
+/*!
+ * \brief The leftmost leaf in subtree
+ * Function finds the leftmost leaf and returns it.
+ * \param[in] inner pointer to inner node (subtree).
+ * \return pointer to leaf.
+ */
+bpt_nd_t *bpt_nd_leftmost_leaf(bpt_nd_t *inner);
 
 #endif            /* _B_PLUS_TREE_INTERNAL_ */

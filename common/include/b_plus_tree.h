@@ -44,8 +44,20 @@
 #define _B_PLUS_TREE_
 
 /*!
- * \name Compare values
- *  Used for compare function.
+ * \name Return codes from compare function
+ * Function for comparing two keys shod return one of these values.
+ * Example function for int values:
+ * int compare_int(void *key1, void *key2)
+ * {
+ *    int a = *((int*)key1), b = *((int*)key2);
+ *    if (a < b) {
+ *       return LESS;
+ *    } else if (a > b) {
+ *       return MORE;
+ *    } else {
+ *       return EQUAL;
+ *    }
+ * }
  * \{ */
 #define EQUAL 0
 #define LESS -1
@@ -89,8 +101,8 @@ struct bpt_nd_t {
 typedef struct bpt_list_item_t {
    void *value;                  /*< pointer to value */
    void *key;                    /*< pointer to key */
-   bpt_nd_t *leaf;               /*< pointer to leaf where is item */
-   unsigned int index_of_value;  /*< index of value in leaf */
+   bpt_nd_t *leaf;               /*< pointer to actual leaf */
+   unsigned int index_of_value;  /*< index of value in actual leaf */
 } bpt_list_item_t;
 
 // Main Functions
@@ -99,13 +111,15 @@ typedef struct bpt_list_item_t {
 // initialization, destruction, inserting items, searching items, deleting items
 
 /*!
- * \brief Creates b plus tree
- * Function which creates structure for b plus tree
- * \param[in] m m-arry tree.
- * \param[in] m m-arry tree.
+ * \brief Initialization of B+ tree
+ * Function creates main structure of the B+ tree.
+ * \param[in] size_of_btree_node count of items in one node.
  * \param[in] comp pointer to key comparing function.
- * \param[in] size_of_key size of key to allocate memory.
- * \return pointer to created bpt_nd_t stucture
+ *     Function should have two attributes (to get the keys),
+ *     then it should return value EQUAL, MORE or LESS.
+ * \param[in] size_of_key size of key.
+ * \param[in] size_of_value size of value.
+ * \return pointer to created bpt_t structure.
  */
 bpt_t *bpt_init(unsigned int size_of_btree_node,
                              int (*comp)(void *, void *),
@@ -113,93 +127,116 @@ bpt_t *bpt_init(unsigned int size_of_btree_node,
                              unsigned int size_of_key);
 
 /*!
- * \brief Destroy b plus tree structure
- * \param[in] btree pointer to tree
+ * \brief Destroy B+ tree
+ * Function removes all the keys, values and nodes in the tree.
+ * The main structure is than deallocated
+ * \param[in] btree pointer to B+ tree main structure
  */
 void bpt_clean(bpt_t *btree);
 
 /*!
- * \brief Insert or find item in tree
- * \param[in] btree pointer to tree
- * \param[in] key key to insert
- * \return poiter to inserted or founded item
+ * \brief Insert or find item in B+ tree
+ * Function tries to find key in the tree. If the key is found,
+ * the appropriate value is returned. Otherwise it inserts key into
+ * the tree and allocates new value which is returned.
+ * \param[in] btree pointer to B+ tree.
+ * \param[in] key key to insert.
+ * \return pointer to the value. New allocated or found in the tree.
  */
 void *bpt_search_or_insert(bpt_t *btree, void *key);
 
 /*!
- * \brief Insert item in tree
- * \param[in] btree pointer to tree
- * \param[in] key key to insert
- * \return poiter to inserted item
+ * \brief Insert item to B+ tree
+ * Function inserts key to the tree and allocates space for value,
+ * which is returned. If the key is already in the tree, the NULL is
+ * returned.
+ * \param[in] btree pointer to B+ tree.
+ * \param[in] key key to insert.
+ * \return pointer to value or NULL.
  */
 void *bpt_insert(bpt_t *btree, void *key);
 
 /*!
- * \brief Search item in tree
- * \param[in] btree pointer to tree
- * \param[in] key key to insert
- * \return poiter to searched item
+ * \brief Search item in B+ tree
+ * Function find item in the tree and returns it's value.
+ * If the key is not in the tree, NULL is returned.
+ * \param[in] btree pointer to B+ tree.
+ * \param[in] key key to search.
+ * \return pointer to value or NULL.
  */
 void *bpt_search(bpt_t *btree, void *key);
 
 
 /*!
- * \brief Delete item from tree
- * \param[in] btree pointer to tree
- * \param[in] key key to delete
- * \return 1 ON SUCCESS, OTHERWISE 0
+ * \brief Remove item from B+ tree
+ * Function searches key in B+ tree and removes
+ * the item from it.
+ * \param[in] btree pointer to B+ tree.
+ * \param[in] key key to delete.
+ * \return 1 ON SUCCESS, OTHERWISE 0.
  */
 int bpt_item_del(bpt_t *btree, void *key);
 
 /*!
- * \brief Get count of all items in tree
- * \param[in] btree pointer to tree
- * \return count of items
+ * \brief Items count in B+ tree
+ * Function returns count of item in B+ tree.
+ * (Getter of btree->count_of_values)
+ * \param[in] btree pointer to B+ tree.
+ * \return count of items.
  */
 unsigned long int bpt_item_cnt(bpt_t *btree);
 
 // LIST
 // ----
-// Iterating all the items in the tree.
+// Iterating through all the items in the tree.
 // Items are sorted by their key.
 
 /*!
- * \brief Create structure to iterate all the items in the tree.
- * Items are sorted by their key.
- * \param[in] btree pointer to tree
- * \return pointer to structure
+ * \brief Initialization of iteration structure.
+ * Function allocates structure used for iteration.
+ * \param[in] btree pointer to B+ tree.
+ * \return pointer to the allocated structure.
  */
 bpt_list_item_t *bpt_list_init(bpt_t *btree);
 
 /*!
- * \brief Set iterating structure to the begening (first item)
- * \param[in] tree pointer to tree
- * \param[out] item pointer to item list structure
- * \return 1 ON SUCCESS,  0 tree is empty
+ * \brief Reset iteration
+ * Function reset the iteration structure to point to the first
+ * item in the sorted list.
+ * Key is than stored in item->key and value in item->value.
+ * \param[in] tree pointer to B+ tree.
+ * \param[out] item pointer to iteration structure.
+ * \return 1 ON SUCCESS,  0 tree is empty.
  */
 int bpt_list_start(bpt_t *tree, bpt_list_item_t *item);
 
 
 /*!
  * \brief Get next item from list
- * \param[in] t pointer to tree
- * \param[inout] item pointer to item
- * \return 1 ON SUCCESS,  0 END OF LIST
+ * Function sets the iteration structure to next item in the list.
+ * Actual key is than stored in item->key and value in item->value.
+ * \param[in] tree pointer to B+ tree.
+ * \param[inout] item pointer to iteration structure.
+ * \return 1 ON SUCCESS,  0 END OF LIST.
  */
 int bpt_list_item_next(bpt_t *tree, bpt_list_item_t *item);
 
 /*!
- * \brief Delete item given by list iterator and get next item.
- * After deletion, iterator will point to the next item in the list (if any).
- * \param[in] btree pointer to tree
- * \param[inout] delete_item structure to list item
- * \return 1 ON SUCCESS,  0 END OF LIST
+ * \brief Remove item
+ * Function removes actual item in the iteration structure and sets iteration to next item
+ * in the list (if it was not the last one).
+ * (The item will be removed in B+ tree. Do not use function bpt_item_del()
+ * while iterating the list.)
+ * \param[in] btree pointer to tree.
+ * \param[inout] delete_item structure to list item.
+ * \return 1 ON SUCCESS, 0 END OF LIST.
  */
 int bpt_list_item_del(bpt_t *btree, bpt_list_item_t *delete_item);
 
 /*!
- * \brief Destroy b_plus item structure
- * \param[in] item pointer to item
+ * \brief Destroy b+ tree
+ * Function deallocates the iteration structure.
+ * \param[in] item pointer to iteration structure.
  */
 void bpt_list_clean(bpt_list_item_t *item);
 
