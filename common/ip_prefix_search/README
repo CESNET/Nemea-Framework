@@ -1,0 +1,258 @@
+IP prefix binary search
+-----------
+    This structure is an ordered array data structure that is used to store a dynamic set,
+where the keys are low and high IP addresses of prefix. Binary search compare low and high IP
+with searched IP address and return data associated with match prefix.
+
+The prefix array can be used for storing any data (string, int). User specified data type and data length
+while loading data from file. It can be use for example for the aggregation of information from multiple
+blacklists.
+
+    At first, function load_networks(), load and parse information and data about networks from file.
+Load is specific to each user and his file format (delimetrs, data format or data length,...). The function creates
+all necessary structures for storing and accessing the data and return structure of IPv4 and IPv6 trees with data.
+
+    Before using the search call the ip_prefix_init() function. The function aggregate data of networks (create
+interval_search_context of networks) and sort interval_search_context to array for better access. Return structure of IPv4 and IPv6 interval_search_context arrays
+and size of each arrays. The parameters are:
+    Structure of networks with data.
+
+    For searching, there is a function ip_prefix_search(). Function return number of data associated with match prefix
+and return pointer to data as parameter:
+    Structure of ip prefix interval_search_context
+    IP address union
+    void pointer to data array
+
+For example, if blacklist contains :
+
+    192.168.1.0/24   aaa
+    192.168.1.0/25   bbb
+    192.168.1.128/25 ccc
+
+init() creates 2 intervals
+    - from 1.0 to 1.127 with data "aaa" and "bbb"
+    - from 1.128 to 1.255 with data "aaa" and "ccc":
+
+ 192.168.1.0     192.168.1.255
+       ↓            ↓
+       <-----aaa---->
+       <-bbb-><-ccc->
+
+
+and ip_prefix_search() is call with 192.168.1.100, search return number 2 and pointer to data "aaa" and "bbb".
+For 192.168.1.200, return also number 2 but data are "aaa" and "ccc". For 192.1.1.1, search return 0 and pointer
+to data is not fill.
+
+    For destruction of a whole structure and data there is ip_prefix_deinit() function, parameter is pointer to
+the ip prefix interval_search_context structure. Also list of network is necessary to destroy with function destroy_networks().
+Recommended control flow is:
+    1. load_networks()
+    2. ip_prefix_init()
+    3. destroy_networks()
+    4. ip_prefix_search()
+    5. ip_prefix_deinit()
+
+
+******************************************************************
+
+Example file
+
+/**
+ * \file main.c
+ * \brief Init and find in prefix EXAMPLE
+ * \author Ondrej Ploteny <xplote01@stud.fit.vutbr.cz>
+ * \date 2016
+ */
+/*
+ * Copyright (C) 2013,2014 CESNET
+ *
+ * LICENSE TERMS
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in
+ *    the documentation and/or other materials provided with the
+ *    distribution.
+ * 3. Neither the name of the Company nor the names of its contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * ALTERNATIVELY, provided that this notice is retained in full, this
+ * product may be distributed under the terms of the GNU General Public
+ * License (GPL) version 2 or later, in which case the provisions
+ * of the GPL apply INSTEAD OF those given above.
+ *
+ * This software is provided ``as is'', and any express or implied
+ * warranties, including, but not limited to, the implied warranties of
+ * merchantability and fitness for a particular purpose are disclaimed.
+ * In no event shall the company or contributors be liable for any
+ * direct, indirect, incidental, special, exemplary, or consequential
+ * damages (including, but not limited to, procurement of substitute
+ * goods or services; loss of use, data, or profits; or business
+ * interruption) however caused and on any theory of liability, whether
+ * in contract, strict liability, or tort (including negligence or
+ * otherwise) arising in any way out of the use of this software, even
+ * if advised of the possibility of such damage.
+ *
+ */
+/**
+ * Prefix search example
+ * Example of using ip_prefix library designed for binary searching IP address in multiple blacklists.
+ * Blacklists information are save in a extern file. Library function 'load_networks' read blacklist file by line and parse
+ * ip addresses, masks and data and create network list. Function init make 'prefix interval_search_context' from parsed network and
+ * preprocess networks for binary search in multiple blacklists.
+ *
+ * !!  If function 'load_networks' is call, you have to call 'destroy_networks' function !!
+ * !!  If function 'init' is call, you have to call 'deinit' function !!
+ *
+ * For prefix searching call function 'prefix_search' with search ip address (ip_addr_t struct) and properly
+ * initialized prefix interval_search_context.
+ * Function 'prefix_search' return number of match blacklists and return their data as parameter 'data',
+ * if 'prefix_search' return 0, no match in blacklist and ip is not found in any blacklist.
+ *
+ *
+ * !!! For new compiler troubleshoot, try gcc --gnu89-inline parameter !!!
+ *
+ * !!! If isn't install unirec.h, copy ipaddr.h and inline.h to source directory and change ip_prefixes.h !!!
+ */
+
+#include<stdio.h>
+#include "ip_prefixes.h"
+#include <sys/time.h>
+
+
+int main()
+{
+    struct timeval tv1, tv2;
+
+    /* Blacklist dataset file */
+    FILE * dataset;
+
+    dataset = fopen ("blacklist4.txt","r");
+    if (dataset == NULL) {
+        return 1;
+    }
+
+    /* Parse file line and create IPv4 and IPv6 network lists */
+    ipps_network_list_t * network_list = load_networks(dataset);
+    fclose(dataset);
+
+    if(network_list->count == 0)
+    {
+        printf("Empty tree, nothing to do");
+        return 0;
+    }
+
+
+    /* Context of networks => networks are transformed to intervals from low to high IP of network,
+     * overlapping intervals are divided with relevant data, data are copied from 'ipps_network_list_t'
+     * interval_search_context_t save sorted array of IPv4 intervals and IPv6 intervals and their counters separately
+     */
+    interval_search_context_t * prefix_context;
+
+    prefix_context = ipps_init(network_list);
+
+
+    if(prefix_context == NULL)
+    {
+        destroy_networks(network_list);
+        return 1;
+    }
+
+    /* 'ipps_network_list_t' is no longer a need, data are copied in 'interval_search_context_t' struct */
+    destroy_networks(network_list);
+
+
+    /* Print all ip intervals and data */
+    printf("----------------------------IPv4----------------------------\n");
+    int index = 0;
+    int j = 0;
+    char ip_string[INET6_ADDRSTRLEN];
+
+    printf("\t%-16s \t%-16s\t%s\n", "Low IP", "High IP", "Data");
+
+    /* Check print IPv4 */
+    for(index = 0; index < prefix_context->v4_count; ++index)
+    {
+        ip_to_str(&prefix_context->v4_prefix_intervals[index].low_ip, &ip_string[0]);
+        printf("\t%-16s", ip_string);
+        ip_to_str(&prefix_context->v4_prefix_intervals[index].high_ip, &ip_string[0]);
+        printf("\t%-15s", ip_string);
+        printf("\t");
+        for(j=0; j < prefix_context->v4_prefix_intervals[index].data_cnt; ++j)
+        {
+            printf("\t%s", (char *) prefix_context->v4_prefix_intervals[index].data_array[j]);
+        }
+        printf("\n");
+    }
+
+    printf("------------------------------------------------------------\n");
+
+    printf("\n-------------------------IPv6-------------------------------\n");
+    printf("\t%-46s \t%-46s\t\t%s\n", "Low IP", "High IP", "Data");
+    /* Check print IPv6 */
+    for(index = 0; index < prefix_context->v6_count; ++index)
+    {
+        ip_to_str(&prefix_context->v6_prefix_intervals[index].low_ip, &ip_string[0]);
+        printf("\t%-46s", ip_string);
+        ip_to_str(&prefix_context->v6_prefix_intervals[index].high_ip, &ip_string[0]);
+        printf("\t%-46s", ip_string);
+        printf("\t");
+        for(j=0; j < prefix_context->v6_prefix_intervals[index].data_cnt; ++j)
+        {
+            printf("\t%s", (char *) prefix_context->v6_prefix_intervals[index].data_array[j]);
+        }
+        printf("\n");
+    }
+    printf("------------------------------------------------------------\n\n");
+
+
+
+
+    /***************** Find some ip addresses in cycle ****************/
+    char *ip_addr[] = {"251.205.178.136",
+                       "255.255.186.96",
+                       "0.0.0.1",
+                       "fd57:9f25:3409::07",
+                       "ff8d:2222:1111::44"
+    };
+
+    ip_addr_t ip;
+    int search_result;      // Number of match prefixes, 0 if not match
+    char ** data = NULL;    // data in blacklist is string
+
+    gettimeofday(&tv1, NULL);
+    for (index = 0; index < 5; ++index) {
+        /* for each ip address in ip_addr array find in prefix interval_search_context */
+        printf("%-16s\n", ip_addr[index]);
+
+        ip_from_str(ip_addr[index], &ip);
+
+        /* find ip address 'ip' in network prefix interval_search_context */
+        search_result = ipps_search(&ip, prefix_context, (void ***) &data);
+
+        if (search_result) {
+            /* if there is any match prefix, print all data */
+            for (j = 0; j < search_result; ++j) {
+                printf("\t%d %s\n", j, data[j]);
+            }
+        }
+        else {
+            printf("\tIP not found in blacklist dataset\n");
+        }
+        printf("\n");
+    }
+    gettimeofday(&tv2, NULL);
+
+    printf("search time: %ld usec", tv2.tv_usec - tv1.tv_usec);
+
+    /* Dealloc prefix interval_search_context struct */
+    ipps_destroy(prefix_context);
+
+
+    return 0;
+}

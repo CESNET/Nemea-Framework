@@ -9,4 +9,5 @@ pkginclude_HEADERS=nemea-common.h \
 		   progress_printer.h \
 		   b_plus_tree.h \
 		   prefix_tree.h \
-                   real_time_sending.h
+                   real_time_sending.h \
+		   ip_prefix_search.h
