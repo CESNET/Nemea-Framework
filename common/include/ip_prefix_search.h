@@ -57,28 +57,26 @@
 
 #include <unirec/ipaddr.h>
 
-/* Deafault size of data pointer array */
+/* Default size of data pointer array */
 #define DATASLOTS 8
 
-/* Deafault size of data collector */
+/* Default size of data collector */
 #define COLLECTORSLOTS 16
+
+/* Default size of ipv6 and ipv4 network collector */
+#define NETWORKSLOTS 16
 
 
 typedef struct network {
     ip_addr_t addr;                 // Network IP address
-    uint32_t mask;                  // Network mask
+    uint32_t mask;                  // Network mask, CIDR notation, use for indexing
     void * data;                    // Pointer to same data
     size_t data_len;                // Number of bytes in 'data'
 } ipps_network_t;
 
 typedef struct network_list {
     uint32_t count;
-    ipps_network_t *network;
-    ipps_network_t **network_v4;
-    ipps_network_t **network_v6;
-    uint32_t v4_count;
-    uint32_t v6_count;
-    uint32_t **net_mask_array;
+    ipps_network_t * networks;
 } ipps_network_list_t;
 
 typedef struct {
@@ -99,7 +97,7 @@ typedef struct {
 
 typedef struct ipps_interval_node {
     ipps_interval_t * interval;                 // Pointer to interval structure
-    struct ipps_interval_node * next;                         // Next node in list, NULL if last node in list
+    struct ipps_interval_node * next;           // Next node in list, NULL if last node in list
 }ipps_interval_node_t;
 
 /** Trim white spaces from string
@@ -142,23 +140,6 @@ int cmp_net_v4(const void *v1, const void *v2);
  */
 int str_to_network(char *str, ipps_network_t *network);
 
-/** Extract network addresses from file
- * Allocate initial memory for networks list structure `networks_list` and network structure array `networks`.
- * Read file `file` line by line and save networks addresses in array of network structure `networks`.
- * If there are more networks than can fit in allocated memory then reallocate memory with 10 more spaces for networks.
- * Split networks to 2 different arrays, one for IPv4 `network_v4` and other for IPv6 `network_v6`.
- * Sort each array of networks from lowest IP address to highest (to use it later in binary search).
- * @param[in] file Pointer to string containing file name.
- * @return Pointer to networks list structure if success else return NULL.
- */
-ipps_network_list_t *load_networks(FILE *file);
-
-/** Dealloc ipps_network_list_t
- * Dealloc struct ipps_network_list_t, opposite loa_network
- * @param[in] network_list Pointer to network_list structure
- * @return void
- */
-void destroy_networks(ipps_network_list_t * network_list);
 
 /** Mask IPv6 address
  * Mask IPv6 address `ip` with network mask `in_mask` and save result to `masked_ipv6`.
@@ -241,7 +222,8 @@ ipps_context_t * new_context();
  * @param[in] network_list Pointer to network list structure
  * @return NULL if memory alloc fails, Pointer to interval_search_context structure
  */
-ipps_context_t * ipps_init(ipps_network_list_t *network_list);
+ipps_context_t * ipps_init(ipps_network_list_t * networks);
+
 
 /** Deinitialize interval_search_context structure
  * Dealloc all memory, garbage collector

@@ -51,7 +51,7 @@
 
 // Information if sigaction is available for nemea signal macro registration
 
-#include "../include/ip_prefix_search.h"
+#include "ip_prefix_search.h"
 
 /**
  * Function for swapping bits in byte.
@@ -385,14 +385,14 @@ ipps_context_t * new_context() {
    return prefix_context;
 }
 
-/** Initialize interval_search_context structure, fill IPv4 and IPv6 interval_search_context arrays
+/** Initialize ipps_context_t structure, fill IPv4 and IPv6 ipps_interval arrays
  * Function compute for all networks in 'network_list' appropriate intervals and copied network data
  * Overlapping intervals are split. Array is sorted by low IP addr of interval.
  * Networks in network list is not necessary sorted, 'ipps_init' mask and sort each network itself
  * @param[in] network_list Pointer to network list structure
- * @return NULL if memory alloc fails, Pointer to interval_search_context structure
+ * @return NULL if memory alloc fails, Pointer to ipps_context structure
  */
-ipps_context_t * ipps_init(ipps_network_list_t *network_list)
+ipps_context_t * ipps_init(ipps_network_list_t * network_list)
 {
    int index;
    ip_addr_t * masked_ip;
@@ -402,7 +402,7 @@ ipps_context_t * ipps_init(ipps_network_list_t *network_list)
       return NULL;
    }
 
-   if(!(network_list->v4_count > 0 || network_list->v6_count > 0))
+   if(network_list->count <= 0)
    {
       fprintf(stderr, "ERROR Network lists are empty, nothing to do");
       return NULL;
@@ -421,22 +421,74 @@ ipps_context_t * ipps_init(ipps_network_list_t *network_list)
       return NULL;
    }
 
-   if(network_list->v4_count > 0 && network_list->network_v4[0] != NULL)
+   ipps_network_t * current_net;             // Currently precessed network
+   void * tmp;
+
+   ipps_network_t  ** networks_v6;           // Pointers to ipv6 networks
+   ipps_network_t  ** networks_v4;           // Pointers to ipv4 networks
+
+
+   uint32_t i_v6 = 0;         // Number of ipv6 networks
+   uint32_t i_v4 = 0;         // Number of ipv4 networks
+
+   size_t i_v6_alloc = NETWORKSLOTS;      // Number of available network pointers
+   size_t i_v4_alloc = NETWORKSLOTS;      // Number of available network pointers
+
+   // Allocate memory for network array
+   if ((networks_v4 = malloc(i_v4_alloc * sizeof(ipps_network_t *))) == NULL ||
+       (networks_v6 = malloc(i_v6_alloc * sizeof(ipps_network_t *))) == NULL) {
+      fprintf(stderr, "ERROR allocating sorted network structures\n");
+      return NULL;
+   }
+
+   /* For each network in array - mask ip address and split to ipv4 or ipv6 network
+    */
+   for (index = 0; index < network_list->count; ++index)
    {
-      /************************/
-      /* Mask all IPv4 networks and sort by IP address and mask */
-      for(index = 0; index < network_list->v4_count; ++index)
+      current_net = &network_list->networks[index];
+      if (ip_is6(&current_net->addr))
       {
-         masked_ip = &network_list->network_v4[index]->addr;
-         masked_ip->ui32[2] = masked_ip->ui32[2] & net_mask_array[network_list->network_v4[index]->mask][0];
+         masked_ip = &current_net->addr;
+         mask_ipv6(&current_net->addr, current_net->mask, masked_ip, net_mask_array);
+
+         i_v6++;
+         if(i_v6_alloc < i_v6)
+         {
+            i_v6_alloc *= 2;
+            tmp = realloc(networks_v6, i_v6_alloc * sizeof(ipps_network_t * ));
+            if (tmp  == NULL) {
+               fprintf(stderr, "ERROR allocating memory for ipv6 network collector\n");
+               return NULL;
+            }
+            networks_v6 = tmp;
+
+         }
+         networks_v6[i_v6-1] = current_net;
       }
-      qsort(network_list->network_v4, network_list->v4_count, sizeof(ipps_network_t *), cmp_net_v4);
-      /************************/
+      else {
+         masked_ip = &current_net->addr;
+         masked_ip->ui32[2] = masked_ip->ui32[2] & net_mask_array[current_net->mask][0];
 
+         i_v4++;
+         if (i_v4_alloc < i_v4) {
+            i_v4_alloc *= 2;
+            tmp = realloc(networks_v4, i_v4_alloc * sizeof(ipps_network_t *));
+            if (tmp == NULL) {
+               fprintf(stderr, "ERROR allocating memory for ipv6 network collector\n");
+               return NULL;
+            }
+            networks_v4 = tmp;
+         }
+         networks_v4[i_v4 - 1] = current_net;
+      }
+   }
 
-      /************************/
+   if(i_v4 > 0 && networks_v4[0] != NULL)
+   {
+      qsort(networks_v4, i_v4, sizeof(ipps_network_t *), cmp_net_v4);
+
       /* Fill intervals for IPv4 to interval_search_context array, if fail, dealloc and return NULL */
-      prefix_context->v4_prefix_intervals = init_context(network_list->network_v4, network_list->v4_count, &prefix_context->v4_count, net_mask_array);
+      prefix_context->v4_prefix_intervals = init_context(networks_v4, i_v4, &prefix_context->v4_count, net_mask_array);
       if(prefix_context->v4_prefix_intervals == NULL)
       {
          destroy_ip_v6_net_mask_array(net_mask_array);
@@ -445,22 +497,15 @@ ipps_context_t * ipps_init(ipps_network_list_t *network_list)
       }
       /************************/
    }
+   free(networks_v4);
 
-   if (network_list->v6_count > 0 && network_list->network_v6[0] != NULL)
+   if (i_v6 > 0 && networks_v6[0] != NULL)
    {
-      /************************/
-      /* Mask all IPv6 networks and sort by IP address and mask */
-      for(index = 0; index < network_list->v6_count; ++index)
-      {
-         mask_ipv6(&network_list->network_v6[index]->addr, network_list->network_v6[index]->mask, &network_list->network_v6[index]->addr, net_mask_array);
-      }
-      qsort(network_list->network_v6, network_list->v6_count, sizeof(ipps_network_t *), cmp_net_v6);
-      /************************/
 
+      qsort(networks_v6, i_v6, sizeof(ipps_network_t *), cmp_net_v6);
 
-      /************************/
       /* Fill intervals for IPv6 to interval_search_context array, if fail, dealloc and return NULL */
-      prefix_context->v6_prefix_intervals = init_context(network_list->network_v6, network_list->v6_count, &prefix_context->v6_count, net_mask_array);
+      prefix_context->v6_prefix_intervals = init_context(networks_v6, i_v6, &prefix_context->v6_count, net_mask_array);
       if(prefix_context->v6_prefix_intervals == NULL)
       {
          destroy_ip_v6_net_mask_array(net_mask_array);
@@ -468,8 +513,10 @@ ipps_context_t * ipps_init(ipps_network_list_t *network_list)
          free(prefix_context);
          return NULL;
       }
+
       /************************/
    }
+   free(networks_v6);
 
    destroy_ip_v6_net_mask_array(net_mask_array);
    return  prefix_context;
