@@ -51,7 +51,7 @@
 
 // Information if sigaction is available for nemea signal macro registration
 
-#include "ip_prefix_search.h"
+#include "../include/ip_prefix_search.h"
 
 /**
  * Function for swapping bits in byte.
