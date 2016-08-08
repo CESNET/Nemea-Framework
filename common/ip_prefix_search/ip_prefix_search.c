@@ -402,7 +402,7 @@ ipps_context_t * ipps_init(ipps_network_list_t * network_list)
       return NULL;
    }
 
-   if(network_list->count <= 0)
+   if(network_list->net_count <= 0)
    {
       fprintf(stderr, "ERROR Network lists are empty, nothing to do");
       return NULL;
@@ -443,7 +443,7 @@ ipps_context_t * ipps_init(ipps_network_list_t * network_list)
 
    /* For each network in array - mask ip address and split to ipv4 or ipv6 network
     */
-   for (index = 0; index < network_list->count; ++index)
+   for (index = 0; index < network_list->net_count; ++index)
    {
       current_net = &network_list->networks[index];
       if (ip_is6(&current_net->addr))

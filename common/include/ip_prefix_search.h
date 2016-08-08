@@ -75,8 +75,8 @@ typedef struct network {
 } ipps_network_t;
 
 typedef struct network_list {
-    uint32_t count;
-    ipps_network_t * networks;
+    uint32_t net_count;             // Number of networks in 'networks' array
+    ipps_network_t * networks;      // Pointer to networks array
 } ipps_network_list_t;
 
 typedef struct {
@@ -86,7 +86,6 @@ typedef struct {
     size_t array_len;                       // Allocated size of 'data_array' => total available slots
     void ** data_array;                     // Array of pointers to data
 }ipps_interval_t;
-
 
 typedef struct {
     uint32_t v4_count;                          // Number of intervals in IPv4 array
@@ -100,14 +99,6 @@ typedef struct ipps_interval_node {
     struct ipps_interval_node * next;           // Next node in list, NULL if last node in list
 }ipps_interval_node_t;
 
-/** Trim white spaces from string
- * Shift pointer to start of string `str` to point at first not whitespace character.
- * Find last character of string `str` that is not whitespace and write '\0' 1 byte after it.
- * @param[in] str String containing whitespaces.
- * @return Pointer to string containing no whitespaces.
- */
-char *str_trim(char *str);
-
 
 /** Create 2D array for IPv6 networks mask
  * Create 2D array `net_mask_array` with 129 rows and 4 columns and
@@ -115,31 +106,6 @@ char *str_trim(char *str);
  * @return Pointer to 2D array.
  */
 uint32_t **create_ip_v6_net_mask_array();
-
-
-/** Compare 2 IPv4 network addresses
- * Compare byte by byte 2 IPv4 addresses
- * @param[in] v1 Pointer to network structure.
- * @param[in] v2 Pointer to network structure.
- * @return >0 if first IP address is bigger than second IP address, 0 if they are equal or <0 if first is lower than second
- */
-int cmp_net_v4(const void *v1, const void *v2);
-
-
-/** Convert IP address from string to struct
- * Trim whitespaces from string `str` and check for network mask.
- * If network mask is not present in string `str` then convert IP address from string `str` to network struct `network`,
- * set network mask `network->mask` to 32 and for each octet from end of IP address `network->addr.ui32[2]`
- * that equals to 0 subtract 8 from network mask, if octet is not equal to 0 then end.
- * If network mask is present in string `str` then convert it to number and write it to `network->mask`
- * then remove it from string `str` and convert IP address from string `str` to network struct `network`.
- * @param[in] str String containing IP address and network mask.
- * @param[in] network Pointer to network structure.
- * return 1 on success otherwise 0.
- *
- */
-int str_to_network(char *str, ipps_network_t *network);
-
 
 /** Mask IPv6 address
  * Mask IPv6 address `ip` with network mask `in_mask` and save result to `masked_ipv6`.
@@ -224,7 +190,6 @@ ipps_context_t * new_context();
  */
 ipps_context_t * ipps_init(ipps_network_list_t * networks);
 
-
 /** Deinitialize interval_search_context structure
  * Dealloc all memory, garbage collector
  * @param[in] prefix_context Pointer to interval_search_context struct
@@ -259,7 +224,7 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
 int add_data(ipps_interval_t * interval, void * data, size_t data_len);
 
 /** Append data in 'dest' with all data from 'src' interval
- * Concat 'dest' and 'src' data_arrays: if necessary realloc destination data array.
+ * Concat 'dest' and 'src' data_arrays: if necessary, realloc destination data array.
  * Copy all data pointers from src, behind last 'dest' data pointer
  * @param[out] dest Pointer to destination interval
  * @param[in] src Pointer to source interval
