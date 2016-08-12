@@ -2624,7 +2624,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       if (ifc_id == NULL) {
          ifc_id = none_ifc_id;
       }
-      in_ifc_cnts = json_pack("{sssisIsI}", "ifc_id", ifc_id, "ifc_type", (int) (ctx->in_ifc_list[x].ifc_type), "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
+      in_ifc_cnts = json_pack("{sisssisIsI}", "ifc_state", ctx->in_ifc_list[x].is_conn(ctx->in_ifc_list[x].priv), "ifc_id", ifc_id, "ifc_type", (int) (ctx->in_ifc_list[x].ifc_type), "messages", ctx->counter_recv_message[x], "buffers", ctx->counter_recv_buffer[x]);
       if (json_array_append_new(in_ifces_arr, in_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
@@ -2636,7 +2636,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       if (ifc_id == NULL) {
          ifc_id = none_ifc_id;
       }
-      out_ifc_cnts = json_pack("{sssisIsIsIsI}", "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type), "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
+      out_ifc_cnts = json_pack("{sisssisIsIsIsI}", "num_clients", ctx->out_ifc_list[x].get_client_count(ctx->out_ifc_list[x].priv), "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type), "sent-messages", ctx->counter_send_message[x], "dropped-messages", ctx->counter_dropped_message[x], "buffers", ctx->counter_send_buffer[x], "autoflushes", ctx->counter_autoflush[x]);
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
