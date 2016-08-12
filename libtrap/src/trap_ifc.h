@@ -146,6 +146,14 @@ typedef int32_t (*ifc_get_client_count_func_t)(void *p);
  */
 typedef char * (*ifc_get_id_func_t)(void *priv);
 
+/**
+ * Check whether the input interface is connected
+ *
+ * \param[in] priv   pointer to IFC's private memory allocated by constructor
+ * \returns 1 (TRUE) if connected, otherwise 0 (FALSE)
+ */
+typedef uint8_t (*ifc_is_conn_func_t)(void *priv);
+
 
 /**
  * @}
@@ -153,6 +161,7 @@ typedef char * (*ifc_get_id_func_t)(void *priv);
 
 /** Struct to hold an instance of some input interface. */
 typedef struct trap_input_ifc_s {
+   ifc_is_conn_func_t is_conn; ///< Pointer to is_connected function
    ifc_get_id_func_t get_id;       ///< Pointer to get_id function
    ifc_recv_func_t recv;           ///< Pointer to receive function
    ifc_terminate_func_t terminate; ///< Pointer to terminate function

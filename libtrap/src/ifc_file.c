@@ -336,6 +336,18 @@ char *file_recv_ifc_get_id(void *priv)
    return config->filename;
 }
 
+uint8_t file_recv_ifc_is_conn(void *priv)
+{
+   if (priv == NULL) {
+      return 0;
+   }
+   file_private_t *config = (file_private_t *) priv;
+   if (config->fd != NULL) {
+      return 1;
+   }
+   return 0;
+}
+
 /**
  * \brief Allocate and initiate file input interface.
  * This function is called by TRAP library to initialize one input interface.
@@ -427,6 +439,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    ifc->create_dump = file_create_dump;
    ifc->priv = priv;
    ifc->get_id = file_recv_ifc_get_id;
+   ifc->is_conn = file_recv_ifc_is_conn;
 
    return TRAP_E_OK;
 }

@@ -106,6 +106,10 @@ char *generator_ifc_get_id(void *priv)
    return NULL;
 }
 
+uint8_t generator_ifc_is_conn(void *priv) {
+   return 1;
+}
+
 int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc)
 {
    generator_private_t *priv = NULL;
@@ -165,6 +169,7 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    ifc->create_dump = create_dump;
    ifc->priv = priv;
    ifc->get_id = generator_ifc_get_id;
+   ifc->is_conn = generator_ifc_is_conn;
 
    return TRAP_E_OK;
 failure:
