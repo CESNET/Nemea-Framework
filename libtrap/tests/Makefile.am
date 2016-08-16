@@ -6,9 +6,9 @@ endif
 
 EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh
 
-check_PROGRAMS = basic_test test_finalize
+check_PROGRAMS = basic_test test_finalize test_signal
 
-noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx test_multi_recv
+noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx test_multi_recv test_signal test_signal_in
 
 AM_LDFLAGS=-static ../src/libtrap.la
 COM_CPPFLAGS=-I../src -I../include -I${top_srcdir}/include -I${top_srcdir}/src
@@ -57,6 +57,10 @@ test_rxtx_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_multi_recv_SOURCES=test_multi_recv.c
 test_multi_recv_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_signal_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_signal_in_CPPFLAGS=$(COM_CPPFLAGS)
 
 valid_buffer_SOURCES=valid_buffer.c
 

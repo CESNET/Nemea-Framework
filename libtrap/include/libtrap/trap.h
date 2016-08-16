@@ -53,10 +53,12 @@ extern "C" {
 #include <stdint.h>
 #include <stdarg.h>
 
+#define trap_ctx_t void
+
 #include "trap_module_info.h"
+#include "trap_signalling.h"
 #include "jansson.h"
 
-#define trap_ctx_t void
 
 /**
  * \defgroup commonapi Common libtrap API
@@ -92,6 +94,10 @@ extern const char trap_git_version[];
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
 #define TRAP_E_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
 #define TRAP_E_FORMAT_MISMATCH 24 ///< Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
+
+#define TRAP_S_EOT       101 ///< End of transmission received
+#define TRAP_S_EOB       102 ///< End of transmission received
+
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
 /**@}*/

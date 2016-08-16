@@ -234,6 +234,33 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
    }
 
    if (ctx->in_ifc_list[ifc_idx].buffer_full > 0) {
+      /* Handle signalling */
+      if (TRAP_SIG_CHECKMESS(ctx->in_ifc_list[ifc_idx].buffer_pointer) == 1) {
+         trap_sig_mess_t *sm = (trap_sig_mess_t *) ctx->in_ifc_list[ifc_idx].buffer_pointer;
+         trap_sig_flag_t flag = ntohs(sm->flag);
+         VERBOSE(CL_VERBOSE_LIBRARY, "the signalling message size %hi %04x %04x.", sm->size, sm->flag, flag);
+
+         if (TRAP_SIG_IS_EOT(flag)) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "eot");
+            result = TRAP_S_EOT;
+         } else if (TRAP_SIG_IS_EOB(flag)) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "eob");
+            result = TRAP_S_EOB;
+         } else if (TRAP_SIG_IS_FRG(flag)) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "frg unimplemented");
+            result = TRAP_E_OK;
+         } else if (TRAP_SIG_IS_NEGOTIATE(flag)) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "handle negotiation");
+            result = TRAP_E_OK;
+         }
+         ctx->in_ifc_list[ifc_idx].buffer_full -= sizeof(trap_sig_mess_t);
+         ctx->in_ifc_list[ifc_idx].buffer_pointer += sizeof(trap_sig_mess_t);
+         goto exit;
+      } else {
+         VERBOSE(CL_VERBOSE_LIBRARY, "the message is not a signal.");
+      }
+
+
       /* get message from buffer */
       (*size) = ntohs(*((uint16_t *) ctx->in_ifc_list[ifc_idx].buffer_pointer));
       (*data) = (ctx->in_ifc_list[ifc_idx].buffer_pointer + sizeof(*size));
