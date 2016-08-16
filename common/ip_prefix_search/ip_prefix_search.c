@@ -287,7 +287,7 @@ void ip_dec(const ip_addr_t * ip, ip_addr_t * ip_dec) {
 
       uint32_t tmp = 0xffffffff;
       int i;
-      for (i = 3; i >0; i--)
+      for (i = 3; i >=0; i--)
       {
          ip_dec->ui32[i] = htonl(ntohl(ip->ui32[i]) - 1);
          if(ip_dec->ui32[i] != tmp)
@@ -308,20 +308,17 @@ void ip_dec(const ip_addr_t * ip, ip_addr_t * ip_dec) {
  * @return void
  */
 void ip_inc(const ip_addr_t * ip, ip_addr_t * ip_inc) {
-   if(ip_is6(ip))
-   {
+   if (ip_is6(ip)) {
       memcpy(ip_inc, ip, 16);
 
       uint32_t tmp = 0xffffffff;
       int i;
-      for (i = 3; i >0; i--)
-      {
+      for (i = 3; i >= 0; i--) {
          ip_inc->ui32[i] = htonl(ntohl(ip->ui32[i]) + 1);
-         if(ip_inc->ui32[i] < tmp)
+         if (ip->ui32[i] < tmp)
             break;
       }
-   } else
-   {
+   } else {
       ip_inc->ui64[0] = 0;
       ip_inc->ui32[2] = htonl(ntohl(ip->ui32[2]) + 1);
       ip_inc->ui32[3] = 0xffffffff;
@@ -655,8 +652,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                ip_cmp_result = ip_cmp( &conductor->interval->high_ip, &current_interval.high_ip);
                if(ip_cmp_result > 0)
                {
-                  // I   <---------->
-                  // T <---------->
+                  // Con   <---------->
+                  // Cur <---------->
 
                   fprintf(stderr, "ERROR Inserting to list");
                   destroy_list(interval_list);
@@ -664,8 +661,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                }
                else if (ip_cmp_result < 0)
                {
-                  // I   <-------->
-                  // T <------------>
+                  // Con   <-------->
+                  // Cur <------------>
 
                   fprintf(stderr, "ERROR Inserting to list");
                   destroy_list(interval_list);
@@ -674,8 +671,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                }
                else
                {
-                  // I   <-------->
-                  // T <---------->
+                  // Con   <-------->
+                  // Cur <---------->
 
                   fprintf(stderr, "ERROR Inserting to list");
                   destroy_list(interval_list);
@@ -690,13 +687,13 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                ip_cmp_result = ip_cmp( &conductor->interval->high_ip, &current_interval.high_ip);
                if(ip_cmp_result > 0)
                {
-                  // I <---------->
-                  // T   <----->
+                  // Con <---------->
+                  // Cur   <----->
 
                   /***********************/
                   /*    | |   ↓  |  |
-                   *  I <----------->
-                   *  T   <----->
+                   *    <----------->
+                   *     <----->
                    */
 
                   /* Insert new interval to interval tree, conductor post insert */
@@ -759,8 +756,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                }
                else if (ip_cmp_result < 0)
                {
-                  // I <---------->
-                  // T   <----------->
+                  // Con <---------->
+                  // Cur   <----------->
 
                   fprintf(stderr, "ERROR Inserting to list");
                   destroy_list(interval_list);
@@ -769,8 +766,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                }
                else
                {
-                  // I <---------->
-                  // T   <-------->
+                  // Con <---------->
+                  // Cur   <-------->
 
                   if(insert_new_interval(conductor, &current_interval.low_ip, &conductor->interval->high_ip) == NULL) {
                      destroy_list(interval_list);
@@ -800,8 +797,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                ip_cmp_result = ip_cmp( &conductor->interval->high_ip, &current_interval.high_ip);
                if(ip_cmp_result > 0)
                {
-                  // I <---------->
-                  // T <-------->
+                  // Con <---------->
+                  // Cur <-------->
 
                   ip_inc(&current_interval.high_ip, &tmp_ip);
 
@@ -820,8 +817,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                }
                else if (ip_cmp_result < 0)
                {
-                  // I <-------->
-                  // T <---------->
+                  // Con <-------->
+                  // Cur <---------->
 
                   fprintf(stderr, "ERROR Inserting to list");
                   destroy_list(interval_list);
@@ -829,8 +826,8 @@ ipps_interval_t * init_context( ipps_network_t ** networks, uint32_t network_cou
                }
                else
                {
-                  //  I <-------->
-                  //  T <-------->
+                  //  Con <-------->
+                  //  Cur <-------->
 
                   if(add_data(conductor->interval, networks[index]->data, networks[index]->data_len)) {
                      destroy_list(interval_list);
