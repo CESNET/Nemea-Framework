@@ -1,5 +1,5 @@
 /**
- * \file ifc_tcpip.c
+ * \file ifc_tcpip.h
  * \brief TRAP signalling API for internal control of data stream
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2016

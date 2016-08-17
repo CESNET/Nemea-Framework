@@ -96,7 +96,7 @@ extern const char trap_git_version[];
 #define TRAP_E_FORMAT_MISMATCH 24 ///< Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
 
 #define TRAP_S_EOT       101 ///< End of transmission received
-#define TRAP_S_EOB       102 ///< End of transmission received
+#define TRAP_S_EOB       102 ///< End of burst received (might be used for end of burst, end of time window etc)
 
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
