@@ -123,10 +123,6 @@ int main(int argc, char **argv)
    TRAP_SIG_EOB(0);
    TRAP_SIG_EOB(0);
 
-   TRAP_SIG_FRG(0);
-   TRAP_SIG_FRG(0);
-   TRAP_SIG_FRG(0);
-
    TRAP_SIG_EOT(0);
    TRAP_SIG_EOT(0);
    TRAP_SIG_EOT(0);

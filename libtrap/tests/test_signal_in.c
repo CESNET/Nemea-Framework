@@ -131,13 +131,6 @@ int main(int argc, char **argv)
    TRAP_SIG_EOB(0);
    X("EOB");
 
-   TRAP_SIG_FRG(0);
-   X("FRG");
-   TRAP_SIG_FRG(0);
-   X("FRG");
-   TRAP_SIG_FRG(0);
-   X("FRG");
-
    TRAP_SIG_EOT(0);
    X("EOT");
    TRAP_SIG_EOT(0);

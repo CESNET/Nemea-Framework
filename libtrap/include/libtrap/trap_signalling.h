@@ -1,5 +1,5 @@
 /**
- * \file ifc_tcpip.h
+ * \file trap_signalling.h
  * \brief TRAP signalling API for internal control of data stream
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2016
@@ -87,11 +87,6 @@ typedef struct trap_sig_mess_s {
 #define TRAP_SIGNAL_EOB       ((trap_sig_flag_t) (1 << 2))
 
 /**
- * Signal next fragment of the previous message
- */
-#define TRAP_SIGNAL_FRG       ((trap_sig_flag_t) (1 << 3))
-
-/**
  * Check if the message is a signalling.
  * \return 1 if the message is a signalling one
  */
@@ -130,14 +125,6 @@ void trap_ctx_sig_flag(trap_ctx_t *ctx, uint32_t ifcidx, trap_sig_flag_t flag);
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifcidx    Index of interface to write into.
  */
-#define TRAP_SIG_FRG(ifcidx)   trap_ctx_sig_flag(trap_glob_ctx, ifcidx, TRAP_SIGNAL_FRG)
-
-/**
- * \brief
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifcidx    Index of interface to write into.
- */
 #define TRAP_CTX_SIG_NEGOTIATE(ctx, ifcidx)   trap_ctx_sig_flag(ctx, ifcidx, TRAP_SIGNAL_NEGOTIATE)
 
 /**
@@ -156,17 +143,8 @@ void trap_ctx_sig_flag(trap_ctx_t *ctx, uint32_t ifcidx, trap_sig_flag_t flag);
  */
 #define TRAP_CTX_SIG_EOB(ctx, ifcidx)   trap_ctx_sig_flag(ctx, ifcidx, TRAP_SIGNAL_EOB)
 
-/**
- * \brief
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifcidx    Index of interface to write into.
- */
-#define TRAP_CTX_SIG_FRG(ctx, ifcidx)   trap_ctx_sig_flag(ctx, ifcidx, TRAP_SIGNAL_FRG)
-
 #define TRAP_SIG_IS_EOT(flag) (flag & TRAP_SIGNAL_EOT)
 #define TRAP_SIG_IS_EOB(flag) (flag & TRAP_SIGNAL_EOB)
-#define TRAP_SIG_IS_FRG(flag) (flag & TRAP_SIGNAL_FRG)
 #define TRAP_SIG_IS_NEGOTIATE(flag) (flag & TRAP_SIGNAL_NEGOTIATE)
 
 /**
