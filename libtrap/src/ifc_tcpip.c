@@ -385,7 +385,8 @@ conn_wait:
       if (config->connected == 0) {
          /* we don't have connection, we must try to connect before accepting header */
          retval = client_socket_connect(priv, config->dest_addr, config->dest_port, &config->sd, temptm);
-         if (retval == TRAP_E_FIELDS_MISMATCH) {
+         /* TODO NEGOTIATION - remove XXX */
+         if (retval == TRAP_E_FORMAT_MISMATCH) {
             config->connected = 1;
             return TRAP_E_FORMAT_MISMATCH;
          } else if (retval == TRAP_E_OK) {
@@ -863,6 +864,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
+/* TODO NEGOTIATION - remove XXX */
    switch(input_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP)) {
    case NEG_RES_FMT_UNKNOWN:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
@@ -887,11 +889,11 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    case NEG_RES_FAILED:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
-      return TRAP_E_FIELDS_MISMATCH;
+      return TRAP_E_FORMAT_MISMATCH;
 
    case NEG_RES_FMT_MISMATCH:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
-      return TRAP_E_FIELDS_MISMATCH;
+      return TRAP_E_FORMAT_MISMATCH;
 
    default:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
@@ -1689,20 +1691,6 @@ static void *accept_clients_thread(void *arg)
 
             pthread_mutex_lock(&c->lock);
 
-            /** Output interface negotiation */
-#ifdef ENABLE_NEGOTIATION
-            int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, newclient);
-            if (ret_val == NEG_RES_OK) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
-            } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-               goto refuse_client;
-            } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
-               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-               goto refuse_client;
-            }
-#endif
-
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
@@ -1720,6 +1708,9 @@ static void *accept_clients_thread(void *arg)
                cl->sending_pointer = NULL;
                cl->pending_bytes = 0;
                c->connected_clients++;
+               /* Output interface negotiation */
+               output_ifc_negotiation(c->ctx, c->ifc_idx);
+
 
                if (sem_post(&c->have_clients) == -1) {
                   VERBOSE(CL_ERROR, "Semaphore post failed.");

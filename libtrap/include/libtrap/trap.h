@@ -90,8 +90,6 @@ extern const char trap_git_version[];
 #define TRAP_E_TERMINATED 15 ///< Interface was terminated during reading/writing
 #define TRAP_E_NOT_SELECTED 16 ///< Interface was not selected reading/writing
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
-#define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
-#define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
 #define TRAP_E_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
 #define TRAP_E_FORMAT_MISMATCH 24 ///< Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
 
@@ -246,20 +244,6 @@ typedef enum {
    /** structured data serialized using JSON */
    TRAP_FMT_JSON = 3
 } trap_data_format_t;
-
-typedef enum {
-   /** Negotiation is not completed */
-   FMT_WAITING = 0,
-
-   /** Negotiation was successful */
-   FMT_OK = 1,
-
-   /** Negotiation failed, format mismatch */
-   FMT_MISMATCH = 2,
-
-   /** Negotiation was successful, but receivers (input ifc) template is subset of senders (output ifc) template and missing fields has to be defined */
-   FMT_CHANGED = 3
-} trap_in_ifc_state_t;
 
 /**
  * Set format of messages on output IFC.
@@ -1057,38 +1041,6 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
  * @}
  *//* modulemacros */
 
-
-
-/**
- * Function handles output interface negotiation (sends hello message to input interface with its data format
- * and data specifier). Hello message contains message header (data format and data specifier size) and data specifier.
- *
- * \param[in] ifc_priv_data  Pointer to output interface private structure.
- * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
- * \param[in] sock_d  Socket descriptor of the connection with the new input interface.
- *
- * \return NEG_RES_FAILED if sending the data to input interface fails,
- *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
- *             NEG_RES_OK signaling success (hello message successfully sent to input interface).
- */
-int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d);
-
-
-/**
- * Function handles input interface negotiation (receives hello message from output interface with its data format
- * and data specifier and compares it with its own data format and data specifier).
- * Hello message contains message header (data format and data specifier size) and data specifier.
- *
- * \param[in,out] ifc_priv_data Pointer to input interface private structure.
- * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
- *
- * \return NEG_RES_FAILED if receiving the data from output interface fails,
- *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
- *             NEG_RES_FMT_SUBSET if the data format of input and output interfaces is the same and data specifier of the input interface is subset of the output interface data specifier,
- *             NEG_RES_CONT if the data format and data specifier of input and output interface are the same (input interface can receive the data for module right after the negotiation),
- *             NEG_RES_FMT_MISMATCH if the data format or data specifier of input and output interfaces does not match.
- */
-int input_ifc_negotiation(void *ifc_priv_data, char ifc_type);
 
 
 #ifdef __cplusplus

@@ -108,8 +108,38 @@ extern trap_ctx_priv_t *trap_glob_ctx;
  */
 typedef struct hello_msg_header_s {
    uint8_t data_type;
-   uint32_t data_fmt_spec_size;
+   char fmt_spec[0];
 } hello_msg_header_t;
+
+
+/**
+ * Function handles output interface negotiation (sends hello message to input interface with its data format
+ * and data specifier). Hello message contains message header (data format and data specifier size) and data specifier.
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc_idx   Index of IFC.
+ *
+ * \return TRAP_E_FORMAT_MISMATCH if the output interface has not specified data format,
+ *         TRAP_E_OK signaling success (hello message successfully sent to input interface).
+ */
+int output_ifc_negotiation(trap_ctx_priv_t *ctx, uint32_t ifc_idx);
+
+
+/**
+ * Function handles input interface negotiation (receives hello message from output interface with its data format
+ * and data specifier and compares it with its own data format and data specifier).
+ * Hello message contains message header (data format and data specifier size) and data specifier.
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc_idx   Index of IFC.
+ *
+ * \return NEG_RES_FAILED if receiving the data from output interface fails,
+ *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
+ *             NEG_RES_FMT_SUBSET if the data format of input and output interfaces is the same and data specifier of the input interface is subset of the output interface data specifier,
+ *             NEG_RES_CONT if the data format and data specifier of input and output interface are the same (input interface can receive the data for module right after the negotiation),
+ *             NEG_RES_FMT_MISMATCH if the data format or data specifier of input and output interfaces does not match.
+ */
+int input_ifc_negotiation(trap_ctx_priv_t *ctx, uint32_t ifc_idx);
 
 
 /*!

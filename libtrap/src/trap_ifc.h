@@ -184,11 +184,6 @@ typedef struct trap_input_ifc_s {
    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
 
    /**
-    * Negotiation state defined as #trap_in_ifc_state_t.
-    */
-   trap_in_ifc_state_t client_state;
-
-   /**
     * Message format defined by trap_data_format_t.
     */
    uint8_t data_type;
