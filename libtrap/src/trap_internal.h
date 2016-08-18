@@ -100,7 +100,7 @@ char trap_err_msg[4096];
 
 typedef struct trap_ctx_priv_s trap_ctx_priv_t;
 
-extern trap_ctx_priv_t * trap_glob_ctx;
+extern trap_ctx_priv_t *trap_glob_ctx;
 
 /**
  * Hello message header structure (used during the output and input interface negotiation).
