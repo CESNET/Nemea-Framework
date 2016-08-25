@@ -115,6 +115,8 @@ int decode_cnts_from_json(char **data)
    char ifc_type;
    const char *ifc_id = NULL;
    uint32_t ifc_cnt = 0;
+   uint8_t ifc_state = 0;
+   int32_t num_clients = 0;
 
    /***********************************/
 
@@ -201,7 +203,15 @@ int decode_cnts_from_json(char **data)
          return -1;
       }
 
-      printf("\tID: %s, TYPE: %c, RM: %" PRIu64 ", RB: %" PRIu64 "\n", ifc_id, ifc_type, ifc_cnts[msg_idx], ifc_cnts[buffers_idx]);
+      cnt = json_object_get(in_ifc_cnts, "ifc_state");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"ifc_state\" from an input interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_state = (uint8_t)(json_integer_value(cnt));
+
+      printf("\tID: %s, TYPE: %c, IS_CONN: %d, RM: %" PRIu64 ", RB: %" PRIu64 "\n", ifc_id, ifc_type, ifc_state, ifc_cnts[msg_idx], ifc_cnts[buffers_idx]);
       memset(ifc_cnts, 0, 2 * sizeof(uint64_t));
    }
 
@@ -289,7 +299,15 @@ int decode_cnts_from_json(char **data)
          return -1;
       }
 
-      printf("\tID: %s, TYPE: %c, SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", ifc_id, ifc_type, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
+      cnt = json_object_get(out_ifc_cnts, "num_clients");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get string value of key \"num_clients\" from an output interface json object.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      num_clients = (int32_t)(json_integer_value(cnt));
+
+      printf("\tID: %s, TYPE: %c, NUM_CLI: %d, SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", ifc_id, ifc_type, num_clients, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
       memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
    }
 
@@ -400,7 +418,16 @@ int main (int argc, char **argv)
       return 0;
    } else {
       printf("\x1b[31;1m""Use Control+C to stop me...\n""\x1b[0m");
-      printf("Legend:\n\tRM (received messages)\n\tRB (received buffers)\n\tSM (sent messages)\n\tDM (dropped messages)\n\tSB (sent buffers)\n\tAF (autoflushes counter)\n- - - - - - - - - - - - - - - - -\n");
+      printf("Legend:\n"
+             "\tIS_CONN (is connected)\n"
+             "\tNUM_CLI (number of clients)\n"
+             "\tRM (received messages)\n"
+             "\tRB (received buffers)\n"
+             "\tSM (sent messages)\n"
+             "\tDM (dropped messages)\n"
+             "\tSB (sent buffers)\n"
+             "\tAF (autoflushes counter)\n"
+             "- - - - - - - - - - - - - - - - - - -\n");
    }
 
 
@@ -454,7 +481,7 @@ int main (int argc, char **argv)
          break;
       }
 
-      printf("--- 3 seconds waiting ---\n");
+      printf("- - - 3 seconds waiting - - -\n\n");
       sleep(3);
    }
 

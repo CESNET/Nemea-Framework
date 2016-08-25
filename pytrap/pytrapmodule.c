@@ -106,7 +106,12 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
         PyErr_SetString(TrapError, "Data length is out of range (0-65535)");
         return NULL;
     }
-    int ret = trap_send(ifcidx, data, (uint16_t) data_size);
+
+    int ret;
+    Py_BEGIN_ALLOW_THREADS
+    ret = trap_send(ifcidx, data, (uint16_t) data_size);
+    Py_END_ALLOW_THREADS
+
     if (ret == TRAP_E_TIMEOUT) {
         PyErr_SetString(TimeoutError, "Timeout");
         return NULL;
@@ -135,7 +140,11 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    int ret = trap_recv(ifcidx, &in_rec, &in_rec_size);
+    int ret;
+    Py_BEGIN_ALLOW_THREADS
+    ret = trap_recv(ifcidx, &in_rec, &in_rec_size);
+    Py_END_ALLOW_THREADS
+
     if (ret == TRAP_E_TIMEOUT) {
         PyErr_SetString(TimeoutError, "Timeout");
         return NULL;

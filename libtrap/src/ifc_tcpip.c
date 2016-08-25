@@ -566,6 +566,18 @@ char *tcpip_recv_ifc_get_id(void *priv)
    return config->dest_port;
 }
 
+uint8_t tcpip_recv_ifc_is_conn(void *priv)
+{
+   if (priv == NULL) {
+      return 0;
+   }
+   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
+   if (config->connected == 1) {
+      return 1;
+   }
+   return 0;
+}
+
 /**
  * \brief Constructor of input TCP/IP IFC module.
  * This function is called by TRAP library to initialize one input interface.
@@ -669,6 +681,7 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    ifc->create_dump = tcpip_receiver_create_dump;
    ifc->priv = config;
    ifc->get_id = tcpip_recv_ifc_get_id;
+   ifc->is_conn = tcpip_recv_ifc_is_conn;
 
 #ifndef ENABLE_NEGOTIATION
    if (config->connected == 0) {
