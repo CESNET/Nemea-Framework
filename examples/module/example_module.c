@@ -98,7 +98,7 @@ TRAP_DEFAULT_SIGNAL_HANDLER(stop = 1)
 int main(int argc, char **argv)
 {
    int ret;
-   char opt;
+   signed char opt;
    int mult = 1;
 
    /* **** TRAP initialization **** */
