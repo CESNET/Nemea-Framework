@@ -12,6 +12,7 @@ setup(name='nemea-pycommon',
       maintainer_email = 'cejkat@cesnet.cz',
       url = 'https://github.com/CESNET/Nemea-Framework',
       license="BSD",
+      test_suite="test.ip_prefix_search_unittest",
       platforms = ["any"],
       classifiers = [
               'Development Status :: 4 - Beta',
