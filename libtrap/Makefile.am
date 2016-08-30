@@ -61,3 +61,11 @@ changelog:
 	mv chlog.tmp ChangeLog
 
 clean-local: rpm-clean deb-clean
+
+
+buffer:
+	gcc --coverage -g -O0 -DUNIT_TESTING -c tests/test_trap_buffer.c
+	gcc --coverage -g -O0 -DUNIT_TESTING -c src/trap_buffer.c
+	gcc -g -O0 -Wl,--wrap=_test_malloc -lcmocka --coverage -DUNIT_TESTING -o test_buffer test_trap_buffer.o trap_buffer.o
+
+
