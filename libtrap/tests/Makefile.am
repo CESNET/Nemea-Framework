@@ -69,7 +69,7 @@ test_multi_recv_CPPFLAGS=$(COM_CPPFLAGS)
 valid_buffer_SOURCES=valid_buffer.c
 
 
-trap_buffer_SOURCES=../src/trap_buffer.c ../src/trap_buffer.h test_trap_buffer.c
+trap_buffer_SOURCES=$(top_builddir)/src/trap_buffer.c $(top_builddir)/src/trap_buffer.h test_trap_buffer.c
 trap_buffer_CPPFLAGS=-DUNIT_TESTING
 trap_buffer_CFLAGS=--coverage -g -O0
 trap_buffer_LDADD=-lcmocka
@@ -80,7 +80,7 @@ test_buffering$(EXEEXT):
 
 clean-local:
 	rm -f test_buffering
-	rm -f *.log.* *.rpt
+	rm -f *.log.* *.rpt *.gcda *.gcno
 
 if ENABLE_LONG_TESTS
 check-hook:

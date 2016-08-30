@@ -5,7 +5,7 @@ AC_PREREQ([2.63])
 AC_INIT([libtrap], [0.8.0], [traffic-analysis@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes]]))
 AC_CONFIG_SRCDIR([libtrap.spec.in])
 AC_CONFIG_HEADERS([config.h])
