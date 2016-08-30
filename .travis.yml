@@ -29,6 +29,7 @@ addons:
       - automake
       - libxml2-dev
       - libxml2
+      - libcmocka-dev
       - python
       - python-dev
       - python-pip
