@@ -493,7 +493,7 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
 
 #ifdef ENABLE_NEGOTIATION
    if (config->neg_initialized == 0) {
-      ret_val = output_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE, 0);
+      ret_val = output_ifc_negotiation(config->ctx, config->ifc_idx);
       if (ret_val == NEG_RES_OK) {
          VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: success.");
          config->neg_initialized = 1;
