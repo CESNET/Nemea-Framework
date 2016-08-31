@@ -26,4 +26,4 @@ help_trapifcspec.c: ${top_srcdir}/README.ifcspec.md
 	${top_srcdir}/mdconvert.sh $< $@ trap_help_ifcspec
 
 clean-local:
-	rm -f help_trapifcspec.c
+	rm -f help_trapifcspec.c *.gcda *.gcno

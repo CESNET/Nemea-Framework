@@ -4,9 +4,17 @@ if ENABLE_LONG_TESTS
 TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
 endif
 
+if HAVE_CMOCKA
+TESTS += trap_buffer
+endif
+
 EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh
 
-check_PROGRAMS = basic_test test_finalize test_signal
+check_PROGRAMS = basic_test test_finalize
+
+if HAVE_CMOCKA
+check_PROGRAMS += trap_buffer
+endif
 
 noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx test_multi_recv test_signal test_signal_in
 
@@ -62,14 +70,18 @@ test_signal_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_signal_in_CPPFLAGS=$(COM_CPPFLAGS)
 
-valid_buffer_SOURCES=valid_buffer.c
+trap_buffer_SOURCES=$(top_builddir)/src/trap_buffer.c $(top_builddir)/src/trap_buffer.h test_trap_buffer.c
+trap_buffer_CPPFLAGS=-DUNIT_TESTING
+trap_buffer_CFLAGS=--coverage -g -O0
+trap_buffer_LDADD=-lcmocka
+trap_buffer_LDFLAGS=--coverage -Wl,--wrap=_test_malloc
 
 test_buffering$(EXEEXT):
 	$(CC) -I../src -DTESTBUFFERING -o $@ -pthread -lrt ../src/trap.c ../src/trap_error.c ../src/trap_internal.c ../src/trap_ifc_dummy.c ../src/trap_ifc_tcpip.c test_buffering.c
 
 clean-local:
 	rm -f test_buffering
-	rm -f *.log.* *.rpt
+	rm -f *.log.* *.rpt *.gcda *.gcno
 
 if ENABLE_LONG_TESTS
 check-hook:

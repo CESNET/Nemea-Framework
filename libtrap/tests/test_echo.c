@@ -90,7 +90,7 @@ int main(int argc, char **argv)
    uint16_t payload_size = sizeof(counter);
 
    const char *options = "n:";
-   char opt;
+   signed char opt;
 
    char *payload = NULL;
 
