@@ -57,7 +57,7 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
 	    [AC_MSG_ERROR([pthread not found])]
 	   )
 
-PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"])
+PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
 AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
 
 # Checks for header files.
