@@ -328,6 +328,7 @@ int tb_getmess(trap_buffer_t *b, const void **data, uint16_t *size)
    tb_block_lock(bl);
 
    if (bl->read_data == bl->write_data) {
+      /* XXX when move to the next buffer */
       DBG_PRINT("Not enough memory in %" PRIu32 " block for %" PRIu16 " message, total size: %" PRIu32 ", header: %" PRIu32 "\n",
              b->blocksize, size, (bl->data->size + size + sizeof(size)), bl->data->size);
       tb_block_unlock(bl);

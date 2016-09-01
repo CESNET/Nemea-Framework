@@ -152,7 +152,7 @@ int main(int argc, char **argv)
    // Read data from input, process them and write to output
    while(!stop) {
       *((uint64_t *) payload) = counter;
-      ret = trap_send_data(0, (void *) payload, payload_size, TRAP_WAIT);
+      ret = trap_send(0, (void *) payload, payload_size);
       if (ret == TRAP_E_OK) {
          counter++;
       } else if (ret == TRAP_E_TIMEOUT) {
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
       }
 #endif
    }
-   ret = trap_send_data(0, (void *) payload, 1, TRAP_WAIT);
+   ret = trap_send(0, (void *) payload, 1);
    trap_send_flush(0);
    duration = time(NULL) - duration;
 

@@ -82,7 +82,7 @@ struct client_s {
 };
 
 typedef struct tcpip_sender_private_s {
-   trap_ctx_priv_t *ctx; /**< Libtrap context */
+   trap_output_ifc_t *ic; /**< IFC context */
    char *server_port;
    int server_sd;
 
@@ -93,11 +93,6 @@ typedef struct tcpip_sender_private_s {
    sem_t have_clients;
    enum tcpip_ifc_sockettype socket_type;
    trap_buffer_header_t int_mess_header; /**< Internal message header */
-
-   void *backup_buffer; /**< Internal backup buffer for message */
-
-   const void *ext_buffer; /**< Pointer to buffer that was passed by higher layer - this is the place we write */
-   uint32_t ext_buffer_size; /** size of content of the extbuffer */
 
    char is_terminated;
 
@@ -116,7 +111,6 @@ typedef struct tcpip_sender_private_s {
    pthread_mutex_t  lock;
    pthread_mutex_t  sending_lock;
    pthread_t        accept_thread;
-   uint32_t ifc_idx;
 } tcpip_sender_private_t;
 
 #define TCPIP_SENDER_STATE_STR(st) (st == CURRENT_IDLE ? "CURRENT_IDLE": \
@@ -134,7 +128,7 @@ typedef struct tcpip_sender_private_s {
  * @{
  */
 typedef struct tcpip_receiver_private_s {
-   trap_ctx_priv_t *ctx; /**< Libtrap context */
+   trap_input_ifc_t *ic; /**< IFC context */
    char *dest_addr;
    char *dest_port;
    char connected;
@@ -143,10 +137,7 @@ typedef struct tcpip_receiver_private_s {
    enum tcpip_ifc_sockettype socket_type;
    void *data_pointer; /**< Pointer to next free byte, if NULL, we ended in header */
    uint32_t data_wait_size; /** Missing data to accept in the next function call */
-   void *ext_buffer; /**< Pointer to buffer that was passed by higher layer - this is the place we write */
-   uint32_t ext_buffer_size; /** size of content of the extbuffer */
    trap_buffer_header_t int_mess_header; /**< Internal message header - used for message_buffer payload size \note message_buffer size is sizeof(tcpip_tdu_header_t) + payload size */
-   uint32_t ifc_idx;
 } tcpip_receiver_private_t;
 
 /**

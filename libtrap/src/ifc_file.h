@@ -47,6 +47,8 @@
 
 typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
+   void *ifc;
+   enum trap_ifc_type direction;
    FILE *fd;
    char **files;
    char *filename;
@@ -57,29 +59,26 @@ typedef struct file_private_s {
    size_t filename_base_length;
    size_t file_index;
    uint32_t file_cnt;
-   uint32_t ifc_idx;
    uint32_t file_change_size;
    uint32_t file_change_time;
 } file_private_t;
 
 /** Create file receive interface (input ifc).
  *  Receive function of this interface reads data from defined file.
- *  @param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  *  @param[in] params <filename> expected.
  *  @param[out] ifc Created interface.
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */
-int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc, uint32_t idx);
+int create_file_recv_ifc(const char *params, trap_input_ifc_t *ifc);
 
 
 /** Create file send interface (output ifc).
  *  Send function of this interface stores data into defined file.
- *  @param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  *  @param[in] params <filename>:<mode>
  *                    <mode> is optional, w - write, a - append. Append is set as default mode.
  *  @param[out] ifc Created interface.
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */
-int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx);
+int create_file_send_ifc(const char *params, trap_output_ifc_t *ifc);
 
 #endif

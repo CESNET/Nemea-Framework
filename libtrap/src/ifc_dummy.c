@@ -66,7 +66,7 @@ static void create_dump(void *priv, uint32_t idx, const char *path)
    return;
 }
 
-int generator_recv(void *priv, void *data, uint32_t *size, int timeout)
+int generator_recv(trap_input_ifc_t *priv, void *data, uint16_t *size, int timeout)
 {
    assert(data != NULL);
    assert(size != NULL);
@@ -110,7 +110,7 @@ uint8_t generator_ifc_is_conn(void *priv) {
    return 1;
 }
 
-int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc)
+int create_generator_ifc(char *params, trap_input_ifc_t *ifc)
 {
    generator_private_t *priv = NULL;
    char *param_iterator = NULL;
@@ -158,7 +158,6 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
       goto failure;
    }
 
-   priv->ctx = ctx;
    priv->is_terminated = 0;
    priv->data_size = n;
 
@@ -185,7 +184,7 @@ failure:
 /***** Blackhole *****/
 // Everything sent to blackhole is dropped
 
-int blackhole_send(void *priv, const void *data, uint32_t size, int timeout)
+int blackhole_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int timeout)
 {
    return TRAP_E_OK;
 }
@@ -212,7 +211,7 @@ char *blackhole_ifc_get_id(void *priv)
    return NULL;
 }
 
-int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *ifc)
+int create_blackhole_ifc(char *params, trap_output_ifc_t *ifc)
 {
    ifc->send = blackhole_send;
    ifc->terminate = blackhole_terminate;

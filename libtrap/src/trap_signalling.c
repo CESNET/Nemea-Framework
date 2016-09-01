@@ -50,23 +50,26 @@ void trap_ctx_sig_flag(trap_ctx_t *ctx, uint32_t ifcidx, trap_sig_flag_t flag)
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
    trap_sig_mess_t *sp;
    trap_output_ifc_t *priv;
+   // XXX
+   (void) priv;
+   (void) sp;
 
 
    if ((c != NULL) && (ifcidx < c->num_ifc_out)) {
       priv = &c->out_ifc_list[ifcidx];
       pthread_mutex_lock(&c->out_ifc_list[ifcidx].ifc_mtx);
-      if (!(priv->buffer_index <= (TRAP_IFC_MESSAGEQ_SIZE - sizeof(trap_buffer_header_t)))) {
-         VERBOSE(CL_ERROR, "Not enough space for signalling message.");
-         pthread_mutex_unlock(&c->out_ifc_list[ifcidx].ifc_mtx);
-         return;
-      }
-
-      sp = (trap_sig_mess_t *) &priv->buffer[priv->buffer_index];
-      sp->size = TRAP_SIGNAL_MAGICSIZE;
-      sp->flag = htons(flag);
-      priv->buffer_index += sizeof(trap_sig_mess_t);
+      // XXX
+      //if (!(priv->buffer_index <= (TRAP_IFC_MESSAGEQ_SIZE - sizeof(trap_buffer_header_t)))) {
+      //   VERBOSE(CL_ERROR, "Not enough space for signalling message.");
+      //   pthread_mutex_unlock(&c->out_ifc_list[ifcidx].ifc_mtx);
+      //   return;
+      //}
+      //sp = (trap_sig_mess_t *) &priv->buffer[priv->buffer_index];
+      //sp->size = TRAP_SIGNAL_MAGICSIZE;
+      //sp->flag = htons(flag);
+      //priv->buffer_index += sizeof(trap_sig_mess_t);
 
       pthread_mutex_unlock(&c->out_ifc_list[ifcidx].ifc_mtx);
-   }
+    }
 }
 

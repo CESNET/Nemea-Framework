@@ -251,14 +251,14 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
  * \param [in] timeout  timeout in usec, can be TRAP_WAIT, TRAP_HALFWAIT, or TRAP_NO_WAIT
  * \return TRAP_E_OK (0) on success
  */
-int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
+int tcpip_receiver_recv(trap_input_ifc_t *priv, void *data, uint16_t *size, int timeout)
 {
 #ifdef LIMITED_RECOVERY
    uint32_t recovery = 0;
 #endif
    /** messageframe contains header that is read (even partially) in HEAD_WAIT */
    trap_buffer_header_t messageframe;
-   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
+   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv->priv;
    void *p = &messageframe;
    struct timeval tm, *temptm;
    int retval;
@@ -420,7 +420,6 @@ head_wait:
          /* we expect to receive data */
          messageframe.data_length = ntohl(messageframe.data_length);
          config->data_wait_size = messageframe.data_length;
-         config->ext_buffer_size = messageframe.data_length;
 #ifdef ENABLE_CHECK_HEADER
          /* check if header is ok: */
          if (tcpip_check_header(&messageframe) == 0) {
@@ -429,7 +428,6 @@ head_wait:
 #endif
          /* we got header, now we can start receiving payload */
          p = data;
-         config->ext_buffer = data;
          goto mess_wait;
       }
 mess_wait:
@@ -500,6 +498,7 @@ p = NULL; \
 static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *path)
 {
    tcpip_receiver_private_t *c = (tcpip_receiver_private_t *) priv;
+   (void) c;
    /* return value */
    int r;
    /* config file trap-i<number>-config.txt */
@@ -507,8 +506,9 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
    /* config file trap-i<number>-buffer.dat */
    char *buf_file = NULL;
    FILE *f = NULL;
-   trap_buffer_header_t aux = { 0 };
-   aux.data_length = htonl(c->ext_buffer_size);
+   // XXX
+   //trap_buffer_header_t aux = { 0 };
+   //aux.data_length = htonl(c->ext_buffer_size);
 
    r = asprintf(&conf_file, "%s/trap-i%02"PRIu32"-config.txt", path, idx);
    if (r == -1) {
@@ -517,16 +517,17 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
       goto exit;
    }
    f = fopen(conf_file, "w");
-   fprintf(f, "Dest addr: %s\nDest port: %s\nConnected: %d\n"
-           "Terminated: %d\nSocket descriptor: %d\nSocket type: %d\n"
-           "Data pointer: %p\nData wait size: %"PRIu32"\nMessage header: %"PRIu32"\n"
-           "Extern buffer pointer: %p\nExtern buffer data size: %"PRIu32"\n"
-           "Timeout: %"PRId32"us (%s)\n",
-           c->dest_addr, c->dest_port, c->connected, c->is_terminated, c->sd, c->socket_type,
-           c->data_pointer, c->data_wait_size, c->int_mess_header.data_length,
-           c->ext_buffer, c->ext_buffer_size,
-           c->ctx->in_ifc_list[idx].datatimeout,
-           TRAP_TIMEOUT_STR(c->ctx->in_ifc_list[idx].datatimeout));
+   // XXX
+   //fprintf(f, "Dest addr: %s\nDest port: %s\nConnected: %d\n"
+   //        "Terminated: %d\nSocket descriptor: %d\nSocket type: %d\n"
+   //        "Data pointer: %p\nData wait size: %"PRIu32"\nMessage header: %"PRIu32"\n"
+   //        "Extern buffer pointer: %p\nExtern buffer data size: %"PRIu32"\n"
+   //        "Timeout: %"PRId32"us (%s)\n",
+   //        c->dest_addr, c->dest_port, c->connected, c->is_terminated, c->sd, c->socket_type,
+   //        c->data_pointer, c->data_wait_size, c->int_mess_header.data_length,
+   //        c->ext_buffer, c->ext_buffer_size,
+   //        c->ic->datatimeout,
+   //        TRAP_TIMEOUT_STR(c->ic->datatimeout));
    fclose(f);
    f = NULL;
 
@@ -537,14 +538,15 @@ static void tcpip_receiver_create_dump(void *priv, uint32_t idx, const char *pat
       goto exit;
    }
    f = fopen(buf_file, "w");
-   if (fwrite(&aux, sizeof(c->ext_buffer_size), 1, f) != 1) {
-      VERBOSE(CL_ERROR, "Writing buffer header failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
-   if (fwrite(c->ext_buffer, c->ext_buffer_size, 1, f) != 1) {
-      VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
+   // XXX
+   //if (fwrite(&aux, sizeof(c->ext_buffer_size), 1, f) != 1) {
+   //   VERBOSE(CL_ERROR, "Writing buffer header failed. (%s:%d)", __FILE__, __LINE__);
+   //   goto exit;
+   //}
+   //if (fwrite(c->ext_buffer, c->ext_buffer_size, 1, f) != 1) {
+   //   VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
+   //   goto exit;
+   //}
 exit:
    if (f != NULL) {
       fclose(f);
@@ -583,7 +585,6 @@ uint8_t tcpip_recv_ifc_is_conn(void *priv)
  * \brief Constructor of input TCP/IP IFC module.
  * This function is called by TRAP library to initialize one input interface.
  *
- * \param[in,out] ctx   Pointer to the private libtrap context data (trap_ctx_init()).
  * \param[in] params    Configuration string containing space separated values of these parameters (in this exact order): *dest_addr* *dest_port*,
  * where dest_addr is destination address of output TCP/IP IFC module and
  * dest_port is the port where sender is listening.
@@ -592,7 +593,7 @@ uint8_t tcpip_recv_ifc_is_conn(void *priv)
  * \param [in] type     Select the type of socket (see #tcpip_ifc_sockettype for options).
  * \return 0 on success (TRAP_E_OK)
  */
-int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, uint32_t idx, enum tcpip_ifc_sockettype type)
+int create_tcpip_receiver_ifc(char *params, trap_input_ifc_t *ifc, enum tcpip_ifc_sockettype type)
 {
 #define X(pointer) free(pointer); \
    pointer = NULL;
@@ -613,10 +614,9 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
       VERBOSE(CL_ERROR, "Failed to allocate internal memory for input IFC.");
       return TRAP_E_MEMORY;
    }
-   config->ctx = ctx;
+   config->ic = ifc;
    config->is_terminated = 0;
    config->socket_type = type;
-   config->ifc_idx = idx;
 
    /* Parsing params */
    param_iterator = trap_get_param_by_delimiter(params, &dest_addr, TRAP_IFC_PARAM_DELIMITER);
@@ -1070,7 +1070,7 @@ static inline int tcpip_sender_conn_phase(tcpip_sender_private_t *config, struct
  * \param[in] timeout  timeout in microseconds
  * \return 0 on success (TRAP_E_OK), TRAP_E_BAD_FPARAMS if sender was not properly initialized, TRAP_E_TERMINATED if interface was terminated.
  */
-int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
+int tcpip_sender_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int timeout)
 {
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    int result = TRAP_E_TIMEOUT;
@@ -1342,7 +1342,8 @@ void tcpip_sender_destroy(void *priv)
                cl->sd = -1;
                c->connected_clients--;
             }
-            X(cl->buffer);
+            // XXX
+            //X(cl->buffer);
          }
          free(c->clients);
          c->clients = NULL;
@@ -1352,7 +1353,8 @@ void tcpip_sender_destroy(void *priv)
       pthread_mutex_destroy(&c->sending_lock);
       sem_destroy(&c->have_clients);
 
-      X(c->backup_buffer)
+      // XXX
+      //X(c->backup_buffer)
       X(c)
    }
 #undef X
@@ -1382,7 +1384,7 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
    /* config file trap-i<number>-buffer.dat */
    char *buf_file = NULL;
    FILE *f = NULL;
-   trap_buffer_header_t aux = { 0 };
+   //trap_buffer_header_t aux = { 0 };
    int32_t i;
    struct client_s *cl;
 
@@ -1395,19 +1397,16 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
    }
    f = fopen(conf_file, "w");
    fprintf(f, "Server port: %s\nServer socket descriptor: %d\n"
-           "Connected clients: %d\nMax clients: %d\nBuffering layer buffer: %p\n"
-           "Buffering layer buffer size: %"PRIu32"\n"
-           "Backup buffer: %p\nTerminated: %d\nInitialized: %d\nSocket type: %s\n"
+           "Connected clients: %d\nMax clients: %d\n"
+           "Terminated: %d\nInitialized: %d\nSocket type: %s\n"
            "Message size: %"PRIu32"\nTimeout: %"PRId32"us (%s)\n"
            "Clients:\n",
            c->server_port, c->server_sd, c->connected_clients, c->clients_arr_size,
-           c->ctx->out_ifc_list[idx].buffer,
-           c->ctx->out_ifc_list[idx].buffer_index,
-           c->backup_buffer, c->is_terminated,
+           c->is_terminated,
            c->initialized, TCPIP_SOCKETTYPE_STR(c->socket_type),
            c->int_mess_header.data_length,
-           c->ctx->out_ifc_list[idx].datatimeout,
-           TRAP_TIMEOUT_STR(c->ctx->out_ifc_list[idx].datatimeout));
+           c->ic->datatimeout,
+           TRAP_TIMEOUT_STR(c->ic->datatimeout));
    for (i = 0; i < c->clients_arr_size; i++) {
       cl = &c->clients[i];
       fprintf(f, "\t{%"PRId32", %s, %p, %"PRIu32"}\n",
@@ -1425,15 +1424,16 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
       goto exit;
    }
    f = fopen(buf_file, "w");
-   aux.data_length = htonl(c->ctx->out_ifc_list[idx].buffer_index);
-   if (fwrite(&aux, sizeof(c->int_mess_header), 1, f) != 1) {
-      VERBOSE(CL_ERROR, "Writing buffer header failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
-   if (fwrite(c->ctx->out_ifc_list[idx].buffer, c->ctx->out_ifc_list[idx].buffer_index, 1, f) != 1) {
-      VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
+   // XXX
+   //aux.data_length = htonl(c->ctx->out_ifc_list[idx].buffer_index);
+   //if (fwrite(&aux, sizeof(c->int_mess_header), 1, f) != 1) {
+   //   VERBOSE(CL_ERROR, "Writing buffer header failed. (%s:%d)", __FILE__, __LINE__);
+   //   goto exit;
+   //}
+   //if (fwrite(c->ctx->out_ifc_list[idx].buffer, c->ctx->out_ifc_list[idx].buffer_index, 1, f) != 1) {
+   //   VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
+   //   goto exit;
+   //}
 exit:
    if (f != NULL) {
       fclose(f);
@@ -1497,7 +1497,7 @@ char *tcpip_send_ifc_get_id(void *priv)
  * \param [in] type select the type of socket (see #tcpip_ifc_sockettype for options)
  * \return 0 on success (TRAP_E_OK)
  */
-int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx, enum tcpip_ifc_sockettype type)
+int create_tcpip_sender_ifc(const char *params, trap_output_ifc_t *ifc, enum tcpip_ifc_sockettype type)
 {
    int result = TRAP_E_OK;
    char *param_iterator = NULL;
@@ -1524,9 +1524,8 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       goto failsafe_cleanup;
    }
 
-   priv->ctx = ctx;
+   priv->ic = ifc;
    priv->socket_type = type;
-   priv->ifc_idx = idx;
 
    /* Parsing params */
    param_iterator = trap_get_param_by_delimiter(params, &server_port, TRAP_IFC_PARAM_DELIMITER);
@@ -1565,8 +1564,9 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    /* allocate buffer according to TRAP_IFC_MESSAGEQ_SIZE with additional space for message header */
    //priv->message_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
    //                        sizeof(trap_buffer_header_t));
-   priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
-                           sizeof(trap_buffer_header_t));
+   // XXX
+   //priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
+   //                        sizeof(trap_buffer_header_t));
 
    if (priv->clients == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
@@ -1623,7 +1623,8 @@ failsafe_cleanup:
    X(server_port);
    X(max_clients);
    if (priv != NULL) {
-      X(priv->backup_buffer);
+      // XXX
+      //X(priv->backup_buffer);
       if (priv->clients != NULL) {
          for (i = 0; i < max_num_client; i++) {
             X(priv->clients[i].buffer);
@@ -1709,7 +1710,8 @@ static void *accept_clients_thread(void *arg)
                cl->pending_bytes = 0;
                c->connected_clients++;
                /* Output interface negotiation */
-               output_ifc_negotiation(c->ctx, c->ifc_idx);
+               // XXX
+               //output_ifc_negotiation(c->ctx, c->ifc_idx);
 
 
                if (sem_post(&c->have_clients) == -1) {
@@ -1754,7 +1756,7 @@ static int server_socket_open(void *priv)
       addr.tcpip_addr.ai_socktype = SOCK_STREAM;
       addr.tcpip_addr.ai_flags = AI_PASSIVE;
       if ((rv = getaddrinfo(NULL, c->server_port, &addr.tcpip_addr, &ai)) != 0) {
-         return trap_errorf(c->ctx, TRAP_E_IO_ERROR, "selectserver: %s\n", gai_strerror(rv));
+         return trap_errorf(c->ic->ctx, TRAP_E_IO_ERROR, "selectserver: %s\n", gai_strerror(rv));
       }
 
       for (p = ai; p != NULL; p = p->ai_next) {

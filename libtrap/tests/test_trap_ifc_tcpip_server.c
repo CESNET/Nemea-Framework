@@ -104,6 +104,7 @@ int main(int argc, char **argv)
    #else
    timeout = 5000000; /* wait for 5 secs */
    #endif
+   trap_ifcctl(TRAPIFC_OUTPUT, 0, TRAPCTL_SETTIMEOUT, timeout);
 
    if (argc > 1) {
       if (sscanf(argv[1], "%hu", &mess_size) != 1) {
@@ -127,7 +128,7 @@ int main(int argc, char **argv)
    uint64_t countto = 0;
    // Read data from input, process them and write to output
    while(!stop) {
-      ret = trap_send_data(0, data_to_send, mess_size, timeout);
+      ret = trap_send(0, data_to_send, mess_size);
       if (ret == TRAP_E_TERMINATED) {
          break;
       } else if (ret == TRAP_E_OK) {

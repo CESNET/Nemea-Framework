@@ -68,22 +68,20 @@ enum tcpip_ifc_sockettype {
 };
 #define TCPIP_SOCKETTYPE_STR(st) (st == TRAP_IFC_TCPIP?"TCP":(st == TRAP_IFC_TCPIP_UNIX ? "UNIX": "SERVICE"))
 /** Create TCP/IP output interface.
- *  \param [in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  *  \param [in] params  format not decided yet
- *  \param [out] ifc Created interface for library purposes
+ *  \param [in,out] ifc Created interface
  *  \param [in] type select the type of socket (see #tcpip_ifc_sockettype for options)
  *  \return 0 on success (TRAP_E_OK)
  */
-int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx, enum tcpip_ifc_sockettype type);
+int create_tcpip_sender_ifc(const char *params, trap_output_ifc_t *ifc, enum tcpip_ifc_sockettype type);
 
 
 /** Create TCP/IP input interface.
- *  \param [in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  *  \param [in] params  format not decided yet
- *  \param [out] ifc Created interface for library purposes
+ *  \param [in,out] ifc Created interface
  *  \param [in] type select the type of socket (see #tcpip_ifc_sockettype for options)
  *  \return 0 on success (TRAP_E_OK)
  */
-int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, uint32_t itx, enum tcpip_ifc_sockettype type);
+int create_tcpip_receiver_ifc(char *params, trap_input_ifc_t *ifc, enum tcpip_ifc_sockettype type);
 
 #endif

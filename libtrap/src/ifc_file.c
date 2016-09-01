@@ -65,6 +65,14 @@
  * @{
  */
 
+static inline uint32_t file_get_ifcidx(file_private_t *c)
+{
+   if (c->direction == TRAPIFC_INPUT) {
+      return ((trap_input_ifc_t *) c->ifc)->ifc_idx;
+   } else {
+      return ((trap_output_ifc_t *) c->ifc)->ifc_idx;
+   }
+}
 
 /**
  * \brief Close file and free allocated memory.
@@ -139,9 +147,8 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
    free(config_file);
 }
 
-char *create_filename_from_time(void *priv)
+char *create_filename_from_time(file_private_t *config)
 {
-   file_private_t *config = (file_private_t*) priv;
    config->starting_time = time(NULL);
    config->file_index = 0;
    char *new_filename = (char*) calloc(config->filename_base_length + 14, sizeof(char));
@@ -187,13 +194,16 @@ char *get_next_file(void *priv)
 
 int open_next_file(file_private_t *c, char *new_filename)
 {
+   uint32_t ifc_idx;
+
    if (!c) {
       VERBOSE(CL_ERROR, "FILE IFC[??]: NULL pointer to inner data structure.");
       return -1;
    }
+   ifc_idx = file_get_ifcidx(c);
 
    if (!new_filename) {
-      VERBOSE(CL_ERROR, "FILE IFC[%d]: NULL pointer to file name.", c->ifc_idx);
+      VERBOSE(CL_ERROR, "FILE IFC[%d]: NULL pointer to file name.", ifc_idx);
       return -1;
    }
 
@@ -207,7 +217,7 @@ int open_next_file(file_private_t *c, char *new_filename)
    c->neg_initialized = 0;
    c->fd = fopen(c->filename, c->mode);
    if (c->fd == NULL) {
-      VERBOSE(CL_ERROR, "FILE IFC [%d]: could not open a new file: \"%s\" after changing data format.", c->ifc_idx, c->filename);
+      VERBOSE(CL_ERROR, "FILE IFC [%d]: could not open a new file: \"%s\" after changing data format.", ifc_idx, c->filename);
       return -1;
    }
 
@@ -229,7 +239,7 @@ int open_next_file(file_private_t *c, char *new_filename)
  * \param[in] timeout   NOT USED IN THIS INTERFACE
  * \return 0 on success (TRAP_E_OK), TRAP_E_IO_ERROR if error occurs during reading, TRAP_E_TERMINATED if interface was terminated.
  */
-int file_recv(void *priv, void *data, uint32_t *size, int timeout)
+int file_recv(trap_input_ifc_t *priv, void *data, uint16_t *size, int timeout)
 {
    size_t loaded;
    char *next_file = NULL;
@@ -304,7 +314,7 @@ neg_start:
                goto neg_start;
 #endif
             } else {
-               return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC[%d]: unable to open next file.", config->ifc_idx);
+               return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC[%d]: unable to open next file.", file_get_ifcidx(config));
             }
          }
       } else {
@@ -359,7 +369,7 @@ uint8_t file_recv_ifc_is_conn(void *priv)
  * \param[in] idx       Index of IFC that is created.
  * \return 0 on success (TRAP_E_OK), TRAP_E_MEMORY, TRAP_E_BADPARAMS on error
  */
-int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_ifc_t *ifc, uint32_t idx)
+int create_file_recv_ifc(const char *params, trap_input_ifc_t *ifc)
 {
    file_private_t *priv;
    size_t name_length;
@@ -367,22 +377,20 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    int i, j;
 
    if (params == NULL) {
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
    }
 
    /* Create structure to store private data */
    priv = calloc(1, sizeof(file_private_t));
    if (!priv) {
-      return trap_error(ctx, TRAP_E_MEMORY);
+      return trap_error(ifc->ctx, TRAP_E_MEMORY);
    }
 
-   priv->ctx = ctx;
-   priv->ifc_idx = idx;
    /* Perform shell-like expansion of ~ */
    if (wordexp(params, &files_exp, 0) != 0) {
       VERBOSE(CL_ERROR, "CREATE INPUT FILE IFC: unable to perform shell-like expand of: %s", params);
       free(priv);
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "CREATE INPUT FILE IFC: unable to perform shell-like expand");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "CREATE INPUT FILE IFC: unable to perform shell-like expand");
    }
 
    priv->file_cnt = files_exp.we_wordc;
@@ -390,7 +398,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
    if (!priv->files) {
       free(priv);
       wordfree(&files_exp);
-      return trap_error(ctx, TRAP_E_MEMORY);
+      return trap_error(ifc->ctx, TRAP_E_MEMORY);
    }
 
    for (i = 0; i < priv->file_cnt; i++) {
@@ -404,7 +412,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
          free(priv->files);
          free(priv);
          wordfree(&files_exp);
-         return trap_error(ctx, TRAP_E_MEMORY);
+         return trap_error(ifc->ctx, TRAP_E_MEMORY);
       }
 
       strncpy(priv->files[i], files_exp.we_wordv[i], name_length);
@@ -426,7 +434,7 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
 
       free(priv->files);
       free(priv);
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "unable to open file");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "unable to open file");
    }
 
    priv->file_index = 0;
@@ -455,7 +463,7 @@ void open_next_file_wrapper(void *priv)
    file_private_t *config = (file_private_t*) priv;
    char *new_filename = create_next_filename(config);
    if (!new_filename) {
-      VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", config->ifc_idx);
+      VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", file_get_ifcidx(config));
    } else {
       open_next_file(config, new_filename);
    }
@@ -476,10 +484,10 @@ void open_next_file_wrapper(void *priv)
  * \param[in] timeout   NOT USED IN THIS INTERFACE
  * \return 0 on success (TRAP_E_OK), TTRAP_E_IO_ERROR if error occurs during writing, TRAP_E_TERMINATED if interface was terminated.
  */
-int file_send(void *priv, const void *data, uint32_t size, int timeout)
+int file_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int timeout)
 {
    int ret_val = 0;
-   file_private_t *config = (file_private_t*) priv;
+   file_private_t *config = (file_private_t *) priv->priv;
    size_t written;
 
    if (config->is_terminated) {
@@ -493,7 +501,7 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
 
 #ifdef ENABLE_NEGOTIATION
    if (config->neg_initialized == 0) {
-      ret_val = output_ifc_negotiation(config->ctx, config->ifc_idx);
+      ret_val = output_ifc_negotiation(config->ctx, file_get_ifcidx(config));
       if (ret_val == NEG_RES_OK) {
          VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: success.");
          config->neg_initialized = 1;
@@ -519,14 +527,14 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
       time_t current_time = time(NULL);
       if (difftime(current_time, config->starting_time) / 60 >= config->file_change_time) {
          config->starting_time = current_time;
-         char *new_filename = create_filename_from_time(priv);
+         char *new_filename = create_filename_from_time(config);
          if (!new_filename) {
-            VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", config->ifc_idx);
+            VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", file_get_ifcidx(config));
             return trap_error(config->ctx, TRAP_E_MEMORY);
          }
 
-         if (open_next_file(priv, new_filename) < 0) {
-            VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: opening new file failed.", config->ifc_idx);
+         if (open_next_file(config, new_filename) < 0) {
+            VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: opening new file failed.", file_get_ifcidx(config));
             return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "unable to open file");
          }
       }
@@ -535,14 +543,14 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
    if (config->file_change_size != 0 && (uint64_t)ftell(config->fd) >= (uint64_t)(1024 * 1024 * (uint64_t)config->file_change_size)) {
       char *new_filename = create_next_filename(priv);
       if (!new_filename) {
-         VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", config->ifc_idx);
+         VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", file_get_ifcidx(config));
          return trap_error(config->ctx, TRAP_E_MEMORY);
       }
 
-         if (open_next_file(priv, new_filename) < 0) {
-            VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: opening new file failed.", config->ifc_idx);
-            return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "unable to open file");
-         }
+      if (open_next_file(config, new_filename) < 0) {
+         VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: opening new file failed.", file_get_ifcidx(config));
+         return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "unable to open file");
+      }
    }
 
    return TRAP_E_OK;
@@ -577,7 +585,7 @@ char *file_send_ifc_get_id(void *priv)
  * \param[in] idx       Index of IFC that is created.
  * \return 0 on success (TRAP_E_OK), TRAP_E_MEMORY, TRAP_E_BADPARAMS on error
  */
-int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx)
+int create_file_send_ifc(const char *params, trap_output_ifc_t *ifc)
 {
    file_private_t *priv;
    char *dest;
@@ -586,17 +594,15 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    size_t length;
 
    if (params == NULL) {
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
    }
 
    /* Create structure to store private data */
    priv = calloc(1, sizeof(file_private_t));
    if (!priv) {
-      return trap_error(ctx, TRAP_E_MEMORY);
+      return trap_error(ifc->ctx, TRAP_E_MEMORY);
    }
 
-   priv->ctx = ctx;
-   priv->ifc_idx = idx;
    priv->file_change_size = 0;
    priv->file_change_time = 0;
    priv->file_index = 0;
@@ -615,13 +621,13 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
       dest = (char*) calloc(length + 1, sizeof(char));
       if (!dest) {
          free(priv);
-         return trap_error(ctx, TRAP_E_MEMORY);
+         return trap_error(ifc->ctx, TRAP_E_MEMORY);
       }
 
       strncpy(dest, params, length);
    } else {
       free(priv);
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "OUTPUT FILE IFC: file name not specified");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "OUTPUT FILE IFC: file name not specified");
    }
 
    /* Perform shell-like expansion of ~ */
@@ -630,7 +636,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
       free(priv);
       free(dest);
       wordfree(&exp_result);
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "CREATE OUTPUT FILE IFC: unable to perform shell-like expand");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "CREATE OUTPUT FILE IFC: unable to perform shell-like expand");
    }
 
    free(dest);
@@ -640,7 +646,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    if (!priv->filename) {
       free(priv);
       wordfree(&exp_result);
-      return trap_error(ctx, TRAP_E_MEMORY);
+      return trap_error(ifc->ctx, TRAP_E_MEMORY);
    }
 
    strncpy(priv->filename, exp_result.we_wordv[0], priv->filename_base_length + 1);
@@ -677,9 +683,9 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             char *tmp = create_filename_from_time(priv);
             free(priv->filename);
             if (!tmp) {
-               VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC[%d]: memory allocation failed.", priv->ifc_idx);
+               VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC[%d]: memory allocation failed.", file_get_ifcidx(priv));
                free(priv);
-               return trap_error(ctx, TRAP_E_MEMORY);
+               return trap_error(ifc->ctx, TRAP_E_MEMORY);
             } else {
                priv->filename = tmp;
             }
@@ -707,7 +713,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC: asprintf failed.");
             free(priv->filename);
             free(priv);
-            return trap_error(ctx, TRAP_E_MEMORY);
+            return trap_error(ifc->ctx, TRAP_E_MEMORY);
          }
 
          priv->file_index++;
@@ -723,7 +729,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
       VERBOSE(CL_ERROR, "CREATE OUTPUT FILE IFC : unable to open file \"%s\" in mode \"%c\". Possible reasons: non-existing file, bad permission, file can not be opened in this mode.", priv->filename, priv->mode[0]);
       free(priv->filename);
       free(priv);
-      return trap_errorf(ctx, TRAP_E_BADPARAMS, "unable to open file");
+      return trap_errorf(ifc->ctx, TRAP_E_BADPARAMS, "unable to open file");
    }
 
    priv->is_terminated = 0;

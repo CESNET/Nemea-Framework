@@ -55,7 +55,7 @@
  *  @param[out] ifc Created interface.
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */
-int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc);
+int create_generator_ifc(char *params, trap_input_ifc_t *ifc);
 
 
 /** Create Blackhole interface (output ifc).
@@ -66,6 +66,6 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
  *  @param[out] ifc Created interface.
  *  @return Always returns 0.
  */
-int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *ifc);
+int create_blackhole_ifc(char *params, trap_output_ifc_t *ifc);
 
 #endif
