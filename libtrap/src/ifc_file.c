@@ -143,6 +143,7 @@ char *create_filename_from_time(void *priv)
 {
    file_private_t *config = (file_private_t*) priv;
    config->starting_time = time(NULL);
+   config->starting_time -= (config->starting_time % (config->file_change_time * 60));
    config->file_index = 0;
    char *new_filename = (char*) calloc(config->filename_base_length + 14, sizeof(char));
    if (!new_filename) {
@@ -150,6 +151,7 @@ char *create_filename_from_time(void *priv)
    }
 
    strncpy(new_filename, config->filename, config->filename_base_length);
+   
    strftime(new_filename + config->filename_base_length, 14, ".%Y%m%d%H%M", localtime(&config->starting_time));
 
    return new_filename;
@@ -518,7 +520,6 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
    if (config->file_change_time != 0) {
       time_t current_time = time(NULL);
       if (difftime(current_time, config->starting_time) / 60 >= config->file_change_time) {
-         config->starting_time = current_time;
          char *new_filename = create_filename_from_time(priv);
          if (!new_filename) {
             VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", config->ifc_idx);
