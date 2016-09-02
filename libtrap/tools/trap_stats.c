@@ -378,6 +378,13 @@ void signal_handler(int catched_signal)
    }
 }
 
+void print_help(char *prog)
+{
+   printf("Usage:  %s  -s service_socket_path\n", prog);
+   printf("\nOptional parameters:\n");
+   printf("\t-1\t- quit after first read\n");
+}
+
 int main (int argc, char **argv)
 {
    // Set up signal handler to catch SIGINT which terminates the program
@@ -395,28 +402,35 @@ int main (int argc, char **argv)
    service_msg_header_t *header = (service_msg_header_t *) calloc(1, sizeof(service_msg_header_t));
    char c = 0;
    int original_argc = argc;
+   int quit_after_read = 0;
 
    // Parse program arguments
    while (1) {
-      c = getopt(argc, argv, "hs:");
+      c = getopt(argc, argv, "h1s:");
       if (c == -1) {
          break;
       }
 
       switch (c) {
       case 'h':
-         printf("Usage:  %s  -s service_socket_path\n", argv[0]);
+         print_help(argv[0]);
          return 0;
       case 's':
          dest_sock = strdup(optarg);
          break;
+      case '1':
+         quit_after_read = 1;
+         break;
+      default:
+         print_help(argv[0]);
+         return 1;
       }
    }
 
-   if (original_argc != 3) {
-      printf("Usage:  %s  -s service_socket_path\n", argv[0]);
-      return 0;
-   } else {
+   if (original_argc != optind || original_argc < 3) {
+      print_help(argv[0]);
+      return 1;
+   } else if (!quit_after_read) {
       printf("\x1b[31;1m""Use Control+C to stop me...\n""\x1b[0m");
       printf("Legend:\n"
              "\tIS_CONN (is connected)\n"
@@ -478,6 +492,10 @@ int main (int argc, char **argv)
       // Decode json and save stats into structures
       if (decode_cnts_from_json(&buffer) == -1) {
          printf( "[SERVICE] Error while receiving stats from module.\n");
+         break;
+      }
+
+      if (quit_after_read) {
          break;
       }
 
