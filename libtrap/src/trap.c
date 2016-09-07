@@ -2549,7 +2549,6 @@ int service_get_data(int sock_d, uint32_t size, void **data)
    while (total_receved < size) {
       last_receved = recv(sock_d, (*data) + total_receved, size - total_receved, MSG_DONTWAIT);
       if (last_receved == 0) {
-         VERBOSE(CL_ERROR, "------- ! Supervisor's service thread closed its socket... done!");
          return -1;
       } else if (last_receved == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
@@ -2561,7 +2560,6 @@ int service_get_data(int sock_d, uint32_t size, void **data)
                continue;
             }
          }
-         VERBOSE(CL_ERROR, "RECV returned -1... error");
          return -1;
       }
       total_receved += last_receved;
@@ -2585,7 +2583,6 @@ int service_send_data(int sock_d, uint32_t size, void **data)
                continue;
             }
          }
-         VERBOSE(CL_ERROR, "SEND returned -1... error");
          return -1;
       }
       total_sent += last_sent;
