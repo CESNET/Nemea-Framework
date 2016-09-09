@@ -14,7 +14,7 @@ setup(name = 'nemea-pytrap',
        maintainer_email = 'cejkat@cesnet.cz',
        url = 'https://github.com/CESNET/Nemea-Framework',
        license = 'BSD',
-       test_suite = "test.unirectemplate_unittest",
+       test_suite = "test",
        platforms = ["Linux"],
        classifiers = [
               'Development Status :: 4 - Beta',
