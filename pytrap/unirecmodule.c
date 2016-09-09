@@ -228,19 +228,20 @@ static PyMethodDef pytrap_unirectime_methods[] = {
 };
 
 int
-UnirecTime_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
+UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
 {
-    pytrap_unirectime *s = (pytrap_unirectime *) self;
     uint32_t secs, msecs = 0;
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
-            return EXIT_FAILURE;
+            return -1;
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
+    } else {
+        return -1;
     }
 
-    return EXIT_SUCCESS;
+    return 0;
 }
 
 static PyObject *
@@ -540,21 +541,22 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
 };
 
 int
-UnirecIPAddr_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
+UnirecIPAddr_init(pytrap_unirecipaddr *s, PyObject *args, PyObject *kwds)
 {
-    pytrap_unirecipaddr *s = (pytrap_unirecipaddr *) self;
     char *ip_str;
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "s", &ip_str)) {
-            return EXIT_FAILURE;
+            return -1;
         }
         if (ip_from_str(ip_str, &s->ip) != 1) {
             PyErr_SetString(TrapError, "Could not parse given IP address.");
-            return EXIT_FAILURE;
+            return -1;
         }
+    } else {
+        return -1;
     }
-    return EXIT_SUCCESS;
+    return 0;
 
 }
 
