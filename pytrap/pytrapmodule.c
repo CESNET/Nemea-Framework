@@ -59,9 +59,21 @@ pytrap_init(PyObject *self, PyObject *args, PyObject *keywds)
     }
 
     argc = PyList_Size(argvlist);
+    if (argc ==0) {
+        PyErr_SetString(TrapError, "argv list must not be empty.");
+        return NULL;
+    }
     argv = calloc(argc, sizeof(char *));
     for (i=0; i<argc; i++) {
         strObj = PyList_GetItem(argvlist, i);
+#if PY_MAJOR_VERSION >= 3
+        if (!PyUnicode_Check(strObj)) {
+#else
+        if (!PyString_Check(strObj)) {
+#endif
+            PyErr_SetString(TrapError, "argv must contain string.");
+            goto failure;
+        }
 #if PY_MAJOR_VERSION >= 3
         arg = PyUnicode_AsUTF8AndSize(strObj, NULL);
 #else
@@ -77,6 +89,9 @@ pytrap_init(PyObject *self, PyObject *args, PyObject *keywds)
     }
 
     Py_RETURN_NONE;
+failure:
+    free(argv);
+    return NULL;
 }
 
 static PyObject *
