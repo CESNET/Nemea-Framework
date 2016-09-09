@@ -66,6 +66,10 @@ class DataTypesIPAddr(unittest.TestCase):
         self.assertFalse(i.isNull())
 
 
+def timedelta_total_seconds(timedelta):
+    return (
+        timedelta.microseconds + 0.0 +
+        (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
 class DataTypesTime(unittest.TestCase):
     def runTest(self):
         import pytrap
@@ -107,7 +111,7 @@ class DataTypesTime(unittest.TestCase):
         now = pytrap.UnirecTime.now()
         now2 = datetime.utcnow()
         delta = now2 - now.toDatetime()
-        self.assertTrue(delta.total_seconds() <= 1, "Now returns delayed time {0}.".format(str(delta)))
+        self.assertTrue(timedelta_total_seconds(delta) <= 1, "Now returns delayed time {0}.".format(str(delta)))
 
         # convert datetime to UnirecTime and compare it
         now = pytrap.UnirecTime.fromDatetime(now2)
