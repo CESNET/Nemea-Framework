@@ -55,7 +55,15 @@ class DataTypesIPAddr(unittest.TestCase):
             self.fail("IP address shouldn't be in dict")
         except:
             pass
-
+        try:
+            i = pytrap.UnirecIPAddr(0)
+            self.fail("Only string is a valid argument of UnirecIPAddr()")
+        except:
+            pass
+        i = pytrap.UnirecIPAddr("::")
+        self.assertTrue(i.isNull())
+        i = pytrap.UnirecIPAddr("::1")
+        self.assertFalse(i.isNull())
 
 
 class DataTypesTime(unittest.TestCase):
