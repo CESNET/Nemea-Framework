@@ -524,6 +524,19 @@ UnirecIPAddr_isIPv6(pytrap_unirecipaddr *self)
     return result;
 }
 
+static PyObject *
+UnirecIPAddr_isNull(pytrap_unirecipaddr *self)
+{
+    PyObject *result;
+    if (self->ip.ui64[0] == 0 && self->ip.ui64[1] == 0) {
+        result = Py_True;
+    } else {
+        result = Py_False;
+    }
+    Py_INCREF(result);
+    return result;
+}
+
 static PyMethodDef pytrap_unirecipaddr_methods[] = {
     {"isIPv4", (PyCFunction) UnirecIPAddr_isIPv4, METH_NOARGS,
         "Check if the address is IPv4.\n\n"
@@ -535,6 +548,12 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         "Check if the address is IPv6.\n\n"
         "Returns:\n"
         "    bool: True if the address is IPv6.\n"
+        },
+
+    {"isNull", (PyCFunction) UnirecIPAddr_isNull, METH_NOARGS,
+        "Check if the address is empty - 0 or \"::\".\n\n"
+        "Returns:\n"
+        "    bool: True if the address is 0.\n"
         },
 
     {NULL, NULL, 0, NULL}
