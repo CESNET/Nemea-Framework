@@ -64,6 +64,10 @@ class DataTypesIPAddr(unittest.TestCase):
         self.assertTrue(i.isNull())
         i = pytrap.UnirecIPAddr("::1")
         self.assertFalse(i.isNull())
+        i = pytrap.UnirecIPAddr("0.0.0.0")
+        self.assertTrue(i.isNull())
+        i = pytrap.UnirecIPAddr("1.2.3.4")
+        self.assertFalse(i.isNull())
 
 
 def timedelta_total_seconds(timedelta):

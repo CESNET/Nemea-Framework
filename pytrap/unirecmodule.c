@@ -528,7 +528,7 @@ static PyObject *
 UnirecIPAddr_isNull(pytrap_unirecipaddr *self)
 {
     PyObject *result;
-    if (self->ip.ui64[0] == 0 && self->ip.ui64[1] == 0) {
+    if (ip_is_null(&self->ip)) {
         result = Py_True;
     } else {
         result = Py_False;
@@ -551,9 +551,9 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         },
 
     {"isNull", (PyCFunction) UnirecIPAddr_isNull, METH_NOARGS,
-        "Check if the address is empty - 0 or \"::\".\n\n"
+        "Check if the address is null (IPv4 or IPv6), i.e. \"0.0.0.0\" or \"::\".\n\n"
         "Returns:\n"
-        "    bool: True if the address is 0.\n"
+        "    bool: True if the address is null.\n"
         },
 
     {NULL, NULL, 0, NULL}
