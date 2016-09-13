@@ -136,7 +136,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # *** Initialize TRAP ***
     trap = pytrap.TrapCtx()
     trap.init(["-i", args.i], 1, 1 if args.trap else 0)
-    trap.setVerboseLevel(3)
+    #trap.setVerboseLevel(3)
     #trap.registerDefaultSignalHandler()
 
     # Set required input format
