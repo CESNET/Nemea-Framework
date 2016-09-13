@@ -537,6 +537,18 @@ UnirecIPAddr_isNull(pytrap_unirecipaddr *self)
     return result;
 }
 
+static int
+UnirecIPAddr_bool(pytrap_unirecipaddr *self)
+{
+    /* bool(ip) == (not isNull(ip)) */
+    PyObject *result;
+    if (ip_is_null(&self->ip)) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 static PyMethodDef pytrap_unirecipaddr_methods[] = {
     {"isIPv4", (PyCFunction) UnirecIPAddr_isIPv4, METH_NOARGS,
         "Check if the address is IPv4.\n\n"
@@ -557,6 +569,14 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         },
 
     {NULL, NULL, 0, NULL}
+};
+
+static PyNumberMethods UnirecIPAddr_numbermethods = {
+#if PY_MAJOR_VERSION >= 3
+    .nb_bool = (inquiry) UnirecIPAddr_bool, 
+#else
+    .nb_nonzero = (inquiry) UnirecIPAddr_bool,
+#endif
 };
 
 int
@@ -624,7 +644,7 @@ static PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
     (reprfunc) UnirecIPAddr_repr, /* tp_repr */
-    0,                         /* tp_as_number */
+    &UnirecIPAddr_numbermethods,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     (hashfunc) UnirecIPAddr_hash,                         /* tp_hash  */
