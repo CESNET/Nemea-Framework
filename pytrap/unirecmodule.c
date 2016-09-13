@@ -1273,6 +1273,83 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+UnirecTemplate_recFixlenSize(pytrap_unirectemplate *self)
+{
+    uint16_t rec_size = ur_rec_fixlen_size(self->urtmplt);
+    return Py_BuildValue("H", rec_size);
+}
+
+static PyObject *
+UnirecTemplate_recVarlenSize(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *dataObj = NULL;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|O", kwlist, &dataObj)) {
+        return NULL;
+    }
+
+    if (dataObj != NULL) {
+        if (PyByteArray_Check(dataObj)) {
+            //data_size = PyByteArray_Size(dataObj);
+            data = PyByteArray_AsString(dataObj);
+        } else if (PyBytes_Check(dataObj)) {
+            PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+            return NULL;
+        }
+    } else {
+        if (self->data != NULL) {
+            data = self->data;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Data was not set nor expolicitly passed as argument.");
+            return NULL;
+        }
+    }
+
+    uint16_t rec_size = ur_rec_varlen_size(self->urtmplt, data);
+    return Py_BuildValue("H", rec_size);
+}
+
+static PyObject *
+UnirecTemplate_recSize(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *dataObj = NULL;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|O", kwlist, &dataObj)) {
+        return NULL;
+    }
+
+    if (dataObj != NULL) {
+        if (PyByteArray_Check(dataObj)) {
+            //data_size = PyByteArray_Size(dataObj);
+            data = PyByteArray_AsString(dataObj);
+        } else if (PyBytes_Check(dataObj)) {
+            PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+            return NULL;
+        }
+    } else {
+        if (self->data != NULL) {
+            data = self->data;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Data was not set nor expolicitly passed as argument.");
+            return NULL;
+        }
+    }
+
+    uint16_t rec_size = ur_rec_size(self->urtmplt, data);
+    return Py_BuildValue("H", rec_size);
+}
+
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"getFieldType", (PyCFunction) UnirecTemplate_getFieldType, METH_VARARGS,
             "Get type of given field.\n\n"
@@ -1363,6 +1440,34 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Get values of record in readable format.\n\n"
             "Returns:\n"
             "    str: String in key=value format.\n"
+        },
+
+        {"recSize", (PyCFunction) UnirecTemplate_recSize, METH_VARARGS | METH_KEYWORDS,
+            "Get size of UniRec record.\n\n"
+            "Return total size of valid record data, i.e. number of bytes occupied by all fields."
+            "This may be less than allocated size of 'data'.\n"
+            "Args:\n"
+            "    data (Optional[bytearray or bytes]): Data of UniRec message (optional if previously set by setData)"
+            "Returns:\n"
+            "    int: Size of record data in bytes\n"
+        },
+
+        {"recFixlenSize", (PyCFunction) UnirecTemplate_recFixlenSize, METH_NOARGS,
+            "Get size of fixed part of UniRec record.\n\n"
+            "This is the minimal size of a record with given template,"
+            "i.e. the size with all variable-length fields empty.\n"
+            "Returns:\n"
+            "    int: Size of fixed part of template in bytes\n"
+        },
+
+
+        {"recVarlenSize", (PyCFunction) UnirecTemplate_recVarlenSize, METH_VARARGS | METH_KEYWORDS,
+            "Get size of variable-length part of UniRec record.\n\n"
+            "Return total size of all variable-length fields.\n"
+            "Args:\n"
+            "    data (Optional[bytearray or bytes]): Data of UniRec message (optional if previously set by setData)"
+            "Returns:\n"
+            "    int: Total size of variable-length fields in bytes\n"
         },
 
         {NULL, NULL, 0, NULL}

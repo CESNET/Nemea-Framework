@@ -62,12 +62,16 @@ class DataTypesIPAddr(unittest.TestCase):
             pass
         i = pytrap.UnirecIPAddr("::")
         self.assertTrue(i.isNull())
+        self.assertFalse(i)
         i = pytrap.UnirecIPAddr("::1")
         self.assertFalse(i.isNull())
+        self.assertTrue(i)
         i = pytrap.UnirecIPAddr("0.0.0.0")
         self.assertTrue(i.isNull())
+        self.assertFalse(i)
         i = pytrap.UnirecIPAddr("1.2.3.4")
         self.assertFalse(i.isNull())
+        self.assertTrue(i)
 
 
 def timedelta_total_seconds(timedelta):
@@ -331,4 +335,33 @@ class Template3Test(unittest.TestCase):
         self.assertEqual(a.getFieldType("TEXT"), str)
         self.assertEqual(a.getFieldType("STREAMBYTES"), bytearray)
 
-
+class TemplateSizeTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+        data = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x0A\x00\x00\x01\xff\xff\xff\xff\xc8\x76\xbe\xff\xe3\x2b\x6c\x57\x00\x00\x00\x01\x00\x00\x00\x02\x06\x00\x04\x00\x00\x00\x06\x00abcdef\xde\xad\xfe\xed')
+        self.assertEqual(a.recSize(data), 50)
+        self.assertEqual(a.recFixlenSize(), 40)
+        self.assertEqual(a.recVarlenSize(data), 10)
+        self.assertRaises(TypeError, a.recSize)  # recSize can't by called without arguments unless data was set by setData
+        self.assertRaises(TypeError, a.recVarlenSize)
+        a.setData(data)
+        self.assertEqual(a.recSize(), 50) # now it should be OK
+        self.assertEqual(a.recVarlenSize(), 10)
+        
+        
+        
+        a = pytrap.UnirecTemplate("uint32 X,ipaddr IP")
+        data = bytearray(100) # Allocate larger byte array than necessary
+        a.setData(data)
+        self.assertEqual(a.recSize(), 20)
+        self.assertEqual(a.recFixlenSize(), 20)
+        self.assertEqual(a.recVarlenSize(), 0)
+        
+        a = pytrap.UnirecTemplate("string STR")
+        data = bytearray(65535)
+        data[0:1] = b'\x00\x00\xfb\xff' # Set offset (0) and length (65531 - maximum), let data be set to zeros
+        a.setData(data)
+        self.assertEqual(a.recSize(), 65535)
+        self.assertEqual(a.recFixlenSize(), 4)
+        self.assertEqual(a.recVarlenSize(), 65531)
