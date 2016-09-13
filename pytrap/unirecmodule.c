@@ -503,12 +503,10 @@ UnirecIPAddr_isIPv4(pytrap_unirecipaddr *self)
 {
     PyObject *result;
     if (ip_is4(&self->ip)) {
-        result = Py_True;
+        Py_RETURN_TRUE;
     } else {
-        result = Py_False;
+        Py_RETURN_FALSE;
     }
-    Py_INCREF(result);
-    return result;
 }
 
 static PyObject *
@@ -516,12 +514,10 @@ UnirecIPAddr_isIPv6(pytrap_unirecipaddr *self)
 {
     PyObject *result;
     if (ip_is4(&self->ip)) {
-        result = Py_False;
+        Py_RETURN_FALSE;
     } else {
-        result = Py_True;
+        Py_RETURN_TRUE;
     }
-    Py_INCREF(result);
-    return result;
 }
 
 static PyObject *
@@ -529,12 +525,10 @@ UnirecIPAddr_isNull(pytrap_unirecipaddr *self)
 {
     PyObject *result;
     if (ip_is_null(&self->ip)) {
-        result = Py_True;
+        Py_RETURN_TRUE;
     } else {
-        result = Py_False;
+        Py_RETURN_FALSE;
     }
-    Py_INCREF(result);
-    return result;
 }
 
 static int
