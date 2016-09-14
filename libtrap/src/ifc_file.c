@@ -74,6 +74,16 @@ static inline uint32_t file_get_ifcidx(file_private_t *c)
    }
 }
 
+static inline trap_ctx_priv_t *file_get_trapctx(file_private_t *c)
+{
+   if (c->direction == TRAPIFC_INPUT) {
+      return ((trap_input_ifc_t *) c->ifc)->ctx;
+   } else {
+      return ((trap_output_ifc_t *) c->ifc)->ctx;
+   }
+}
+
+
 /**
  * \brief Close file and free allocated memory.
  * \param[in] priv   pointer to module private data
@@ -250,12 +260,12 @@ int file_recv(trap_input_ifc_t *priv, void *data, uint16_t *size, int timeout)
    file_private_t *config = (file_private_t*) priv;
 
    if (config->is_terminated) {
-      return trap_error(config->ctx, TRAP_E_TERMINATED);
+      return trap_error(file_get_trapctx(config), TRAP_E_TERMINATED);
    }
 
    /* Check whether the file stream is opened */
    if (config->fd == NULL) {
-      return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+      return trap_error(file_get_trapctx(config), TRAP_E_NOT_INITIALIZED);
    }
 
 #ifdef ENABLE_NEGOTIATION
@@ -314,12 +324,12 @@ neg_start:
                goto neg_start;
 #endif
             } else {
-               return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC[%d]: unable to open next file.", file_get_ifcidx(config));
+               return trap_errorf(file_get_trapctx(config), TRAP_E_IO_ERROR, "INPUT FILE IFC[%d]: unable to open next file.", file_get_ifcidx(config));
             }
          }
       } else {
          VERBOSE(CL_ERROR, "INPUT FILE IFC: read error occurred in file: %s", config->filename);
-         return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC: unable to read");
+         return trap_errorf(file_get_trapctx(config), TRAP_E_IO_ERROR, "INPUT FILE IFC: unable to read");
       }
    }
 
@@ -491,27 +501,27 @@ int file_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int time
    size_t written;
 
    if (config->is_terminated) {
-      return trap_error(config->ctx, TRAP_E_TERMINATED);
+      return trap_error(file_get_trapctx(config), TRAP_E_TERMINATED);
    }
 
    /* Check whether the file stream is opened */
    if (config->fd == NULL) {
-      return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+      return trap_error(file_get_trapctx(config), TRAP_E_NOT_INITIALIZED);
    }
 
 #ifdef ENABLE_NEGOTIATION
    if (config->neg_initialized == 0) {
-      ret_val = output_ifc_negotiation(config->ctx, file_get_ifcidx(config));
+      ret_val = output_ifc_negotiation(file_get_trapctx(config), file_get_ifcidx(config));
       if (ret_val == NEG_RES_OK) {
          VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: success.");
          config->neg_initialized = 1;
          fflush(config->fd);
       } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
          VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+         return trap_error(file_get_trapctx(config), TRAP_E_NOT_INITIALIZED);
       } else { /* ret_val == NEG_RES_FAILED */
          VERBOSE(CL_VERBOSE_LIBRARY, "File output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+         return trap_error(file_get_trapctx(config), TRAP_E_NOT_INITIALIZED);
       }
    }
 #endif
@@ -520,7 +530,7 @@ int file_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int time
    written = fwrite(data, 1, size, config->fd);
    if (written != size) {
       VERBOSE(CL_ERROR, "OUTPUT FILE IFC: unable to write to file: %s", config->filename);
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "OUTPUT FILE IFC: unable to write");
+      return trap_errorf(file_get_trapctx(config), TRAP_E_IO_ERROR, "OUTPUT FILE IFC: unable to write");
    }
 
    if (config->file_change_time != 0) {
@@ -530,12 +540,12 @@ int file_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int time
          char *new_filename = create_filename_from_time(config);
          if (!new_filename) {
             VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", file_get_ifcidx(config));
-            return trap_error(config->ctx, TRAP_E_MEMORY);
+            return trap_error(file_get_trapctx(config), TRAP_E_MEMORY);
          }
 
          if (open_next_file(config, new_filename) < 0) {
             VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: opening new file failed.", file_get_ifcidx(config));
-            return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "unable to open file");
+            return trap_errorf(file_get_trapctx(config), TRAP_E_BADPARAMS, "unable to open file");
          }
       }
    }
@@ -544,12 +554,12 @@ int file_send(trap_output_ifc_t *priv, const void *data, uint16_t size, int time
       char *new_filename = create_next_filename(priv);
       if (!new_filename) {
          VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: memory allocation failed.", file_get_ifcidx(config));
-         return trap_error(config->ctx, TRAP_E_MEMORY);
+         return trap_error(file_get_trapctx(config), TRAP_E_MEMORY);
       }
 
       if (open_next_file(config, new_filename) < 0) {
          VERBOSE(CL_ERROR, "OUTPUT FILE IFC[%d]: opening new file failed.", file_get_ifcidx(config));
-         return trap_errorf(config->ctx, TRAP_E_BADPARAMS, "unable to open file");
+         return trap_errorf(file_get_trapctx(config), TRAP_E_BADPARAMS, "unable to open file");
       }
    }
 

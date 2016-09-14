@@ -46,7 +46,6 @@
 #include "trap_ifc.h"
 
 typedef struct file_private_s {
-   trap_ctx_priv_t *ctx;
    void *ifc;
    enum trap_ifc_type direction;
    FILE *fd;
