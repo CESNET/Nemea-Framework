@@ -2268,14 +2268,14 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
    }
 
    if (ctx->num_ifc_out > 0) {
-      ctx->ifc_autoflush_timeout = calloc(ctx->num_ifc_out, sizeof(struct out_ifc_timeout_s));
+      //ctx->ifc_autoflush_timeout = calloc(ctx->num_ifc_out, sizeof(struct out_ifc_timeout_s));
       // Create thread for handling timeouts outputs interfaces
-      if (pthread_create(&ctx->timeout_thread, NULL, trap_automatic_flush_thr, (void *) ctx) != 0) {
-         VERBOSE(CL_ERROR, "Creation of timeout handler thread failed.");
-         trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader thread failed.");
-         goto freeall_on_failed;
-      }
-      ctx->timeout_thread_initialized = 1;
+      //if (pthread_create(&ctx->timeout_thread, NULL, trap_automatic_flush_thr, (void *) ctx) != 0) {
+      //   VERBOSE(CL_ERROR, "Creation of timeout handler thread failed.");
+      //   trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader thread failed.");
+      //   goto freeall_on_failed;
+      //}
+      ctx->timeout_thread_initialized = 0;
    }
 
    // Implicit service thread creation

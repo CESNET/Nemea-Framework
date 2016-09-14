@@ -70,6 +70,7 @@ static inline void _tb_block_clear(tb_block_t *bl)
 {
    bl->write_data = (char *) bl->data->data;
    bl->read_data = bl->write_data;
+   bl->rsize = 0;
    bl->data->size = 0;
 }
 
@@ -100,24 +101,38 @@ static inline tb_block_t *tb_computenext_blockp(trap_buffer_t *tb, uint16_t curi
    return (tb_block_t *) (tb->mem + (BLOCKSIZE_TOTAL(tb) * bi));
 }
 
-void tb_next_wr_block(trap_buffer_t *tb)
+int tb_next_wr_block(trap_buffer_t *tb)
 {
    uint16_t bi = (tb->cur_wr_block_idx + 1) % tb->nblocks;
    tb_block_t *bp = tb->blocks[bi];
-   DBG_PRINT("move block from %p to idx %" PRIu32 " %p\n", tb->cur_wr_block, bi, bp);
 
-   tb->cur_wr_block_idx = bi;
-   tb->cur_wr_block = bp;
+   if (bp->rsize == 0) {
+      DBG_PRINT("move wr block from %p to idx %" PRIu32 " %p\n", tb->cur_wr_block, bi, bp);
+
+      tb->cur_wr_block->data->size = htonl(tb->cur_wr_block->rsize);
+      tb->cur_wr_block_idx = bi;
+      tb->cur_wr_block = bp;
+      bp->write_data = (char *) bp->data->data;
+      bp->read_data = bp->write_data;
+      return TB_SUCCESS;
+   } else {
+      return TB_FULL;
+   }
 }
 
-void tb_next_rd_block(trap_buffer_t *tb)
+int tb_next_rd_block(trap_buffer_t *tb)
 {
    uint16_t bi = (tb->cur_rd_block_idx + 1) % tb->nblocks;
    tb_block_t *bp = tb->blocks[bi];
-   DBG_PRINT("move block from %p to idx %" PRIu32 " %p\n", tb->cur_rd_block, bi, bp);
+   DBG_PRINT("move rd block from %p to idx %" PRIu32 " %p\n", tb->cur_rd_block, bi, bp);
 
-   tb->cur_rd_block_idx = bi;
-   tb->cur_rd_block = bp;
+   if (bp->read_data < bp->write_data) {
+      tb->cur_rd_block_idx = bi;
+      tb->cur_rd_block = bp;
+      return TB_SUCCESS;
+   } else {
+      return TB_EMPTY;
+   }
 }
 
 void tb_first_rd_block(trap_buffer_t *b)
@@ -136,7 +151,7 @@ void tb_first_wr_block(trap_buffer_t *b)
 
 int tb_isblockfree(tb_block_t *b)
 {
-   if (b->data->size == 0) {
+   if (b->rsize == 0) {
       return TB_SUCCESS;
    } else {
       return TB_FULL;
@@ -157,24 +172,26 @@ trap_buffer_t *tb_init(uint16_t nblocks, uint32_t blocksize)
 
    n->blocksize = blocksize;
    n->nblocks = nblocks;
+   n->freeblocks = nblocks;
    n->mem = malloc(nblocks * BLOCKSIZE_TOTAL(n));
    if (n->mem == NULL) {
-      free(n);
-      return NULL;
+      goto fail_exit2;
    }
 
    n->blocks = malloc(nblocks * sizeof(tb_block_t *));
    if (n->blocks == NULL) {
-      free(n->mem);
-      free(n);
-      return NULL;
+      goto fail_exit;
    }
 
    if (pthread_mutex_init(&n->lock, NULL) != 0) {
-      free(n->mem);
-      free(n);
-      return NULL;
+      goto fail_exit;
    }
+
+   if (pthread_mutex_init(&n->isbusy_lock, NULL) != 0) {
+      goto fail_exit;
+   }
+
+   pthread_cond_init(&n->isbusy, NULL);
    tb_first_wr_block(n);
    tb_first_rd_block(n);
 
@@ -184,8 +201,14 @@ trap_buffer_t *tb_init(uint16_t nblocks, uint32_t blocksize)
       n->blocks[i] = bl;
       bl = tb_computenext_blockp(n, i);
    }
-
+   DBG_PRINT("trap_buffer init finished successfuly.");
    return n;
+
+fail_exit:
+   free(n->mem);
+fail_exit2:
+   free(n);
+   return NULL;
 }
 
 void tb_destroy(trap_buffer_t **b)
@@ -196,6 +219,7 @@ void tb_destroy(trap_buffer_t **b)
    }
 
    trap_buffer_t *p = (*b);
+   tb_lock(p);
 
    tb_first_wr_block(p);
    for (i = 0; i < p->nblocks; i++) {
@@ -203,8 +227,14 @@ void tb_destroy(trap_buffer_t **b)
       tb_next_wr_block(p);
    }
 
+   pthread_cond_destroy(&p->isbusy);
+
    free(p->mem);
    free(p->blocks);
+   tb_unlock(p);
+   pthread_mutex_destroy(&p->lock);
+   pthread_mutex_destroy(&p->isbusy_lock);
+
    free(p);
    (*b) = NULL;
 }
@@ -229,32 +259,45 @@ int tb_block_unlock(tb_block_t *bl)
    return pthread_mutex_unlock(&bl->lock);
 }
 
+int tb_busy_lock(trap_buffer_t *b)
+{
+   return pthread_mutex_lock(&b->isbusy_lock);
+}
+
+int tb_busy_unlock(trap_buffer_t *b)
+{
+   return pthread_mutex_unlock(&b->isbusy_lock);
+}
+
+
 static inline int _tb_pushmess_checksize(trap_buffer_t *b, tb_block_t **bl, uint32_t ts)
 {
    uint32_t maxsize = (b->blocksize - sizeof(struct tb_block_data_s));
    tb_block_t *blp = *bl;
 
-   if (((*bl)->data->size + ts) > maxsize) {
-      DBG_PRINT("No memory for %" PRIu16 " msg, total size: %" PRIu32 ", hdr: %" PRIu32 "\n",
-             size, ((*bl)->data->size + ts), (*bl)->data->size);
+   if (((*bl)->rsize + ts) > maxsize) {
+      DBG_PRINT("No mem for %" PRIu32 " msg, total size: %" PRIu32 ", hdr: %" PRIu32 "\n",
+             ts, ((*bl)->rsize + ts), (*bl)->rsize);
       if (ts > maxsize) {
          DBG_PRINT("Message is bigger than block.\n");
          return TB_ERROR;
       }
 
       /* move to the next block in locked time */
+      if (tb_next_wr_block(b) == TB_FULL) {
+         return TB_FULL;
+      }
       tb_block_unlock(blp);
-      tb_next_wr_block(b);
+
       blp = b->cur_wr_block;
       tb_block_lock(blp);
       (*bl) = blp;
 
-      if (tb_isblockfree(*bl) == TB_FULL) {
-         return TB_FULL;
-      } else {
-         DBG_PRINT("Moved to the next block.\n");
-         return TB_USED_NEWBLOCK;
-      }
+      /* we are using new block */
+      b->freeblocks--;
+
+      DBG_PRINT("Moved to the next block.\n");
+      return TB_USED_NEWBLOCK;
    }
    return TB_SUCCESS;
 }
@@ -279,9 +322,9 @@ int tb_pushmess(trap_buffer_t *b, const void *data, uint16_t size)
    char *p = (char *) (msize + 1);
    (*msize) = htons(size);
    memcpy(p, data, size);
-   bl->data->size += size + sizeof(size);
+   bl->rsize += size + sizeof(size);
    bl->write_data += size + sizeof(size);
-   DBG_PRINT("Saved %" PRIu16 " B, total: %" PRIu32 " B\n", size, (bl->data->size + ts));
+   DBG_PRINT("Saved %" PRIu16 " B, total: %" PRIu32 " B\n", size, (bl->rsize + ts));
 
 exit:
    tb_block_unlock(bl);
@@ -311,13 +354,25 @@ int tb_pushmess2(trap_buffer_t *b, const void *d1, uint16_t s1, const void *d2, 
    memcpy(p, d1, s1);
    p += s1;
    memcpy(p, d2, s2);
-   bl->data->size += ts + sizeof(ts);
+   bl->rsize += ts + sizeof(ts);
    bl->write_data += ts + sizeof(ts);
-   DBG_PRINT("Saved 2-part-msg %" PRIu16 " B, total: %" PRIu32 " B\n", ts, (bl->data->size + ts));
+   DBG_PRINT("Saved 2-part-msg %" PRIu16 " B, total: %" PRIu32 " B\n", ts, (bl->rsize));
 
 exit:
    tb_block_unlock(bl);
    return res;
+}
+
+void tb_wait_for_push(trap_buffer_t *tb)
+{
+   int res = 0;
+   DBG_PRINT("Entering tb_wait_for_push().\n");
+   tb_busy_lock(tb);
+   while (tb->freeblocks < 1 && res == 0) {
+      res = pthread_cond_wait(&tb->isbusy, &tb->isbusy_lock);
+   }
+   tb_busy_unlock(tb);
+   DBG_PRINT("Leaving tb_wait_for_push().\n");
 }
 
 int tb_getmess(trap_buffer_t *b, const void **data, uint16_t *size)
@@ -329,20 +384,19 @@ int tb_getmess(trap_buffer_t *b, const void **data, uint16_t *size)
 
    if (bl->read_data == bl->write_data) {
       /* XXX when move to the next buffer */
-      DBG_PRINT("Not enough memory in %" PRIu32 " block for %" PRIu16 " message, total size: %" PRIu32 ", header: %" PRIu32 "\n",
-             b->blocksize, size, (bl->data->size + size + sizeof(size)), bl->data->size);
+      DBG_PRINT("Not enough memory in %" PRIu32 " block for %" PRIu16 " message, total size: %" PRIu64 ", header: %" PRIu32 "\n",
+             b->blocksize, *size, (bl->rsize + *size + sizeof(*size)), bl->rsize);
       tb_block_unlock(bl);
-      tb_next_rd_block(b);
-      bl = b->cur_rd_block;
-      tb_block_lock(bl);
-      if (bl->read_data >= bl->write_data) {
-         tb_block_unlock(bl);
-         tb_unlock(b);
-         return TB_EMPTY;
-      } else {
+      if (tb_next_rd_block(b) == TB_SUCCESS) {
+         bl = b->cur_rd_block;
+         tb_block_lock(bl);
          res = TB_USED_NEWBLOCK;
          DBG_PRINT("Moved to the next block.\n");
+      } else {
+         tb_unlock(b);
+         return TB_EMPTY;
       }
+
    }
    tb_unlock(b);
 
@@ -368,6 +422,27 @@ void tb_clear_unused(trap_buffer_t *tb)
       }
       tb_block_unlock(bl);
    }
+   tb_first_wr_block(tb);
+   tb_first_rd_block(tb);
    tb_unlock(tb);
+}
+
+int tb_iswr_ready(trap_buffer_t *tb)
+{
+   if ((tb->cur_wr_block->rsize != 0) && (tb->cur_wr_block != tb->cur_rd_block)) {
+      return TB_SUCCESS;
+   } else {
+      DBG_PRINT("write block is not ready.\n");
+      return TB_EMPTY;
+   }
+}
+
+int tb_isrd_ready(trap_buffer_t *tb)
+{
+   if ((tb->cur_wr_block != tb->cur_rd_block) && (tb->cur_wr_block->rsize != 0)) {
+      return TB_SUCCESS;
+   } else {
+      return TB_EMPTY;
+   }
 }
 

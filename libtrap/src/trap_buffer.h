@@ -92,6 +92,11 @@ typedef struct tb_block_s {
    pthread_mutex_t lock;
 
    /**
+    * RAW size without changing byte-order
+    */
+   uint32_t rsize;
+
+   /**
     * Pointer to data in the block (to the header of the first message)
     */
    struct tb_block_data_s data[0];
@@ -138,9 +143,21 @@ typedef struct trap_buffer_s {
    uint16_t nblocks;
 
    /**
+    * Number of blocks in the buffer.
+    */
+   uint16_t freeblocks;
+
+   /**
     * Lock the buffer
     */
    pthread_mutex_t lock;
+
+   /**
+    * Lock the isbusy condvar
+    */
+   pthread_mutex_t isbusy_lock;
+
+   pthread_cond_t isbusy;
 } trap_buffer_t;
 
 /**
@@ -225,6 +242,8 @@ int tb_pushmess(trap_buffer_t *tb, const void *data, uint16_t size);
  */
 int tb_pushmess2(trap_buffer_t *tb, const void *d1, uint16_t s1, const void *d2, uint16_t s2);
 
+void tb_wait_for_push(trap_buffer_t *tb);
+
 /**
  * Go through all blocks and those which are not used (refcount) mark as free.
  *
@@ -236,8 +255,10 @@ void tb_clear_unused(trap_buffer_t *tb);
  * Move to the next block for writing.
  *
  * This function moves cur_block pointer to the next block (it overflows after nblocks).
+ * \return TB_FULL if the next block is full, cur_wr_block was not moved,
+ *  TB_SUCCESS if the next block is empty, the cur_wr_block was moved.
  */
-void tb_next_wr_block(trap_buffer_t *tb);
+int tb_next_wr_block(trap_buffer_t *tb);
 
 /**
  * Move to the first block for writing.
@@ -255,46 +276,58 @@ void tb_first_wr_block(trap_buffer_t *tb);
  * Pseudocode:
  * trap_buffer_t *b = tb_init(10, 100000);
  * tb_block_t *bl;
- * TB_FILL_START(b, &bl, res);
+ * TB_FLUSH_START(b, &bl, res);
  * if (res == TB_SUCCESS) {
- *    s = recv(...);
- *    TB_FILL_END(b, bl, s);
+ *    s = send(...);
+ *    TB_FLUSH_END(b, bl, 0);
  * }
  *
- * \param[in] wdb  Pointer to the buffer.
+ * \param[in] rdb  Pointer to the buffer.
  * \param[out] bl  Pointer to block (tb_block_t **bl).
- * \param[out] res  Result of TB_FILL_START(), it is set to TB_SUCCESS or TB_FULL.
+ * \param[out] res  Result of TB_FLUSH_START(), it is set to TB_EMPTY (no data to send) or TB_FULL (we can continue sending).
  */
-#define TB_FLUSH_START(wrb, bl, res) do { \
-      tb_lock(wrb); \
-      (*bl) = wrb->cur_rd_block; \
+#define TB_FLUSH_START(rdb, bl, res) do { \
+      tb_lock(rdb); \
+      (*bl) = rdb->cur_rd_block; \
       tb_block_lock(*bl); \
-      if (tb_isblockfree(*bl) != TB_FULL) { \
+      if (tb_iswr_ready(rdb) == TB_SUCCESS) { \
+         res = TB_FULL; \
+      } else { \
          /* current block is not free, we must unlock and wait */ \
          tb_block_unlock(*bl); \
          res = TB_EMPTY; \
-      } else { \
-         res = TB_FULL; \
       } \
-      tb_unlock(wrb); \
+      tb_unlock(rdb); \
    } while (0)
 
 /**
  * Unlock the current free block after writing its content.
  *
- * It MUST NOT be called when TB_FILL_START() returned TB_FULL.
+ * It MUST NOT be called when TB_FLUSH_START() returned TB_FULL.
  *
  * \param[in] rdb  Pointer to the buffer.
  * \param[in] bl  Pointer to block (tb_block_t *bl).
- * \param[in] s   Size of data written into the block. This will be set into header.
+ * \param[in] ref   Reference count, if 0, mark the block as free.
  */
-#define TB_FLUSH_END(rdb, bl, s) do { \
-      if (bl->refcount == 0) { \
+#define TB_FLUSH_END(rdb, bl, ref) do { \
+      bl->refcount = ref; \
+      tb_block_unlock(bl); \
+      tb_unlock(rdb); \
+      tb_lock(rdb); \
+      tb_block_lock(bl); \
+      if (bl->refcount == 0 && bl->rsize != 0) { \
          /* block can be marked as empty for next pushmess() */ \
+         bl->rsize = 0; \
          bl->data->size = 0; \
+         /* we have processed a block -> it is free now */ \
          tb_next_rd_block(rdb); \
+         tb_busy_lock(rdb); \
+         rdb->freeblocks++; \
+         pthread_cond_signal(&rdb->isbusy); \
+         tb_busy_unlock(rdb); \
       } \
       tb_block_unlock(bl); \
+      tb_unlock(rdb); \
    } while (0)
 
 /**
@@ -333,7 +366,9 @@ void tb_first_rd_block(trap_buffer_t *tb);
  * This function moves cur_block pointer to the next block (it overflows after nblocks).
  * \param[in] tb   Pointer to the buffer.
  */
-void tb_next_rd_block(trap_buffer_t *tb);
+int tb_next_rd_block(trap_buffer_t *tb);
+
+int tb_iswr_ready(trap_buffer_t *tb);
 
 /**
  * Lock the current free block for writing its content.
@@ -356,15 +391,19 @@ void tb_next_rd_block(trap_buffer_t *tb);
  */
 #define TB_FILL_START(rdb, bl, res) do { \
       tb_lock(rdb); \
+      DBG_PRINT("cur_wr_block_idx: %i\n", rdb->cur_wr_block_idx); \
       (*bl) = rdb->cur_wr_block; \
       tb_block_lock(*bl); \
       if (tb_isblockfree(*bl) == TB_SUCCESS) { \
-         tb_next_wr_block(rdb); \
          (res) = TB_SUCCESS; \
       } else { \
          /* current block is not free, we must unlock and wait */ \
          tb_block_unlock(*bl); \
-         (res) = TB_FULL; \
+         (res) = tb_next_wr_block(rdb); \
+         if (res == TB_SUCCESS) { \
+            (*bl) = rdb->cur_wr_block; \
+            tb_block_lock(*bl); \
+         } \
       } \
       tb_unlock(rdb); \
    } while (0)
@@ -379,7 +418,8 @@ void tb_next_rd_block(trap_buffer_t *tb);
  * \param[in] s   Size of data written into the block. This will be set into header.
  */
 #define TB_FILL_END(rdb, bl, s) do { \
-      bl->data->size = s; \
+      bl->rsize = s; \
+      bl->data->size = htonl(s); \
       bl->write_data += s; \
       bl->read_data = bl->data->data; \
       tb_block_unlock(bl); \

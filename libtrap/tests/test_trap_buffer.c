@@ -279,14 +279,16 @@ static void test_ifcapproach(void **state)
    for (i = 0; i <= nblocks; i++) {
       TB_FILL_START(rdb, &bl, res);
       if (i >= nblocks) {
+         DBG_PRINT("i: %i res %i\n", i, res);
          assert_true(res == TB_FULL);
       } else {
+         DBG_PRINT("i: %i res %i\n", i, res);
          assert_true(res == TB_SUCCESS);
       }
       if (res == TB_SUCCESS) {
-         memcpy(bl->data->data, wrb->blocks[i]->data->data, wrb->blocks[i]->data->size);
+         memcpy(bl->data->data, wrb->blocks[i]->data->data, wrb->blocks[i]->rsize);
 
-         TB_FILL_END(rdb, bl, wrb->blocks[i]->data->size);
+         TB_FILL_END(rdb, bl, wrb->blocks[i]->rsize);
       } else {
          DBG_PRINT("Filling full buffer.\n");
       }
@@ -306,7 +308,7 @@ static void test_ifcapproach(void **state)
    tb_clear_unused(rdb);
 
    DBG_PRINT("#2 FILLING BUFFER as IFC DOES\n");
-   for (i = 0; i <= nblocks; i++) {
+   for (i = 0; i <= 2 * nblocks; i++) {
       TB_FILL_START(rdb, &bl, res);
       if (i >= nblocks) {
          assert_true(res == TB_FULL);
@@ -315,28 +317,33 @@ static void test_ifcapproach(void **state)
          assert_true(res == TB_SUCCESS);
       }
       if (res == TB_SUCCESS) {
-         memcpy(bl->data->data, wrb->blocks[i]->data->data, wrb->blocks[i]->data->size);
+         memcpy(bl->data->data, wrb->blocks[i]->data->data, wrb->blocks[i]->rsize);
 
-         TB_FILL_END(rdb, bl, wrb->blocks[i]->data->size);
+         TB_FILL_END(rdb, bl, wrb->blocks[i]->rsize);
       } else {
          DBG_PRINT("Filling full buffer.\n");
       }
    }
 
-   for (i = 0; i <= nblocks; i++) {
+   DBG_PRINT("FLUSHING the filled buffer\n");
+   for (i = 0; i < nblocks; i++) {
       TB_FLUSH_START(wrb, &bl, res);
 
+      DBG_PRINT("i: %u size: %u\n", i, bl->rsize);
+      DBG_PRINT("block_num %u, cur_wr_block_idx %u, cur_rd_block_idx %u\n", i, wrb->cur_wr_block_idx, wrb->cur_rd_block_idx);
       if (i >= nblocks) {
-         assert_true(bl->data->size == 0);
+         assert_true(bl->rsize == 0);
       } else {
-         assert_memory_equal(bl->data->data, rdb->blocks[i]->data->data, bl->data->size);
+         assert_memory_equal(bl->data->data, rdb->blocks[i]->data->data, bl->rsize);
       }
 
-      if (res == TB_FULL) {
+      DBG_PRINT("res: %u\n", res);
+      if (res != TB_EMPTY) {
          bl->refcount = 0;
 
-         TB_FLUSH_END(rdb, bl, 0);
+         TB_FLUSH_END(wrb, bl, 0);
       }
+      DBG_PRINT("i: %u size: %u\n", i, bl->rsize);
    }
 
    tb_destroy(&wrb);

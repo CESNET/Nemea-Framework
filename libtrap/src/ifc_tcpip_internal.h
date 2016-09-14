@@ -41,6 +41,10 @@
  *
  */
 
+#ifndef IFC_TCPIP_INTERNAL_H
+#define IFC_TCPIP_INTERNAL_H
+
+#include "trap_buffer.h"
 
 /** \addtogroup trap_ifc
  * @{
@@ -76,7 +80,6 @@ enum client_send_state {
 struct client_s {
    int sd; /**< Socket descriptor */
    void *sending_pointer; /**< Array of pointers into buffer */
-   void *buffer; /**< separate message buffer */
    uint32_t pending_bytes; /**< The size of data that must be sent */
    enum client_send_state client_state; /**< State of sending */
 };
@@ -108,6 +111,7 @@ typedef struct tcpip_sender_private_s {
     */
    int term_pipe[2];
 
+   trap_buffer_t *buffer;
    pthread_mutex_t  lock;
    pthread_mutex_t  sending_lock;
    pthread_t        accept_thread;
@@ -138,6 +142,8 @@ typedef struct tcpip_receiver_private_s {
    void *data_pointer; /**< Pointer to next free byte, if NULL, we ended in header */
    uint32_t data_wait_size; /** Missing data to accept in the next function call */
    trap_buffer_header_t int_mess_header; /**< Internal message header - used for message_buffer payload size \note message_buffer size is sizeof(tcpip_tdu_header_t) + payload size */
+
+   trap_buffer_t *buffer;
 } tcpip_receiver_private_t;
 
 /**
@@ -151,4 +157,6 @@ typedef struct tcpip_receiver_private_s {
 /**
  * @}
  */
+
+#endif
 
