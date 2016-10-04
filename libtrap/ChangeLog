@@ -1,3 +1,10 @@
+2016-09-07 (Marek Svepes): libtrap: service ifc: removed useless output messages
+2016-09-02 (Tomas Jansky): libtrap: file ifc: timestamp of newly created files is now rounded according to the given time  period
+2016-08-12 (Marek Svepes): libtrap: tools: update of trap_stats program after adding new fields "num_clients" and "ifc_state" to JSON messages in service interface
+2016-08-12 (Marek Svepes): libtrap: doc: service ifc README update
+2016-08-12 (Marek Svepes): libtrap: service ifc: JSON messages extension
+2016-08-12 (Marek Svepes): libtrap: added callback function for input interface to check whether it is connected or not
+
 2016-07-26 (Václav Bartoš): libtrap doc: README.ifcspec.md (file ifc) improved
 2016-07-25 (Tomas Cejka): libtrap: deb: tune list of files in packages and add doc
 2016-07-25 (Marek Svepes): libtrap: code maintenance - removed unused variables in service interface routine
