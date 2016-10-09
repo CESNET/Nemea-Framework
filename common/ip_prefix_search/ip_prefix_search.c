@@ -45,7 +45,6 @@
  */
 
 /**
- * !!! For new compiler troubleshoot, try gcc --gnu89-inline parameter !!!
  * Look at the example Makefile
  */
 
