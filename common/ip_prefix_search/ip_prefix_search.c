@@ -51,6 +51,18 @@
 // Information if sigaction is available for nemea signal macro registration
 
 #include "../include/ip_prefix_search.h"
+extern int ip_from_str(const char *str, ip_addr_t *addr);
+extern void ip_to_str(const ip_addr_t *addr, char *str);
+extern int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2);
+extern ip_addr_t ip_from_16_bytes_le(char b[16]);
+extern ip_addr_t ip_from_16_bytes_be(char b[16]);
+extern ip_addr_t ip_from_4_bytes_le(char b[4]);
+extern ip_addr_t ip_from_4_bytes_be(char b[4]);
+extern ip_addr_t ip_from_int(uint32_t i);
+extern char *ip_get_v4_as_bytes(const ip_addr_t *addr);
+extern uint32_t ip_get_v4_as_int(ip_addr_t *addr);
+extern int ip_is6(const ip_addr_t *addr);
+extern int ip_is4(const ip_addr_t *addr);
 
 /**
  * Function for swapping bits in byte.
