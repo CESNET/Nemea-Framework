@@ -218,7 +218,7 @@ static PyMethodDef pytrap_unirectime_methods[] = {
         "Returns:\n"
         "    (str): Formatted timestamp as string.\n"
     },
-    {"now", (PyCFunction) UnirecTime_now, METH_STATIC,
+    {"now", (PyCFunction) UnirecTime_now, METH_STATIC | METH_NOARGS,
         "Get UnirecTime instance of current time.\n\n"
         "Returns:\n"
         "    (UnirecTime): Current date and time.\n"
@@ -228,19 +228,20 @@ static PyMethodDef pytrap_unirectime_methods[] = {
 };
 
 int
-UnirecTime_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
+UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
 {
-    pytrap_unirectime *s = (pytrap_unirectime *) self;
     uint32_t secs, msecs = 0;
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
-            return EXIT_FAILURE;
+            return -1;
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
+    } else {
+        return -1;
     }
 
-    return EXIT_SUCCESS;
+    return 0;
 }
 
 static PyObject *
@@ -500,27 +501,42 @@ out:
 static PyObject *
 UnirecIPAddr_isIPv4(pytrap_unirecipaddr *self)
 {
-    PyObject *result;
     if (ip_is4(&self->ip)) {
-        result = Py_True;
+        Py_RETURN_TRUE;
     } else {
-        result = Py_False;
+        Py_RETURN_FALSE;
     }
-    Py_INCREF(result);
-    return result;
 }
 
 static PyObject *
 UnirecIPAddr_isIPv6(pytrap_unirecipaddr *self)
 {
-    PyObject *result;
     if (ip_is4(&self->ip)) {
-        result = Py_False;
+        Py_RETURN_FALSE;
     } else {
-        result = Py_True;
+        Py_RETURN_TRUE;
     }
-    Py_INCREF(result);
-    return result;
+}
+
+static PyObject *
+UnirecIPAddr_isNull(pytrap_unirecipaddr *self)
+{
+    if (ip_is_null(&self->ip)) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
+static int
+UnirecIPAddr_bool(pytrap_unirecipaddr *self)
+{
+    /* bool(ip) == (not isNull(ip)) */
+    if (ip_is_null(&self->ip)) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 static PyObject *
@@ -589,6 +605,12 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         "    bool: True if the address is IPv6.\n"
         },
 
+    {"isNull", (PyCFunction) UnirecIPAddr_isNull, METH_NOARGS,
+        "Check if the address is null (IPv4 or IPv6), i.e. \"0.0.0.0\" or \"::\".\n\n"
+        "Returns:\n"
+        "    bool: True if the address is null.\n"
+        },
+
     {"inc", (PyCFunction) UnirecIPAddr_inc, METH_NOARGS,
         "Increment IP address.\n\n"
         "Returns:\n"
@@ -602,24 +624,32 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+static PyNumberMethods UnirecIPAddr_numbermethods = {
+#if PY_MAJOR_VERSION >= 3
+    .nb_bool = (inquiry) UnirecIPAddr_bool, 
+#else
+    .nb_nonzero = (inquiry) UnirecIPAddr_bool,
+#endif
+};
+
 int
-UnirecIPAddr_init(PyTypeObject *self, PyObject *args, PyObject *kwds)
+UnirecIPAddr_init(pytrap_unirecipaddr *s, PyObject *args, PyObject *kwds)
 {
-    pytrap_unirecipaddr *s = (pytrap_unirecipaddr *) self;
     char *ip_str;
 
     if (s != NULL) {
-
         if (!PyArg_ParseTuple(args, "s", &ip_str)) {
-            return EXIT_FAILURE;
+            return -1;
         }
-
         if (ip_from_str(ip_str, &s->ip) != 1) {
             PyErr_SetString(TrapError, "Could not parse given IP address.");
-            return EXIT_FAILURE;
+            return -1;
         }
+    } else {
+        return -1;
     }
-    return EXIT_SUCCESS;
+    return 0;
+
 }
 
 static PyObject *
@@ -667,7 +697,7 @@ static PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
     (reprfunc) UnirecIPAddr_repr, /* tp_repr */
-    0,                         /* tp_as_number */
+    &UnirecIPAddr_numbermethods,                         /* tp_as_number */
     0,                         /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     (hashfunc) UnirecIPAddr_hash,                         /* tp_hash  */
@@ -1316,6 +1346,83 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+UnirecTemplate_recFixlenSize(pytrap_unirectemplate *self)
+{
+    uint16_t rec_size = ur_rec_fixlen_size(self->urtmplt);
+    return Py_BuildValue("H", rec_size);
+}
+
+static PyObject *
+UnirecTemplate_recVarlenSize(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *dataObj = NULL;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|O", kwlist, &dataObj)) {
+        return NULL;
+    }
+
+    if (dataObj != NULL) {
+        if (PyByteArray_Check(dataObj)) {
+            //data_size = PyByteArray_Size(dataObj);
+            data = PyByteArray_AsString(dataObj);
+        } else if (PyBytes_Check(dataObj)) {
+            PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+            return NULL;
+        }
+    } else {
+        if (self->data != NULL) {
+            data = self->data;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Data was not set nor expolicitly passed as argument.");
+            return NULL;
+        }
+    }
+
+    uint16_t rec_size = ur_rec_varlen_size(self->urtmplt, data);
+    return Py_BuildValue("H", rec_size);
+}
+
+static PyObject *
+UnirecTemplate_recSize(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    PyObject *dataObj = NULL;
+    char *data;
+    Py_ssize_t data_size;
+
+    static char *kwlist[] = {"data", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "|O", kwlist, &dataObj)) {
+        return NULL;
+    }
+
+    if (dataObj != NULL) {
+        if (PyByteArray_Check(dataObj)) {
+            //data_size = PyByteArray_Size(dataObj);
+            data = PyByteArray_AsString(dataObj);
+        } else if (PyBytes_Check(dataObj)) {
+            PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
+            return NULL;
+        }
+    } else {
+        if (self->data != NULL) {
+            data = self->data;
+        } else {
+            PyErr_SetString(PyExc_TypeError, "Data was not set nor expolicitly passed as argument.");
+            return NULL;
+        }
+    }
+
+    uint16_t rec_size = ur_rec_size(self->urtmplt, data);
+    return Py_BuildValue("H", rec_size);
+}
+
 static PyMethodDef pytrap_unirectemplate_methods[] = {
         {"getFieldType", (PyCFunction) UnirecTemplate_getFieldType, METH_VARARGS,
             "Get type of given field.\n\n"
@@ -1406,6 +1513,34 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Get values of record in readable format.\n\n"
             "Returns:\n"
             "    str: String in key=value format.\n"
+        },
+
+        {"recSize", (PyCFunction) UnirecTemplate_recSize, METH_VARARGS | METH_KEYWORDS,
+            "Get size of UniRec record.\n\n"
+            "Return total size of valid record data, i.e. number of bytes occupied by all fields."
+            "This may be less than allocated size of 'data'.\n"
+            "Args:\n"
+            "    data (Optional[bytearray or bytes]): Data of UniRec message (optional if previously set by setData)"
+            "Returns:\n"
+            "    int: Size of record data in bytes\n"
+        },
+
+        {"recFixlenSize", (PyCFunction) UnirecTemplate_recFixlenSize, METH_NOARGS,
+            "Get size of fixed part of UniRec record.\n\n"
+            "This is the minimal size of a record with given template,"
+            "i.e. the size with all variable-length fields empty.\n"
+            "Returns:\n"
+            "    int: Size of fixed part of template in bytes\n"
+        },
+
+
+        {"recVarlenSize", (PyCFunction) UnirecTemplate_recVarlenSize, METH_VARARGS | METH_KEYWORDS,
+            "Get size of variable-length part of UniRec record.\n\n"
+            "Return total size of all variable-length fields.\n"
+            "Args:\n"
+            "    data (Optional[bytearray or bytes]): Data of UniRec message (optional if previously set by setData)"
+            "Returns:\n"
+            "    int: Total size of variable-length fields in bytes\n"
         },
 
         {NULL, NULL, 0, NULL}
@@ -2095,3 +2230,5 @@ int init_unirectemplate(PyObject *m)
 
     return EXIT_SUCCESS;
 }
+
+
