@@ -57,7 +57,7 @@
  * It is currently placed according to this format, where %s is replaced by
  * port given as an argument of TCPIP IFC.
  */
-#define UNIX_PATH_FILENAME_FORMAT   DEFAULTSOCKETDIR "/localhost-%s.sock"
+#define UNIX_PATH_FILENAME_FORMAT   DEFAULTSOCKETDIR "/trap-%s.sock"
 #endif
 
 /**
