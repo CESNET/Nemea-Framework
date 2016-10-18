@@ -53,6 +53,9 @@ endif
 deb-clean:
 	rm -rf libtrap_*.build libtrap_*.changes libtrap_*.deb libtrap-dev_*.deb libtrap_*.orig.tar.gz libtrap-*.tar.gz libtrap-@VERSION@
 
+install-exec-hook:
+	mkdir -p $(DESTDIR)/$(DEFAULTSOCKETDIR) && chmod 1777 $(DESTDIR)/$(DEFAULTSOCKETDIR) || true
+
 changelog:
 	echo -e "This will insert history into ChangeLog file and open NEWS in vim.\nC-c to interrupt."; \
 	git log --date=short --format="%cd (%an): %s" $(shell git tag | head -1)..HEAD . > chlog.tmp; \

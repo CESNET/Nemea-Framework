@@ -51,12 +51,14 @@
  */
 #define TCPIP_IFC_PARAMS_DELIMITER  (',')
 
+#ifndef UNIX_PATH_FILENAME_FORMAT
 /**
  * Communication via UNIX socket needs to specify path to socket file.
  * It is currently placed according to this format, where %s is replaced by
  * port given as an argument of TCPIP IFC.
  */
-#define UNIX_PATH_FILENAME_FORMAT   "/tmp/trap-localhost-%s.sock"
+#define UNIX_PATH_FILENAME_FORMAT   DEFAULTSOCKETDIR "/localhost-%s.sock"
+#endif
 
 /**
  * Type of socket that is used for the TRAP interface.

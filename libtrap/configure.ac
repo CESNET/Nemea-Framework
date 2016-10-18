@@ -29,6 +29,14 @@ AC_ARG_ENABLE([debug],
 
 LT_INIT()
 
+AC_ARG_WITH([defaultsocketdir],
+	[AS_HELP_STRING([--with-defaultsocketdir=DIR], [Directory for UNIX&service IFCs [/tmp], for production set it to e.g. /var/run/libtrap.])],
+	[],
+	[with_defaultsocketdir=/tmp])
+
+AC_SUBST([defaultsocketdir], [$with_defaultsocketdir])
+AC_DEFINE_DIR([DEFAULTSOCKETDIR], [defaultsocketdir], [Default path to socket directory])
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
