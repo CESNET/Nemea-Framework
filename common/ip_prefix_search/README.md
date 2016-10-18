@@ -1,61 +1,68 @@
-IP prefix binary search
------------
-    This structure is an ordered array data structure that is used to store a dynamic set,
-where the keys are low and high IP addresses of prefix. Binary search compare low and high IP
-with searched IP address and return data associated with match prefix.
+# IP prefix binary search
 
-    The prefix array can be used for storing any data (string, int). It can be use for example for
-the aggregation of information from multiple blacklists. Data type is specific
-to each user and his source format (source file, delimiters, data format or data length,...), so user
-MUST defined function load_networks(), which load and parse information and data about
-networks from any of his source and fill 'ipps_network_list' structure.
+This structure is an ordered array data structure that is used to store a dynamic set,
+where the keys are low and high IP addresses of prefix. Binary search compares low and high IP
+with the searched IP address and returns data associated with match prefix.
 
-    Before using the search call the ipps_init() function. The function creates all
+The prefix array can be used for storing any data (string, int). For example, it can be used to
+aggregate information from multiple blacklists. Data type is specific
+to each user and their source format (source file, delimiters, data format or data length,...), so user
+MUST define ```function load_networks()```, which load and parse information, and data about
+networks from any of their source and fill ```'ipps_network_list'``` structure.
+
+Before using the search, call the ```ipps_init()``` function. The function creates all
 necessary structures for storing and accessing the data and return structure of IPv4 and
 IPv6 array of prefixes with data (network context).
+
 The parameters are:
-    Structure with networks array and networks counter.
+* Structure with networks array and networks counter
 
-    For searching, there is a function ipps_search(). Function return number of data
-associated with match prefix and return pointer to data as parameter:
-    Structure of ip prefix context, ipps_context_t
-    IP address union
-    void pointer to data array
+For searching, use the function ```ipps_search()```. Function returns number of data associated with match prefix and return pointer to data as parameter:
 
-For example, if blacklist contains :
+* Structure of ip prefix context, ipps_context_t
+* IP address union
+* Void pointer to data array
 
+For example, if blacklist contains:
+
+```
     192.168.1.0/24   aaa
     192.168.1.0/25   bbb
     192.168.1.128/25 ccc
+```
 
-init() creates 2 intervals
-    - from 1.0 to 1.127 with data "aaa" and "bbb"
-    - from 1.128 to 1.255 with data "aaa" and "ccc":
+```init()``` creates 2 intervals:
+* From 1.0 to 1.127 with data "aaa" and "bbb"
+* From 1.128 to 1.255 with data "aaa" and "ccc":
 
+```
  192.168.1.0     192.168.1.255
        ↓            ↓
        <-----aaa---->
        <-bbb-><-ccc->
+```
 
-
-and ip_prefix_search() is call with 192.168.1.100, search return number 2 and pointer to data "aaa" and "bbb".
+and ```ip_prefix_search()``` is called with 192.168.1.100, search return number 2 and pointer to data "aaa" and "bbb".
 For 192.168.1.200, return also number 2 but data are "aaa" and "ccc". For 192.1.1.1, search return 0 and pointer
 to data is not fill.
 
-    For destruction of a whole structure and data there is ipps_destroy() function, parameter is pointer to
-the ipps_context_t structure, that has to be destroyed. Also list of networks is necessary to destroy with
-function destroy_networks() (this function isn't a part of library and user must defined it).
+For destruction of a whole structure and data there is ```ipps_destroy()``` function, parameter is pointer to
+the ```ipps_context_t structure```, that has to be destroyed. Also, a list of networks is necessary to destroy with
+function ```destroy_networks()``` (this function isn't a part of library and the user must define it).
+
 Recommended control flow is:
-    1. load_networks()
-    2. ipps_init()
-    3. destroy_networks()
-    4. ipps_search()
-    5. ipps_destroy()
+1. ```load_networks()```
+2. ```ipps_init()```
+3. ```destroy_networks()```
+4. ```ipps_search()```
+5. ```ipps_destroy()```
 
 
 ******************************************************************
 
-Example file
+## Example file
+
+```
 /**
  * \file main.c
  * \brief Init and find prefix EXAMPLE
@@ -458,3 +465,4 @@ int main()
 
     return 0;
 }
+```
