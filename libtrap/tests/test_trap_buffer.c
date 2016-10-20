@@ -50,6 +50,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <unistd.h>
+#include <pthread.h>
 
 #define DEBUG_PRINTS 0
 
@@ -59,6 +61,12 @@
 #define DBG_PRINT(...)
 #endif
 
+/**
+    * Deafult value of testing data
+    */
+#define TEST_DATA_START 0xA0B0C0D001020304
+#define TEST_DATA_COUNT 100000
+#define TEST_MAX_TRIES 20
 
 void *__real__test_malloc(const size_t size, const char* file, const int line);
 
@@ -179,6 +187,99 @@ static void test_insert_message(void **state)
 
    tb_destroy(&b);
 }
+
+
+static void test_insert_messages_thread(trap_buffer_t *b)
+{
+   assert_non_null(b);
+   uint32_t i;
+   int32_t res;
+   uint64_t data = TEST_DATA_START;
+   uint16_t data_size = sizeof(data);
+   uint32_t tries;
+   for (i = 0; i < TEST_DATA_COUNT; i++) {
+      tries = 0;
+      do {
+         res = tb_pushmess(b, (void *) &data, data_size);
+         DBG_PRINT("insert iter %" PRIu16 " res: %i\n", i, res);
+         if (res != TB_SUCCESS && res != TB_USED_NEWBLOCK ) {
+            sleep(1);
+            if (tries > TEST_MAX_TRIES) {
+               DBG_PRINT("It is not possible to insert more data.\n");
+               assert_true(i == TEST_DATA_COUNT);
+               return;
+            }
+            tries++;
+         }
+      } while (res != TB_SUCCESS && res != TB_USED_NEWBLOCK);
+      data++;
+   }
+   assert_true(i == TEST_DATA_COUNT);
+   DBG_PRINT("All data inserted\n");
+}
+
+static void test_concurrent_insert_read(void **state)
+{
+   uint64_t data = TEST_DATA_START;
+   int32_t res;
+   uint32_t tries = 0, i = 0;
+   const void *data_pointer = (void *) &data;
+   uint16_t nblocks = 3, sblock = 100;
+   uint16_t data_size = sizeof(data);
+   pthread_t thr;
+   (void) state; /* unused */
+   trap_buffer_t *b = NULL;
+   tb_block_t *bl;
+
+   will_return(__wrap__test_malloc, 0);
+   will_return(__wrap__test_malloc, 0);
+   will_return(__wrap__test_malloc, 0);
+   b = tb_init(nblocks, sblock);
+
+   assert_non_null(b);
+   assert_true(tb_isblockfree(b->cur_wr_block) == TB_SUCCESS);
+
+   // create inserting thread
+   pthread_create(&(thr), NULL, (void* (*)(void*))test_insert_messages_thread, (b));
+   // read the data
+   for (i = 0; i < TEST_DATA_COUNT; i++) {
+      tries = 0;
+      do {
+         TB_FLUSH_START(b, &bl, res);
+         res = tb_getmess(b, &data_pointer, &data_size);
+         if (res != TB_SUCCESS && res != TB_USED_NEWBLOCK ) {
+            DBG_PRINT("read iter %" PRIu16 " res %i \n", i, res);
+            sleep(1);
+            if (tries > TEST_MAX_TRIES) {
+               DBG_PRINT("There are no other data.\n");
+               assert_true(i == TEST_DATA_COUNT);
+               pthread_join(thr, NULL);
+               tb_destroy(&b);
+               return;
+            }
+            tries++;
+         } else {
+            DBG_PRINT("read iter %" PRIu16 " res %i should get %" PRIx64 " and got %" PRIx64 "\n", i, res,
+               data, *((uint64_t *) data_pointer));
+            assert_true(*((uint64_t *) data_pointer) == data);
+         }
+         if (res == TB_SUCCESS || res == TB_FULL){
+            TB_FLUSH_END(b, bl, 0);
+         }
+         else {
+            sleep(1);
+         }
+      } while (res != TB_SUCCESS);
+      data++;
+   }
+   assert_true(i == TEST_DATA_COUNT);
+   DBG_PRINT("All data readed\n");
+
+   pthread_join(thr, NULL);
+   tb_destroy(&b);
+}
+
+
 
 static void test_insert_bigmessage(void **state)
 {
@@ -358,7 +459,8 @@ int main(void)
        cmocka_unit_test(test_insert_message),
        cmocka_unit_test(test_insert_message2),
        cmocka_unit_test(test_insert_bigmessage),
-       cmocka_unit_test(test_ifcapproach)
+       cmocka_unit_test(test_ifcapproach),
+       cmocka_unit_test(test_concurrent_insert_read)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
