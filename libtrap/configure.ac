@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.8.1], [traffic-analysis@cesnet.cz])
+AC_INIT([libtrap], [0.9.0], [nemea@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
@@ -28,6 +28,14 @@ AC_ARG_ENABLE([debug],
               CPPFLAGS="-DNDEBUG=1"])
 
 LT_INIT()
+
+AC_ARG_WITH([defaultsocketdir],
+	[AS_HELP_STRING([--with-defaultsocketdir=DIR], [Directory for UNIX&service IFCs [/tmp], for production set it to e.g. /var/run/libtrap.])],
+	[],
+	[with_defaultsocketdir=/tmp])
+
+AC_SUBST([defaultsocketdir], [$with_defaultsocketdir])
+AC_DEFINE_DIR([DEFAULTSOCKETDIR], [defaultsocketdir], [Default path to socket directory])
 
 # Checks for programs.
 AC_PROG_CC
