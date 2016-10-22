@@ -105,6 +105,10 @@ union tcpip_socket_addr {
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024)
 #define MAX_CLIENTS_ARR_SIZE     10
 
+/**
+ * Unix sockets for service IFC and UNIX IFC have default path format defined by UNIX_PATH_FILENAME_FORMAT
+ */
+const char trap_default_socket_path_format[] __attribute__((used)) = UNIX_PATH_FILENAME_FORMAT;
 
 static int client_socket_connect(void *priv, const char *dest_addr, const char *dest_port, int *socket_descriptor, struct timeval *tv);
 static void client_socket_disconnect(void *priv);

@@ -89,13 +89,6 @@ const char trap_version[] __attribute__((used)) = PACKAGE_VERSION;
 const char trap_git_version[] __attribute__((used)) = GIT_VERSION;
 
 /**
- * Default path to socket directory.
- *
- * UNIX sockets are created here for service IFC as well as for UNIX IFC type.
- */
-const char trap_default_socket_path[] __attribute__((used)) = DEFAULTSOCKETDIR;
-
-/**
  * Print Trap IFC help in trap_print_help() if non-zero.
  */
 char trap_help_spec = 0;
