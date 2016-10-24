@@ -616,6 +616,7 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         "Returns:\n"
         "    UnirecIPAddr: New incremented IPAddress.\n"
         },
+
     {"dec", (PyCFunction) UnirecIPAddr_dec, METH_NOARGS,
         "Decrement IP address.\n\n"
         "Returns:\n"
@@ -1750,20 +1751,20 @@ UnirecIPAddrRange_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self = (pytrap_unirecipaddrrange *)type->tp_alloc(type, 0);
     if (self != NULL) {
         self->start = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
-        Py_INCREF(self->start);
 
         if (self->start == NULL) {
-            Py_DECREF(self);
+          //  Py_DECREF(self);
             return NULL;
         }
+        Py_INCREF(self->start);
 
         self->end = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
-        Py_INCREF(self->end);
 
         if (self->end == NULL) {
-            Py_DECREF(self);
+           // Py_DECREF(self);
             return NULL;
         }
+        Py_INCREF(self->end);
     }
 
     return (PyObject *)self;
@@ -1798,7 +1799,7 @@ UnirecIPAddrRange_isIn(pytrap_unirecipaddrrange *self, PyObject *args)
             result = PyLong_FromLong(0);
         }
         else{
-            /* ip address is grater then interval */
+            /* ip address is greater then interval */
             result = PyLong_FromLong(1);
         }
     }
@@ -1811,6 +1812,7 @@ UnirecIPAddrRange_isIn(pytrap_unirecipaddrrange *self, PyObject *args)
 static PyObject *
 UnirecIPAddrRange_isOverlap(pytrap_unirecipaddrrange *self, PyObject *args)
 {
+    /* compared ranges must by sorted by low ip and mask */
     pytrap_unirecipaddrrange *other;
 
     PyObject * tmp;
@@ -1822,6 +1824,7 @@ UnirecIPAddrRange_isOverlap(pytrap_unirecipaddrrange *self, PyObject *args)
     if (!PyObject_IsInstance((PyObject*)other, (PyObject *) &pytrap_UnirecIPAddrRange)) {
         return Py_NotImplemented;
     }
+
     tmp = UnirecIPAddrRange_isIn(self, (PyObject *) other->start);
     cmp_result = PyLong_AsLong(tmp);
     Py_DECREF(tmp);
@@ -1830,9 +1833,6 @@ UnirecIPAddrRange_isOverlap(pytrap_unirecipaddrrange *self, PyObject *args)
         Py_RETURN_TRUE;
     }
     else{
-        tmp = UnirecIPAddrRange_isIn(other, (PyObject *) self->start);
-        cmp_result = PyLong_AsLong(tmp);
-        Py_DECREF(tmp);
         Py_RETURN_FALSE;
     }
 }
@@ -2118,12 +2118,16 @@ static PyMemberDef UnirecIPAddrRange_members[] = {
 static PyMethodDef UnirecIPAddrRange_methods[] = {
     {"isIn", (PyCFunction) UnirecIPAddrRange_isIn, METH_O,
         "Check if the address is in IP range.\n\n"
+        "Args:\n"
+        "    ipaddr: UnirecIPAddr struct"
         "Returns:\n"
-        "    bool: True if the address is in range.\n"
+        "    long: -1 if ipaddr < start of range, 0 if ipaddr is in interval, 1 if ipaddr > end of range .\n"
         },
 
     {"isOverlap", (PyCFunction) UnirecIPAddrRange_isOverlap, METH_VARARGS,
-        "Check if 2 Ranges are overlaps\n\n"
+        "Check if 2 ranges sorted by start IP overlap.\n\n"
+        "Args:\n"
+        "    other: UnirecIPAddrRange, second interval to compare"
         "Returns:\n"
         "    bool: True if ranges are overlaps.\n"
         },

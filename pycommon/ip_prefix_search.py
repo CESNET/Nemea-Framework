@@ -74,28 +74,27 @@ def main(argv):
 
 **************************************
 """
-import sys
-import os.path
+import sys, os.path
 import pytrap
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "python"))
-sys.path.append(os.path.join(os.path.dirname(__file__), "..", "python"))
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-
 class IPPSNetwork(object):
-    """
-    Network class
+    """ Network class
     Represent network with associated data.
-        - Network is set as simple string in prefix format e.g. '192.168.1.0/24'
-        - Data type is arbitrary
+
+    Args:
+       addr : String represent prefix ip address
+       data (optional): data assoc with ip prefix
+
+    Attributes:
+	addr (string) : prefix ip address. Set as simple string in prefix format e.g. '192.168.1.0/24'
+        data : Data type is arbitrary
     """
     def __init__(self, addr, data=None):
 
         if isinstance(addr, str):
-            self.addr = addr  # ip address string with prefix in format: 192.168.1.1/24
+            self.addr = addr  # ip address string
         else:
-            raise TypeError("Can't convert object of type to UnirecIPAddr, object isn't string in prefix format")
+            raise TypeError("Can't convert object of type to UnirecIPAddr, object isn't string")
 
         self.data = data    # any data
 
@@ -110,14 +109,18 @@ class IPPSInterval(pytrap.UnirecIPAddrRange):
     """
     IP prefix search Interval class
     Represent IP interval range (from start IP to end IP) and store all assoc data
-    Params may be:
+    Args:
         - string represent network in prefix format e.g. '192.168.1.0/25'
         - 2 strings or UnirecIPAddr structs represent start and end ip addresses of interval
         - data in arbitrary type
     e.g.    IPPSInterval("192.168.1.0/24", data="xyz")
             IPPSInterval("192.168.1.0", "192.168.1.255", "xyz")
             IPPSInterval(pytrap.UnirecIPAddr("192.168.1.0"), pytrap.UnirecIPAddr("192.168.1.255"), "xyz")
-
+    
+    Attributes:
+        start: low IP address of interval
+        end  : high IP address of Interval
+        _data: list of data object
     """
     def __new__(cls, param1, param2=None, data=None):
         if param2 is None:
@@ -165,8 +168,9 @@ class IPPSInterval(pytrap.UnirecIPAddrRange):
     def add_data(self, new_data):
         """
         Add data to private data array _data
-        :param new_data: any inserted data
-        :return: void
+        Args:
+            new_data: inserted data object (int, string...)
+        Return: void
         """
         if isinstance(new_data, list):
             self._data.extend(new_data)
@@ -179,8 +183,8 @@ class IPPSContext(object):
     IP prefix search Context class
     Represent context of networks (overlaps intervals), processed for prefix search
 
-    Params:
-        - list of IPPSNetwork objects
+    Args:
+        val: list of IPPSNetwork objects
     """
 
     def __init__(self, val):
@@ -203,6 +207,16 @@ class IPPSContext(object):
 
     @classmethod
     def fromFile(cls, val):
+        """ Initialize IPPSContext from blacklist data file. Function parse source file 
+        and create IPPSNetwork structs from each line. 
+        Blacklist file must be in format:
+	<ip address>/<mask>,<data>\n
+        
+        Args: 
+            val: path to source file
+        Return: 
+            new IPPSContext or None if val isn't string 
+        """
         if isinstance(val, str):
             network_list = []
             with open(val, "r") as f:
@@ -228,6 +242,15 @@ class IPPSContext(object):
 
     @staticmethod
     def split_overlaps_intervals(sort_intvl_list):
+        """ Function split intervals and appropriate merge assoc data, if 2 intervals are overlap 
+
+        Args:
+            sort_intvl_list: list of IPPSIntervals sorted by low IP address and IP mask
+        Return: 
+            new list of nonoverlaping IPPSIntervals, ready to search
+        Raises:
+            TypeError: if sort_intvl_list is poorly sorted
+        """
         interval_list = []
 
         if len(sort_intvl_list) < 1:
