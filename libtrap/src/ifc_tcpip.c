@@ -1098,25 +1098,26 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    assert(timeout >= TRAP_HALFWAIT);
 
    /* I. Init phase: set timeout and double-send switch */
-   trap_set_timeouts(timeout, &tm, NULL);
-   temptm = (((timeout==TRAP_WAIT) || (timeout==TRAP_HALFWAIT))?NULL:&tm);
-
-   switch (timeout) {
-   case TRAP_WAIT:
-      trap_set_abs_timespec(1000000, &tm, &tmnblk);
-      break;
-   case TRAP_HALFWAIT:
-      trap_set_abs_timespec(0, &tm, &tmnblk);
-      break;
-   default:
-      trap_set_abs_timespec(timeout, &tm, &tmnblk);
-      break;
-   }
-   temptmblk = &tmnblk;
-
-   block = ((timeout==TRAP_WAIT)?1:0);
+   temptm = (((timeout==TRAP_WAIT) || (timeout == TRAP_HALFWAIT)) ? NULL : &tm);
 
 blocking_repeat:
+   switch (timeout) {
+   case TRAP_WAIT:
+      trap_set_timeouts(1000000, &tm, &tmnblk);
+      break;
+   case TRAP_HALFWAIT:
+      trap_set_timeouts(0, &tm, &tmnblk);
+      break;
+   default:
+      trap_set_timeouts(timeout, &tm, &tmnblk);
+      break;
+   }
+
+   trap_set_timeouts(timeout, &tm, NULL);
+   temptmblk = &tmnblk;
+
+   block = ((timeout == TRAP_WAIT) ? 1 : 0);
+
    if (c->is_terminated) {
       return TRAP_E_TERMINATED;
    }
@@ -1163,7 +1164,7 @@ blocking_repeat:
       }
    }
 
-   retval = select(maxsd + 1, &disset, &set, NULL, (temptm != NULL?temptm:&sectm));
+   retval = select(maxsd + 1, &disset, &set, NULL, (temptm != NULL ? temptm : &sectm));
    if (retval == 0) {
       if (temptm != NULL) {
          /* non-blocking mode */

@@ -1490,7 +1490,7 @@ inline char *get_param_by_delimiter(const char *source, char **dest, const char 
    return trap_get_param_by_delimiter(source, dest, delimiter);
 }
 
-void trap_set_abs_timespec(int timeout, struct timeval *tm, struct timespec *tmnblk)
+void trap_set_abs_timespec(struct timeval *tm, struct timespec *tmnblk)
 {
    if (tmnblk == NULL) {
       /* we do not need tmnblk */
@@ -1528,7 +1528,7 @@ void trap_set_timeouts(int timeout, struct timeval *tm, struct timespec *tmnblk)
       VERBOSE(CL_ERROR, "Setting timeout to %d failed", timeout);
       return;
    }
-   trap_set_abs_timespec(timeout, tm, tmnblk);
+   trap_set_abs_timespec(tm, tmnblk);
 }
 
 int trap_ifcctl(int8_t type, uint32_t ifcidx, int32_t request, ... /* arg */)

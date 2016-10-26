@@ -283,11 +283,10 @@ void trap_set_timeouts(int timeout, struct timeval *tm, struct timespec *tmnblk)
 /**
  * \brief Internal function for setting of timeout structs according to libtrap timeout.
  *
- * \param[in] timeout  Amount of time / timeout that is being converted.
  * \param[in] tm       Precomputed timeval, set using e.g. trap_set_timeouts().
  * \param[out] tmnblk  Used for sem_timedwait() call to block on semaphore.
  */
-void trap_set_abs_timespec(int timeout, struct timeval *tm, struct timespec *tmnblk);
+void trap_set_abs_timespec(struct timeval *tm, struct timespec *tmnblk);
 
 /**
  * @}
