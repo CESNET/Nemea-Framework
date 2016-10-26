@@ -110,13 +110,12 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                             help='Add "Test" to "Category" before sending a message to output(s).')
     arg_parser.add_argument('-v', '--verbose', action='store_true',
                             help="Enable verbose mode (may be used by some modules, common part donesn't print anything")
-
+    arg_parser.add_argument('--whitelist-file', metavar="FILE", type=str,
+                            help="File with whitelist filter information in format:<ip address>/<mask>,<data>\\n \n <data> and <mask> are optional. Whitelist is applied to SRC_IP field and report only ip address from whitelist file.")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
                            help='TODO (ideally this section should be added by TRAP')
-
-
     # Parse arguments
     args = arg_parser.parse_args()
 
@@ -167,6 +166,14 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         import warden_client
         wardenclient = warden_client.Client(**warden_client.read_cfg(args.warden))
 
+    # if whitelist is set, parse whilst file and prepare context for binary search
+    if args.whitelist_file:
+        if 'ipaddr SRC_IP' in req_format.split(","):
+            import ip_prefix_search
+            whitelist = ip_prefix_search.IPPSContext.fromFile(args.whitelist_file)
+    else:
+        whitelist = None
+
 
     # *** Main loop ***
     URInputTmplt = None
@@ -215,6 +222,9 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             rec = data
 
         # *** Convert input record to IDEA ***
+
+        if whitelist and not whitelist.ip_search(rec.SRC_IP):
+             continue
 
         # Pass the input record to conversion function to create IDEA message
         idea = conv_func(rec, args)
