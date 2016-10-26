@@ -181,6 +181,7 @@ UnirecTime_format(pytrap_unirectime *self, PyObject *args)
     PyObject *strftime = PyUnicode_FromString("strftime");
 
     PyObject *result = PyObject_CallMethodObjArgs(dt, strftime, fmt, NULL);
+    Py_DECREF(dt);
     Py_DECREF(strftime);
     return result;
 }
@@ -1133,7 +1134,7 @@ PyObject *
 UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
 {
     PyObject *d = PyDict_New();
-    PyObject *key;
+    PyObject *key, *num;
     int i;
 
     if (d != NULL) {
@@ -1143,7 +1144,9 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
 #else
             key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
 #endif
-            PyDict_SetItem(d, key, PyLong_FromLong(self->urtmplt->ids[i]));
+            num = PyLong_FromLong(self->urtmplt->ids[i]);
+            PyDict_SetItem(d, key, num);
+            Py_DECREF(num);
             Py_DECREF(key);
         }
         return d;
@@ -1649,6 +1652,7 @@ UnirecTemplate_next(pytrap_unirectemplate *self)
 {
     PyObject *name;
     PyObject *value;
+    PyObject *result;
 
     if (self->iter_index < self->field_count) {
 #if PY_MAJOR_VERSION >= 3
@@ -1658,7 +1662,10 @@ UnirecTemplate_next(pytrap_unirectemplate *self)
 #endif
         value = UnirecTemplate_get_local(self, self->data, self->urtmplt->ids[self->iter_index]);
         self->iter_index++;
-        return Py_BuildValue("(OO)", name, value);
+        result = Py_BuildValue("(OO)", name, value);
+        Py_DECREF(name);
+        Py_DECREF(value);
+        return result;
     }
 
     self->iter_index = 0;
@@ -1752,18 +1759,16 @@ UnirecIPAddrRange_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         self->start = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
 
         if (self->start == NULL) {
-            //  Py_DECREF(self);
             return NULL;
         }
-        Py_INCREF(self->start);
 
         self->end = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
 
         if (self->end == NULL) {
-            // Py_DECREF(self);
+            PyErr_SetString(PyExc_MemoryError, "Allocation of end address failed.");
+            Py_DECREF(self->start);
             return NULL;
         }
-        Py_INCREF(self->end);
     }
 
     return (PyObject *)self;
@@ -1800,7 +1805,6 @@ UnirecIPAddrRange_isIn(pytrap_unirecipaddrrange *self, PyObject *args)
         }
     }
 
-    Py_INCREF(result);
     return result;
 }
 
@@ -2057,12 +2061,17 @@ UnirecIPAddrRange_repr(pytrap_unirecipaddrrange *self)
 static PyObject *
 UnirecIPAddrRange_str(pytrap_unirecipaddrrange *self)
 {
+    PyObject *ip1 = NULL, *ip2 = NULL, *res = NULL;
+    ip1 = UnirecIPAddr_str(self->start);
+    ip2 = UnirecIPAddr_str(self->end);
 #if PY_MAJOR_VERSION >= 3
-    return PyUnicode_FromFormat("%U - %U", UnirecIPAddr_str(self->start), UnirecIPAddr_str(self->end));
+    res = PyUnicode_FromFormat("%S - %S", ip1, ip2);
 #else
-    return PyString_FromFormat("%s - %s", PyString_AsString(UnirecIPAddr_str(self->start)),
-        PyString_AsString(UnirecIPAddr_str(self->end)));
+    res = PyString_FromFormat("%s - %s", PyString_AsString(ip1), PyString_AsString(ip2));
 #endif
+    Py_DECREF(ip1);
+    Py_DECREF(ip2);
+    return res;
 }
 
 static PyMemberDef UnirecIPAddrRange_members[] = {
