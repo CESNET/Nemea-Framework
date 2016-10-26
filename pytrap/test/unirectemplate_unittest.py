@@ -373,7 +373,7 @@ class DataTypesIPAddrRange(unittest.TestCase):
         self.assertEqual(ip1, ip1)
         self.assertEqual(type(ip1), pytrap.UnirecIPAddrRange, "Bad type of IP address Range object.")
         self.assertEqual(str(ip1), "192.168.3.0 - 192.168.3.255", "IP address is not equal to its str().")
-        self.assertEqual(repr(ip1), "UnirecIPAddrRange('192.168.3.0' - '192.168.3.255')",
+        self.assertEqual(repr(ip1), "UnirecIPAddrRange(UnirecIPAddr('192.168.3.0'), UnirecIPAddr('192.168.3.255'))",
                          "IP address is not equal to its repr().")
 
         self.assertTrue(ip1.start.isIPv4(), "IPv6 was recognized as IPv4.")
@@ -401,7 +401,7 @@ class DataTypesIPAddrRange(unittest.TestCase):
         self.assertEqual(type(ip1), pytrap.UnirecIPAddrRange, "Bad type of IP address object.")
         self.assertEqual(str(ip1), "fd7c:e770:9b8a:: - fd7c:e770:9b8a:0:ffff:ffff:ffff:ffff",
                          "IP address is not equal to its str().")
-        self.assertEqual(repr(ip1), "UnirecIPAddrRange('fd7c:e770:9b8a::' - 'fd7c:e770:9b8a:0:ffff:ffff:ffff:ffff')",
+        self.assertEqual(repr(ip1), "UnirecIPAddrRange(UnirecIPAddr('fd7c:e770:9b8a::'), UnirecIPAddr('fd7c:e770:9b8a:0:ffff:ffff:ffff:ffff'))",
                          "IP address is not equal to its repr().")
 
         self.assertFalse(ip1.start.isIPv4(), "IPv6 was not recognized.")

@@ -2074,12 +2074,18 @@ out:
 static PyObject *
 UnirecIPAddrRange_repr(pytrap_unirecipaddrrange *self)
 {
+    PyObject *ip1 = NULL, *ip2 = NULL, *res = NULL;
+
+    ip1 = UnirecIPAddr_repr(self->start);
+    ip2 = UnirecIPAddr_repr(self->end);
 #if PY_MAJOR_VERSION >= 3
-    return PyUnicode_FromFormat("UnirecIPAddrRange('%U' - '%U')", UnirecIPAddr_str(self->start), UnirecIPAddr_str(self->end));
+    res = PyUnicode_FromFormat("UnirecIPAddrRange(%S, %S)", ip1, ip2);
 #else
-    return PyString_FromFormat("UnirecIPAddrRange('%s' - '%s')", PyString_AsString(UnirecIPAddr_str(self->start)),
-        PyString_AsString(UnirecIPAddr_str(self->end)));
+    res = PyString_FromFormat("UnirecIPAddrRange(%s, %s)", PyString_AsString(ip1), PyString_AsString(ip2));
 #endif
+    Py_DECREF(ip1);
+    Py_DECREF(ip2);
+    return res;
 }
 
 static PyObject *
