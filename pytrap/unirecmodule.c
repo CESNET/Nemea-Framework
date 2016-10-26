@@ -868,13 +868,13 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
         }
         break;
     case UR_TYPE_UINT32:
-        longval = PyLong_AsLong(valueObj);
+        longval = PyLong_AsLongLong(valueObj);
         if (PyErr_Occurred() == NULL) {
             *((uint32_t *) value) = (uint32_t) longval;
         }
         break;
     case UR_TYPE_UINT64:
-        longval = PyLong_AsLong(valueObj);
+        longval = PyLong_AsLongLong(valueObj);
         if (PyErr_Occurred() == NULL) {
             *((uint64_t *) value) = (uint64_t) longval;
         }
@@ -892,7 +892,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
         }
         break;
     case UR_TYPE_INT32:
-        longval = PyLong_AsLong(valueObj);
+        longval = PyLong_AsLongLong(valueObj);
         if (PyErr_Occurred() == NULL) {
             *((int32_t *) value) = (int32_t) longval;
         }
