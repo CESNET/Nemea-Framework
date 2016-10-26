@@ -206,20 +206,20 @@ class IPPSContext(object):
         return len(self.interval_list_v4) + len(self.interval_list_v6)
 
     @classmethod
-    def fromFile(cls, val):
+    def fromFile(cls, path):
         """ Initialize IPPSContext from blacklist data file. Function parse source file
         and create IPPSNetwork structs from each line.
         Blacklist file must be in format:
 	<ip address>/<mask>,<data>\n
 
         Args:
-            val: path to source file
+            path: path to source file
         Return:
-            new IPPSContext or None if val isn't string
+            new IPPSContext or None if path isn't string
         """
-        if isinstance(val, str):
+        if isinstance(path, str):
             network_list = []
-            with open(val, "r") as f:
+            with open(path, "r") as f:
                 for line in f:
                     if line.isspace():
                         continue
