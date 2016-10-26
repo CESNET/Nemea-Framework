@@ -1850,180 +1850,146 @@ bit_endian_swap(uint8_t in)
     return in;
 }
 
+/* TODO something like this can be used globally */
+#if PY_MAJOR_VERSION >= 3
+#  define CHECK_STR_CONV(pobj, cstr, csize) { \
+    if (!PyUnicode_Check(pobj)) { \
+        PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected."); \
+        return -1; \
+    } else { \
+        cstr = PyUnicode_AsUTF8AndSize(pobj, &csize); \
+    } \
+} while (0)
+#else
+#  define CHECK_STR_CONV(pobj, cstr, csize) { \
+    if (!PyString_Check(pobj)) { \
+        PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected."); \
+        return -1; \
+    } \
+    if (PyString_AsStringAndSize(pobj, &cstr, &csize) == -1) { \
+        return -1; \
+    } \
+} while (0)
+#endif
+
+#define COPY_IPADD(str, dest, tmp) { \
+    if (ip_from_str(str, &tmp) != 1) { \
+        PyErr_SetString(TrapError, "Could not parse given IP address."); \
+        goto exit_failure; \
+    } \
+    memcpy(&dest, &tmp, sizeof(ip_addr_t)); \
+} while (0)
+
+#define FREE_CLEAR(p) free(p);
+
 static int
 UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject *kwds)
 {
     PyObject *start = NULL, *end = NULL;
-    char *start_str, *end_str;
+    char *argstr = NULL, *str = NULL, *netmask = NULL;
     Py_ssize_t size;
+    ip_addr_t tmp_ip;
+    unsigned char mask = 0;
+    uint32_t net_mask_array[4];
 
     static char *kwlist[] = {"start", "end", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist, &start, &end)) {
-        return -1;
+        goto exit_failure;
     }
 
-    if (end) {
-        if (PyObject_IsInstance(end, (PyObject *) &pytrap_UnirecIPAddr)) {
-            pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *) end);
-            memcpy(&self->end->ip, &src->ip, 16);
-        } else {
-#if PY_MAJOR_VERSION >= 3
-            if (!PyUnicode_Check(end)) {
-                PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected.");
-                return -1;
-            } else {
-                end_str = PyUnicode_AsUTF8AndSize(end, &size);
-            }
-#else
-            if (!PyString_Check(end)) {
-                PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected.");
-                return -1;
-            }
-            if (PyString_AsStringAndSize(end, &end_str, &size) == -1) {
-                return -1;
-            }
-#endif
-            pytrap_UnirecIPAddr.tp_init((PyObject *) self->end, Py_BuildValue("(s)", end_str), kwds);
+    /* start argument */
+    if (PyObject_IsInstance(start, (PyObject *) &pytrap_UnirecIPAddr)) {
+        if (!end) {
+            PyErr_SetString(PyExc_TypeError, "Missing end argument.");
+            goto exit_failure;
         }
-    }
-
-    if (start) {
-        if (PyObject_IsInstance(start, (PyObject *) &pytrap_UnirecIPAddr)) {
-            pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *) start);
-            memcpy(&self->start->ip, &src->ip,16 );
-
+        memcpy(&self->start->ip, &(((pytrap_unirecipaddr *) start)->ip), sizeof(ip_addr_t));
+    } else {
+        /* check for supported string type */
+        CHECK_STR_CONV(start, argstr, size);
+        str = strdup(argstr);
+        /* supported string type */
+        netmask = strchr(str, '/');
+        if (netmask == NULL) {
             if (!end) {
-                PyErr_SetString(PyExc_TypeError, "Missing end IP address");
-                return -1;
+                PyErr_SetString(PyExc_TypeError, "End argument is required when start is not in <ip>/<mask> format.");
+                goto exit_failure;
             }
+            /* set start IP and continue with end */
+            COPY_IPADD(str, self->start->ip, tmp_ip);
+            FREE_CLEAR(str);
         } else {
-#if PY_MAJOR_VERSION >= 3
-            if (!PyUnicode_Check(start)) {
-                PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected.");
-                return -1;
-            } else {
-                start_str = PyUnicode_AsUTF8AndSize(start, &size);
-            }
-#else
-            if (!PyString_Check(start)) {
-                PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected.");
-                return -1;
-            }
-            if (PyString_AsStringAndSize(start, &start_str, &size) == -1) {
-                return -1;
-            }
-#endif
             if (end) {
-                pytrap_UnirecIPAddr.tp_init((PyObject *)self->start,  Py_BuildValue("(s)", start_str), kwds);
+                PyErr_SetString(PyExc_TypeError, "Start argument is in <ip>/<mask> format - end argument must be ommited.");
+                goto exit_failure;
+            }
+
+            /* expected string in <ip>/<mask> format, e.g. 192.168.1.0/24 */
+            *netmask = '\0';
+            netmask++;
+            if (sscanf(netmask, "%" SCNu8, &mask) != 1) {
+                PyErr_Format(PyExc_TypeError, "Malformed netmask %s.", netmask);
+                goto exit_failure;
+            }
+
+            /* replace '/' with '\0' in order to convert string IP into ip_addr_t */
+            if (ip_from_str(str, &tmp_ip) != 1) {
+                PyErr_SetString(TrapError, "Could not parse given IP address.");
+                goto exit_failure;
+            }
+
+            if (ip_is4(&tmp_ip)) {
+                net_mask_array[0] = 0xFFFFFFFF >> (mask > 31 ? 0 : 32 - mask);
+                net_mask_array[0] = (bit_endian_swap((net_mask_array[0] & 0x000000FF)>>  0) <<  0) |
+                    (bit_endian_swap((net_mask_array[0] & 0x0000FF00)>>  8) <<  8) |
+                    (bit_endian_swap((net_mask_array[0] & 0x00FF0000)>> 16) << 16) |
+                    (bit_endian_swap((net_mask_array[0] & 0xFF000000)>> 24) << 24);
+
+                tmp_ip.ui32[2] = tmp_ip.ui32[2] & net_mask_array[0];
+                memcpy(&self->start->ip, &tmp_ip, 16);
+
+                tmp_ip.ui32[2] = tmp_ip.ui32[2] | (~net_mask_array[0]);
+                memcpy(&self->end->ip, &tmp_ip, 16);
             } else {
-                char * str;
-                long mask;
-                ip_addr_t tmp_ip;
-                Py_ssize_t size;
-                PyObject *net;
+                // Fill every word of IPv6 address
+                net_mask_array[0] = 0xFFFFFFFF>>(mask > 31 ? 0 : 32 - mask);
+                net_mask_array[1] = 0xFFFFFFFF>>(mask > 63 ? 0 : (mask > 32 ? 64 - mask: 32));
+                net_mask_array[2] = 0xFFFFFFFF>>(mask > 95 ? 0 : (mask > 64 ? 96 - mask: 32));
+                net_mask_array[3] = 0xFFFFFFFF>>(mask > 127 ? 0 :(mask > 96 ? 128 - mask : 32));
 
-#if PY_MAJOR_VERSION >= 3
-                net = start;
-#else
-                net = PyUnicode_FromObject(start);
-#endif
-                PyObject *sep = PyUnicode_FromString("/");
-                PyObject *par = PyUnicode_Split(net, sep, 1);
+                int i;
 
-                if (PyList_Size(par) == 1 && !end) {
-                    PyErr_SetString(PyExc_TypeError, "Missing end IP.");
-                    return -1;
-                }
-
-#if PY_MAJOR_VERSION >= 3
-                if (!PyUnicode_Check(start)) {
-                    PyErr_SetString(PyExc_TypeError, "String object expected.");
-                    return -1;
-                }
-
-                str = PyUnicode_AsUTF8AndSize(PyList_GetItem(par, 0), &size);
-                PyObject *py_mask = PyLong_FromUnicodeObject(PyList_GetItem(par, 1), 10);
-                mask = PyLong_AsLong(py_mask);
-                Py_DECREF(py_mask);
-#else
-                if (!PyString_Check(start)) {
-                    PyErr_SetString(PyExc_TypeError, "String object expected");
-                    return -1;
-                }
-
-                if (PyString_AsStringAndSize(PyList_GetItem(par, 0), &str, &size) == -1) {
-                    return -1;
-                }
-
-                char * msk = NULL;
-                if (PyString_AsStringAndSize(PyList_GetItem(par, 1), &msk, &size) == -1) {
-                    return -1;
-                }
-
-                mask = PyLong_AsLong(PyLong_FromString(msk, NULL, 10));
-#endif
-                Py_DECREF(sep);
-                Py_DECREF(par);
-
-                if (ip_from_str(str, &tmp_ip) != 1) {
-                    PyErr_SetString(TrapError, "Could not parse given IP address.");
-                    return -1;
-                }
-
-                if (ip_is4(&tmp_ip)) {
-                    uint32_t mask_bit;
-                    mask_bit = 0xFFFFFFFF>>(mask > 31 ? 0 : 32 - mask);
-                    mask_bit = (bit_endian_swap((mask_bit & 0x000000FF)>>  0) <<  0) |
-                        (bit_endian_swap((mask_bit & 0x0000FF00)>>  8) <<  8) |
-                        (bit_endian_swap((mask_bit & 0x00FF0000)>> 16) << 16) |
-                        (bit_endian_swap((mask_bit & 0xFF000000)>> 24) << 24);
-
-                    tmp_ip.ui32[2] = tmp_ip.ui32[2] & mask_bit;
-                    memcpy( &self->start->ip, &tmp_ip, 16);
-
-                    tmp_ip.ui32[2] = tmp_ip.ui32[2] | (~ mask_bit);
-                    memcpy( &self->end->ip, &tmp_ip, 16);
-
-                } else {
-                    uint32_t * net_mask_array;
-
-                    net_mask_array = malloc(4 * sizeof(uint32_t));
-                    if (net_mask_array == NULL) {
-                        return -1;
-                    }
-                    // Fill every word of IPv6 address
-                    net_mask_array[0] = 0xFFFFFFFF>>(mask > 31 ? 0 : 32 - mask);
-                    net_mask_array[1] = 0xFFFFFFFF>>(mask > 63 ? 0 : (mask > 32 ? 64 - mask: 32));
-                    net_mask_array[2] = 0xFFFFFFFF>>(mask > 95 ? 0 : (mask > 64 ? 96 - mask: 32));
-                    net_mask_array[3] = 0xFFFFFFFF>>(mask > 127 ? 0 :(mask > 96 ? 128 - mask : 32));
-
-                    int i;
-
+                for (i = 0; i < 4; ++i) {
                     // Swap bits in every byte for compatibility with ip_addr_t stucture
-                    for (i = 0; i < 4; ++i) {
-                        net_mask_array[i] = (bit_endian_swap((net_mask_array[i] & 0x000000FF)>>  0) <<  0) |
-                            (bit_endian_swap((net_mask_array[i] & 0x0000FF00)>>  8) <<  8) |
-                            (bit_endian_swap((net_mask_array[i] & 0x00FF0000)>> 16) << 16) |
-                            (bit_endian_swap((net_mask_array[i] & 0xFF000000)>> 24) << 24);
-                    }
+                    net_mask_array[i] = (bit_endian_swap((net_mask_array[i] & 0x000000FF) >> 0) <<  0) |
+                        (bit_endian_swap((net_mask_array[i] & 0x0000FF00)>>  8) <<  8) |
+                        (bit_endian_swap((net_mask_array[i] & 0x00FF0000)>> 16) << 16) |
+                        (bit_endian_swap((net_mask_array[i] & 0xFF000000)>> 24) << 24);
 
-                    for (i = 0; i < 4; i++) {
-                        tmp_ip.ui32[i] = tmp_ip.ui32[i] & net_mask_array[i];
-                    }
-                    memcpy( &self->start->ip, &tmp_ip, 16);
-
-                    for (i = 0; i < 4; i++) {
-                        tmp_ip.ui32[i] = tmp_ip.ui32[i] | ( ~ net_mask_array[i]);
-                    }
-                    memcpy( &self->end->ip, &tmp_ip, 16);
-
-                    free(net_mask_array);
+                    self->start->ip.ui32[i] = tmp_ip.ui32[i] & net_mask_array[i];
+                    self->end->ip.ui32[i] = tmp_ip.ui32[i] | ( ~ net_mask_array[i]);
                 }
             }
+            free(str);
+            /* we are done */
+            goto exit_success;
         }
     }
+
+    /* end argument */
+    if (PyObject_IsInstance(end, (PyObject *) &pytrap_UnirecIPAddr)) {
+        memcpy(&self->end->ip, &(((pytrap_unirecipaddr *) end)->ip), sizeof(ip_addr_t));
+    } else {
+        /* string is supported */
+        CHECK_STR_CONV(end, str, size);
+        COPY_IPADD(str, self->end->ip, tmp_ip);
+    }
+exit_success:
     return 0;
+exit_failure:
+    FREE_CLEAR(str);
+    return -1;
 }
 
 static PyObject *

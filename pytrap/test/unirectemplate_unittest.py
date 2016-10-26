@@ -369,6 +369,21 @@ class TemplateSizeTest(unittest.TestCase):
 class DataTypesIPAddrRange(unittest.TestCase):
     def runTest(self):
         import pytrap
+        try:
+            ip1 = pytrap.UnirecIPAddrRange("1.2.3.4")
+            self.fail("2 arguments or <ip>/<netmask> are required")
+        except:
+            pass
+        try:
+            ip1 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("1.2.3.4"))
+            self.fail("2 arguments or <ip>/<netmask> are required")
+        except:
+            pass
+        try:
+            ip1 = pytrap.UnirecIPAddrRange(1, 2)
+            self.fail("Integer arguments are not supported.")
+        except:
+            pass
         ip1 = pytrap.UnirecIPAddrRange("192.168.3.1/24")
         self.assertEqual(ip1, ip1)
         self.assertEqual(type(ip1), pytrap.UnirecIPAddrRange, "Bad type of IP address Range object.")
