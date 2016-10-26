@@ -76,9 +76,10 @@ extern const char trap_version[];
 extern const char trap_git_version[];
 
 /**
- * Text string with default path to sockets (UNIX IFC and service IFC).
+ * Text string with default path format to sockets (UNIX IFC and service IFC).
+ * Assigned in ifc_tcpip.h
  */
-extern const char trap_default_socket_path[];
+extern const char trap_default_socket_path_format[];
 
 /**
  * \defgroup errorcodes Error codes
