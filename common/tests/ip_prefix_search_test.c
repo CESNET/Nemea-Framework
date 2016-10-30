@@ -41,20 +41,22 @@
  *
  */
 #include "../include/ip_prefix_search.h"
+#include "../ip_prefix_search/ipps_internal.h"
 
-void print_networks( ipps_network_list_t *networks) {
-    int index;
-    char string[INET6_ADDRSTRLEN];
+//void print_networks( ipps_network_list_t *networks)
+//{
+//    int index;
+//    char string[INET6_ADDRSTRLEN];
+//
+//    for (index = 0; index < networks->net_count; ++index) {
+//        ip_to_str(&networks->networks[index].addr, &string[0]);
+//        printf("%d %-32s/%-3d\t%c\n", index, string, networks->networks[index].mask,
+//               *(char *) networks->networks[index].data);
+//    }
+//    printf("\n\n");
+//}
 
-    for (index = 0; index < networks->net_count; ++index) {
-        ip_to_str(&networks->networks[index].addr, &string[0]);
-        printf("%d %-32s/%-3d\t%c\n", index, string, networks->networks[index].mask,
-               *(char *) networks->networks[index].data);
-    }
-    printf("\n\n");
-}
-
-ipps_network_list_t * new_list(int use_net, char * ip_addr[], uint32_t * masks)
+ipps_network_list_t *new_list(int use_net, char *ip_addr[], uint32_t *masks)
 {
     ipps_network_list_t *new_list = malloc(sizeof(ipps_network_list_t));
     if (new_list == NULL) {
@@ -62,31 +64,26 @@ ipps_network_list_t * new_list(int use_net, char * ip_addr[], uint32_t * masks)
         return NULL;
     }
 
-    new_list->net_count=use_net;
+    new_list->net_count = use_net;
     new_list->networks = malloc(use_net * sizeof(ipps_network_t));
-    ipps_network_t * network = new_list->networks;
-
-
+    ipps_network_t *network = new_list->networks;
 
     int i;
     for (i = 0; i < use_net; ++i) {
         network->data = malloc(sizeof(char));
         network->data_len = 1;
-        ((char *) network->data)[0] = 'a'+ (char) i;
+        ((char *) network->data)[0] = 'a' + (char) i;
         ip_from_str(ip_addr[i], &network->addr);
         network->mask = masks[i];
         network++;
     }
-
-
-
     return new_list;
 }
 
-void deinit_list(ipps_network_list_t * list)
+void deinit_list(ipps_network_list_t *list)
 {
     int i;
-    for ( i = 0; i < list->net_count; ++i) {
+    for (i = 0; i < list->net_count; ++i) {
         free(list->networks[i].data);
     }
     free(list->networks);
@@ -94,22 +91,19 @@ void deinit_list(ipps_network_list_t * list)
 }
 
 
-void print_context(ipps_context_t * prefix_context)
+void print_context(ipps_context_t *prefix_context)
 {
     char ip_string[INET6_ADDRSTRLEN];
     int j, index;
 
-
-    /* Check print IPv4 */
-    for(index = 0; index < prefix_context->v4_count; ++index)
-    {
+    // Check print IPv4
+    for (index = 0; index < prefix_context->v4_count; ++index) {
         ip_to_str(&prefix_context->v4_prefix_intervals[index].low_ip, &ip_string[0]);
         printf("\t%-16s", ip_string);
         ip_to_str(&prefix_context->v4_prefix_intervals[index].high_ip, &ip_string[0]);
         printf("\t%-15s", ip_string);
         printf("\t");
-        for(j=0; j < prefix_context->v4_prefix_intervals[index].data_cnt; ++j)
-        {
+        for (j=0; j < prefix_context->v4_prefix_intervals[index].data_cnt; ++j) {
             printf("\t%c", *(char *) prefix_context->v4_prefix_intervals[index].data_array[j]);
         }
         printf("\n");
@@ -119,16 +113,14 @@ void print_context(ipps_context_t * prefix_context)
 
     printf("\n-------------------------IPv6-------------------------------\n");
     printf("\t%-46s \t%-46s\t\t%s\n", "Low IP", "High IP", "Data");
-    /* Check print IPv6 */
-    for(index = 0; index < prefix_context->v6_count; ++index)
-    {
+    // Check print IPv6
+    for (index = 0; index < prefix_context->v6_count; ++index) {
         ip_to_str(&prefix_context->v6_prefix_intervals[index].low_ip, &ip_string[0]);
         printf("\t%-46s", ip_string);
         ip_to_str(&prefix_context->v6_prefix_intervals[index].high_ip, &ip_string[0]);
         printf("\t%-46s", ip_string);
         printf("\t");
-        for(j=0; j < prefix_context->v6_prefix_intervals[index].data_cnt; ++j)
-        {
+        for (j=0; j < prefix_context->v6_prefix_intervals[index].data_cnt; ++j) {
             printf("\t%c", *(char *) prefix_context->v6_prefix_intervals[index].data_array[j]);
         }
         printf("\n");
@@ -136,16 +128,14 @@ void print_context(ipps_context_t * prefix_context)
     printf("------------------------------------------------------------\n\n");
 }
 
-int main() {
-
+int main(void)
+{
     int index;
     int search_result;
     int cmp_result;
 
     ip_addr_t ip;
     ip_addr_t ip2;
-
-
 
     ipps_network_list_t *networks;
     ipps_context_t *prefix_context;
@@ -195,15 +185,16 @@ int main() {
 
     printf("TEST 1 - IP increment\n");
     for (index = 0; index < 10; ++index) {
-        if(index == 4)
+        if (index == 4) {
             printf("\tIPv4 increment function OK\n");
+        }
 
         ip_from_str(ip_addr[index], &ip);
         ip_inc(&ip, &ip2);
         ip_from_str(ip_addr_inc[index], &ip);
 
-        cmp_result = memcmp(&ip2, &ip, 16 );
-        if(cmp_result) {
+        cmp_result = memcmp(&ip2, &ip, 16);
+        if (cmp_result) {
             return 1;
         }
     }
@@ -212,15 +203,16 @@ int main() {
 
     printf("TEST 2 - IP decrement\n");
     for (index = 0; index < 10; ++index) {
-        if(index == 4)
+        if (index == 4) {
             printf("\tIPv4 decrement function OK\n");
+        }
 
         ip_from_str(ip_addr[index], &ip);
         ip_dec(&ip, &ip2);
         ip_from_str(ip_addr_dec[index], &ip);
 
-        cmp_result = memcmp(&ip2, &ip, 16 );
-        if(cmp_result) {
+        cmp_result = memcmp(&ip2, &ip, 16);
+        if (cmp_result) {
             return 1;
         }
     }
@@ -240,8 +232,8 @@ int main() {
 
     };
 
-    uint32_t masks[] = {1,24,25,32,31,1,64, 47,128,120};
-    uint32_t masks_srt[] = {24,25,1,31,32,120,128, 64,1,47};
+    uint32_t masks[] = {1, 24, 25, 32, 31, 1, 64, 47, 128, 120};
+    uint32_t masks_srt[] = {24, 25, 1, 31, 32, 120, 128, 64, 1, 47};
     char data_srt[] = {'b', 'c', 'a', 'e', 'd', 'j', 'i', 'g', 'f', 'h'};
 
 
@@ -268,22 +260,21 @@ int main() {
     }
 
     for (index = 0; index < 5; ++index) {
-        networks_v6[index] = &networks->networks[index+5];
+        networks_v6[index] = &networks->networks[index + 5];
     }
 
     qsort(networks_v4, 5, sizeof(ipps_network_t *), cmp_net_v4);
 
     for (index = 0; index < 5; ++index) {
         ip_from_str(ip_addr_srt[index], &ip);
-        cmp_result = memcmp(networks_v4[index], &ip, 16 );
-        if(cmp_result) {
+        cmp_result = memcmp(networks_v4[index], &ip, 16);
+        if (cmp_result) {
             return 1;
-        }
-        else {
-            if(masks_srt[index] != networks_v4[index]->mask) {
+        } else {
+            if (masks_srt[index] != networks_v4[index]->mask) {
                 return 1;
             }
-            if(data_srt[index] != *(char*)networks_v4[index]->data) {
+            if (data_srt[index] != *(char *) networks_v4[index]->data) {
                 return 1;
             }
         }
@@ -294,15 +285,14 @@ int main() {
 
     for (index = 0; index < 5; ++index) {
         ip_from_str(ip_addr_srt[index+5], &ip);
-        cmp_result = memcmp(networks_v6[index], &ip, 16 );
-        if(cmp_result) {
+        cmp_result = memcmp(networks_v6[index], &ip, 16);
+        if (cmp_result) {
             return 1;
-        }
-        else {
+        } else {
             if(masks_srt[index+5] != networks_v6[index]->mask) {
                 return 1;
             }
-            if(data_srt[index+5] != *(char*)networks_v6[index]->data) {
+            if(data_srt[index+5] != *(char*) networks_v6[index]->data) {
                 return 1;
             }
         }
@@ -316,22 +306,22 @@ int main() {
     /**********************************************************************/
     /**********************************************************************/
     printf("TEST 4 - Create Interval\n");
-    ipps_interval_node_t * inter_node;
-    ip_from_str(ip_addr2[0],&ip);
-    ip_from_str(ip_addr2[1],&ip2);
+    ipps_interval_node_t *inter_node;
+    ip_from_str(ip_addr2[0], &ip);
+    ip_from_str(ip_addr2[1], &ip2);
 
     inter_node = new_interval( &ip, &ip2);
-    if(inter_node == NULL ||
-       inter_node->interval == NULL ||
-       inter_node->interval->data_array == NULL){
+    if (inter_node == NULL
+        || inter_node->interval == NULL
+        || inter_node->interval->data_array == NULL) {
         return 1;
     }
-    cmp_result = memcmp(&inter_node->interval->low_ip, &ip, 16 );
-    if(cmp_result != 0) {
+    cmp_result = memcmp(&inter_node->interval->low_ip, &ip, 16);
+    if (cmp_result != 0) {
         return 1;
     }
-    cmp_result = memcmp(&inter_node->interval->high_ip, &ip2, 16 );
-    if(cmp_result != 0) {
+    cmp_result = memcmp(&inter_node->interval->high_ip, &ip2, 16);
+    if (cmp_result != 0) {
         return 1;
     }
     free(inter_node->interval->data_array);
@@ -339,21 +329,21 @@ int main() {
     free(inter_node);
     printf("\tIPv4 create interval function OK\n");
 
-    ip_from_str(ip_addr2[5],&ip);
-    ip_from_str(ip_addr2[7],&ip2);
+    ip_from_str(ip_addr2[5], &ip);
+    ip_from_str(ip_addr2[7], &ip2);
 
-    inter_node = new_interval( &ip, &ip2);
-    if(inter_node == NULL ||
-       inter_node->interval == NULL ||
-       inter_node->interval->data_array == NULL){
+    inter_node = new_interval(&ip, &ip2);
+    if (inter_node == NULL
+        || inter_node->interval == NULL
+        || inter_node->interval->data_array == NULL) {
         return 1;
     }
-    cmp_result = memcmp(&inter_node->interval->low_ip, &ip, 16 );
-    if(cmp_result != 0) {
+    cmp_result = memcmp(&inter_node->interval->low_ip, &ip, 16);
+    if (cmp_result != 0) {
         return 1;
     }
-    cmp_result = memcmp(&inter_node->interval->high_ip, &ip2, 16 );
-    if(cmp_result != 0) {
+    cmp_result = memcmp(&inter_node->interval->high_ip, &ip2, 16);
+    if (cmp_result != 0) {
         return 1;
     }
 
@@ -364,39 +354,40 @@ int main() {
     printf("TEST 5 - add data\n");
 
     void *tmp_ptr = malloc(sizeof(char));
-    if(tmp_ptr == NULL)
+    if (tmp_ptr == NULL) {
         return 1;
+    }
+
     *(char *)tmp_ptr = 'a';
 
-    if(add_data(inter_node->interval, tmp_ptr, sizeof(char))) {
+    if (add_data(inter_node->interval, tmp_ptr, sizeof(char))) {
         destroy_list(inter_node);
         return  1;
     }
     free(tmp_ptr);
 
-
     tmp_ptr = malloc(2 * sizeof(char));
     ((char *)tmp_ptr)[0] = 'b';
     ((char *)tmp_ptr)[1] = 'c';
 
-    if(add_data(inter_node->interval, tmp_ptr, 2*sizeof(char))) {
+    if (add_data(inter_node->interval, tmp_ptr, 2 * sizeof(char))) {
         destroy_list(inter_node);
         return  1;
     }
     free(tmp_ptr);
 
     tmp_ptr = malloc(sizeof(int));
-    *(int*)tmp_ptr = 42;
+    *(int *)tmp_ptr = 42;
     if(add_data(inter_node->interval, tmp_ptr, sizeof(int))) {
         destroy_list(inter_node);
         return  1;
     }
     free(tmp_ptr);
 
-    if(inter_node->interval->data_array == NULL ||
-       inter_node->interval->data_array[0] == NULL ||
-       inter_node->interval->data_array[1] == NULL||
-       inter_node->interval->data_array[2] == NULL){
+    if(inter_node->interval->data_array == NULL
+       || inter_node->interval->data_array[0] == NULL
+       || inter_node->interval->data_array[1] == NULL
+       || inter_node->interval->data_array[2] == NULL) {
         return 1;
     }
 
@@ -418,27 +409,27 @@ int main() {
     /**********************************************************************/
     /**********************************************************************/
     printf("TEST 6 - insert interval\n");
-    ip_from_str(ip_addr2[2],&ip);
-    ip_from_str(ip_addr2[3],&ip2);
+    ip_from_str(ip_addr2[2], &ip);
+    ip_from_str(ip_addr2[3], &ip2);
 
 //    insert_new_interval(inter_node, &ip, &ip2);
-    if( insert_new_interval(inter_node, &ip, &ip2) == NULL) {
+    if (insert_new_interval(inter_node, &ip, &ip2) == NULL) {
         destroy_list(inter_node);
         return 1;
     }
 
-    if(inter_node->next == NULL ||
-       inter_node->next->interval == NULL ||
-       inter_node->next->interval->data_array == NULL){
+    if (inter_node->next == NULL
+        || inter_node->next->interval == NULL
+        || inter_node->next->interval->data_array == NULL) {
         return 1;
     }
 
-    cmp_result = memcmp(&inter_node->next->interval->low_ip, &ip, 16 );
-    if(cmp_result != 0) {
+    cmp_result = memcmp(&inter_node->next->interval->low_ip, &ip, 16);
+    if (cmp_result != 0) {
         return 1;
     }
-    cmp_result = memcmp(&inter_node->next->interval->high_ip, &ip2, 16 );
-    if(cmp_result != 0) {
+    cmp_result = memcmp(&inter_node->next->interval->high_ip, &ip2, 16);
+    if (cmp_result != 0) {
         return 1;
     }
 
@@ -450,47 +441,47 @@ int main() {
     printf("TEST 7 - Copy data\n");
 
     for (index = 0; index < 4; ++index) {
-
         if (copy_all_data(inter_node->next->interval, inter_node->interval)) {
             destroy_list(inter_node);
             return 1;
         }
     }
 
-     if(inter_node->next->interval->data_array == NULL) {
+     if (inter_node->next->interval->data_array == NULL) {
          return 1;
      }
     int offset = 0;
     for (index = 0; index < 4; ++index) {
         offset = 3*index;
-        if(inter_node->next->interval->data_array[0 + offset] == NULL ||
-           inter_node->next->interval->data_array[1 + offset] == NULL||
-           inter_node->next->interval->data_array[2 + offset] == NULL){
+        if (inter_node->next->interval->data_array[0 + offset] == NULL
+            || inter_node->next->interval->data_array[1 + offset] == NULL
+            || inter_node->next->interval->data_array[2 + offset] == NULL) {
             return 1;
         }
 
-        if( *(char *)inter_node->next->interval->data_array[0+offset] != 'a') {
+        if (*(char *)inter_node->next->interval->data_array[0+offset] != 'a') {
             return 1;
         }
-        if( ((char *) inter_node->next->interval->data_array[1+offset])[0] != 'b') {
+        if (((char *) inter_node->next->interval->data_array[1+offset])[0] != 'b') {
             return 1;
         }
-        if( ((char *) inter_node->next->interval->data_array[1+offset])[1] != 'c') {
+        if (((char *) inter_node->next->interval->data_array[1+offset])[1] != 'c') {
             return 1;
         }
-        if( *(int *)inter_node->next->interval->data_array[2+offset] != 42) {
+        if (*(int *)inter_node->next->interval->data_array[2+offset] != 42) {
             return 1;
         }
     }
 
-    if(inter_node->next->interval->data_cnt != 12)
+    if (inter_node->next->interval->data_cnt != 12) {
         return 1;
+    }
 
-    if(inter_node->next->interval->array_len <= DATASLOTS)
+    if(inter_node->next->interval->array_len <= DATASLOTS) {
         return 1;
+    }
 
     destroy_list(inter_node);
-
     printf("\tCopy function (overflow array, data copy) OK\n");
 
 
@@ -509,7 +500,7 @@ int main() {
 
     };
 
-    uint32_t masks3[] = {1,24,25,32,1,64,47, 128};
+    uint32_t masks3[] = {1, 24, 25, 32, 1, 64, 47, 128};
 
     networks = new_list(8, ip_addr3, masks3);
 
@@ -518,38 +509,32 @@ int main() {
     prefix_context = ipps_init(networks);
     deinit_list(networks);
     printf("TEST 8 - Context alloc\n");
-    if(prefix_context == NULL) {
+    if (prefix_context == NULL) {
         return 1;
     }
-    if (prefix_context->v4_count > 0 && prefix_context->v4_prefix_intervals == NULL)
-    {
+    if (prefix_context->v4_count > 0 && prefix_context->v4_prefix_intervals == NULL) {
         return 1;
     }
-    if (prefix_context->v6_count > 0 && prefix_context->v6_prefix_intervals == NULL)
-    {
+    if (prefix_context->v6_count > 0 && prefix_context->v6_prefix_intervals == NULL) {
         return 1;
     }
 
-    for(index = 0; index < prefix_context->v4_count; ++index)
-    {
-        if(prefix_context->v4_prefix_intervals[index].data_array[0] == NULL) {
+    for (index = 0; index < prefix_context->v4_count; ++index) {
+        if (prefix_context->v4_prefix_intervals[index].data_array[0] == NULL) {
             return 1;
-        }
-        else {
-            if(*(char *)prefix_context->v4_prefix_intervals[index].data_array[0] != 'a' + index){
+        } else {
+            if (*(char *)prefix_context->v4_prefix_intervals[index].data_array[0] != 'a' + index) {
                 return 1;
             }
         }
 
     }
 
-    for(index = 0; index < prefix_context->v6_count; ++index)
-    {
+    for (index = 0; index < prefix_context->v6_count; ++index) {
         if(prefix_context->v6_prefix_intervals[index].data_array[0] == NULL) {
             return 1;
-        }
-        else {
-            if(*(char *)prefix_context->v6_prefix_intervals[index].data_array[0] != 'a' + index + 4){
+        } else {
+            if (*(char *)prefix_context->v6_prefix_intervals[index].data_array[0] != 'a' + index + 4) {
                 return 1;
             }
         }
@@ -584,18 +569,18 @@ int main() {
 
     int result;
     int i;
-    for ( i = 0; i < 4; ++i) {
+    for (i = 0; i < 4; ++i) {
         ip_from_str(ip_addr_l[i], &ip);
 
         result = memcmp(&prefix_context->v4_prefix_intervals[i].low_ip, &ip, 16 );
-        if(result) {
+        if (result) {
             return 1;
         }
 
     }
     printf("\tIPv4 masking OK\n");
 
-    for ( i=0; i < 4; ++i) {
+    for (i=0; i < 4; ++i) {
         ip_from_str(ip_addr_l[4+i], &ip);
 
         result = memcmp(&prefix_context->v6_prefix_intervals[i].low_ip, &ip, 16 );
@@ -612,14 +597,14 @@ int main() {
     for (i = 0; i < 4; ++i) {
         ip_from_str(ip_addr_l[i], &ip);
 
-        result = memcmp(&prefix_context->v4_prefix_intervals[i].low_ip, &ip, 16 );
-        if(result) {
+        result = memcmp(&prefix_context->v4_prefix_intervals[i].low_ip, &ip, 16);
+        if (result) {
             return 1;
         }
 
         ip_from_str(ip_addr_h[i], &ip);
-        result = memcmp(&prefix_context->v4_prefix_intervals[i].high_ip, &ip, 16 );
-        if(result) {
+        result = memcmp(&prefix_context->v4_prefix_intervals[i].high_ip, &ip, 16);
+        if (result) {
             return 1;
         }
     }
@@ -628,14 +613,14 @@ int main() {
     for (i = 0; i < 4; ++i) {
         ip_from_str(ip_addr_l[4+i], &ip);
 
-        result = memcmp(&prefix_context->v6_prefix_intervals[i].low_ip, &ip, 16 );
-        if(result) {
+        result = memcmp(&prefix_context->v6_prefix_intervals[i].low_ip, &ip, 16);
+        if (result) {
             return 1;
         }
 
         ip_from_str(ip_addr_h[4+i], &ip);
-        result = memcmp(&prefix_context->v6_prefix_intervals[i].high_ip, &ip, 16 );
-        if(result) {
+        result = memcmp(&prefix_context->v6_prefix_intervals[i].high_ip, &ip, 16);
+        if (result) {
             return 1;
         }
     }
@@ -655,7 +640,7 @@ int main() {
     char *match6_search[] = {"0::0", "f001:c316:69c3::a0:a0", "f002:c316:69c3:ffff:ffff:ffff:ffff:ffff"};
     char *no_match6_search[] = {"f001:c316:69c1::ffff", "f002:c316:69c4::", "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff "};
 
-    char ** data;
+    char **data;
 
     printf("\tIPv4 basic interval search\n");
     for (index = 0; index < 3; ++index) {
@@ -663,7 +648,7 @@ int main() {
 
         ip_from_str(match_search[index], &ip);
         /* find ip address 'ip' in network prefix interval_search_context */
-        search_result = ipps_search(&ip, prefix_context, (void ***) &data);
+        search_result = ipps_search(&ip, prefix_context, (void ***)&data);
 
         if (search_result != 1) {
             return 1;
@@ -677,7 +662,7 @@ int main() {
     for (index = 0; index < 3; ++index) {
         ip_from_str(no_match_search[index], &ip);
         /* find ip address 'ip' in network prefix interval_search_context */
-        search_result = ipps_search(&ip, prefix_context, (void ***) &data);
+        search_result = ipps_search(&ip, prefix_context, (void ***)&data);
 
         if (search_result != 0) {
             return 1;
@@ -691,7 +676,7 @@ int main() {
 
         ip_from_str(match6_search[index], &ip);
         /* find ip address 'ip' in network prefix interval_search_context */
-        search_result = ipps_search(&ip, prefix_context, (void ***) &data);
+        search_result = ipps_search(&ip, prefix_context, (void ***)&data);
 
         if (search_result != 1) {
             return 1;
@@ -705,7 +690,7 @@ int main() {
     for (index = 0; index < 3; ++index) {
         ip_from_str(no_match6_search[index], &ip);
         /* find ip address 'ip' in network prefix interval_search_context */
-        search_result = ipps_search(&ip, prefix_context, (void ***) &data);
+        search_result = ipps_search(&ip, prefix_context, (void ***)&data);
 
         if (search_result != 0) {
             return 1;
@@ -863,17 +848,7 @@ int main() {
             "vm",
             "v"
     };
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-                             
-    
-    
+
 
     networks = new_list(24, ip_addr4, masks4);
 
@@ -884,15 +859,15 @@ int main() {
 
 //    print_context(prefix_context);
 
-    if(prefix_context == NULL) {
+    if (prefix_context == NULL) {
         return 1;
     }
 
-    if(prefix_context->v4_prefix_intervals == NULL) {
+    if (prefix_context->v4_prefix_intervals == NULL) {
         return 1;
     }
 
-    if(prefix_context->v4_count != 15) {
+    if (prefix_context->v4_count != 15) {
         return 1;
     }
 
@@ -905,15 +880,18 @@ int main() {
 
 
         cmp_result = memcmp(&ip, &prefix_context->v4_prefix_intervals[index].low_ip, 16);
-        if(cmp_result != 0)
+        if (cmp_result != 0) {
             return 1;
+        }
         cmp_result = memcmp(&ip2, &prefix_context->v4_prefix_intervals[index].high_ip, 16);
-        if(cmp_result != 0)
+        if (cmp_result != 0) {
             return 1;
-        if(size != prefix_context->v4_prefix_intervals[index].data_cnt)
+        }
+        if (size != prefix_context->v4_prefix_intervals[index].data_cnt) {
             return 1;
+        }
         for (int j = 0; j < size; ++j) {
-            if(((char *) prefix_context->v4_prefix_intervals[index].data_array[j])[0] != result_data_4[index][j]) {
+            if (((char *) prefix_context->v4_prefix_intervals[index].data_array[j])[0] != result_data_4[index][j]) {
                 return 1;
             }
         }
@@ -927,17 +905,19 @@ int main() {
         ip_from_str(result_ip_addr6_h[index], &ip2);
         size = strlen(result_data_6[index]);
 
-
         cmp_result = memcmp(&ip, &prefix_context->v6_prefix_intervals[index].low_ip, 16);
-        if(cmp_result != 0)
+        if (cmp_result != 0) {
             return 1;
+        }
         cmp_result = memcmp(&ip2, &prefix_context->v6_prefix_intervals[index].high_ip, 16);
-        if(cmp_result != 0)
+        if (cmp_result != 0) {
             return 1;
-        if(size != prefix_context->v6_prefix_intervals[index].data_cnt)
+        }
+        if (size != prefix_context->v6_prefix_intervals[index].data_cnt) {
             return 1;
+        }
         for (int j = 0; j < size; ++j) {
-            if(((char *) prefix_context->v6_prefix_intervals[index].data_array[j])[0] != result_data_6[index][j]) {
+            if (((char *) prefix_context->v6_prefix_intervals[index].data_array[j])[0] != result_data_6[index][j]) {
                 return 1;
             }
         }
@@ -970,7 +950,7 @@ int main() {
         size = strlen(result_data_4[data_index4[index]]);
         ip_from_str(match_search2[index], &ip);
         /* find ip address 'ip' in network prefix interval_search_context */
-        search_result = ipps_search(&ip, prefix_context, (void ***) &data);
+        search_result = ipps_search(&ip, prefix_context, (void ***)&data);
 
         if (search_result != size) {
             return 1;

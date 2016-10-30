@@ -184,16 +184,16 @@ class IPPSContext(object):
     Represent context of networks (overlaps intervals), processed for prefix search
 
     Args:
-        val: list of IPPSNetwork objects
+        networks: list of IPPSNetwork objects
     """
 
-    def __init__(self, val):
+    def __init__(self, networks):
         self.interval_list_v4 = []
         self.interval_list_v6 = []
         self.list_len_v4 = 0
         self.list_len_v6 = 0
 
-        self.list_init(val)
+        self.list_init(networks)
 
     def __repr__(self):
         return "IPPSContext(" + str(self) + ")"
@@ -206,20 +206,20 @@ class IPPSContext(object):
         return len(self.interval_list_v4) + len(self.interval_list_v6)
 
     @classmethod
-    def fromFile(cls, val):
+    def fromFile(cls, filename):
         """ Initialize IPPSContext from blacklist data file. Function parse source file 
         and create IPPSNetwork structs from each line. 
         Blacklist file must be in format:
 	<ip address>/<mask>,<data>\n
         
         Args: 
-            val: path to source file
+            filename: path to source file
         Return: 
             new IPPSContext or None if val isn't string 
         """
-        if isinstance(val, str):
+        if isinstance(filename, str):
             network_list = []
-            with open(val, "r") as f:
+            with open(filename, "r") as f:
                 for line in f:
                     if line.isspace():
                         continue

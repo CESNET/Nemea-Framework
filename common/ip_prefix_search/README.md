@@ -138,14 +138,14 @@ Recommended control flow is:
  * if ipps_search() return 0, no match in blacklist and ip is not found in any blacklist.
  *
  *
- * !!! For new compiler troubleshoot, try gcc --gnu89-inline parameter !!!
- * !!! If isn't install unirec.h, copy ipaddr.h and inline.h to source directory and change ip_prefixes.h !!!
+ * 
+ *
  */
 
 #include<stdio.h>
 #include <sys/time.h>
-//#include <nemea-common/ip_prefix_search.h>
-#include "ip_prefix_search.h"
+#include <nemea-common/ip_prefix_search.h>
+
 
 /* Length of loaded data in bytes */
 #define DATALENGTH 4

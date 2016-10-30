@@ -1731,8 +1731,8 @@ static PyTypeObject pytrap_UnirecIPAddrRange;
 
 typedef struct {
     PyObject_HEAD
-    pytrap_unirecipaddr * start; /* low ip */
-    pytrap_unirecipaddr * end;   /* high ip*/
+    pytrap_unirecipaddr *start;  ///< low ip
+    pytrap_unirecipaddr *end;    ///< high ip
 } pytrap_unirecipaddrrange;
 
 static void
@@ -1750,18 +1750,16 @@ UnirecIPAddrRange_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     self = (pytrap_unirecipaddrrange *)type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->start = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
+        self->start = (pytrap_unirecipaddr *)pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
 
         if (self->start == NULL) {
-          //  Py_DECREF(self);
             return NULL;
         }
         Py_INCREF(self->start);
 
-        self->end = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
+        self->end = (pytrap_unirecipaddr *)pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
 
         if (self->end == NULL) {
-           // Py_DECREF(self);
             return NULL;
         }
         Py_INCREF(self->end);
@@ -1774,31 +1772,28 @@ UnirecIPAddrRange_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 UnirecIPAddrRange_isIn(pytrap_unirecipaddrrange *self, PyObject *args)
 {
-    pytrap_unirecipaddr *ipaddr = (pytrap_unirecipaddr *) args;
+    pytrap_unirecipaddr *ipaddr = (pytrap_unirecipaddr *)args;
     PyObject *result = Py_False;
 
-    if (!PyObject_IsInstance(args, (PyObject *) &pytrap_UnirecIPAddr)) {
+    if (!PyObject_IsInstance(args, (PyObject *)&pytrap_UnirecIPAddr)) {
         result = Py_NotImplemented;
     }
 
     int cmp_result;
     cmp_result = ip_cmp(&self->start->ip, &ipaddr->ip);
 
-    if (cmp_result == 0){
+    if (cmp_result == 0) {
         /* ip address is in interval */
         result = PyLong_FromLong(0);
-    }
-    else if(cmp_result > 0){
+    } else if(cmp_result > 0) {
         /* ip address is lower then interval */
         result = PyLong_FromLong(-1);
-    }
-    else{
+    } else {
         cmp_result = ip_cmp(&self->end->ip, &ipaddr->ip);
-        if (cmp_result >= 0){
+        if (cmp_result >= 0) {
             /* ip address is in interval */
             result = PyLong_FromLong(0);
-        }
-        else{
+        } else {
             /* ip address is greater then interval */
             result = PyLong_FromLong(1);
         }
@@ -1815,31 +1810,31 @@ UnirecIPAddrRange_isOverlap(pytrap_unirecipaddrrange *self, PyObject *args)
     /* compared ranges must by sorted by low ip and mask */
     pytrap_unirecipaddrrange *other;
 
-    PyObject * tmp;
+    PyObject *tmp;
     long cmp_result;
 
-    if (! PyArg_ParseTuple(args, "O", &other ))
+    if (! PyArg_ParseTuple(args, "O", &other )) {
         return NULL;
+    }
 
     if (!PyObject_IsInstance((PyObject*)other, (PyObject *) &pytrap_UnirecIPAddrRange)) {
         return Py_NotImplemented;
     }
 
-    tmp = UnirecIPAddrRange_isIn(self, (PyObject *) other->start);
+    tmp = UnirecIPAddrRange_isIn(self, (PyObject *)other->start);
     cmp_result = PyLong_AsLong(tmp);
     Py_DECREF(tmp);
 
-    if(cmp_result == 0){
+    if(cmp_result == 0) {
         Py_RETURN_TRUE;
-    }
-    else{
+    } else {
         Py_RETURN_FALSE;
     }
 }
 
-static int UnirecIPAddrRange_contains(pytrap_unirecipaddrrange *o, pytrap_unirecipaddr * ip)
+static int UnirecIPAddrRange_contains(pytrap_unirecipaddrrange *o, pytrap_unirecipaddr *ip)
 {
-    PyObject * tmp = UnirecIPAddrRange_isIn(o, (PyObject *) ip);
+    PyObject *tmp = UnirecIPAddrRange_isIn(o, (PyObject *)ip);
     int cmp_result = PyLong_AsLong(tmp);
     Py_DECREF(tmp);
     return cmp_result == 0 ? 1 : 0;
@@ -1862,13 +1857,11 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
 
     static char *kwlist[] = {"start", "end", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
-                                      &start, &end
-                                      ))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist, &start, &end)) {
         return -1;
+    }
 
-    if(end)
-    {
+    if (end) {
         if (PyObject_IsInstance(end, (PyObject *) &pytrap_UnirecIPAddr)) {
             pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *) end);
             memcpy(&self->end->ip, &src->ip,16 );
@@ -1891,28 +1884,25 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                     return -1;
                 }
             #endif
-            pytrap_UnirecIPAddr.tp_init((PyObject *)self->end,  Py_BuildValue("(s)", end_str), kwds);
+            pytrap_UnirecIPAddr.tp_init((PyObject *)self->end, Py_BuildValue("(s)", end_str), kwds);
         }
     }
 
-    if(start)
-    {
+    if(start) {
         if (PyObject_IsInstance(start, (PyObject *) &pytrap_UnirecIPAddr)) {
-            pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *) start);
-            memcpy(&self->start->ip, &src->ip,16 );
+            pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *)start);
+            memcpy(&self->start->ip, &src->ip, 16);
 
-            if(!end){
+            if (!end) {
                 PyErr_SetString(PyExc_TypeError, "Missing end IP address");
                 return -1;
             }
-        }
-        else{
+        } else {
             #if PY_MAJOR_VERSION >= 3
-                if (!PyUnicode_Check(start)){
+                if (!PyUnicode_Check(start)) {
                     PyErr_SetString(PyExc_TypeError, "String or UnirecIPAddr object expected.");
                     return -1;
-                }
-                else{
+                } else {
                      start_str = PyUnicode_AsUTF8AndSize(start, &size);
                 }
             #else
@@ -1924,12 +1914,11 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                     return -1;
                 }
             #endif
-            if(end){
+            if (end) {
                 pytrap_UnirecIPAddr.tp_init((PyObject *)self->start,  Py_BuildValue("(s)", start_str), kwds);
-            }
-            else{
+            } else {
 
-                char * str;
+                char *str;
                 long mask;
                 ip_addr_t tmp_ip;
                 Py_ssize_t size;
@@ -1943,7 +1932,7 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                 PyObject *sep = PyUnicode_FromString("/");
                 PyObject *par = PyUnicode_Split(net, sep, 1);
 
-                if(PyList_Size(par) == 1 && !end){
+                if (PyList_Size(par) == 1 && !end) {
                     PyErr_SetString(PyExc_TypeError, "Missing end IP.");
                     return -1;
                 }
@@ -1968,7 +1957,7 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                     return -1;
                 }
 
-                char * msk = NULL;
+                char *msk = NULL;
                 if (PyString_AsStringAndSize(PyList_GetItem(par, 1), &msk, &size) == -1) {
                     return -1;
                 }
@@ -1983,13 +1972,13 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                     return -1;
                     }
 
-                if(ip_is4(&tmp_ip)){
+                if (ip_is4(&tmp_ip)) {
                     uint32_t mask_bit;
                     mask_bit = 0xFFFFFFFF>>(mask > 31 ? 0 : 32 - mask);
                     mask_bit = (bit_endian_swap((mask_bit & 0x000000FF)>>  0) <<  0) |
-                                   (bit_endian_swap((mask_bit & 0x0000FF00)>>  8) <<  8) |
-                                   (bit_endian_swap((mask_bit & 0x00FF0000)>> 16) << 16) |
-                                   (bit_endian_swap((mask_bit & 0xFF000000)>> 24) << 24);
+                               (bit_endian_swap((mask_bit & 0x0000FF00)>>  8) <<  8) |
+                               (bit_endian_swap((mask_bit & 0x00FF0000)>> 16) << 16) |
+                               (bit_endian_swap((mask_bit & 0xFF000000)>> 24) << 24);
 
                     tmp_ip.ui32[2] = tmp_ip.ui32[2] & mask_bit;
                     memcpy( &self->start->ip, &tmp_ip, 16);
@@ -1997,9 +1986,8 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                     tmp_ip.ui32[2] = tmp_ip.ui32[2] | (~ mask_bit);
                     memcpy( &self->end->ip, &tmp_ip, 16);
 
-                }
-                else{
-                    uint32_t * net_mask_array;
+                } else {
+                    uint32_t *net_mask_array;
 
                     net_mask_array = malloc(4 * sizeof(uint32_t));
                     if (net_mask_array == NULL) {
@@ -2016,14 +2004,15 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                     // Swap bits in every byte for compatibility with ip_addr_t stucture
                     for (i = 0; i < 4; ++i) {
                         net_mask_array[i] = (bit_endian_swap((net_mask_array[i] & 0x000000FF)>>  0) <<  0) |
-                                               (bit_endian_swap((net_mask_array[i] & 0x0000FF00)>>  8) <<  8) |
-                                               (bit_endian_swap((net_mask_array[i] & 0x00FF0000)>> 16) << 16) |
-                                               (bit_endian_swap((net_mask_array[i] & 0xFF000000)>> 24) << 24);
+                                            (bit_endian_swap((net_mask_array[i] & 0x0000FF00)>>  8) <<  8) |
+                                            (bit_endian_swap((net_mask_array[i] & 0x00FF0000)>> 16) << 16) |
+                                            (bit_endian_swap((net_mask_array[i] & 0xFF000000)>> 24) << 24);
                     }
 
                     for (i = 0; i < 4; i++){
                         tmp_ip.ui32[i] = tmp_ip.ui32[i] & net_mask_array[i];
                     }
+
                     memcpy( &self->start->ip, &tmp_ip, 16);
 
                     for (i = 0; i < 4; i++){
@@ -2044,14 +2033,14 @@ UnirecIPAddrRange_compare(PyObject *a, PyObject *b, int op)
 {
     PyObject *result;
 
-    if (!PyObject_IsInstance(a, (PyObject *) &pytrap_UnirecIPAddrRange) ||
-             !PyObject_IsInstance(b, (PyObject *) &pytrap_UnirecIPAddrRange)) {
+    if (!PyObject_IsInstance(a, (PyObject *)&pytrap_UnirecIPAddrRange) ||
+             !PyObject_IsInstance(b, (PyObject *)&pytrap_UnirecIPAddrRange)) {
         result = Py_NotImplemented;
         goto out;
     }
 
-    pytrap_unirecipaddrrange *ur_a = (pytrap_unirecipaddrrange *) a;
-    pytrap_unirecipaddrrange *ur_b = (pytrap_unirecipaddrrange *) b;
+    pytrap_unirecipaddrrange *ur_a = (pytrap_unirecipaddrrange *)a;
+    pytrap_unirecipaddrrange *ur_b = (pytrap_unirecipaddrrange *)b;
 
     int res_S = ip_cmp(&ur_a->start->ip, &ur_b->start->ip);
     int res_E = ip_cmp(&ur_a->end->ip, &ur_b->end->ip);
