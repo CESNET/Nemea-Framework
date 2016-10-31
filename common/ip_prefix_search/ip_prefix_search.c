@@ -1,8 +1,8 @@
 /**
  * \file ip_prefix_search.c
  * \brief Init and prefix search
- * \author Erik Sabik <xsabik02\stud.fit.vutbr.cz>
- * \author Ondrej Ploteny <xplote01\stud.fit.vutbr.cz>
+ * \author Erik Sabik <xsabik02@stud.fit.vutbr.cz>
+ * \author Ondrej Ploteny <xplote01@stud.fit.vutbr.cz>
  * \date 2013
  * \date 2014
  * \date 2016
@@ -174,7 +174,7 @@ int cmp_net_v6(const void *v1, const void *v2)
 
 /**
  * Mask IPv6 address
- * Mask IPv6 address `ip` with network mask `in_mask` and save result to `masked_ipv6`.
+ * Mask IPv6 address `ip` with network mask `mask` and save result to `masked_ipv6`.
  * \param[in] ip Pointer to IP union.
  * \param[in] mask Network mask.
  * \param[out] masked_ipv6 Pointer to IP union.
@@ -227,7 +227,7 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
  * Alloc and initialize new node to interval list
  * \param[in] low_ip Pointer to network structure
  * \param[in] high_ip Pointer to result interval
- * \return NULL if malloc fail, pointer to new interval node
+ * \return Pointer to new interval node, NULL if malloc fails
  */
  ipps_interval_node_t *new_interval(const ip_addr_t *low_ip, const ip_addr_t *high_ip)
 {
@@ -266,7 +266,7 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
  * \param[in] position Pointer to interval node structure, for post insert
  * \param[in] low_ip Pointer to IP address structure
  * \param[in] high_ip Pointer to IP address structure
- * \return NULL if malloc fails, else pointer to new inserted interval node in list
+ * \return Pointer to new inserted interval node in list, NULL if malloc fails
  */
  ipps_interval_node_t *insert_new_interval(ipps_interval_node_t *position,
                                           const ip_addr_t *low_ip, const ip_addr_t *high_ip)
@@ -286,8 +286,8 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
 /**
  * Decrement IP address
  * Decrement IPv4 or IPv6 address 'ip' and save result to 'ip_dec'
- * \param[in] ip Pointer to ip address structure
- * \param[out] ip_dec Pointer to ip address structure
+ * \param[in] ip Pointer to input ip address structure
+ * \param[out] ip_dec Pointer to output ip address structure
  * \return void
  */
 void ip_dec(const ip_addr_t *ip, ip_addr_t *ip_dec)
@@ -313,8 +313,8 @@ void ip_dec(const ip_addr_t *ip, ip_addr_t *ip_dec)
 /**
  * Increment IP address
  * Increment IPv4 or Ipv6 address 'ip' and save result to 'ip_inc'
- * \param[in] ip Pointer to network structure
- * \param[out] ip_inc Pointer to result interval
+ * \param[in] ip Pointer to input ip address structure
+ * \param[out] ip_inc Pointer to output ip address structure
  * \return void
  */
 void ip_inc(const ip_addr_t *ip, ip_addr_t *ip_inc)
@@ -597,18 +597,19 @@ int add_data(ipps_interval_t *interval, void *data, size_t data_len)
 
 /**
  * Initialize array of intervals
- * Function for each network in 'networks' array compute IP interval and insert interval
- * to interval list.  All network data are hard copied. Overlapping intervals are split
- * and sorted.  If intervals are overlaps, data are alloc only once and pointer to data is
- * duplicated.  Overlapping is detected by compare lows and highs IP addresses.
- * At the end is sorted list copied to array for better access
- * Function return pointer to sorted array of intervals and fill 'context_counter' by
- * numbers of intervals.
+ * For each network in 'networks' array compute IP interval and insert it into
+ * interval list.  All network data are hard copied.  Overlapping intervals are
+ * split and sorted.  If intervals are overlaps, data are allocated only once
+ * and pointer to data is duplicated.  Overlapping is detected by comparing low
+ * and high IP addresses. At the end the sorted list is copied to an array for
+ * better access.
+ * Returns pointer to sorted array of intervals and fill 'context_counter' by
+ * number of intervals.
  * \param[in] networks Pointer to array of network structures
  * \param[in] network_count Number of networks in array
  * \param[out] context_counter Pointer to integer, fill by number of intervals in result
  * \param[in] net_mask_array Pointer to 2D array of network mask
- * \return NULL if memory alloc fails, Pointer to array of interval structure
+ * \return Pointer to array of interval structures, NULL if memory alloc fails
  */
 ipps_interval_t *init_context( ipps_network_t **networks, uint32_t network_count,
                                uint32_t *context_counter, uint32_t **net_mask_array)
