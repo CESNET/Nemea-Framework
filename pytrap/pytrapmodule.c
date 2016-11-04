@@ -484,18 +484,20 @@ static PyMethodDef pytrap_methods[] = {
 "    import pytrap\n" \
 "    c = pytrap.TrapCtx()\n" \
 "    c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
+"    fmttype = pytrap.FMT_UNIREC\n" \
 "    fmtspec = \"ipaddr SRC_IP\"\n" \
-"    c.setRequiredFmt(0, pytrap.FMT_UNIREC, fmtspec)\n" \
+"    c.setRequiredFmt(0, fmttype, fmtspec)\n" \
 "    rec = pytrap.UnirecTemplate(fmtspec)\n" \
 "    try:\n" \
 "        data = c.recv()\n" \
 "    except pytrap.FormatChanged as e:\n" \
+"        fmttype, fmtspec = c.getDataFmt(0)\n" \
 "        rec = pytrap.UnirecTemplate(fmtspec)\n" \
 "        data = e.data\n" \
-"    fmttype, fmtspec = c.getDataFmt(0)\n" \
 "    c.setDataFmt(0, fmttype, fmtspec)\n" \
 "    rec.setData(data)\n" \
 "    print(rec.strRecord())\n" \
+"    # send the message that was received:\n" \
 "    c.send(data)\n" \
 "    c.finalize()\n" \
 "\n" \
