@@ -129,8 +129,8 @@ int main(int argc, char **argv)
    ret = trap_ctx_send(ctx_output, 0, (void *) payload, payload_size);
    t2 = time(NULL);
    printf("timeout in %"PRId64", t1: %"PRId64" t2: %"PRId64"\n", t2 - duration, duration, t2);
-   if ((t2 - duration) < 2) {
-      printf("expected duration 2, measured %d.\n", (int) (t2 - duration));
+   if ((t2 - duration) > 1) {
+      printf("expected duration <= 1, measured %d.\n", (int) (t2 - duration));
       goto error;
    }
    if (ret != TRAP_E_TIMEOUT) {

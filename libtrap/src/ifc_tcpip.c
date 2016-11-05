@@ -1101,29 +1101,40 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    /* I. Init phase: set timeout and double-send switch */
 
 blocking_repeat:
-   switch (timeout) {
-   case TRAP_WAIT:
-   case TRAP_HALFWAIT:
-      trap_set_timeouts(1000000, &tv, &ts);
-      break;
-   default:
-      trap_set_timeouts(timeout, &tv, &ts);
-      break;
-   }
 
    if (c->is_terminated) {
       return TRAP_E_TERMINATED;
    }
 
-   FD_ZERO(&disset);
-   FD_ZERO(&set);
+   switch (timeout) {
+   case TRAP_WAIT:
+      trap_set_timeouts(1000000, &tv, &ts);
+      break;
+   case TRAP_HALFWAIT:
+      /*
+       * wait 1s in a loop for select(),
+       * do not change timeout for sem_timedwait in connphase
+       */
+      trap_set_timeouts(1000000, &tv, NULL);
+      break;
+   default:
+      /*
+       * set timeout (can be 0 - nowait or any positive number) for select(),
+       * do not change timeout for sem_timedwait in connphase
+       */
+      trap_set_timeouts(timeout, &tv, NULL);
+      break;
+   }
 
-   passed = failed = 0;
-   /* wait for client when blocking */
+   /* Check connected clients and wait for them when blocking */
    result = tcpip_sender_conn_phase(c, ts_p);
    if (result != TRAP_E_OK) {
+      /* it is useless to send when nobody receives */
       goto exit;
    }
+
+   FD_ZERO(&disset);
+   FD_ZERO(&set);
 
    /*
     * add term_pipe for reading into the disconnect client set
@@ -1173,6 +1184,8 @@ blocking_repeat:
          goto exit;
       }
    }
+
+   passed = failed = 0;
 
    pthread_mutex_lock(&c->sending_lock);
    for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
@@ -1258,14 +1271,18 @@ blocking_repeat:
          }
          result = TRAP_E_OK;
       } else {
-         if (timeout == TRAP_WAIT) {
+         if (block != 0) {
             goto blocking_repeat;
          }
       }
    }
 
 exit:
-   if (timeout == TRAP_WAIT && ((result != TRAP_E_OK) || (c->connected_clients == 0))) {
+   /*
+    * Return to blocking_repeat ONLY when the timeout is TRAP_WAIT.
+    * TRAP_HALFWAIT is handled before.
+    */
+   if ((timeout == TRAP_WAIT) && ((result != TRAP_E_OK) || (c->connected_clients == 0))) {
       goto blocking_repeat;
    }
    return result;
