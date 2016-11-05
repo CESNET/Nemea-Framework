@@ -1077,42 +1077,39 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    int result = TRAP_E_TIMEOUT;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   /* timeout for blocking mode */
-   struct timeval tm;
-   /* timout for nonblocking mode */
-   struct timespec tmnblk;
-   /* pointer to timeout for select() */
-   struct timeval *temptm;
-   /* pointer to timeout for select() */
-   struct timespec *temptmblk;
+   /* timeout for select */
+   struct timeval tv;
+   /* timeout for sem_timedwait */
+   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
    fd_set set, disset;
    int maxsd = -1;
    struct client_s *cl;
    uint32_t i, j, failed, passed;
    int retval;
    ssize_t readbytes;
-   char block;
+
+   char block = ((timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0);
+
+   /* pointer to timeout for select() */
+   struct timeval *tv_p = ((block != 0) ? NULL : &tv);
+   /* pointer to timeout for sem_timedwait() */
+   struct timespec *ts_p = &ts;
 
    /* correct module will pass only possitive timeout or TRAP_WAIT, TRAP_HALFWAIT */
    assert(timeout >= TRAP_HALFWAIT);
 
    /* I. Init phase: set timeout and double-send switch */
-   temptm = &tm;
 
 blocking_repeat:
    switch (timeout) {
    case TRAP_WAIT:
    case TRAP_HALFWAIT:
-      trap_set_timeouts(1000000, &tm, &tmnblk);
+      trap_set_timeouts(1000000, &tv, &ts);
       break;
    default:
-      trap_set_timeouts(timeout, &tm, &tmnblk);
+      trap_set_timeouts(timeout, &tv, &ts);
       break;
    }
-
-   temptmblk = &tmnblk;
-
-   block = ((timeout == TRAP_WAIT) ? 1 : 0);
 
    if (c->is_terminated) {
       return TRAP_E_TERMINATED;
@@ -1123,7 +1120,7 @@ blocking_repeat:
 
    passed = failed = 0;
    /* wait for client when blocking */
-   result = tcpip_sender_conn_phase(c, temptmblk);
+   result = tcpip_sender_conn_phase(c, ts_p);
    if (result != TRAP_E_OK) {
       goto exit;
    }
@@ -1157,9 +1154,9 @@ blocking_repeat:
       }
    }
 
-   retval = select(maxsd + 1, &disset, &set, NULL, temptm);
+   retval = select(maxsd + 1, &disset, &set, NULL, tv_p);
    if (retval == 0) {
-      if (temptm != NULL) {
+      if (block == 0) {
          /* non-blocking mode */
          result = TRAP_E_TIMEOUT;
          goto exit;
