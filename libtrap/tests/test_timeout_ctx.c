@@ -130,9 +130,11 @@ int main(int argc, char **argv)
    t2 = time(NULL);
    printf("timeout in %"PRId64", t1: %"PRId64" t2: %"PRId64"\n", t2 - duration, duration, t2);
    if ((t2 - duration) < 2) {
+      printf("expected duration 2, measured %d.\n", (int) (t2 - duration));
       goto error;
    }
    if (ret != TRAP_E_TIMEOUT) {
+      printf("expected ret %d but received %d.\n", TRAP_E_TIMEOUT, ret);
       goto error;
    }
    trap_ctx_terminate(ctx_output);
