@@ -1823,7 +1823,7 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
    if (c->num_ifc_out > 0) {
       for (i = 0; i < c->num_ifc_out; i++) {
          trap_ctx_ifcctl((trap_ctx_t *) c, TRAPIFC_OUTPUT, i, TRAPCTL_AUTOFLUSH_TIMEOUT, TRAP_NO_AUTO_FLUSH);
-         trap_ctx_ifcctl((trap_ctx_t *) c, TRAPIFC_OUTPUT, i, TRAPCTL_SETTIMEOUT, TRAP_HALFWAIT);
+         trap_ctx_ifcctl((trap_ctx_t *) c, TRAPIFC_OUTPUT, i, TRAPCTL_SETTIMEOUT, 100000);
          trap_ctx_send_flush((trap_ctx_t *) c, i);
       }
    }
