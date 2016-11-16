@@ -7,9 +7,9 @@ sends them through output IFC.
 
 Thanks to libtrap negotiation feature, the module can be connected to any other Nemea module and negotiation of data
 format is done automatically. `./python_example.py` accepts any specifier (`""`) of UniRec data format
-(`trap.TRAP_FMT_UNIREC`) on input IFC (using `trap.set_required_fmt(0, trap.TRAP_FMT_UNIREC, "")`)
+(`pytrap.TRAP_FMT_UNIREC`) on input IFC (using `trap.set_required_fmt(0, pytrap.TRAP_FMT_UNIREC, "")`)
 
-On input IFC, data format can be retrieved using: `(fmttype, fmtspec) = trap.get_data_fmt(trap.IFC_INPUT, 0)`.
+On input IFC, data format can be retrieved using: `(fmttype, fmtspec) = trap.get_data_fmt(pytrap.IFC_INPUT, 0)`.
 
 See source code of [./python_example.py](./python_example.py) for complete running example.
 
