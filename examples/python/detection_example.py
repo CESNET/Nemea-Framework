@@ -44,7 +44,6 @@ while True:
         data = c.recv()
     except pytrap.FormatChanged as e:
         fmttype, inputspec = c.getDataFmt(0)
-        c.setDataFmt(0, fmttype, inputspec)
         rec = pytrap.UnirecTemplate(inputspec)
         data = e.data
     if len(data) <= 1:
