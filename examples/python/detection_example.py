@@ -23,20 +23,20 @@ trap.setDataFmt(0, pytrap.FMT_UNIREC, alertspec)
 alert.createMessage()
 
 def do_detection(rec):
-	global alert, c
-	# TODO write your algorithm into this method
+    global alert, c
+    # TODO write your algorithm into this method
 
-	# TODO and send an alert
-	if rec.DST_PORT == 6666 or rec.SRC_IP == pytrap.UnirecIPAddr("192.168.1.1"):
-		print(rec.strRecord())
-		# fill-in alert:
-		alert.SRC_IP = rec.SRC_IP
-		alert.DST_IP = rec.DST_IP
-		alert.SRC_PORT = rec.SRC_PORT
-		alert.DST_PORT = rec.DST_PORT
+    # TODO and send an alert
+    if rec.DST_PORT == 6666 or rec.SRC_IP == pytrap.UnirecIPAddr("192.168.1.1"):
+        print(rec.strRecord())
+        # fill-in alert:
+        alert.SRC_IP = rec.SRC_IP
+        alert.DST_IP = rec.DST_IP
+        alert.SRC_PORT = rec.SRC_PORT
+        alert.DST_PORT = rec.DST_PORT
                 alert.EVENT_TIME = rec.TIME_FIRST
-		# send alert
-		trap.send(alert.getData(), 0)
+        # send alert
+        trap.send(alert.getData(), 0)
 
 # Main loop
 while True:
@@ -54,5 +54,4 @@ while True:
 
 # Free allocated TRAP IFCs
 trap.finalize()
-
 
