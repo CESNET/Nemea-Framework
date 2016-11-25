@@ -66,8 +66,13 @@ It means you haven't provided the parameters required by the TRAP library. For m
 ## Install Munin script
 
 1) Install the example module
+
 2) Run the module
+
 3) Change appropriately owner and rights of created unix socket file.
+
 4) Copy the script into /usr/share/munin/plugins/munin_prot_flows.
+
 5) Create symbolic link: ln -s /usr/share/munin/plugins/munin_prot_flows /etc/munin/plugins/
+
 6) Restart munin-node service: service munin-node restart
