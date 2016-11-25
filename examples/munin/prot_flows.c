@@ -85,7 +85,7 @@ trap_module_info_t *module_info = NULL;
  */
 #define MODULE_PARAMS(PARAM)
 
-#define DEF_SOCKET_PATH "/tmp/prot_flows.sock"
+#define DEF_SOCKET_PATH "/var/run/nemea-supervisor/prot_flows.sock"
 
 static int stop = 0;
 
