@@ -10,8 +10,8 @@ def getData():
 	sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 	try:
 		sock.connect(SOCKET_PATH)
-	except socket.error, msg:
-		sys.stderr.write(bytes(msg))
+	except socket.error as msg:
+		sys.stderr.write(str(msg))
 		sys.exit(1)
 
 	data = ""
@@ -38,8 +38,8 @@ graph_order"""
 		config += " " + key
 
 	for key in headers:
-		config += "\n" + key + ".label " + key + " flows per second"
-		config += "\n" + key + ".info " + key + "flows per second"
+		config += "\n" + key + ".label " + key
+		config += "\n" + key + ".info " + key
 		config += "\n" + key + ".draw AREASTACK"
 		config += "\n" + key + ".type DERIVE"
 		config += "\n" + key + ".min 0"
