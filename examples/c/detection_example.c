@@ -59,7 +59,22 @@
 /**
  * Definition of fields used in unirec templates (for both input and output interfaces) in this example basic flow from flow_meter
  */
-UR_FIELDS ( ipaddr DST_IP,ipaddr SRC_IP,uint64 BYTES,uint64 LINK_BIT_FIELD,time TIME_FIRST,time TIME_LAST,uint32 PACKETS,uint16 DST_PORT,uint16 SRC_PORT,uint8 DIR_BIT_FIELD,uint8 PROTOCOL,uint8 TCP_FLAGS,uint8 TOS,uint8 TTL )
+UR_FIELDS ( 
+  ipaddr DST_IP,
+  ipaddr SRC_IP,
+  uint64 BYTES,
+  uint64 LINK_BIT_FIELD,
+  time TIME_FIRST,
+  time TIME_LAST,
+  uint32 PACKETS,
+  uint16 DST_PORT,
+  uint16 SRC_PORT,
+  uint8 DIR_BIT_FIELD,
+  uint8 PROTOCOL,
+  uint8 TCP_FLAGS,
+  uint8 TOS,
+  uint8 TTL
+)
 
 trap_module_info_t *module_info = NULL;
 
@@ -82,7 +97,7 @@ trap_module_info_t *module_info = NULL;
  * Module parameter argument types: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float, string
  */
 #define MODULE_PARAMS(PARAM) \
-  PARAM('p', "port", "Port selected for detection and forwarding flows.", required_argument, "int32")
+  PARAM('p', "port", "Port selected for detection and forwarding flows.", required_argument, "uint16")
   //PARAM(char, char *, char *, no_argument  or  required_argument, char *)V
 
 static int stop = 0;
@@ -96,7 +111,7 @@ int main(int argc, char **argv)
 {
    int ret;
    signed char opt;
-   int mult = 1;
+   int port = 1;
 
    /* **** TRAP initialization **** */
 
@@ -184,9 +199,9 @@ int main(int argc, char **argv)
 
       // PROCESS THE DATA
 
-      if ( ur_get(in_tmplt, in_rec, F_DST_PORT) == port ) {
-         ur_copy_fields(out_tmplt, out, rec, in_tmplt, in_rec);
-         ret = trap_send(0, out_rec, ur_rec_fixllen_size(out_tmplt));
+      if ( ur_get(in_tmplt, in_rec, F_DST_PORT) == (uint16_t)port ) {
+         ur_copy_fields(out_tmplt, out_rec, in_tmplt, in_rec);
+         ret = trap_send(0, out_rec, ur_rec_fixlen_size(out_tmplt));
          TRAP_DEFAULT_SEND_ERROR_HANDLING(ret, continue, break);
       }
    }
