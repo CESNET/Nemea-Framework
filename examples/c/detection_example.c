@@ -150,12 +150,12 @@ int main(int argc, char **argv)
    }
 
    /* **** Create UniRec templates **** */
-   ur_template_t *in_tmplt = ur_create_input_template(0, "DST_IP, SRC_IP, BYTES, LINK_BIT_FIELD, TIME_FIRST, TIME_LAST, PACKETS, DST_PORT, SRC_PORT, DIR_BIT_FIELD, PROTOCOL, TCP_FLAGS, TOS, TTL", NULL);
+   ur_template_t *in_tmplt = ur_create_input_template(0, "DST_IP,SRC_IP,BYTES,LINK_BIT_FIELD,TIME_FIRST,TIME_LAST,PACKETS,DST_PORT,SRC_PORT,DIR_BIT_FIELD,PROTOCOL,TCP_FLAGS,TOS,TTL", NULL);
    if (in_tmplt == NULL){
       fprintf(stderr, "Error: Input template could not be created.\n");
       return -1;
    }
-   ur_template_t *out_tmplt = ur_create_output_template(0, "DST_IP, SRC_IP, BYTES, LINK_BIT_FIELD, TIME_FIRST, TIME_LAST, PACKETS, DST_PORT, SRC_PORT, DIR_BIT_FIELD, PROTOCOL, TCP_FLAGS, TOS, TTL", NULL);
+   ur_template_t *out_tmplt = ur_create_output_template(0, "DST_IP,SRC_IP,BYTES,LINK_BIT_FIELD,TIME_FIRST,TIME_LAST,PACKETS,DST_PORT,SRC_PORT,DIR_BIT_FIELD,PROTOCOL,TCP_FLAGS,TOS,TTL", NULL);
    if (out_tmplt == NULL){
       ur_free_template(in_tmplt);
       fprintf(stderr, "Error: Output template could not be created.\n");
