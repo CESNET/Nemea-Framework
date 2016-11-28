@@ -1370,11 +1370,9 @@ ur_links_t *ur_create_links(const char* mask)
 // Destroy links structure.
 void ur_free_links(ur_links_t *links)
 {
-	if ((links) != NULL) {
+	if (links != NULL) {
 		free(links->link_indexes);
-
 		free(links);
-		links = NULL;
 	}
 }
 // Following functions are defined in links.h
