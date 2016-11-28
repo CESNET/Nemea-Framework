@@ -52,6 +52,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <libtrap/trap.h>
 #include <unirec/unirec.h>
 #include "fields.h"
@@ -111,7 +112,8 @@ int main(int argc, char **argv)
 {
    int ret;
    signed char opt;
-   int port = 1;
+   uint16_t port = 1;
+   ur_ipaddr_t ip; //ip_from_str na nacteni a porovnam je pomoci ip_cmp kdyz vrati 0
 
    /* **** TRAP initialization **** */
 
@@ -139,7 +141,7 @@ int main(int argc, char **argv)
    while ((opt = TRAP_GETOPT(argc, argv, module_getopt_string, long_options)) != -1) {
       switch (opt) {
       case 'p':
-         port = atoi(optarg);
+         sscanf(optarg, "%" SCNu16, &port);
          break;
       default:
          fprintf(stderr, "Invalid arguments.\n");
@@ -199,7 +201,7 @@ int main(int argc, char **argv)
 
       // PROCESS THE DATA
 
-      if ( ur_get(in_tmplt, in_rec, F_DST_PORT) == (uint16_t)port ) {
+      if (ur_get(in_tmplt, in_rec, F_DST_PORT) == port) {
          ur_copy_fields(out_tmplt, out_rec, in_tmplt, in_rec);
          ret = trap_send(0, out_rec, ur_rec_fixlen_size(out_tmplt));
          TRAP_DEFAULT_SEND_ERROR_HANDLING(ret, continue, break);
