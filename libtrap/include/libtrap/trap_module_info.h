@@ -153,7 +153,6 @@ typedef struct trap_module_info_s {
                               string with several lines or even paragraphs. */
    int num_ifc_in;  ///< Number of input interfaces
    int num_ifc_out; ///< Number of output interfaces
-   // TODO more ... (e.g. UniRec specifiers)
    trap_module_info_parameter_t **params;
 } trap_module_info_t;
 

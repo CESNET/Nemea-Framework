@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
 	/*
 	*
-	* Modules body
+	* Module's body
 	*
 	*
 	*/
