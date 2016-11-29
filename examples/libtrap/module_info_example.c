@@ -77,7 +77,7 @@ trap_module_info_t *module_info = NULL;
 
 int main(int argc, char *argv[])
 {
-	uint x = 0;
+	uint32_t x = 0;
 	int opt = 0;
 
 	// IMPORTANT

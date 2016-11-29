@@ -91,7 +91,7 @@ module_info_test_t *module_info = NULL;
 
 int main()
 {
-   uint x = 0;
+   uint32_t x = 0;
 
    // Allocate and initialize module_info structure and all its members
    // according to the MODULE_BASIC_INFO and MODULE_PARAMS definitions
