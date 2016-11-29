@@ -78,7 +78,7 @@ AC_ARG_ENABLE([pytrap], AC_HELP_STRING([--disable-pytrap], [Disable pytrap exten
         [AM_CONDITIONAL([ENABLE_PYTRAP], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_PYTRAP], [true])])
 
-AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.]),
+AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-examples], [Disable examples.]),
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
 
