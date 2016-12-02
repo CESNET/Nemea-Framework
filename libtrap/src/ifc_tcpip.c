@@ -1077,63 +1077,64 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    int result = TRAP_E_TIMEOUT;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   /* timeout for blocking mode */
-   struct timeval tm;
-   /* timout for nonblocking mode */
-   struct timespec tmnblk;
-   /* pointer to timeout for select() */
-   struct timeval *temptm;
-   /* pointer to timeout for select() */
-   struct timespec *temptmblk;
+   /* timeout for select */
+   struct timeval tv;
+   /* timeout for sem_timedwait */
+   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
    fd_set set, disset;
    int maxsd = -1;
    struct client_s *cl;
    uint32_t i, j, failed, passed;
-   struct timeval sectm;
    int retval;
    ssize_t readbytes;
-   char block;
+
+   char block = ((timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0);
+
+   /* pointer to timeout for select() */
+   struct timeval *tv_p = ((block != 0) ? NULL : &tv);
+   /* pointer to timeout for sem_timedwait() */
+   struct timespec *ts_p = &ts;
 
    /* correct module will pass only possitive timeout or TRAP_WAIT, TRAP_HALFWAIT */
    assert(timeout >= TRAP_HALFWAIT);
 
    /* I. Init phase: set timeout and double-send switch */
-   temptm = (((timeout==TRAP_WAIT) || (timeout == TRAP_HALFWAIT)) ? NULL : &tm);
 
 blocking_repeat:
-   switch (timeout) {
-   case TRAP_WAIT:
-      trap_set_timeouts(1000000, &tm, &tmnblk);
-      break;
-   case TRAP_HALFWAIT:
-      trap_set_timeouts(0, &tm, &tmnblk);
-      break;
-   default:
-      trap_set_timeouts(timeout, &tm, &tmnblk);
-      break;
-   }
-
-   trap_set_timeouts(timeout, &tm, NULL);
-   temptmblk = &tmnblk;
-
-   block = ((timeout == TRAP_WAIT) ? 1 : 0);
 
    if (c->is_terminated) {
       return TRAP_E_TERMINATED;
    }
 
-   sectm.tv_sec = 1;
-   sectm.tv_usec = 0;
+   switch (timeout) {
+   case TRAP_WAIT:
+      trap_set_timeouts(1000000, &tv, &ts);
+      break;
+   case TRAP_HALFWAIT:
+      /*
+       * wait 1s in a loop for select(),
+       * do not change timeout for sem_timedwait in connphase
+       */
+      trap_set_timeouts(1000000, &tv, NULL);
+      break;
+   default:
+      /*
+       * set timeout (can be 0 - nowait or any positive number) for select(),
+       * do not change timeout for sem_timedwait in connphase
+       */
+      trap_set_timeouts(timeout, &tv, NULL);
+      break;
+   }
+
+   /* Check connected clients and wait for them when blocking */
+   result = tcpip_sender_conn_phase(c, ts_p);
+   if (result != TRAP_E_OK) {
+      /* it is useless to send when nobody receives */
+      goto exit;
+   }
 
    FD_ZERO(&disset);
    FD_ZERO(&set);
-
-   passed = failed = 0;
-   /* wait for client when blocking */
-   result = tcpip_sender_conn_phase(c, temptmblk);
-   if (result != TRAP_E_OK) {
-      goto exit;
-   }
 
    /*
     * add term_pipe for reading into the disconnect client set
@@ -1164,9 +1165,9 @@ blocking_repeat:
       }
    }
 
-   retval = select(maxsd + 1, &disset, &set, NULL, (temptm != NULL ? temptm : &sectm));
+   retval = select(maxsd + 1, &disset, &set, NULL, tv_p);
    if (retval == 0) {
-      if (temptm != NULL) {
+      if (block == 0) {
          /* non-blocking mode */
          result = TRAP_E_TIMEOUT;
          goto exit;
@@ -1183,6 +1184,8 @@ blocking_repeat:
          goto exit;
       }
    }
+
+   passed = failed = 0;
 
    pthread_mutex_lock(&c->sending_lock);
    for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
@@ -1268,14 +1271,18 @@ blocking_repeat:
          }
          result = TRAP_E_OK;
       } else {
-         if (timeout == TRAP_WAIT) {
+         if (block != 0) {
             goto blocking_repeat;
          }
       }
    }
 
 exit:
-   if (timeout == TRAP_WAIT && ((result != TRAP_E_OK) || (c->connected_clients == 0))) {
+   /*
+    * Return to blocking_repeat ONLY when the timeout is TRAP_WAIT.
+    * TRAP_HALFWAIT is handled before.
+    */
+   if ((timeout == TRAP_WAIT) && ((result != TRAP_E_OK) || (c->connected_clients == 0))) {
       goto blocking_repeat;
    }
    return result;
