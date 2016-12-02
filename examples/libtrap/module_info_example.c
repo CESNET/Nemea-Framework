@@ -77,75 +77,75 @@ trap_module_info_t *module_info = NULL;
 
 int main(int argc, char *argv[])
 {
-	uint x = 0;
-	int opt = 0;
+   uint32_t x = 0;
+   int opt = 0;
 
-	// IMPORTANT
-	// Macro allocates and initializes module_info structure and all its members according to the MODULE_BASIC_INFO and MODULE_PARAMS definitions on the lines 14 and 21 of this file
-	// It also creates a string with short_opt letters for getopt function called "module_getopt_string" and long_options field for getopt_long function in variable "long_options"
-	INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
-
-
-	// Printing out whole module_info structure
-	printf("--- Module_info structure after initialization ---\n");
-	printf("Basic info:\n%s %s %d %d\n\nParams:\n", module_info->name, module_info->description, module_info->num_ifc_in, module_info->num_ifc_out);
-	while (module_info->params[x] != NULL) {
-		printf("-%c --%s %s %d %s\n", module_info->params[x]->short_opt, module_info->params[x]->long_opt, module_info->params[x]->description, module_info->params[x]->param_required_argument, module_info->params[x]->argument_type);
-		x++;
-	}
-
-	// Printing out static structure long_options used in getopt_long function
-	x = 0;
-	printf("\n--- Long_options structure after initialization ---\n");
-	while (long_options[x].name != 0) {
-		printf("{%s, %d, 0, '%c'}\n", long_options[x].name, long_options[x].has_arg, (char)long_options[x].val);
-		x++;
-	}
-
-	// Printing out string variable module_getopt_string containing short_opt letters for getopt function
-	printf("\n--- Getopt string ---\n\"%s\"\n", module_getopt_string);
+   // IMPORTANT
+   // Macro allocates and initializes module_info structure and all its members according to the MODULE_BASIC_INFO and MODULE_PARAMS definitions on the lines 14 and 21 of this file
+   // It also creates a string with short_opt letters for getopt function called "module_getopt_string" and long_options field for getopt_long function in variable "long_options"
+   INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
 
 
-	// Usage of the created getopt string
-	printf("\n--- Params parsing ---\n");
-	while ((opt = TRAP_GETOPT(argc, argv, module_getopt_string, long_options)) != -1) {
-		switch (opt) {
-		case 's':
-			printf("opt: \"%c\"\n", opt);
-			break;
-		case 'p':
-			printf("opt: \"%c\"\n", opt);
-			break;
-		case 'L':
-			printf("opt: \"%c\"\n", opt);
-			break;
-		case 'h':
-			printf("opt: \"%c\"\n", opt);
-			break;
-		case 'r':
-			printf("opt: \"%c\"\n", opt);
-			break;
-		case 'f':
-			printf("opt: \"%c\"\n", opt);
-			break;
+   // Printing out whole module_info structure
+   printf("--- Module_info structure after initialization ---\n");
+   printf("Basic info:\n%s %s %d %d\n\nParams:\n", module_info->name, module_info->description, module_info->num_ifc_in, module_info->num_ifc_out);
+   while (module_info->params[x] != NULL) {
+      printf("-%c --%s %s %d %s\n", module_info->params[x]->short_opt, module_info->params[x]->long_opt, module_info->params[x]->description, module_info->params[x]->param_required_argument, module_info->params[x]->argument_type);
+      x++;
+   }
 
-		default:
-			fprintf(stderr, "Invalid arguments.\n");
-			goto exit;
-		}
-	}
+   // Printing out static structure long_options used in getopt_long function
+   x = 0;
+   printf("\n--- Long_options structure after initialization ---\n");
+   while (long_options[x].name != 0) {
+      printf("{%s, %d, 0, '%c'}\n", long_options[x].name, long_options[x].has_arg, (char)long_options[x].val);
+      x++;
+   }
+
+   // Printing out string variable module_getopt_string containing short_opt letters for getopt function
+   printf("\n--- Getopt string ---\n\"%s\"\n", module_getopt_string);
 
 
-	/*
-	*
-	* Modules body
-	*
-	*
-	*/
+   // Usage of the created getopt string
+   printf("\n--- Params parsing ---\n");
+   while ((opt = TRAP_GETOPT(argc, argv, module_getopt_string, long_options)) != -1) {
+      switch (opt) {
+      case 's':
+         printf("opt: \"%c\"\n", opt);
+         break;
+      case 'p':
+         printf("opt: \"%c\"\n", opt);
+         break;
+      case 'L':
+         printf("opt: \"%c\"\n", opt);
+         break;
+      case 'h':
+         printf("opt: \"%c\"\n", opt);
+         break;
+      case 'r':
+         printf("opt: \"%c\"\n", opt);
+         break;
+      case 'f':
+         printf("opt: \"%c\"\n", opt);
+         break;
+
+      default:
+         fprintf(stderr, "Invalid arguments.\n");
+         goto exit;
+      }
+   }
+
+
+   /*
+    *
+    * Module's body
+    *
+    *
+    */
 
 exit:
-	// IMPORTANT
-	// Release allocated memory for module_info structure and the rest of the used variables
-	FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
-	return 0;
+   // IMPORTANT
+   // Release allocated memory for module_info structure and the rest of the used variables
+   FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
+   return 0;
 }

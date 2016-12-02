@@ -2593,7 +2593,7 @@ int service_send_data(int sock_d, uint32_t size, void **data)
 
 int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
 {
-   uint x = 0;
+   uint32_t x = 0;
    char *ifc_id = NULL;
    char none_ifc_id[] = "none";
 
