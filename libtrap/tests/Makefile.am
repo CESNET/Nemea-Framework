@@ -1,4 +1,4 @@
-TESTS = basic_test_arg.test basic_test test_finalize basic_test_timeouts.test libtrap_disbuffer.test
+TESTS = basic_test_arg.test basic_test test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test
 
 if ENABLE_LONG_TESTS
 TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
@@ -10,7 +10,7 @@ if HAVE_CMOCKA
 TESTS += trap_buffer
 endif
 
-EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh
+EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh test_service_ifc_fail.test
 
 check_PROGRAMS = basic_test test_finalize
 
