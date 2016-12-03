@@ -127,6 +127,45 @@ static int compare_timeouts(const void *a, const void *b);
 int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
 void *service_thread_routine(void *arg);
 
+/**
+ * Look for environment variables and change the change the related global variables.
+ */
+void trap_check_global_vars(void)
+{
+   int size;
+   /* According to man, getenv is not secured in some cases.
+    * 1) effective ID does not match real ID */
+   if ((getuid() != geteuid()) || (getgid() != getegid())) {
+      return;
+   }
+   /* 2) effective capability bit was set on the executable file.
+    * TODO
+    */
+
+   /* 3) process has a nonempty permitted capability set.
+    * TODO
+    */
+
+   /*
+    * TRAP_SOCKET_DIR env.var. to redefine path to sockets,
+    * trap_default_socket_path_format is set.
+    */
+   const char *e = getenv("TRAP_SOCKET_DIR");
+   if (e != NULL) {
+      size = snprintf(NULL, 0, "%s%s", e, DEFAULT_SOCKET_FORMAT);
+      trap_default_socket_path_format = malloc(size + 1);
+      sprintf(trap_default_socket_path_format, "%s%s", e, DEFAULT_SOCKET_FORMAT);
+   }
+}
+
+void trap_free_global_vars(void)
+{
+   if (strcmp(trap_default_socket_path_format, UNIX_PATH_FILENAME_FORMAT) != 0) {
+      free(trap_default_socket_path_format);
+      trap_default_socket_path_format = UNIX_PATH_FILENAME_FORMAT;
+   }
+}
+
 trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int i_ifcs, int o_ifcs, uint16_t param_count)
 {
    trap_module_info_t *m = NULL;
@@ -1427,6 +1466,8 @@ output:
         align_def, cols - align_def);
       X("  PAGER", "Show the help output in the set PAGER.",
         align_def, cols - align_def);
+      X("  TRAP_SOCKET_DIR", "Change path to socket directory (default: " DEFAULTSOCKETDIR ").",
+        align_def, cols - align_def);
 
 #undef X
    } else if (trap_help_spec != 0) {
@@ -1855,6 +1896,8 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
    trap_free_ctx_t(&c);
    (*ctx) = NULL;
 
+   trap_free_global_vars();
+
    return TRAP_E_OK;
 }
 
@@ -2153,6 +2196,9 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
    } else if (module_info->num_ifc_out < 0) {
       module_info->num_ifc_out = strlen(ifc_spec.types) - module_info->num_ifc_in;
    }
+
+   trap_check_global_vars();
+
    /* create mutex protecting session list */
    pthread_rwlockattr_t lock_attrs;
    pthread_rwlockattr_init(&lock_attrs);
@@ -2409,6 +2455,9 @@ alloc_counter_failed:
       ctx->counter_dropped_message = NULL;
    }
    trap_free_ctx_t(&ctx);
+
+   trap_free_global_vars();
+
    return ctx;
 }
 

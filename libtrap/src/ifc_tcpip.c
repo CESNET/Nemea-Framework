@@ -108,7 +108,7 @@ union tcpip_socket_addr {
 /**
  * Unix sockets for service IFC and UNIX IFC have default path format defined by UNIX_PATH_FILENAME_FORMAT
  */
-const char trap_default_socket_path_format[] __attribute__((used)) = UNIX_PATH_FILENAME_FORMAT;
+char *trap_default_socket_path_format __attribute__((used)) = UNIX_PATH_FILENAME_FORMAT;
 
 static int client_socket_connect(void *priv, const char *dest_addr, const char *dest_port, int *socket_descriptor, struct timeval *tv);
 static void client_socket_disconnect(void *priv);
@@ -843,7 +843,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    } else if (config->socket_type == TRAP_IFC_TCPIP_UNIX) {
       /* UNIX socket */
       addr.unix_addr.sun_family = AF_UNIX;
-      snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, UNIX_PATH_FILENAME_FORMAT, dest_port);
+      snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, trap_default_socket_path_format, dest_port);
       sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
       if (sockfd != -1) {
          if (connect(sockfd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) < 0) {
@@ -1323,7 +1323,7 @@ void tcpip_sender_destroy(void *priv)
    // Free private data
    if (c != NULL) {
       if ((c->socket_type == TRAP_IFC_TCPIP_UNIX) || (c->socket_type == TRAP_IFC_TCPIP_SERVICE)) {
-         if (asprintf(&unix_socket_path, UNIX_PATH_FILENAME_FORMAT, c->server_port) != -1) {
+         if (asprintf(&unix_socket_path, trap_default_socket_path_format, c->server_port) != -1) {
             if (unix_socket_path != NULL) {
                unlink(unix_socket_path);
                free(unix_socket_path);
@@ -1799,7 +1799,7 @@ static int server_socket_open(void *priv)
    } else if ((c->socket_type == TRAP_IFC_TCPIP_UNIX) || (c->socket_type == TRAP_IFC_TCPIP_SERVICE)) {
       /* UNIX socket */
       addr.unix_addr.sun_family = AF_UNIX;
-      snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, UNIX_PATH_FILENAME_FORMAT, c->server_port);
+      snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, trap_default_socket_path_format, c->server_port);
       /* if socket file exists, it could be hard to create new socket and bind */
       unlink(addr.unix_addr.sun_path); /* error when file does not exist is not a problem */
       c->server_sd = socket(AF_UNIX, SOCK_STREAM, 0);
