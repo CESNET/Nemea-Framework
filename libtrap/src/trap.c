@@ -2685,6 +2685,11 @@ void *service_thread_routine(void *arg)
 
    trap_ctx_priv_t *g_ctx = (trap_ctx_priv_t *) arg;
 
+   if (service_ifc == NULL) {
+      VERBOSE(CL_ERROR, "Error: allocation of service IFC failed.");
+      goto exit_service_thread;
+   }
+
    // service_sock_spec size is length of "service_PID" where PID is max 10 chars (8 + 10 + 1 zero terminating)
    char service_sock_spec[19];
    if (snprintf(service_sock_spec, 19, "service_%d", getpid()) < 1) {
@@ -2695,6 +2700,8 @@ void *service_thread_routine(void *arg)
    /* service port does not create thread for accepting clients */
    if (create_tcpip_sender_ifc(NULL, service_sock_spec, service_ifc, 0, TRAP_IFC_TCPIP_SERVICE) != TRAP_E_OK) {
       VERBOSE(CL_ERROR,"Error while creating service IFC.");
+      free(service_ifc);
+      service_ifc = NULL;
       goto exit_service_thread;
    }
 
@@ -2820,9 +2827,11 @@ exit_service_thread:
       json_data = NULL;
    }
    free(header);
-   service_ifc->terminate(service_ifc->priv);
-   service_ifc->destroy(service_ifc->priv);
-   free(service_ifc);
+   if (service_ifc != NULL) {
+      service_ifc->terminate(service_ifc->priv);
+      service_ifc->destroy(service_ifc->priv);
+      free(service_ifc);
+   }
    pthread_exit(NULL);
 }
 
