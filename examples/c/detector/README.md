@@ -26,10 +26,10 @@ make install
 Important: Nemea-Framework has to be compiled (or installed) in advance.
 
 ## Description
-This module contains example of module implementation using TRAP platform.
+This module contains example of simple filtering module. It forwards flows with desired source IP or source port.
 
 ## Interfaces
-- Inputs: 0
+- Inputs: 1
 - Outputs: 1
 
 ## Parameters
