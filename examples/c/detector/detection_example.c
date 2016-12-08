@@ -60,6 +60,7 @@
 /**
  * Definition of fields used in unirec templates (for both input and output interfaces) in this example basic flow from flow_meter
  */
+/*This module functions as a filter of flows forwarded by flow_meter, I need all fields written below to be forwarded to the next module.*/
 UR_FIELDS ( 
   ipaddr DST_IP,
   ipaddr SRC_IP,
@@ -86,8 +87,8 @@ trap_module_info_t *module_info = NULL;
 #define MODULE_BASIC_INFO(BASIC) \
   BASIC("Example detection module", \
         "This module serves as an example of module implementation in TRAP platform. It receives UniRec" \
-        "with flow from different module (flowmeter). Detects whether it has the right format and then" \
-        "detects whether it was flow started from 192.168.1.1.", 1, 1)
+        "with flow from different module (flowmeter). It is a filter, it resends all flows initiated on" \
+        "a port and on an address.", 1, 1)
   //BASIC(char *, char *, int, int)
 
 
@@ -98,7 +99,8 @@ trap_module_info_t *module_info = NULL;
  * Module parameter argument types: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float, string
  */
 #define MODULE_PARAMS(PARAM) \
-  PARAM('p', "port", "Port selected for detection and forwarding flows.", required_argument, "uint16")
+  PARAM('p', "port", "Port selected for for filtering.", required_argument, "uint16") \
+  PARAM('a', "address", "Address selected for filtering.", required_argument, "ipaddr")
   //PARAM(char, char *, char *, no_argument  or  required_argument, char *)V
 
 static int stop = 0;
@@ -113,7 +115,7 @@ int main(int argc, char **argv)
    int ret;
    signed char opt;
    uint16_t port = 1;
-   ur_ipaddr_t ip; //ip_from_str na nacteni a porovnam je pomoci ip_cmp kdyz vrati 0
+   ip_addr_t ip;
 
    /* **** TRAP initialization **** */
 
@@ -123,7 +125,6 @@ int main(int argc, char **argv)
     * function called "module_getopt_string" and long_options field for getopt_long function in variable "long_options"
     */
    INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
-/*TODO Co s MODULE_PARAMS*/
    /**
     * Let TRAP library parse program arguments, extract its parameters and initialize module interfaces
     */
@@ -143,6 +144,8 @@ int main(int argc, char **argv)
       case 'p':
          sscanf(optarg, "%" SCNu16, &port);
          break;
+      case 'a':
+         ip_from_str(optarg, &ip);
       default:
          fprintf(stderr, "Invalid arguments.\n");
          FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS);
@@ -199,9 +202,8 @@ int main(int argc, char **argv)
          }
       }
 
-      // PROCESS THE DATA
-
-      if (ur_get(in_tmplt, in_rec, F_DST_PORT) == port) {
+      /*In the following code flows with destination input by parameters (ip address and port) are filtered and forwarded on the outgoing interface, other flows are discardedi.*/
+      if ( (ur_get(in_tmplt, in_rec, F_DST_PORT) == port) || (ip_cmp(&ur_get(in_tmplt, in_rec, F_DST_IP), &ip) == 0) ) { 
          ur_copy_fields(out_tmplt, out_rec, in_tmplt, in_rec);
          ret = trap_send(0, out_rec, ur_rec_fixlen_size(out_tmplt));
          TRAP_DEFAULT_SEND_ERROR_HANDLING(ret, continue, break);
@@ -225,4 +227,3 @@ int main(int argc, char **argv)
 
    return 0;
 }
-
