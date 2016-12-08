@@ -365,3 +365,112 @@ class TemplateSizeTest(unittest.TestCase):
         self.assertEqual(a.recSize(), 65535)
         self.assertEqual(a.recFixlenSize(), 4)
         self.assertEqual(a.recVarlenSize(), 65531)
+
+class DataTypesIPAddrRange(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        try:
+            ip1 = pytrap.UnirecIPAddrRange("1.2.3.4")
+            self.fail("2 arguments or <ip>/<netmask> are required")
+        except:
+            pass
+        try:
+            ip1 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("1.2.3.4"))
+            self.fail("2 arguments or <ip>/<netmask> are required")
+        except:
+            pass
+        try:
+            ip1 = pytrap.UnirecIPAddrRange(1, 2)
+            self.fail("Integer arguments are not supported.")
+        except:
+            pass
+        ip1 = pytrap.UnirecIPAddrRange("192.168.3.1/24")
+        self.assertEqual(ip1, ip1)
+        self.assertEqual(type(ip1), pytrap.UnirecIPAddrRange, "Bad type of IP address Range object.")
+        self.assertEqual(str(ip1), "192.168.3.0 - 192.168.3.255", "IP address is not equal to its str().")
+        self.assertEqual(repr(ip1), "UnirecIPAddrRange(UnirecIPAddr('192.168.3.0'), UnirecIPAddr('192.168.3.255'))",
+                         "IP address is not equal to its repr().")
+
+        self.assertTrue(ip1.start.isIPv4(), "IPv6 was recognized as IPv4.")
+        self.assertFalse(ip1.start.isIPv6(), "IPv6 was not recognized.")
+        self.assertEqual(ip1.start.isIPv4(), ip1.end.isIPv4(), "IPv4 was not recognized.")
+        self.assertEqual(ip1.start.isIPv6(), ip1.end.isIPv6(), "IPv4 was recognized as IPv6.")
+
+        ip2 = pytrap.UnirecIPAddrRange("192.168.0.1/24")
+        ip3 = pytrap.UnirecIPAddrRange("192.168.3.1/24")
+        self.assertFalse(ip1 == ip2, "Comparison of different IP addresses failed.")
+        self.assertFalse(ip1 <= ip2, "Comparison of the same IP addresses failed.")
+        self.assertFalse(ip2 >= ip1, "Comparison of the same IP addresses failed.")
+        self.assertFalse(ip1 != ip3, "Comparison of the same IP addresses failed.")
+        self.assertFalse(ip1 < ip3, "Comparison of the same IP addresses failed.")
+        self.assertFalse(ip1 > ip3, "Comparison of the same IP addresses failed.")
+
+        ip1 = pytrap.UnirecIPAddrRange("192.168.3.1/32")
+        self.assertEqual(ip1.start, ip1.end)
+        ip1 = pytrap.UnirecIPAddrRange("192.168.3.1", "192.168.3.1")
+        self.assertEqual(ip1.start, ip1.end)
+        ip1 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("192.168.4.1"), pytrap.UnirecIPAddr("192.168.4.1"))
+        self.assertEqual(ip1.start, ip1.end)
+
+        ip1 = pytrap.UnirecIPAddrRange("fd7c:e770:9b8a::465/64")
+        self.assertEqual(type(ip1), pytrap.UnirecIPAddrRange, "Bad type of IP address object.")
+        self.assertEqual(str(ip1), "fd7c:e770:9b8a:: - fd7c:e770:9b8a:0:ffff:ffff:ffff:ffff",
+                         "IP address is not equal to its str().")
+        self.assertEqual(repr(ip1), "UnirecIPAddrRange(UnirecIPAddr('fd7c:e770:9b8a::'), UnirecIPAddr('fd7c:e770:9b8a:0:ffff:ffff:ffff:ffff'))",
+                         "IP address is not equal to its repr().")
+
+        self.assertFalse(ip1.start.isIPv4(), "IPv6 was not recognized.")
+        self.assertTrue(ip1.start.isIPv6(), "IPv6 was recognized as IPv4.")
+        self.assertEqual(ip1.start.isIPv4(), ip1.end.isIPv4(), "IPv4 was not recognized.")
+        self.assertEqual(ip1.start.isIPv6(), ip1.end.isIPv6(), "IPv4 was recognized as IPv6.")
+
+        ip1 = pytrap.UnirecIPAddrRange("fd7c:e770:9b8a::465/128")
+        self.assertEqual(ip1.start, ip1.end)
+        ip1 = pytrap.UnirecIPAddrRange("fd7c:e770:9b8a::465", "fd7c:e770:9b8a::465")
+        self.assertEqual(ip1.start, ip1.end)
+        ip1 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("fd7c:e770:9b8a::465"),
+                                       pytrap.UnirecIPAddr("fd7c:e770:9b8a::465"))
+        self.assertEqual(ip1.start, ip1.end)
+
+        intex = pytrap.UnirecIPAddrRange("192.168.1.0", "192.168.1.255")
+
+        self.assertTrue(pytrap.UnirecIPAddr("192.168.1.0") in intex, "in test: first ip - fail")
+        self.assertTrue(pytrap.UnirecIPAddr("192.168.1.255") in intex, "in test: last ip - fail")
+        self.assertTrue(pytrap.UnirecIPAddr("192.168.1.125") in intex, "in test: mid ip - fail")
+        self.assertFalse(pytrap.UnirecIPAddr("192.168.0.255") in intex, "in test: low match - fail")
+        self.assertFalse(pytrap.UnirecIPAddr("10.10.10.0") in intex, "in test: low match - fail")
+        self.assertFalse(pytrap.UnirecIPAddr("192.168.2.0") in intex, "in test: great match - fail")
+        self.assertFalse(pytrap.UnirecIPAddr("255.255.255.255") in intex, "in test: great match - fail")
+
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("192.168.1.0")), 0, "in test: first ip - fail")
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("192.168.1.255")), 0, "in test: last ip - fail")
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("192.168.1.125")),  0, "in test: mid ip - fail")
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("192.168.0.255")), -1, "in test: low match - fail")
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("10.10.10.0")), -1, "in test: low match - fail")
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("192.168.2.0")), 1, "in test: great match - fail")
+        self.assertEqual(intex.isIn(pytrap.UnirecIPAddr("255.255.255.255")), 1, "in test: great match - fail")
+
+
+        intex2 = pytrap.UnirecIPAddrRange("192.168.1.128", "192.168.2.172")
+        result = intex.isOverlap(intex2)
+        self.assertTrue(result, "isOverlap - match IPAddr in interval - fail")
+
+        intex2 = pytrap.UnirecIPAddrRange("192.168.2.0", "192.168.2.128")
+        result = intex.isOverlap(intex2)
+        self.assertFalse(result, "isOverlap - no match IPAddr in interval -fail")
+
+        intex2 = pytrap.UnirecIPAddrRange("192.168.2.0", "192.168.2.128")
+        result = intex == intex2
+        self.assertFalse(result, "Equal operator - not eq - fail")
+
+        intex2 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("192.168.1.0"), "192.168.2.128")
+        result = intex == intex2
+        self.assertFalse(result, "Equal operator - not eq - fail")
+
+        intex2 = pytrap.UnirecIPAddrRange("192.168.1.128/25")
+        result = intex == intex2
+        self.assertFalse(result, "Equal operator - not eq - fail")
+
+        intex2 = pytrap.UnirecIPAddrRange("192.168.1.0", pytrap.UnirecIPAddr("192.168.1.255"))
+        result = intex == intex2
+        self.assertTrue(result, "Equal operator - eq - fail")

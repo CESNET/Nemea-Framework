@@ -4,7 +4,7 @@ DESCRIPTION="Common Python modules and methods of the NEMEA system."
 LONG_DESCRIPTION="""The module contains methods for creation and submission of incident reports in IDEA format."""
 setup(name='nemea-pycommon',
       version='1.0.6',
-      py_modules=['report2idea'],
+      py_modules=['report2idea', 'ip_prefix_search'],
       packages=[],
       author='Vaclav Bartos, CESNET',
       author_email='bartos@cesnet.cz',
@@ -12,6 +12,7 @@ setup(name='nemea-pycommon',
       maintainer_email = 'cejkat@cesnet.cz',
       url = 'https://github.com/CESNET/Nemea-Framework',
       license="BSD",
+      test_suite="test",
       platforms = ["any"],
       classifiers = [
               'Development Status :: 4 - Beta',

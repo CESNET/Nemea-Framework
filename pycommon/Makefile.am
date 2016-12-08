@@ -1,4 +1,4 @@
-EXTRA_DIST=report2idea.py nemea-pycommon.spec setup.py
+EXTRA_DIST=report2idea.py ip_prefix_search.py nemea-pycommon.spec setup.py
 
 if MAKE_RPMS
 RPMFILENAME=nemea-pycommon

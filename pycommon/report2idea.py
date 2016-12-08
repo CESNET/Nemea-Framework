@@ -110,13 +110,14 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                             help='Add "Test" to "Category" before sending a message to output(s).')
     arg_parser.add_argument('-v', '--verbose', action='store_true',
                             help="Enable verbose mode (may be used by some modules, common part donesn't print anything")
-
+    arg_parser.add_argument('--srcwhitelist-file', metavar="FILE", type=str,
+                            help="File with addresses/subnets in format: <ip address>/<mask>,<data>\\n \n where /<mask>,<data> is optional, <data> is a user-specific optional content. Whitelist is applied to SRC_IP field. If SRC_IP from the alert is on whitelist, the alert IS NOT reported.")
+    arg_parser.add_argument('--dstwhitelist-file', metavar="FILE", type=str,
+                            help="File with addresses/subnets, whitelist is applied on DST_IP, see --srcwhitelist-file help.")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
                            help='TODO (ideally this section should be added by TRAP')
-
-
     # Parse arguments
     args = arg_parser.parse_args()
 
@@ -167,6 +168,20 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         import warden_client
         wardenclient = warden_client.Client(**warden_client.read_cfg(args.warden))
 
+    # Check if a whitelist is set, parse the file and prepare context for binary search
+    import ip_prefix_search
+    if args.srcwhitelist_file:
+        if 'ipaddr SRC_IP' in req_format.split(","):
+            srcwhitelist = ip_prefix_search.IPPSContext.fromFile(args.srcwhitelist_file)
+    else:
+        srcwhitelist = None
+
+    if args.dstwhitelist_file:
+        if 'ipaddr DST_IP' in req_format.split(","):
+            dstwhitelist = ip_prefix_search.IPPSContext.fromFile(args.dstwhitelist_file)
+    else:
+        dstwhitelist = None
+
 
     # *** Main loop ***
     URInputTmplt = None
@@ -213,6 +228,13 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             rec = json.loads(data)
         else: # TRAP_FMT_RAW
             rec = data
+
+        # Check whitelists
+        if srcwhitelist and srcwhitelist.ip_search(rec.SRC_IP):
+             continue
+
+        if dstwhitelist and dstwhitelist.ip_search(rec.DST_IP):
+             continue
 
         # *** Convert input record to IDEA ***
 
