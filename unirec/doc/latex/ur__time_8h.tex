@@ -1,0 +1,45 @@
+\hypertarget{ur__time_8h}{}\section{ur\+\_\+time.\+h File Reference}
+\label{ur__time_8h}\index{ur\+\_\+time.\+h@{ur\+\_\+time.\+h}}
+
+
+Types, macros and function for Uni\+Rec timestamp format.  
+
+
+{\ttfamily \#include $<$stdint.\+h$>$}\\*
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{group__ur__time_ga52573ceb442ad4fbd35d76f244048ec3}{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}~0x4189374\+B\+C6\+A7\+E\+F\+U\+LL
+\item 
+\#define \hyperlink{group__ur__time_ga6decebb086670b8be48b9a3e185d1cb7}{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC}~0x03\+E9\+U\+LL
+\item 
+\#define \hyperlink{group__ur__time_ga8a7a7eb122f30c16d0b3c18bbf313d50}{ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec}(sec,  msec)~(\hyperlink{group__ur__time_ga9d13a2ac3696e74a33a93aa0461a3899}{ur\+\_\+time\+\_\+t})( ((uint64\+\_\+t)(sec) $<$$<$ 32) $\vert$ (((uint64\+\_\+t)(msec)$\ast$\hyperlink{group__ur__time_ga52573ceb442ad4fbd35d76f244048ec3}{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}) $>$$>$ 32) )
+\begin{DoxyCompactList}\small\item\em Convert seconds and milliseconds to ur\+\_\+time\+\_\+t. \end{DoxyCompactList}\item 
+\#define \hyperlink{group__ur__time_ga19172b0ee74eb297f1f54bc868e50667}{ur\+\_\+time\+\_\+get\+\_\+sec}(time)~(uint32\+\_\+t)((uint64\+\_\+t)(time) $>$$>$ 32)
+\begin{DoxyCompactList}\small\item\em Get number of seconds from ur\+\_\+time\+\_\+t. \end{DoxyCompactList}\item 
+\#define \hyperlink{group__ur__time_ga427dae14973a034c807ed2603fee1f6e}{ur\+\_\+time\+\_\+get\+\_\+msec}(time)~(uint32\+\_\+t)((((uint64\+\_\+t)(time) \& 0xffffffff) $\ast$ U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+E\+C) $>$$>$ 32)
+\begin{DoxyCompactList}\small\item\em Get number of milliseconds from ur\+\_\+time\+\_\+t. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef uint64\+\_\+t \hyperlink{group__ur__time_ga9d13a2ac3696e74a33a93aa0461a3899}{ur\+\_\+time\+\_\+t}
+\begin{DoxyCompactList}\small\item\em Type of timestamps used in Uni\+Rec Timestamps in Uni\+Rec are stored as number of seconds from Unix epoch in 64bit fixed point number (32bit integral part, 32bit fraction part). \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Types, macros and function for Uni\+Rec timestamp format. 
+
+\begin{DoxyAuthor}{Author}
+Erik Sabik \href{mailto:xsabik02@stud.fit.vutbr.cz}{\tt xsabik02@stud.\+fit.\+vutbr.\+cz} 
+
+Vaclav Bartos \href{mailto:ibartosv@fit.vutbr.cz}{\tt ibartosv@fit.\+vutbr.\+cz} 
+
+Tomas Cejka \href{mailto:cejkat@cesnet.cz}{\tt cejkat@cesnet.\+cz} 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+2013 
+
+2014 
+
+2015 
+\end{DoxyDate}

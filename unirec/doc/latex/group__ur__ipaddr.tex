@@ -1,0 +1,321 @@
+\hypertarget{group__ur__ipaddr}{}\section{IP addresses A\+PI}
+\label{group__ur__ipaddr}\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+union \hyperlink{unionip__addr__u}{ip\+\_\+addr\+\_\+u}
+\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef union \hyperlink{unionip__addr__u}{ip\+\_\+addr\+\_\+u} \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+I\+N\+L\+I\+NE int \hyperlink{group__ur__ipaddr_gabf382d0ceec2ca2d62cb94ecf000ecd4}{ip\+\_\+is4} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+NE int \hyperlink{group__ur__ipaddr_gaeaa8f3d94315e53ebf8c43c7dde8f6cb}{ip\+\_\+is6} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+NE uint32\+\_\+t \hyperlink{group__ur__ipaddr_gae6ab3a77cab8533289729b25c9438689}{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int} (\hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+NE char $\ast$ \hyperlink{group__ur__ipaddr_gac2c790297e16730292696c44306dd1a6}{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+NE \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_gad57ac58e8823c5197445e9035843a417}{ip\+\_\+from\+\_\+int} (uint32\+\_\+t i)
+\item 
+I\+N\+L\+I\+NE \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga2c694d465f540e700d91a655f6d47ebd}{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be} (char b\mbox{[}4\mbox{]})
+\item 
+I\+N\+L\+I\+NE \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga34b4da3670a99958f7038c90da2b7152}{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le} (char b\mbox{[}4\mbox{]})
+\item 
+I\+N\+L\+I\+NE \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga61daf049c5a24cd2a331d916694a4fef}{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be} (char b\mbox{[}16\mbox{]})
+\item 
+I\+N\+L\+I\+NE \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga35a767afac198cabbbb7cf5ea70c9e33}{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le} (char b\mbox{[}16\mbox{]})
+\item 
+I\+N\+L\+I\+NE int \hyperlink{group__ur__ipaddr_ga6b852d36a8e8b8932058fba40570a24a}{ip\+\_\+cmp} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr1, const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr2)
+\item 
+I\+N\+L\+I\+NE int \hyperlink{group__ur__ipaddr_ga43a7b7ceb95df7a142c5da17fa778cd0}{ip\+\_\+is\+\_\+null} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+NE int \hyperlink{group__ur__ipaddr_gae01409ca18c16d2b28292ff94802b51b}{ip\+\_\+from\+\_\+str} (const char $\ast$str, \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+NE void \hyperlink{group__ur__ipaddr_ga4aa063dc904a602c2ee1f46bf50315e7}{ip\+\_\+to\+\_\+str} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr, char $\ast$str)
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Structure and functions to handle generic IP addresses (I\+Pv4 or I\+Pv6). IP addresses are stored on 128 bits. I\+Pv6 addresses are stored directly. I\+Pv4 addresses are converted to 128 bit is this way\+: 
+\begin{DoxyCode}
+0000:0000:0000:0000:<ipv4\_addr>:ffff:ffff
+\end{DoxyCode}
+ No valid I\+Pv6 address should look like this so it\textquotesingle{}s possible to determine IP address version without explicitly storing any flag.
+
+Addresses are stored in big endian (network byte order).
+
+This implementation assumes the platform uses little endian (true for x86 architectures).
+
+
+\begin{DoxyCode}
+Layout of \hyperlink{unionip__addr__u}{ip\_addr\_t} \textcolor{keyword}{union}:
+ MSB                                 LSB
+ xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx
+|      i64[0]       |       i64[1]      |
+| i32[0]  | i32[1]  | i32[2]  | i32[3]  |
+|bytes[0] ...              ... bytes[15]|
+\end{DoxyCode}
+ 
+
+\subsection{Typedef Documentation}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+addr\+\_\+t@{ip\+\_\+addr\+\_\+t}}
+\index{ip\+\_\+addr\+\_\+t@{ip\+\_\+addr\+\_\+t}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+addr\+\_\+t}{ip\_addr\_t}}]{\setlength{\rightskip}{0pt plus 5cm}typedef union {\bf ip\+\_\+addr\+\_\+u}  {\bf ip\+\_\+addr\+\_\+t}}\hypertarget{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{}\label{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}
+IP address data type.
+
+It is 128b data type. User can access to parts of the IP address in several ways. 
+
+\subsection{Function Documentation}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+cmp@{ip\+\_\+cmp}}
+\index{ip\+\_\+cmp@{ip\+\_\+cmp}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+cmp(const ip\+\_\+addr\+\_\+t $\ast$addr1, const ip\+\_\+addr\+\_\+t $\ast$addr2)}{ip\_cmp(const ip\_addr\_t *addr1, const ip\_addr\_t *addr2)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE int ip\+\_\+cmp (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr1, }
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr2}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga6b852d36a8e8b8932058fba40570a24a}{}\label{group__ur__ipaddr_ga6b852d36a8e8b8932058fba40570a24a}
+Compare two IP addresses.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr1} & IP address as ip\+\_\+addr\+\_\+t \\
+\hline
+\mbox{\tt in}  & {\em addr2} & IP address as ip\+\_\+addr\+\_\+t \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Positive number ($>$0) if addr1 $>$ addr2, negative number ($<$0) if addr1 $<$ addr2, and zero (=0) if addr1 == addr2. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be@{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be}}
+\index{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be@{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be(char b[16])}{ip\_from\_16\_bytes\_be(char b[16])}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE {\bf ip\+\_\+addr\+\_\+t} ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be (
+\begin{DoxyParamCaption}
+\item[{char}]{b\mbox{[}16\mbox{]}}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga61daf049c5a24cd2a331d916694a4fef}{}\label{group__ur__ipaddr_ga61daf049c5a24cd2a331d916694a4fef}
+Convert 16B array (in network byte order) into I\+Pv6 address encoded as ip\+\_\+addr\+\_\+t.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em b} & 16 bytes array in network byte order for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+Pv6 address stored as ip\+\_\+addr\+\_\+t. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le@{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le}}
+\index{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le@{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le(char b[16])}{ip\_from\_16\_bytes\_le(char b[16])}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE {\bf ip\+\_\+addr\+\_\+t} ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le (
+\begin{DoxyParamCaption}
+\item[{char}]{b\mbox{[}16\mbox{]}}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga35a767afac198cabbbb7cf5ea70c9e33}{}\label{group__ur__ipaddr_ga35a767afac198cabbbb7cf5ea70c9e33}
+Convert 16B array (in little-\/endian byte order) into I\+Pv6 address encoded as ip\+\_\+addr\+\_\+t.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em b} & 16 bytes array in little-\/endian byte order for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+Pv6 address stored as ip\+\_\+addr\+\_\+t. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be@{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be}}
+\index{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be@{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be(char b[4])}{ip\_from\_4\_bytes\_be(char b[4])}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE {\bf ip\+\_\+addr\+\_\+t} ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be (
+\begin{DoxyParamCaption}
+\item[{char}]{b\mbox{[}4\mbox{]}}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga2c694d465f540e700d91a655f6d47ebd}{}\label{group__ur__ipaddr_ga2c694d465f540e700d91a655f6d47ebd}
+Convert 4B array (in network byte order) into I\+Pv4 address encoded as ip\+\_\+addr\+\_\+t.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em b} & 4 bytes array in network byte order for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+Pv4 address stored as ip\+\_\+addr\+\_\+t. 
+\end{DoxyReturn}
+\begin{DoxySeeAlso}{See also}
+\hyperlink{group__ur__ipaddr_gad57ac58e8823c5197445e9035843a417}{ip\+\_\+from\+\_\+int()} 
+\end{DoxySeeAlso}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le@{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le}}
+\index{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le@{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le(char b[4])}{ip\_from\_4\_bytes\_le(char b[4])}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE {\bf ip\+\_\+addr\+\_\+t} ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le (
+\begin{DoxyParamCaption}
+\item[{char}]{b\mbox{[}4\mbox{]}}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga34b4da3670a99958f7038c90da2b7152}{}\label{group__ur__ipaddr_ga34b4da3670a99958f7038c90da2b7152}
+Convert 4B array (in little-\/endian byte order) into I\+Pv4 address encoded as ip\+\_\+addr\+\_\+t.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em b} & 4 bytes array in little-\/endian byte order for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+Pv4 address stored as ip\+\_\+addr\+\_\+t. 
+\end{DoxyReturn}
+\begin{DoxySeeAlso}{See also}
+\hyperlink{group__ur__ipaddr_gad57ac58e8823c5197445e9035843a417}{ip\+\_\+from\+\_\+int()} 
+\end{DoxySeeAlso}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+from\+\_\+int@{ip\+\_\+from\+\_\+int}}
+\index{ip\+\_\+from\+\_\+int@{ip\+\_\+from\+\_\+int}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+from\+\_\+int(uint32\+\_\+t i)}{ip\_from\_int(uint32\_t i)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE {\bf ip\+\_\+addr\+\_\+t} ip\+\_\+from\+\_\+int (
+\begin{DoxyParamCaption}
+\item[{uint32\+\_\+t}]{i}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_gad57ac58e8823c5197445e9035843a417}{}\label{group__ur__ipaddr_gad57ac58e8823c5197445e9035843a417}
+Convert 32b number into I\+Pv4 address encoded as ip\+\_\+addr\+\_\+t.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em i} & 32b number in host byte order for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+I\+Pv4 address stored as ip\+\_\+addr\+\_\+t. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+from\+\_\+str@{ip\+\_\+from\+\_\+str}}
+\index{ip\+\_\+from\+\_\+str@{ip\+\_\+from\+\_\+str}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+from\+\_\+str(const char $\ast$str, ip\+\_\+addr\+\_\+t $\ast$addr)}{ip\_from\_str(const char *str, ip\_addr\_t *addr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE int ip\+\_\+from\+\_\+str (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{str, }
+\item[{{\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_gae01409ca18c16d2b28292ff94802b51b}{}\label{group__ur__ipaddr_gae01409ca18c16d2b28292ff94802b51b}
+Convert string into ip\+\_\+addr\+\_\+t.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em str} & String for conversion. \\
+\hline
+\mbox{\tt out}  & {\em addr} & Pointer to memory where to store converted IP address. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 on success, 0 on error i.\+e. string is not a valid IP address. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes@{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes}}
+\index{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes@{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes(const ip\+\_\+addr\+\_\+t $\ast$addr)}{ip\_get\_v4\_as\_bytes(const ip\_addr\_t *addr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE char$\ast$ ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_gac2c790297e16730292696c44306dd1a6}{}\label{group__ur__ipaddr_gac2c790297e16730292696c44306dd1a6}
+Get pointer to byte array of I\+Pv4 address.
+
+The function returns pointer to the first byte of IP address data structure. Data is in network byte order.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr} & IP address for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the first byte of I\+Pv4 address. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int@{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int}}
+\index{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int@{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int(ip\+\_\+addr\+\_\+t $\ast$addr)}{ip\_get\_v4\_as\_int(ip\_addr\_t *addr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE uint32\+\_\+t ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int (
+\begin{DoxyParamCaption}
+\item[{{\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_gae6ab3a77cab8533289729b25c9438689}{}\label{group__ur__ipaddr_gae6ab3a77cab8533289729b25c9438689}
+Get I\+Pv4 address as one 32b number.
+
+The function takes the appropriate 32b part of ip\+\_\+addr\+\_\+t and converts it into host byte order.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr} & IP address for conversion. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+IP address as one 32b number in host byte order. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+is4@{ip\+\_\+is4}}
+\index{ip\+\_\+is4@{ip\+\_\+is4}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+is4(const ip\+\_\+addr\+\_\+t $\ast$addr)}{ip\_is4(const ip\_addr\_t *addr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE int ip\+\_\+is4 (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_gabf382d0ceec2ca2d62cb94ecf000ecd4}{}\label{group__ur__ipaddr_gabf382d0ceec2ca2d62cb94ecf000ecd4}
+Check if the address is I\+Pv4.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr} & IP address that is checked. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 if the address is I\+Pv4, 0 otherwise. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+is6@{ip\+\_\+is6}}
+\index{ip\+\_\+is6@{ip\+\_\+is6}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+is6(const ip\+\_\+addr\+\_\+t $\ast$addr)}{ip\_is6(const ip\_addr\_t *addr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE int ip\+\_\+is6 (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_gaeaa8f3d94315e53ebf8c43c7dde8f6cb}{}\label{group__ur__ipaddr_gaeaa8f3d94315e53ebf8c43c7dde8f6cb}
+Check if the address is I\+Pv6.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr} & IP address that is checked. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 if the address is I\+Pv6, 0 otherwise. 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+It is a negation of \hyperlink{group__ur__ipaddr_gabf382d0ceec2ca2d62cb94ecf000ecd4}{ip\+\_\+is4()}. 
+\end{DoxyNote}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+is\+\_\+null@{ip\+\_\+is\+\_\+null}}
+\index{ip\+\_\+is\+\_\+null@{ip\+\_\+is\+\_\+null}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+is\+\_\+null(const ip\+\_\+addr\+\_\+t $\ast$addr)}{ip\_is\_null(const ip\_addr\_t *addr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE int ip\+\_\+is\+\_\+null (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga43a7b7ceb95df7a142c5da17fa778cd0}{}\label{group__ur__ipaddr_ga43a7b7ceb95df7a142c5da17fa778cd0}
+Check if IP address is N\+U\+L\+L/invalid/unspecified?
+
+There are two variants being used as invalid/unspecified address\+: 
+\begin{DoxyCode}
+1 00000000 00000000 00000000 ffffffff (i.e. "0.0.0.0", zero IPv4)
+2 00000000 00000000 00000000 00000000 (i.e. "::", zero IPv6)
+\end{DoxyCode}
+
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr} & IP address to check. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+1 if given address matches any of the ones above, otherwise returns 0. 
+\end{DoxyReturn}
+\index{I\+P addresses A\+PI@{I\+P addresses A\+PI}!ip\+\_\+to\+\_\+str@{ip\+\_\+to\+\_\+str}}
+\index{ip\+\_\+to\+\_\+str@{ip\+\_\+to\+\_\+str}!I\+P addresses A\+PI@{I\+P addresses A\+PI}}
+\subsubsection[{\texorpdfstring{ip\+\_\+to\+\_\+str(const ip\+\_\+addr\+\_\+t $\ast$addr, char $\ast$str)}{ip\_to\_str(const ip\_addr\_t *addr, char *str)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+N\+L\+I\+NE void ip\+\_\+to\+\_\+str (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{addr, }
+\item[{char $\ast$}]{str}
+\end{DoxyParamCaption}
+)}\hypertarget{group__ur__ipaddr_ga4aa063dc904a602c2ee1f46bf50315e7}{}\label{group__ur__ipaddr_ga4aa063dc904a602c2ee1f46bf50315e7}
+Convert ip\+\_\+addr\+\_\+t into string.
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em addr} & Pointer to IP address. \\
+\hline
+\mbox{\tt out}  & {\em str} & Pointer to memory where to store converted IP address. It must be of at least I\+N\+E\+T6\+\_\+\+A\+D\+D\+R\+S\+T\+R\+L\+EN size. \\
+\hline
+\end{DoxyParams}

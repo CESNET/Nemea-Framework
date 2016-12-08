@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['count',['count',['../structur__template__t.html#a3331d5fc7eeda55fbbb33543da5db0d9',1,'ur_template_t']]]
+  ['bytes',['bytes',['../unionip__addr__u.html#a096a9f4c0c9499e1a049b08243a13908',1,'ip_addr_u']]]
 ];

@@ -1,0 +1,126 @@
+\hypertarget{classIPaddr__cpp}{}\section{I\+Paddr\+\_\+cpp Class Reference}
+\label{classIPaddr__cpp}\index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+
+
+{\ttfamily \#include $<$ipaddr\+\_\+cpp.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classIPaddr__cpp_a450c35472ab98d00f27b041e03f82978}{I\+Paddr\+\_\+cpp} ()
+\item 
+\hyperlink{classIPaddr__cpp_a150c0d3d33c93709f21c56d617893547}{I\+Paddr\+\_\+cpp} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$ptr)
+\item 
+\hyperlink{classIPaddr__cpp_ae4af8442dd70b4143b7acbc10baf83e0}{$\sim$\+I\+Paddr\+\_\+cpp} ()
+\item 
+bool \hyperlink{classIPaddr__cpp_acbb4296c7de0b11ab386125deddfe853}{operator$<$} (const \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} \&key2) const 
+\item 
+bool \hyperlink{classIPaddr__cpp_aaf92bb4645a643a780a98d73d6abe63c}{operator$<$=} (const \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} \&key2) const 
+\item 
+bool \hyperlink{classIPaddr__cpp_a28acfd6e680b48394363f102273fdec4}{operator$>$} (const \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} \&key2) const 
+\item 
+bool \hyperlink{classIPaddr__cpp_a89c93a9f1647b548e3ec0c444a8fe4b4}{operator$>$=} (const \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} \&key2) const 
+\item 
+bool \hyperlink{classIPaddr__cpp_afb24038927369d121a7f78e8800b1b4b}{operator==} (const \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} \&key2) const 
+\item 
+bool \hyperlink{classIPaddr__cpp_a8b54c0118c6a0ff8bb920e3197e1275d}{operator!=} (const \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} \&key2) const 
+\item 
+std\+::string \hyperlink{classIPaddr__cpp_abeee306f1938a460601f686fcaea9867}{to\+String} () const 
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$ {\bfseries data}\hypertarget{classIPaddr__cpp_adf049f6518644143081b06e798a29ccf}{}\label{classIPaddr__cpp_adf049f6518644143081b06e798a29ccf}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} class representing IP address.
+
+Wrapper of IP address data type (ip\+\_\+addr\+\_\+t) for C++. 
+
+\subsection{Constructor \& Destructor Documentation}
+\index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{I\+Paddr\+\_\+cpp()}{IPaddr\_cpp()}}]{\setlength{\rightskip}{0pt plus 5cm}I\+Paddr\+\_\+cpp\+::\+I\+Paddr\+\_\+cpp (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_a450c35472ab98d00f27b041e03f82978}{}\label{classIPaddr__cpp_a450c35472ab98d00f27b041e03f82978}
+Constructor of I\+Paddr\+\_\+ccp object. \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{I\+Paddr\+\_\+cpp(const ip\+\_\+addr\+\_\+t $\ast$ptr)}{IPaddr\_cpp(const ip\_addr\_t *ptr)}}]{\setlength{\rightskip}{0pt plus 5cm}I\+Paddr\+\_\+cpp\+::\+I\+Paddr\+\_\+cpp (
+\begin{DoxyParamCaption}
+\item[{const {\bf ip\+\_\+addr\+\_\+t} $\ast$}]{ptr}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_a150c0d3d33c93709f21c56d617893547}{}\label{classIPaddr__cpp_a150c0d3d33c93709f21c56d617893547}
+Copy constructor of \hyperlink{classIPaddr__cpp}{I\+Paddr\+\_\+cpp} class. \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!````~I\+Paddr\+\_\+cpp@{$\sim$\+I\+Paddr\+\_\+cpp}}
+\index{````~I\+Paddr\+\_\+cpp@{$\sim$\+I\+Paddr\+\_\+cpp}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{$\sim$\+I\+Paddr\+\_\+cpp()}{~IPaddr\_cpp()}}]{\setlength{\rightskip}{0pt plus 5cm}I\+Paddr\+\_\+cpp\+::$\sim$\+I\+Paddr\+\_\+cpp (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_ae4af8442dd70b4143b7acbc10baf83e0}{}\label{classIPaddr__cpp_ae4af8442dd70b4143b7acbc10baf83e0}
+Desctructor of I\+Paddr\+\_\+ccp object. 
+
+\subsection{Member Function Documentation}
+\index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!operator"!=@{operator"!=}}
+\index{operator"!=@{operator"!=}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{operator"!=(const I\+Paddr\+\_\+cpp \&key2) const }{operator!=(const IPaddr\_cpp \&key2) const }}]{\setlength{\rightskip}{0pt plus 5cm}bool I\+Paddr\+\_\+cpp\+::operator!= (
+\begin{DoxyParamCaption}
+\item[{const {\bf I\+Paddr\+\_\+cpp} \&}]{key2}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_a8b54c0118c6a0ff8bb920e3197e1275d}{}\label{classIPaddr__cpp_a8b54c0118c6a0ff8bb920e3197e1275d}
+Compare IP address (operator !=) \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!operator$<$@{operator$<$}}
+\index{operator$<$@{operator$<$}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{operator$<$(const I\+Paddr\+\_\+cpp \&key2) const }{operator<(const IPaddr\_cpp \&key2) const }}]{\setlength{\rightskip}{0pt plus 5cm}bool I\+Paddr\+\_\+cpp\+::operator$<$ (
+\begin{DoxyParamCaption}
+\item[{const {\bf I\+Paddr\+\_\+cpp} \&}]{key2}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_acbb4296c7de0b11ab386125deddfe853}{}\label{classIPaddr__cpp_acbb4296c7de0b11ab386125deddfe853}
+Compare IP address (operator $<$) \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!operator$<$=@{operator$<$=}}
+\index{operator$<$=@{operator$<$=}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{operator$<$=(const I\+Paddr\+\_\+cpp \&key2) const }{operator<=(const IPaddr\_cpp \&key2) const }}]{\setlength{\rightskip}{0pt plus 5cm}bool I\+Paddr\+\_\+cpp\+::operator$<$= (
+\begin{DoxyParamCaption}
+\item[{const {\bf I\+Paddr\+\_\+cpp} \&}]{key2}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_aaf92bb4645a643a780a98d73d6abe63c}{}\label{classIPaddr__cpp_aaf92bb4645a643a780a98d73d6abe63c}
+Compare IP address (operator $<$=) \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!operator==@{operator==}}
+\index{operator==@{operator==}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{operator==(const I\+Paddr\+\_\+cpp \&key2) const }{operator==(const IPaddr\_cpp \&key2) const }}]{\setlength{\rightskip}{0pt plus 5cm}bool I\+Paddr\+\_\+cpp\+::operator== (
+\begin{DoxyParamCaption}
+\item[{const {\bf I\+Paddr\+\_\+cpp} \&}]{key2}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_afb24038927369d121a7f78e8800b1b4b}{}\label{classIPaddr__cpp_afb24038927369d121a7f78e8800b1b4b}
+Compare IP address (operator ==) \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!operator$>$@{operator$>$}}
+\index{operator$>$@{operator$>$}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{operator$>$(const I\+Paddr\+\_\+cpp \&key2) const }{operator>(const IPaddr\_cpp \&key2) const }}]{\setlength{\rightskip}{0pt plus 5cm}bool I\+Paddr\+\_\+cpp\+::operator$>$ (
+\begin{DoxyParamCaption}
+\item[{const {\bf I\+Paddr\+\_\+cpp} \&}]{key2}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_a28acfd6e680b48394363f102273fdec4}{}\label{classIPaddr__cpp_a28acfd6e680b48394363f102273fdec4}
+Compare IP address (operator $>$) \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!operator$>$=@{operator$>$=}}
+\index{operator$>$=@{operator$>$=}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{operator$>$=(const I\+Paddr\+\_\+cpp \&key2) const }{operator>=(const IPaddr\_cpp \&key2) const }}]{\setlength{\rightskip}{0pt plus 5cm}bool I\+Paddr\+\_\+cpp\+::operator$>$= (
+\begin{DoxyParamCaption}
+\item[{const {\bf I\+Paddr\+\_\+cpp} \&}]{key2}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_a89c93a9f1647b548e3ec0c444a8fe4b4}{}\label{classIPaddr__cpp_a89c93a9f1647b548e3ec0c444a8fe4b4}
+Compare IP address (operator $>$=) \index{I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}!to\+String@{to\+String}}
+\index{to\+String@{to\+String}!I\+Paddr\+\_\+cpp@{I\+Paddr\+\_\+cpp}}
+\subsubsection[{\texorpdfstring{to\+String() const }{toString() const }}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string I\+Paddr\+\_\+cpp\+::to\+String (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{classIPaddr__cpp_abeee306f1938a460601f686fcaea9867}{}\label{classIPaddr__cpp_abeee306f1938a460601f686fcaea9867}
+Convert IP address to string.
+
+\begin{DoxyReturn}{Returns}
+IP address as a string. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+ipaddr\+\_\+cpp.\+h\end{DoxyCompactItemize}

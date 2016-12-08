@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['field_5fspec_5fs',['field_spec_s',['../structfield__spec__s.html',1,'']]],
-  ['first_5fdynamic',['first_dynamic',['../structur__template__t.html#a3ff58f0882adb970deec7c6f7faa7f7c',1,'ur_template_t']]]
+  ['direction',['direction',['../structur__template__t.html#a099d176cd55c8e16d01a3e9eb6f8c6d4',1,'ur_template_t']]]
 ];

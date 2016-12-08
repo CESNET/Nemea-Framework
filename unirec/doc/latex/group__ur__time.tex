@@ -1,0 +1,94 @@
+\hypertarget{group__ur__time}{}\section{Timestamps A\+PI}
+\label{group__ur__time}\index{Timestamps A\+PI@{Timestamps A\+PI}}
+\subsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \hyperlink{group__ur__time_ga52573ceb442ad4fbd35d76f244048ec3}{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}~0x4189374\+B\+C6\+A7\+E\+F\+U\+LL
+\item 
+\#define \hyperlink{group__ur__time_ga6decebb086670b8be48b9a3e185d1cb7}{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC}~0x03\+E9\+U\+LL
+\item 
+\#define \hyperlink{group__ur__time_ga8a7a7eb122f30c16d0b3c18bbf313d50}{ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec}(sec,  msec)~(\hyperlink{group__ur__time_ga9d13a2ac3696e74a33a93aa0461a3899}{ur\+\_\+time\+\_\+t})( ((uint64\+\_\+t)(sec) $<$$<$ 32) $\vert$ (((uint64\+\_\+t)(msec)$\ast$\hyperlink{group__ur__time_ga52573ceb442ad4fbd35d76f244048ec3}{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}) $>$$>$ 32) )
+\begin{DoxyCompactList}\small\item\em Convert seconds and milliseconds to ur\+\_\+time\+\_\+t. \end{DoxyCompactList}\item 
+\#define \hyperlink{group__ur__time_ga19172b0ee74eb297f1f54bc868e50667}{ur\+\_\+time\+\_\+get\+\_\+sec}(time)~(uint32\+\_\+t)((uint64\+\_\+t)(time) $>$$>$ 32)
+\begin{DoxyCompactList}\small\item\em Get number of seconds from ur\+\_\+time\+\_\+t. \end{DoxyCompactList}\item 
+\#define \hyperlink{group__ur__time_ga427dae14973a034c807ed2603fee1f6e}{ur\+\_\+time\+\_\+get\+\_\+msec}(time)~(uint32\+\_\+t)((((uint64\+\_\+t)(time) \& 0xffffffff) $\ast$ U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+E\+C) $>$$>$ 32)
+\begin{DoxyCompactList}\small\item\em Get number of milliseconds from ur\+\_\+time\+\_\+t. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef uint64\+\_\+t \hyperlink{group__ur__time_ga9d13a2ac3696e74a33a93aa0461a3899}{ur\+\_\+time\+\_\+t}\hypertarget{group__ur__time_ga9d13a2ac3696e74a33a93aa0461a3899}{}\label{group__ur__time_ga9d13a2ac3696e74a33a93aa0461a3899}
+
+\begin{DoxyCompactList}\small\item\em Type of timestamps used in Uni\+Rec Timestamps in Uni\+Rec are stored as number of seconds from Unix epoch in 64bit fixed point number (32bit integral part, 32bit fraction part). \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+
+
+\subsection{Macro Definition Documentation}
+\index{Timestamps A\+PI@{Timestamps A\+PI}!U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC@{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC}}
+\index{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC@{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC}!Timestamps A\+PI@{Timestamps A\+PI}}
+\subsubsection[{\texorpdfstring{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC}{UR\_TIME\_FRAC\_TO\_MSEC}}]{\setlength{\rightskip}{0pt plus 5cm}\#define U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+EC~0x03\+E9\+U\+LL}\hypertarget{group__ur__time_ga6decebb086670b8be48b9a3e185d1cb7}{}\label{group__ur__time_ga6decebb086670b8be48b9a3e185d1cb7}
+Constant used to convert fraction of second on 32 bits to milliseconds. Its value is 1000 / 2$^\wedge$32 in fixed-\/point notation. \index{Timestamps A\+PI@{Timestamps A\+PI}!ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec@{ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec}}
+\index{ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec@{ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec}!Timestamps A\+PI@{Timestamps A\+PI}}
+\subsubsection[{\texorpdfstring{ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec}{ur\_time\_from\_sec\_msec}}]{\setlength{\rightskip}{0pt plus 5cm}\#define ur\+\_\+time\+\_\+from\+\_\+sec\+\_\+msec(
+\begin{DoxyParamCaption}
+\item[{}]{sec, }
+\item[{}]{msec}
+\end{DoxyParamCaption}
+)~({\bf ur\+\_\+time\+\_\+t})( ((uint64\+\_\+t)(sec) $<$$<$ 32) $\vert$ (((uint64\+\_\+t)(msec)$\ast${\bf U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}) $>$$>$ 32) )}\hypertarget{group__ur__time_ga8a7a7eb122f30c16d0b3c18bbf313d50}{}\label{group__ur__time_ga8a7a7eb122f30c16d0b3c18bbf313d50}
+
+
+Convert seconds and milliseconds to ur\+\_\+time\+\_\+t. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em sec} & seconds \\
+\hline
+{\em msec} & milliseconds \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Uni\+Rec timestamp (ur\+\_\+time\+\_\+t) 
+\end{DoxyReturn}
+\index{Timestamps A\+PI@{Timestamps A\+PI}!ur\+\_\+time\+\_\+get\+\_\+msec@{ur\+\_\+time\+\_\+get\+\_\+msec}}
+\index{ur\+\_\+time\+\_\+get\+\_\+msec@{ur\+\_\+time\+\_\+get\+\_\+msec}!Timestamps A\+PI@{Timestamps A\+PI}}
+\subsubsection[{\texorpdfstring{ur\+\_\+time\+\_\+get\+\_\+msec}{ur\_time\_get\_msec}}]{\setlength{\rightskip}{0pt plus 5cm}\#define ur\+\_\+time\+\_\+get\+\_\+msec(
+\begin{DoxyParamCaption}
+\item[{}]{time}
+\end{DoxyParamCaption}
+)~(uint32\+\_\+t)((((uint64\+\_\+t)(time) \& 0xffffffff) $\ast$ U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+F\+R\+A\+C\+\_\+\+T\+O\+\_\+\+M\+S\+E\+C) $>$$>$ 32)}\hypertarget{group__ur__time_ga427dae14973a034c807ed2603fee1f6e}{}\label{group__ur__time_ga427dae14973a034c807ed2603fee1f6e}
+
+
+Get number of milliseconds from ur\+\_\+time\+\_\+t. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em time} & Uni\+Rec timestamp \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+milliseconds 
+\end{DoxyReturn}
+\index{Timestamps A\+PI@{Timestamps A\+PI}!ur\+\_\+time\+\_\+get\+\_\+sec@{ur\+\_\+time\+\_\+get\+\_\+sec}}
+\index{ur\+\_\+time\+\_\+get\+\_\+sec@{ur\+\_\+time\+\_\+get\+\_\+sec}!Timestamps A\+PI@{Timestamps A\+PI}}
+\subsubsection[{\texorpdfstring{ur\+\_\+time\+\_\+get\+\_\+sec}{ur\_time\_get\_sec}}]{\setlength{\rightskip}{0pt plus 5cm}\#define ur\+\_\+time\+\_\+get\+\_\+sec(
+\begin{DoxyParamCaption}
+\item[{}]{time}
+\end{DoxyParamCaption}
+)~(uint32\+\_\+t)((uint64\+\_\+t)(time) $>$$>$ 32)}\hypertarget{group__ur__time_ga19172b0ee74eb297f1f54bc868e50667}{}\label{group__ur__time_ga19172b0ee74eb297f1f54bc868e50667}
+
+
+Get number of seconds from ur\+\_\+time\+\_\+t. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em time} & Uni\+Rec timestamp \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+seconds 
+\end{DoxyReturn}
+\index{Timestamps A\+PI@{Timestamps A\+PI}!U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC@{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}}
+\index{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC@{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}!Timestamps A\+PI@{Timestamps A\+PI}}
+\subsubsection[{\texorpdfstring{U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC}{UR\_TIME\_MSEC\_TO\_FRAC}}]{\setlength{\rightskip}{0pt plus 5cm}\#define U\+R\+\_\+\+T\+I\+M\+E\+\_\+\+M\+S\+E\+C\+\_\+\+T\+O\+\_\+\+F\+R\+AC~0x4189374\+B\+C6\+A7\+E\+F\+U\+LL}\hypertarget{group__ur__time_ga52573ceb442ad4fbd35d76f244048ec3}{}\label{group__ur__time_ga52573ceb442ad4fbd35d76f244048ec3}
+Constant used to convert milliseconds to fraction of second on 32 bits. Its values is 2$^\wedge$32 / 1000 in fixed-\/point notation. 

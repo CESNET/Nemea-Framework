@@ -1,0 +1,978 @@
+\hypertarget{unirec_8c}{}\section{unirec.\+c File Reference}
+\label{unirec_8c}\index{unirec.\+c@{unirec.\+c}}
+
+
+Definition of Uni\+Rec structures and functions.  
+
+
+{\ttfamily \#include $<$stdlib.\+h$>$}\\*
+{\ttfamily \#include $<$stdio.\+h$>$}\\*
+{\ttfamily \#include $<$inttypes.\+h$>$}\\*
+{\ttfamily \#include $<$time.\+h$>$}\\*
+{\ttfamily \#include $<$string.\+h$>$}\\*
+{\ttfamily \#include $<$regex.\+h$>$}\\*
+{\ttfamily \#include \char`\"{}unirec.\+h\char`\"{}}\\*
+{\ttfamily \#include $<$libtrap/trap.\+h$>$}\\*
+{\ttfamily \#include \char`\"{}ur\+\_\+values.\+c\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}inline.\+h\char`\"{}}\\*
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL int \hyperlink{group__ur__ipaddr_gabf382d0ceec2ca2d62cb94ecf000ecd4}{ip\+\_\+is4} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL int \hyperlink{group__ur__ipaddr_gaeaa8f3d94315e53ebf8c43c7dde8f6cb}{ip\+\_\+is6} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL uint32\+\_\+t \hyperlink{group__ur__ipaddr_gae6ab3a77cab8533289729b25c9438689}{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+int} (\hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL char $\ast$ \hyperlink{group__ur__ipaddr_gac2c790297e16730292696c44306dd1a6}{ip\+\_\+get\+\_\+v4\+\_\+as\+\_\+bytes} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_gad57ac58e8823c5197445e9035843a417}{ip\+\_\+from\+\_\+int} (uint32\+\_\+t i)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga2c694d465f540e700d91a655f6d47ebd}{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+be} (char b\mbox{[}4\mbox{]})
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga34b4da3670a99958f7038c90da2b7152}{ip\+\_\+from\+\_\+4\+\_\+bytes\+\_\+le} (char b\mbox{[}4\mbox{]})
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga61daf049c5a24cd2a331d916694a4fef}{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+be} (char b\mbox{[}16\mbox{]})
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} \hyperlink{group__ur__ipaddr_ga35a767afac198cabbbb7cf5ea70c9e33}{ip\+\_\+from\+\_\+16\+\_\+bytes\+\_\+le} (char b\mbox{[}16\mbox{]})
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL int \hyperlink{group__ur__ipaddr_ga6b852d36a8e8b8932058fba40570a24a}{ip\+\_\+cmp} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr1, const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr2)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL int \hyperlink{group__ur__ipaddr_gae01409ca18c16d2b28292ff94802b51b}{ip\+\_\+from\+\_\+str} (const char $\ast$str, \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr)
+\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL void \hyperlink{group__ur__ipaddr_ga4aa063dc904a602c2ee1f46bf50315e7}{ip\+\_\+to\+\_\+str} (const \hyperlink{group__ur__ipaddr_ga25f353236a342b23c6eb35f4a87176b5}{ip\+\_\+addr\+\_\+t} $\ast$addr, char $\ast$str)
+\item 
+int \hyperlink{unirec_8c_a238d68dc4d1dc5b0369e907b0e2d9711}{ur\+\_\+init} (\hyperlink{structur__static__field__specs__t}{ur\+\_\+static\+\_\+field\+\_\+specs\+\_\+t} field\+\_\+specs\+\_\+static)
+\begin{DoxyCompactList}\small\item\em Initialize Uni\+Rec structures Initialize Uni\+Rec structures. Function is called during defining first own field. \end{DoxyCompactList}\item 
+char $\ast$ \hyperlink{unirec_8c_abfbfcce0fe6729ceb692d09541336c33}{ur\+\_\+template\+\_\+string\+\_\+delimiter} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, int delimiter)
+\begin{DoxyCompactList}\small\item\em Receive data from interface with given context Receive data with specified template from libtrap interface with specified context. If the receiving template is subset of sending template, it will define new fields and expand receiving template. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_a98890a8d9702c533d4d1d1e7921f74e6}{ur\+\_\+get\+\_\+empty\+\_\+id} ()
+\begin{DoxyCompactList}\small\item\em Return first empty id for new Uni\+Rec field Return first empty id for new Uni\+Rec field. If there is no space in the Uni\+Rec structures, it will increase space in the existing structures. \end{DoxyCompactList}\item 
+int {\bfseries ur\+\_\+get\+\_\+field\+\_\+type\+\_\+from\+\_\+str} (const char $\ast$type)\hypertarget{unirec_8c_ae511d9e52485818f2513fe5f2e1d564c}{}\label{unirec_8c_ae511d9e52485818f2513fe5f2e1d564c}
+
+\item 
+const char $\ast$ {\bfseries ur\+\_\+get\+\_\+type\+\_\+and\+\_\+name\+\_\+from\+\_\+string} (const char $\ast$source, char $\ast$$\ast$name, char $\ast$$\ast$type, int $\ast$length\+\_\+name, int $\ast$length\+\_\+type)\hypertarget{unirec_8c_a1dad0e5a16c5828870041e64270e1943}{}\label{unirec_8c_a1dad0e5a16c5828870041e64270e1943}
+
+\item 
+char $\ast$ \hyperlink{unirec_8c_a31d468a710c302abfc212784c99ef889}{ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names} (const char $\ast$ifc\+\_\+data\+\_\+fmt)
+\begin{DoxyCompactList}\small\item\em Parses field names from data format Function parses field names from data format and returns pointer to new allocated string. Example\+: \char`\"{}type1 name1,type2 name2\char`\"{} =$>$ \char`\"{}name1,name2\char`\"{} New string has to be freed by user. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_ac2b52aaae2bd3aa7d38b119a95a275e9}{ur\+\_\+expand\+\_\+template} (const char $\ast$ifc\+\_\+data\+\_\+fmt, \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt)
+\begin{DoxyCompactList}\small\item\em Expand Uni\+Rec template Expand existing Uni\+Rec template by a string containing types and names of its fields separated by commas. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent). In case of success the given template will be destroyed and new template will be returned. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_adc5a6441796f8df8c63645298170f8f4}{ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields} (const char $\ast$ifc\+\_\+data\+\_\+fmt)
+\begin{DoxyCompactList}\small\item\em Define set of new Uni\+Rec fields Define new Uni\+Rec fields at run-\/time. It adds new fields into existing structures. If the field already exists and type is equal nothing will happen. If the type is not equal an error will be returned. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{}. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_a4b090390e3e2728d2d59168eb532633a}{ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template} (const char $\ast$ifc\+\_\+data\+\_\+fmt, \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt)
+\begin{DoxyCompactList}\small\item\em Defined new fields and expand an Uni\+Rec template Define new fields (function ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields) and create new Uni\+Rec template (function ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec). The string describing fields contain types and names of fields separated by commas. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent). In case of success the given template will be destroyed and new template will be returned. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_ae1a76a48d18a09ee2f32ed638bbcbcf7}{ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec} (const char $\ast$ifc\+\_\+data\+\_\+fmt)
+\begin{DoxyCompactList}\small\item\em Create Uni\+Rec template from data format string. Creates new Uni\+Rec template (function ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec). The string describing fields contain types and names of fields separated by commas. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent).. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_ae9296343268e2117e4f53705c0cdf3a5}{ur\+\_\+define\+\_\+field} (const char $\ast$name, ur\+\_\+field\+\_\+type\+\_\+t type)
+\begin{DoxyCompactList}\small\item\em Define new Uni\+Rec field Define new Uni\+Rec field at run-\/time. It adds new field into existing structures. If the field already exists (name and type are equal) it only returns its ID. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_a0d8940c1aab20e50ab84da99715322fc}{ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id} (ur\+\_\+field\+\_\+id\+\_\+t field\+\_\+id)
+\begin{DoxyCompactList}\small\item\em Undefine Uni\+Rec field by its id Undefine Uni\+Rec field created at run-\/time. It erases given field from Uni\+Rec structures and the field ID can be used for another field. By undefining field, all templates which were using the undefined field, has to be recreated. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_a3b7d40d098716943f035185d26aeff29}{ur\+\_\+undefine\+\_\+field} (const char $\ast$name)
+\begin{DoxyCompactList}\small\item\em Undefine Uni\+Rec field by its name Undefine Uni\+Rec field created at run-\/time. It erases given field from Uni\+Rec structures and the field ID can be used for another field. By undefining field, all templates which were using the undefined field, has to be recreated. \end{DoxyCompactList}\item 
+void \hyperlink{unirec_8c_a77bb16e4585117517a5d7aabebcb8a0a}{ur\+\_\+finalize} ()\hypertarget{unirec_8c_a77bb16e4585117517a5d7aabebcb8a0a}{}\label{unirec_8c_a77bb16e4585117517a5d7aabebcb8a0a}
+
+\begin{DoxyCompactList}\small\item\em Deallocate Uni\+Rec structures Deallocate Uni\+Rec structures at the end of a program. This function S\+H\+O\+U\+LD be called after all Uni\+Rec functions and macros invocations, typically during a cleanup phase before the program\textquotesingle{}s end. This function has to be called if some fields are defined during run-\/time, otherwise this function is needless. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_ae04af6d1916490e641f7640e440a8e7c}{ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name} (const char $\ast$name)
+\begin{DoxyCompactList}\small\item\em Get ID of a field by its name Get ID of a field by its name. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_af893df4c0a8d17cae3f8999e9bcce312}{compare\+\_\+fields} (const void $\ast$field1, const void $\ast$field2)
+\begin{DoxyCompactList}\small\item\em Compare fields Compare two fields. This function is for sorting the fields in the right order. First by sizes (larger first) and then by names. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_abc843c9ffe0367e0e2d40bbf4f3c6053}{ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template} (trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, const char $\ast$fields, char $\ast$$\ast$errstr)
+\begin{DoxyCompactList}\small\item\em Create Uni\+Rec template and set it to input interface on specified context Creates Uni\+Rec template, same like ur\+\_\+create\+\_\+input\+\_\+template, but context is specified. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_ab80b3d4a916e0657f57062c9477d5bd0}{ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template} (trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, const char $\ast$fields, char $\ast$$\ast$errstr)
+\begin{DoxyCompactList}\small\item\em Create Uni\+Rec template and set it to output interface on specified context Creates Uni\+Rec template, same like ur\+\_\+create\+\_\+output\+\_\+template, but context is specified. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_aa27853144707572d1e6a5e0f0a37edae}{ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template} (trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt)
+\begin{DoxyCompactList}\small\item\em Set Uni\+Rec template to ouput interface on specified context. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_aa21b5e95ade1d2d6993fcf9f9a6c4548}{ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template} (trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt)
+\begin{DoxyCompactList}\small\item\em Set Uni\+Rec template to input interface on specified context. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_a5ac83d4ba9ab47e065f7847272beac67}{ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template} (trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc\+\_\+in, int ifc\+\_\+out, const char $\ast$fields, char $\ast$$\ast$errstr)
+\begin{DoxyCompactList}\small\item\em Create Uni\+Rec template and set it to input and output interface on specified context Creates Uni\+Rec template, same like ur\+\_\+create\+\_\+bidirectional\+\_\+template, but context is specified. \end{DoxyCompactList}\item 
+\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$ \hyperlink{unirec_8c_aec94dfdd45a6af36f412cc06f9b0106d}{ur\+\_\+create\+\_\+template} (const char $\ast$fields, char $\ast$$\ast$errstr)
+\begin{DoxyCompactList}\small\item\em Create Uni\+Rec template Create new Uni\+Rec template specified by a string containing names of its fields separated by commas. Example spec-\/string\+: \char`\"{}\+S\+R\+C\+\_\+\+I\+P,\+D\+S\+T\+\_\+\+I\+P,\+S\+R\+C\+\_\+\+P\+O\+R\+T,\+D\+S\+T\+\_\+\+P\+O\+R\+T,\+P\+R\+O\+T\+O\+C\+O\+L,\+P\+A\+C\+K\+E\+T\+S\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent). Template created by this function should be destroyed by ur\+\_\+free\+\_\+template. \end{DoxyCompactList}\item 
+void \hyperlink{unirec_8c_a6bfac2d2161cf28551a467a382feda7e}{ur\+\_\+free\+\_\+template} (\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt)
+\begin{DoxyCompactList}\small\item\em Destroy Uni\+Rec template Free all memory allocated for a template created previously by ur\+\_\+create\+\_\+template. \end{DoxyCompactList}\item 
+void \hyperlink{unirec_8c_a10c9d739b4b74b4547099b9095857dff}{ur\+\_\+print\+\_\+template} (\hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt)\hypertarget{unirec_8c_a10c9d739b4b74b4547099b9095857dff}{}\label{unirec_8c_a10c9d739b4b74b4547099b9095857dff}
+
+\begin{DoxyCompactList}\small\item\em Print Uni\+Rec template Print static\+\_\+size, first\+\_\+dynamic and table of offsets to stdout (for debugging). If template does not contain any dynamic fields, print \textquotesingle{}-\/\textquotesingle{} instead. param\mbox{[}in\mbox{]} tmplt pointer to the template. \end{DoxyCompactList}\item 
+void {\bfseries ur\+\_\+var\+\_\+change\+\_\+size} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, void $\ast$rec, int field\+\_\+id, int new\+\_\+val\+\_\+len)\hypertarget{unirec_8c_a6c1aeacaf5107408c58188e63406bcd1}{}\label{unirec_8c_a6c1aeacaf5107408c58188e63406bcd1}
+
+\item 
+int \hyperlink{unirec_8c_adc58a81c9f7eb5a1ec3ba36d97612068}{ur\+\_\+set\+\_\+var} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, void $\ast$rec, int field\+\_\+id, const void $\ast$val\+\_\+ptr, int val\+\_\+len)
+\begin{DoxyCompactList}\small\item\em Set content of variable-\/length Uni\+Rec field Copy given data into variable-\/length Uni\+Rec field, set its offset and length in a record and move data which are behind this field. For better performance use function ur\+\_\+clear\+\_\+varlen, before setting all variable fields in record. \end{DoxyCompactList}\item 
+void \hyperlink{unirec_8c_a1a1a56a89c745a13823db8ef01fcb07b}{ur\+\_\+clear\+\_\+varlen} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, void $\ast$rec)
+\begin{DoxyCompactList}\small\item\em Clear variable-\/length part of a record. For better performance of setting content to variable-\/length fields, use this function before setting of all the variable-\/length fields. This function will clear all the variable-\/length fields, so they don\textquotesingle{}t have to be moved in memory during setting of them. \end{DoxyCompactList}\item 
+uint16\+\_\+t \hyperlink{unirec_8c_a52dad8336d06db586dd23820263f5fc2}{ur\+\_\+rec\+\_\+varlen\+\_\+size} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, const void $\ast$rec)
+\begin{DoxyCompactList}\small\item\em Get size of variable sized part of Uni\+Rec record Get total size of all variable-\/length fields in an Uni\+Rec record. \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{unirec_8c_a7e2d113dfd7629182d2b18c29c408707}{ur\+\_\+create\+\_\+record} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, uint16\+\_\+t max\+\_\+var\+\_\+size)
+\item 
+void \hyperlink{unirec_8c_af622ee72f07d52a617a22be35088d77e}{ur\+\_\+free\+\_\+record} (void $\ast$record)
+\item 
+char $\ast$ \hyperlink{unirec_8c_a8b5745a7f8f493f0ccd9a2099e191efd}{ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, const void $\ast$rec, ur\+\_\+field\+\_\+id\+\_\+t field\+\_\+id)
+\begin{DoxyCompactList}\small\item\em Get variable-\/length Uni\+Rec field as a C string Copy data of a variable-\/length field from Uni\+Rec record and append \textquotesingle{}\textbackslash{}0\textquotesingle{} character. The function allocates new memory space for the string, it must be freed using free()! \end{DoxyCompactList}\item 
+void $\ast$ \hyperlink{unirec_8c_ab57dab204aa7abf9f0dbde89f0ee408d}{ur\+\_\+clone\+\_\+record} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, const void $\ast$src)
+\begin{DoxyCompactList}\small\item\em Create new Uni\+Rec and copy the source Uni\+Rec into it. Function creates new Uni\+Rec record and fills it with the data given by parameter. \end{DoxyCompactList}\item 
+void \hyperlink{unirec_8c_ade89057b16556ff28d540a1f0473ab81}{ur\+\_\+copy\+\_\+fields} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$dst\+\_\+tmplt, void $\ast$dst, const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$src\+\_\+tmplt, const void $\ast$src)
+\begin{DoxyCompactList}\small\item\em Copy data from one Uni\+Rec record to another. Copies all fields present in both templates from src to dst. The function compares src\+\_\+tmplt and dst\+\_\+tmplt and for each field present in both templates it sets the value of field in dst to a corresponding value in src. \char`\"{}dst\char`\"{} must point to a memory of enough size. \end{DoxyCompactList}\item 
+ur\+\_\+iter\+\_\+t \hyperlink{unirec_8c_afb2182af09a35e3ba1bc868c311f3a80}{ur\+\_\+iter\+\_\+fields} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, ur\+\_\+iter\+\_\+t id)
+\begin{DoxyCompactList}\small\item\em Iterate over fields of a template in order of a record This function can be used to iterate over all fields of a given template. It returns ID of the next field present in the template after a given ID. If ID is set to U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+B\+E\+G\+IN, it returns the first fields. If no more fields are present, U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND is returned. Example usage\+: ur\+\_\+field\+\_\+id\+\_\+t id = U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+B\+E\+G\+IN while ((id = ur\+\_\+iter\+\_\+fields(\&tmplt, id)) != U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND) \{ ... \} The order of fields is given by the order in which they are defined. \end{DoxyCompactList}\item 
+ur\+\_\+iter\+\_\+t \hyperlink{unirec_8c_a8877cbc958a4943aaf720154f8338ae3}{ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmplt, int index)
+\begin{DoxyCompactList}\small\item\em Iterate over fields of a template This function can be used to iterate over all fields of a given template. It returns n-\/th ID of a record specified by index. If the return value is U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND. The index is higher than count of fields in the template. Example usage\+: int i = 0; while ((id = ur\+\_\+iter\+\_\+fields(\&tmplt, i++)) != U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND) \{ ... \} The order of fields is given by the order in the record. \end{DoxyCompactList}\item 
+int \hyperlink{unirec_8c_ae60aa0708ffef7cadd5a1d7663eb8083}{ur\+\_\+set\+\_\+from\+\_\+string} (const \hyperlink{structur__template__t}{ur\+\_\+template\+\_\+t} $\ast$tmpl, void $\ast$data, ur\+\_\+field\+\_\+id\+\_\+t f\+\_\+id, const char $\ast$v)
+\begin{DoxyCompactList}\small\item\em Set value of a Uni\+Rec field. \end{DoxyCompactList}\item 
+char $\ast$ \hyperlink{unirec_8c_a11693505eb5de52b6b2b021aeaf1a7e1}{ur\+\_\+cpy\+\_\+string} (const char $\ast$str)
+\begin{DoxyCompactList}\small\item\em Duplicates given string. Helper function which returns pointer to duplicated string. New string has to be freed by user. \end{DoxyCompactList}\item 
+const char $\ast$ \hyperlink{unirec_8c_adad09e518520d1791d94b29ee7af2487}{ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end} (uint32\+\_\+t start, uint32\+\_\+t end, int32\+\_\+t value)
+\begin{DoxyCompactList}\small\item\em Returns name of specified value (Helper function) Helper function for ur\+\_\+values\+\_\+get\+\_\+name. This function returns name of specified value and field, which is defined in values file. Function needs start and end index of a field. \end{DoxyCompactList}\item 
+const char $\ast$ \hyperlink{unirec_8c_a2a2e25e5cdee3544c54e4abf4782dfb5}{ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end} (uint32\+\_\+t start, uint32\+\_\+t end, int32\+\_\+t value)
+\begin{DoxyCompactList}\small\item\em Returns description of specified value (Helper function) Helper function for ur\+\_\+values\+\_\+get\+\_\+description. This function returns description of specified value and field, which is defined in values file. Function needs start and end index of a field. \end{DoxyCompactList}\item 
+\hyperlink{structur__links__t}{ur\+\_\+links\+\_\+t} $\ast$ \hyperlink{group__ur__links_ga79615b30cdec474a94bb5ce5f3eeb34f}{ur\+\_\+create\+\_\+links} (const char $\ast$mask)
+\begin{DoxyCompactList}\small\item\em Create and initialize links structure. Create new links structure and initialize it from link mask in string format passed by parameter. String link mask is stored in uint64\+\_\+t, thne link count and link\+\_\+indexes arrray is determined from it. Structure created by this function should be destroyed by ur\+\_\+free\+\_\+links. \end{DoxyCompactList}\item 
+void \hyperlink{group__ur__links_ga7e1802498fc99e49f98eada58ff0d883}{ur\+\_\+free\+\_\+links} (\hyperlink{structur__links__t}{ur\+\_\+links\+\_\+t} $\ast$links)
+\begin{DoxyCompactList}\small\item\em Destroy links structure. Free all memory allocated for a links structure created previously by ur\+\_\+create\+\_\+links. \end{DoxyCompactList}\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL int \hyperlink{group__ur__links_ga20fe681784b2536ad4293ed1d2932da2}{ur\+\_\+get\+\_\+link\+\_\+index} (\hyperlink{structur__links__t}{ur\+\_\+links\+\_\+t} $\ast$links, uint64\+\_\+t link\+\_\+bit\+\_\+field)
+\begin{DoxyCompactList}\small\item\em Get index of link (0 -\/ (n-\/1)) Function gets search link\+\_\+indexes array for value corresponding to passed L\+I\+N\+K\+\_\+\+B\+I\+T\+\_\+\+F\+I\+E\+LD, which should contains only one \char`\"{}1\char`\"{} value. If more ones are filled in L\+I\+N\+K\+\_\+\+B\+I\+T\+\_\+\+F\+I\+E\+LD, first from right is taken. Returns index to link\+\_\+indexes array (from interval 0 -\/ (link\+\_\+count-\/1)) or negative value if correspondig value was not found. \end{DoxyCompactList}\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL uint64\+\_\+t \hyperlink{group__ur__links_ga469c39d33966e8752fc53a4fba154d10}{ur\+\_\+get\+\_\+link\+\_\+bit\+\_\+field\+\_\+position} (\hyperlink{structur__links__t}{ur\+\_\+links\+\_\+t} $\ast$links, unsigned int index)
+\begin{DoxyCompactList}\small\item\em Get position in link\+\_\+bit\+\_\+field of link. Get position in link\+\_\+bit\+\_\+field of link specified by index of link (from interval 0 -\/ (link\+\_\+count-\/1)). This function is inversion to get\+\_\+link\+\_\+index. Returns zero if invalid index is passed. \end{DoxyCompactList}\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL uint64\+\_\+t \hyperlink{group__ur__links_gab0da3a3f0c637c7f49640f74a262e6a0}{ur\+\_\+get\+\_\+link\+\_\+mask} (\hyperlink{structur__links__t}{ur\+\_\+links\+\_\+t} $\ast$links)
+\begin{DoxyCompactList}\small\item\em Get link mask. \end{DoxyCompactList}\item 
+I\+N\+L\+I\+N\+E\+\_\+\+I\+M\+PL unsigned int \hyperlink{group__ur__links_ga9ae62c9d1c388c62669aa5dfdeb97977}{ur\+\_\+get\+\_\+link\+\_\+count} (\hyperlink{structur__links__t}{ur\+\_\+links\+\_\+t} $\ast$links)
+\begin{DoxyCompactList}\small\item\em Get link count. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+const int {\bfseries ur\+\_\+field\+\_\+type\+\_\+size} \mbox{[}$\,$\mbox{]}
+\item 
+const char $\ast$ {\bfseries ur\+\_\+field\+\_\+type\+\_\+str} \mbox{[}$\,$\mbox{]}
+\item 
+\hyperlink{structur__field__specs__t}{ur\+\_\+field\+\_\+specs\+\_\+t} {\bfseries ur\+\_\+field\+\_\+specs}\hypertarget{unirec_8c_a8b963edd959e1d4bdd91d82807a384ba}{}\label{unirec_8c_a8b963edd959e1d4bdd91d82807a384ba}
+
+\item 
+\hyperlink{structur__static__field__specs__t}{ur\+\_\+static\+\_\+field\+\_\+specs\+\_\+t} {\bfseries U\+R\+\_\+\+F\+I\+E\+L\+D\+\_\+\+S\+P\+E\+C\+S\+\_\+\+S\+T\+A\+T\+IC}\hypertarget{unirec_8c_a67e3a2f4dff881d18a6a3c8cc67b906b}{}\label{unirec_8c_a67e3a2f4dff881d18a6a3c8cc67b906b}
+
+\item 
+const char {\bfseries U\+R\+\_\+\+M\+E\+M\+O\+R\+Y\+\_\+\+E\+R\+R\+OR} \mbox{[}$\,$\mbox{]} = \char`\"{}Memory allocation error\char`\"{}\hypertarget{unirec_8c_abd6a82288d5136644ea1e3f8c68f6192}{}\label{unirec_8c_abd6a82288d5136644ea1e3f8c68f6192}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Definition of Uni\+Rec structures and functions. 
+
+\begin{DoxyAuthor}{Author}
+Vaclav Bartos \href{mailto:ibartosv@fit.vutbr.cz}{\tt ibartosv@fit.\+vutbr.\+cz} 
+
+Zdenek Rosa \href{mailto:rosazden@fit.cvut.cz}{\tt rosazden@fit.\+cvut.\+cz} 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+2015 
+\end{DoxyDate}
+
+
+\subsection{Function Documentation}
+\index{unirec.\+c@{unirec.\+c}!compare\+\_\+fields@{compare\+\_\+fields}}
+\index{compare\+\_\+fields@{compare\+\_\+fields}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{compare\+\_\+fields(const void $\ast$field1, const void $\ast$field2)}{compare\_fields(const void *field1, const void *field2)}}]{\setlength{\rightskip}{0pt plus 5cm}int compare\+\_\+fields (
+\begin{DoxyParamCaption}
+\item[{const void $\ast$}]{field1, }
+\item[{const void $\ast$}]{field2}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_af893df4c0a8d17cae3f8999e9bcce312}{}\label{unirec_8c_af893df4c0a8d17cae3f8999e9bcce312}
+
+
+Compare fields Compare two fields. This function is for sorting the fields in the right order. First by sizes (larger first) and then by names. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em field1} & Pointer to first field (field\+\_\+spec\+\_\+t) \\
+\hline
+\mbox{\tt in}  & {\em field2} & Pointer to second field (field\+\_\+spec\+\_\+t) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+-\/1 if f1 should go before f2, 0 if f1 is the same as f2, 1 otherwise 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+clear\+\_\+varlen@{ur\+\_\+clear\+\_\+varlen}}
+\index{ur\+\_\+clear\+\_\+varlen@{ur\+\_\+clear\+\_\+varlen}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+clear\+\_\+varlen(const ur\+\_\+template\+\_\+t $\ast$tmplt, void $\ast$rec)}{ur\_clear\_varlen(const ur\_template\_t *tmplt, void *rec)}}]{\setlength{\rightskip}{0pt plus 5cm}void ur\+\_\+clear\+\_\+varlen (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{void $\ast$}]{rec}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a1a1a56a89c745a13823db8ef01fcb07b}{}\label{unirec_8c_a1a1a56a89c745a13823db8ef01fcb07b}
+
+
+Clear variable-\/length part of a record. For better performance of setting content to variable-\/length fields, use this function before setting of all the variable-\/length fields. This function will clear all the variable-\/length fields, so they don\textquotesingle{}t have to be moved in memory during setting of them. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template. \\
+\hline
+\mbox{\tt in}  & {\em rec} & Pointer to the beginning of a record. \\
+\hline
+\end{DoxyParams}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+clone\+\_\+record@{ur\+\_\+clone\+\_\+record}}
+\index{ur\+\_\+clone\+\_\+record@{ur\+\_\+clone\+\_\+record}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+clone\+\_\+record(const ur\+\_\+template\+\_\+t $\ast$tmplt, const void $\ast$src)}{ur\_clone\_record(const ur\_template\_t *tmplt, const void *src)}}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ ur\+\_\+clone\+\_\+record (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{const void $\ast$}]{src}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\hypertarget{unirec_8c_ab57dab204aa7abf9f0dbde89f0ee408d}{}\label{unirec_8c_ab57dab204aa7abf9f0dbde89f0ee408d}
+
+
+Create new Uni\+Rec and copy the source Uni\+Rec into it. Function creates new Uni\+Rec record and fills it with the data given by parameter. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template \\
+\hline
+\mbox{\tt in}  & {\em src} & Pointer to source data (Uni\+Rec record of the same template) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to a new Uni\+Rec 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+copy\+\_\+fields@{ur\+\_\+copy\+\_\+fields}}
+\index{ur\+\_\+copy\+\_\+fields@{ur\+\_\+copy\+\_\+fields}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+copy\+\_\+fields(const ur\+\_\+template\+\_\+t $\ast$dst\+\_\+tmplt, void $\ast$dst, const ur\+\_\+template\+\_\+t $\ast$src\+\_\+tmplt, const void $\ast$src)}{ur\_copy\_fields(const ur\_template\_t *dst\_tmplt, void *dst, const ur\_template\_t *src\_tmplt, const void *src)}}]{\setlength{\rightskip}{0pt plus 5cm}void ur\+\_\+copy\+\_\+fields (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{dst\+\_\+tmplt, }
+\item[{void $\ast$}]{dst, }
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{src\+\_\+tmplt, }
+\item[{const void $\ast$}]{src}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ade89057b16556ff28d540a1f0473ab81}{}\label{unirec_8c_ade89057b16556ff28d540a1f0473ab81}
+
+
+Copy data from one Uni\+Rec record to another. Copies all fields present in both templates from src to dst. The function compares src\+\_\+tmplt and dst\+\_\+tmplt and for each field present in both templates it sets the value of field in dst to a corresponding value in src. \char`\"{}dst\char`\"{} must point to a memory of enough size. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em dst\+\_\+tmplt} & Pointer to destination Uni\+Rec template \\
+\hline
+\mbox{\tt in}  & {\em dst} & Pointer to destination record \\
+\hline
+\mbox{\tt in}  & {\em src\+\_\+tmplt} & Pointer to source Uni\+Rec template \\
+\hline
+\mbox{\tt in}  & {\em src} & Pointer to source record \\
+\hline
+\end{DoxyParams}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+cpy\+\_\+string@{ur\+\_\+cpy\+\_\+string}}
+\index{ur\+\_\+cpy\+\_\+string@{ur\+\_\+cpy\+\_\+string}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+cpy\+\_\+string(const char $\ast$str)}{ur\_cpy\_string(const char *str)}}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ ur\+\_\+cpy\+\_\+string (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{str}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a11693505eb5de52b6b2b021aeaf1a7e1}{}\label{unirec_8c_a11693505eb5de52b6b2b021aeaf1a7e1}
+
+
+Duplicates given string. Helper function which returns pointer to duplicated string. New string has to be freed by user. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em str} & Pointer to the string to duplicate \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to duplicated string on N\+U\+LL. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+create\+\_\+record@{ur\+\_\+create\+\_\+record}}
+\index{ur\+\_\+create\+\_\+record@{ur\+\_\+create\+\_\+record}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+create\+\_\+record(const ur\+\_\+template\+\_\+t $\ast$tmplt, uint16\+\_\+t max\+\_\+var\+\_\+size)}{ur\_create\_record(const ur\_template\_t *tmplt, uint16\_t max\_var\_size)}}]{\setlength{\rightskip}{0pt plus 5cm}void$\ast$ ur\+\_\+create\+\_\+record (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{uint16\+\_\+t}]{max\+\_\+var\+\_\+size}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a7e2d113dfd7629182d2b18c29c408707}{}\label{unirec_8c_a7e2d113dfd7629182d2b18c29c408707}
+Create Uni\+Rec record. Allocate memory for a record with given template. It allocates N+M bytes, where N is the size of static part of the record (inferred from template), and M is the size of variable part (variable-\/length fields), which must be provided by caller. No more than 65535 bytes is allocated (even if N+M is greater), since this is the maximal possible size of Uni\+Rec record. 
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template. \\
+\hline
+\mbox{\tt in}  & {\em max\+\_\+var\+\_\+size} & Size of variable-\/length part, i.\+e. sum of lengths of all variable-\/length fields. If it is not known at the time of record creation, use U\+R\+\_\+\+M\+A\+X\+\_\+\+S\+I\+ZE, which allocates enough memory to hold the largest possible Uni\+Rec record (65535 bytes). Set to 0 if there are no variable-\/length fields in the template. \\
+\hline
+\end{DoxyParams}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+create\+\_\+template@{ur\+\_\+create\+\_\+template}}
+\index{ur\+\_\+create\+\_\+template@{ur\+\_\+create\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+create\+\_\+template(const char $\ast$fields, char $\ast$$\ast$errstr)}{ur\_create\_template(const char *fields, char **errstr)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+create\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{fields, }
+\item[{char $\ast$$\ast$}]{errstr}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_aec94dfdd45a6af36f412cc06f9b0106d}{}\label{unirec_8c_aec94dfdd45a6af36f412cc06f9b0106d}
+
+
+Create Uni\+Rec template Create new Uni\+Rec template specified by a string containing names of its fields separated by commas. Example spec-\/string\+: \char`\"{}\+S\+R\+C\+\_\+\+I\+P,\+D\+S\+T\+\_\+\+I\+P,\+S\+R\+C\+\_\+\+P\+O\+R\+T,\+D\+S\+T\+\_\+\+P\+O\+R\+T,\+P\+R\+O\+T\+O\+C\+O\+L,\+P\+A\+C\+K\+E\+T\+S\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent). Template created by this function should be destroyed by ur\+\_\+free\+\_\+template. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em fields} & String with names of fields delimited by comma \\
+\hline
+\mbox{\tt in}  & {\em errstr} & Pointer to char$\ast$ string where the error message will be allocated and written in case of error. N\+U\+LL if you don\textquotesingle{}t need error message. In case of error, function will allocate string, which has to be freed by user. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to newly created template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec@{ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec}}
+\index{ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec@{ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec(const char $\ast$ifc\+\_\+data\+\_\+fmt)}{ur\_create\_template\_from\_ifc\_spec(const char *ifc\_data\_fmt)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ifc\+\_\+data\+\_\+fmt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ae1a76a48d18a09ee2f32ed638bbcbcf7}{}\label{unirec_8c_ae1a76a48d18a09ee2f32ed638bbcbcf7}
+
+
+Create Uni\+Rec template from data format string. Creates new Uni\+Rec template (function ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec). The string describing fields contain types and names of fields separated by commas. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent).. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ifc\+\_\+data\+\_\+fmt} & String with types and names of fields delimited by commas \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the new template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template@{ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template}}
+\index{ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template@{ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template(trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc\+\_\+in, int ifc\+\_\+out, const char $\ast$fields, char $\ast$$\ast$errstr)}{ur\_ctx\_create\_bidirectional\_template(trap\_ctx\_t *ctx, int ifc\_in, int ifc\_out, const char *fields, char **errstr)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+ctx\+\_\+create\+\_\+bidirectional\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{trap\+\_\+ctx\+\_\+t $\ast$}]{ctx, }
+\item[{int}]{ifc\+\_\+in, }
+\item[{int}]{ifc\+\_\+out, }
+\item[{const char $\ast$}]{fields, }
+\item[{char $\ast$$\ast$}]{errstr}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a5ac83d4ba9ab47e065f7847272beac67}{}\label{unirec_8c_a5ac83d4ba9ab47e065f7847272beac67}
+
+
+Create Uni\+Rec template and set it to input and output interface on specified context Creates Uni\+Rec template, same like ur\+\_\+create\+\_\+bidirectional\+\_\+template, but context is specified. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ctx} & specified context \\
+\hline
+\mbox{\tt in}  & {\em ifc\+\_\+in} & input interface number \\
+\hline
+\mbox{\tt in}  & {\em ifc\+\_\+out} & output interface number \\
+\hline
+\mbox{\tt in}  & {\em fields} & String with names of fields delimited by comma \\
+\hline
+\mbox{\tt in}  & {\em errstr} & Pointer to char$\ast$ string where the error message will be allocated and written in case of error. N\+U\+LL if you don\textquotesingle{}t need error message. In case of error, function will allocate string, which has to be freed by user. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to newly created template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template@{ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template}}
+\index{ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template@{ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template(trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, const char $\ast$fields, char $\ast$$\ast$errstr)}{ur\_ctx\_create\_input\_template(trap\_ctx\_t *ctx, int ifc, const char *fields, char **errstr)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+ctx\+\_\+create\+\_\+input\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{trap\+\_\+ctx\+\_\+t $\ast$}]{ctx, }
+\item[{int}]{ifc, }
+\item[{const char $\ast$}]{fields, }
+\item[{char $\ast$$\ast$}]{errstr}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_abc843c9ffe0367e0e2d40bbf4f3c6053}{}\label{unirec_8c_abc843c9ffe0367e0e2d40bbf4f3c6053}
+
+
+Create Uni\+Rec template and set it to input interface on specified context Creates Uni\+Rec template, same like ur\+\_\+create\+\_\+input\+\_\+template, but context is specified. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ctx} & specified context \\
+\hline
+\mbox{\tt in}  & {\em ifc} & interface number \\
+\hline
+\mbox{\tt in}  & {\em fields} & String with names of fields delimited by comma \\
+\hline
+\mbox{\tt in}  & {\em errstr} & Pointer to char$\ast$ string where the error message will be allocated and written in case of error. N\+U\+LL if you don\textquotesingle{}t need error message. In case of error, function will allocate string, which has to be freed by user. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to newly created template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template@{ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template}}
+\index{ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template@{ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template(trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, const char $\ast$fields, char $\ast$$\ast$errstr)}{ur\_ctx\_create\_output\_template(trap\_ctx\_t *ctx, int ifc, const char *fields, char **errstr)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+ctx\+\_\+create\+\_\+output\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{trap\+\_\+ctx\+\_\+t $\ast$}]{ctx, }
+\item[{int}]{ifc, }
+\item[{const char $\ast$}]{fields, }
+\item[{char $\ast$$\ast$}]{errstr}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ab80b3d4a916e0657f57062c9477d5bd0}{}\label{unirec_8c_ab80b3d4a916e0657f57062c9477d5bd0}
+
+
+Create Uni\+Rec template and set it to output interface on specified context Creates Uni\+Rec template, same like ur\+\_\+create\+\_\+output\+\_\+template, but context is specified. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ctx} & specified context \\
+\hline
+\mbox{\tt in}  & {\em ifc} & interface number \\
+\hline
+\mbox{\tt in}  & {\em fields} & String with names of fields delimited by comma \\
+\hline
+\mbox{\tt in}  & {\em errstr} & Pointer to char$\ast$ string where the error message will be allocated and written in case of error. N\+U\+LL if you don\textquotesingle{}t need error message. In case of error, function will allocate string, which has to be freed by user. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to newly created template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template@{ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template}}
+\index{ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template@{ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template(trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, ur\+\_\+template\+\_\+t $\ast$tmplt)}{ur\_ctx\_set\_input\_template(trap\_ctx\_t *ctx, int ifc, ur\_template\_t *tmplt)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+ctx\+\_\+set\+\_\+input\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{trap\+\_\+ctx\+\_\+t $\ast$}]{ctx, }
+\item[{int}]{ifc, }
+\item[{{\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_aa21b5e95ade1d2d6993fcf9f9a6c4548}{}\label{unirec_8c_aa21b5e95ade1d2d6993fcf9f9a6c4548}
+
+
+Set Uni\+Rec template to input interface on specified context. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ctx} & specified context \\
+\hline
+\mbox{\tt in}  & {\em ifc} & interface number \\
+\hline
+\mbox{\tt in}  & {\em tmplt} & pointer to a template \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+OK if there is no problem. U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if the ID is not in the template. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template@{ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template}}
+\index{ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template@{ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template(trap\+\_\+ctx\+\_\+t $\ast$ctx, int ifc, ur\+\_\+template\+\_\+t $\ast$tmplt)}{ur\_ctx\_set\_output\_template(trap\_ctx\_t *ctx, int ifc, ur\_template\_t *tmplt)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+ctx\+\_\+set\+\_\+output\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{trap\+\_\+ctx\+\_\+t $\ast$}]{ctx, }
+\item[{int}]{ifc, }
+\item[{{\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_aa27853144707572d1e6a5e0f0a37edae}{}\label{unirec_8c_aa27853144707572d1e6a5e0f0a37edae}
+
+
+Set Uni\+Rec template to ouput interface on specified context. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ctx} & specified context \\
+\hline
+\mbox{\tt in}  & {\em ifc} & interface number \\
+\hline
+\mbox{\tt in}  & {\em tmplt} & pointer to a template \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+OK if there is no problem. U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if the ID is not in the template. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+define\+\_\+field@{ur\+\_\+define\+\_\+field}}
+\index{ur\+\_\+define\+\_\+field@{ur\+\_\+define\+\_\+field}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+define\+\_\+field(const char $\ast$name, ur\+\_\+field\+\_\+type\+\_\+t type)}{ur\_define\_field(const char *name, ur\_field\_type\_t type)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+define\+\_\+field (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{name, }
+\item[{ur\+\_\+field\+\_\+type\+\_\+t}]{type}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ae9296343268e2117e4f53705c0cdf3a5}{}\label{unirec_8c_ae9296343268e2117e4f53705c0cdf3a5}
+
+
+Define new Uni\+Rec field Define new Uni\+Rec field at run-\/time. It adds new field into existing structures. If the field already exists (name and type are equal) it only returns its ID. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em name} & String with name of field. \\
+\hline
+\mbox{\tt in}  & {\em type} & Type of field (specified by U\+R\+\_\+\+T\+Y\+P\+E\+\_\+$\ast$). \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+ID of created or existing field. U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if there is an allocation problem. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+N\+A\+ME if the name value is empty. U\+R\+\_\+\+E\+\_\+\+T\+Y\+P\+E\+\_\+\+M\+I\+S\+M\+A\+T\+CH if the name already exists, but the type is different. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template@{ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template}}
+\index{ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template@{ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template(const char $\ast$ifc\+\_\+data\+\_\+fmt, ur\+\_\+template\+\_\+t $\ast$tmplt)}{ur\_define\_fields\_and\_update\_template(const char *ifc\_data\_fmt, ur\_template\_t *tmplt)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+define\+\_\+fields\+\_\+and\+\_\+update\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ifc\+\_\+data\+\_\+fmt, }
+\item[{{\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a4b090390e3e2728d2d59168eb532633a}{}\label{unirec_8c_a4b090390e3e2728d2d59168eb532633a}
+
+
+Defined new fields and expand an Uni\+Rec template Define new fields (function ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields) and create new Uni\+Rec template (function ur\+\_\+create\+\_\+template\+\_\+from\+\_\+ifc\+\_\+spec). The string describing fields contain types and names of fields separated by commas. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent). In case of success the given template will be destroyed and new template will be returned. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ifc\+\_\+data\+\_\+fmt} & String with types and names of fields delimited by commas \\
+\hline
+\mbox{\tt in}  & {\em tmplt} & Pointer to an existing template. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the updated template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields@{ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields}}
+\index{ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields@{ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields(const char $\ast$ifc\+\_\+data\+\_\+fmt)}{ur\_define\_set\_of\_fields(const char *ifc\_data\_fmt)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+define\+\_\+set\+\_\+of\+\_\+fields (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ifc\+\_\+data\+\_\+fmt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_adc5a6441796f8df8c63645298170f8f4}{}\label{unirec_8c_adc5a6441796f8df8c63645298170f8f4}
+
+
+Define set of new Uni\+Rec fields Define new Uni\+Rec fields at run-\/time. It adds new fields into existing structures. If the field already exists and type is equal nothing will happen. If the type is not equal an error will be returned. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{}. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ifc\+\_\+data\+\_\+fmt} & String containing types and names of fields delimited by comma. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+OK on success U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if there is an allocation problem. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+N\+A\+ME if the name value is empty. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+T\+Y\+PE if the type does not exist. U\+R\+\_\+\+E\+\_\+\+T\+Y\+P\+E\+\_\+\+M\+I\+S\+M\+A\+T\+CH if the name already exists, but the type is different. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+expand\+\_\+template@{ur\+\_\+expand\+\_\+template}}
+\index{ur\+\_\+expand\+\_\+template@{ur\+\_\+expand\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+expand\+\_\+template(const char $\ast$ifc\+\_\+data\+\_\+fmt, ur\+\_\+template\+\_\+t $\ast$tmplt)}{ur\_expand\_template(const char *ifc\_data\_fmt, ur\_template\_t *tmplt)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ur\+\_\+template\+\_\+t}$\ast$ ur\+\_\+expand\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ifc\+\_\+data\+\_\+fmt, }
+\item[{{\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ac2b52aaae2bd3aa7d38b119a95a275e9}{}\label{unirec_8c_ac2b52aaae2bd3aa7d38b119a95a275e9}
+
+
+Expand Uni\+Rec template Expand existing Uni\+Rec template by a string containing types and names of its fields separated by commas. Example ifc\+\_\+data\+\_\+fmt\+: \char`\"{}uint32 F\+O\+O,uint8 B\+A\+R,float F\+O\+O2\char`\"{} Order of fields is not important (templates with the same set of fields are equivalent). In case of success the given template will be destroyed and new template will be returned. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ifc\+\_\+data\+\_\+fmt} & String with types and names of fields delimited by commas \\
+\hline
+\mbox{\tt in}  & {\em tmplt} & Pointer to an existing template. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to the updated template or N\+U\+LL in case of error. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+free\+\_\+record@{ur\+\_\+free\+\_\+record}}
+\index{ur\+\_\+free\+\_\+record@{ur\+\_\+free\+\_\+record}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+free\+\_\+record(void $\ast$record)}{ur\_free\_record(void *record)}}]{\setlength{\rightskip}{0pt plus 5cm}void ur\+\_\+free\+\_\+record (
+\begin{DoxyParamCaption}
+\item[{void $\ast$}]{record}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_af622ee72f07d52a617a22be35088d77e}{}\label{unirec_8c_af622ee72f07d52a617a22be35088d77e}
+Free Uni\+Rec record. Free memory allocated for Uni\+Rec record. You can call system free() on the record as well, this function is there just for completeness. 
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em record} & Pointer to the record to free. \\
+\hline
+\end{DoxyParams}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+free\+\_\+template@{ur\+\_\+free\+\_\+template}}
+\index{ur\+\_\+free\+\_\+template@{ur\+\_\+free\+\_\+template}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+free\+\_\+template(ur\+\_\+template\+\_\+t $\ast$tmplt)}{ur\_free\_template(ur\_template\_t *tmplt)}}]{\setlength{\rightskip}{0pt plus 5cm}void ur\+\_\+free\+\_\+template (
+\begin{DoxyParamCaption}
+\item[{{\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a6bfac2d2161cf28551a467a382feda7e}{}\label{unirec_8c_a6bfac2d2161cf28551a467a382feda7e}
+
+
+Destroy Uni\+Rec template Free all memory allocated for a template created previously by ur\+\_\+create\+\_\+template. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to the template. \\
+\hline
+\end{DoxyParams}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+get\+\_\+empty\+\_\+id@{ur\+\_\+get\+\_\+empty\+\_\+id}}
+\index{ur\+\_\+get\+\_\+empty\+\_\+id@{ur\+\_\+get\+\_\+empty\+\_\+id}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+get\+\_\+empty\+\_\+id()}{ur\_get\_empty\_id()}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+get\+\_\+empty\+\_\+id (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a98890a8d9702c533d4d1d1e7921f74e6}{}\label{unirec_8c_a98890a8d9702c533d4d1d1e7921f74e6}
+
+
+Return first empty id for new Uni\+Rec field Return first empty id for new Uni\+Rec field. If there is no space in the Uni\+Rec structures, it will increase space in the existing structures. 
+
+\begin{DoxyReturn}{Returns}
+ID for new field. U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY (negative value) if there is an allocation problem. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name@{ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name}}
+\index{ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name@{ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name(const char $\ast$name)}{ur\_get\_id\_by\_name(const char *name)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+get\+\_\+id\+\_\+by\+\_\+name (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{name}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ae04af6d1916490e641f7640e440a8e7c}{}\label{unirec_8c_ae04af6d1916490e641f7640e440a8e7c}
+
+
+Get ID of a field by its name Get ID of a field by its name. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em name} & String with name of a field. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+ID of a field. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+N\+A\+ME (negative value) if the name is not known. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str@{ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str}}
+\index{ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str@{ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str(const ur\+\_\+template\+\_\+t $\ast$tmplt, const void $\ast$rec, ur\+\_\+field\+\_\+id\+\_\+t field\+\_\+id)}{ur\_get\_var\_as\_str(const ur\_template\_t *tmplt, const void *rec, ur\_field\_id\_t field\_id)}}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ ur\+\_\+get\+\_\+var\+\_\+as\+\_\+str (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{const void $\ast$}]{rec, }
+\item[{ur\+\_\+field\+\_\+id\+\_\+t}]{field\+\_\+id}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a8b5745a7f8f493f0ccd9a2099e191efd}{}\label{unirec_8c_a8b5745a7f8f493f0ccd9a2099e191efd}
+
+
+Get variable-\/length Uni\+Rec field as a C string Copy data of a variable-\/length field from Uni\+Rec record and append \textquotesingle{}\textbackslash{}0\textquotesingle{} character. The function allocates new memory space for the string, it must be freed using free()! 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template \\
+\hline
+\mbox{\tt in}  & {\em rec} & Pointer to the beginning of a record \\
+\hline
+\mbox{\tt in}  & {\em field\+\_\+id} & Identifier of a field. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Requested field as a string (char$\ast$) or N\+U\+LL on malloc error. It should be freed using free(). 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names@{ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names}}
+\index{ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names@{ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names(const char $\ast$ifc\+\_\+data\+\_\+fmt)}{ur\_ifc\_data\_fmt\_to\_field\_names(const char *ifc\_data\_fmt)}}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ ur\+\_\+ifc\+\_\+data\+\_\+fmt\+\_\+to\+\_\+field\+\_\+names (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{ifc\+\_\+data\+\_\+fmt}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a31d468a710c302abfc212784c99ef889}{}\label{unirec_8c_a31d468a710c302abfc212784c99ef889}
+
+
+Parses field names from data format Function parses field names from data format and returns pointer to new allocated string. Example\+: \char`\"{}type1 name1,type2 name2\char`\"{} =$>$ \char`\"{}name1,name2\char`\"{} New string has to be freed by user. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ifc\+\_\+data\+\_\+fmt} & Pointer to the string containing data format \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to string with names of fields 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+init@{ur\+\_\+init}}
+\index{ur\+\_\+init@{ur\+\_\+init}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+init(ur\+\_\+static\+\_\+field\+\_\+specs\+\_\+t field\+\_\+specs\+\_\+static)}{ur\_init(ur\_static\_field\_specs\_t field\_specs\_static)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+init (
+\begin{DoxyParamCaption}
+\item[{{\bf ur\+\_\+static\+\_\+field\+\_\+specs\+\_\+t}}]{field\+\_\+specs\+\_\+static}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a238d68dc4d1dc5b0369e907b0e2d9711}{}\label{unirec_8c_a238d68dc4d1dc5b0369e907b0e2d9711}
+
+
+Initialize Uni\+Rec structures Initialize Uni\+Rec structures. Function is called during defining first own field. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em field\+\_\+specs\+\_\+static} & Structure of statically-\/known Uni\+Rec fields. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if there is an allocation problem, U\+R\+\_\+\+OK otherwise. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+iter\+\_\+fields@{ur\+\_\+iter\+\_\+fields}}
+\index{ur\+\_\+iter\+\_\+fields@{ur\+\_\+iter\+\_\+fields}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+iter\+\_\+fields(const ur\+\_\+template\+\_\+t $\ast$tmplt, ur\+\_\+iter\+\_\+t id)}{ur\_iter\_fields(const ur\_template\_t *tmplt, ur\_iter\_t id)}}]{\setlength{\rightskip}{0pt plus 5cm}ur\+\_\+iter\+\_\+t ur\+\_\+iter\+\_\+fields (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{ur\+\_\+iter\+\_\+t}]{id}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_afb2182af09a35e3ba1bc868c311f3a80}{}\label{unirec_8c_afb2182af09a35e3ba1bc868c311f3a80}
+
+
+Iterate over fields of a template in order of a record This function can be used to iterate over all fields of a given template. It returns ID of the next field present in the template after a given ID. If ID is set to U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+B\+E\+G\+IN, it returns the first fields. If no more fields are present, U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND is returned. Example usage\+: ur\+\_\+field\+\_\+id\+\_\+t id = U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+B\+E\+G\+IN while ((id = ur\+\_\+iter\+\_\+fields(\&tmplt, id)) != U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND) \{ ... \} The order of fields is given by the order in which they are defined. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Template to iterate over. \\
+\hline
+\mbox{\tt in}  & {\em id} & Field ID returned in last iteration or U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+B\+E\+G\+IN to get first value. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+ID of the next field or U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND if no more fields are present. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order@{ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order}}
+\index{ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order@{ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order(const ur\+\_\+template\+\_\+t $\ast$tmplt, int index)}{ur\_iter\_fields\_record\_order(const ur\_template\_t *tmplt, int index)}}]{\setlength{\rightskip}{0pt plus 5cm}ur\+\_\+iter\+\_\+t ur\+\_\+iter\+\_\+fields\+\_\+record\+\_\+order (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{int}]{index}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a8877cbc958a4943aaf720154f8338ae3}{}\label{unirec_8c_a8877cbc958a4943aaf720154f8338ae3}
+
+
+Iterate over fields of a template This function can be used to iterate over all fields of a given template. It returns n-\/th ID of a record specified by index. If the return value is U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND. The index is higher than count of fields in the template. Example usage\+: int i = 0; while ((id = ur\+\_\+iter\+\_\+fields(\&tmplt, i++)) != U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND) \{ ... \} The order of fields is given by the order in the record. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Template to iterate over. \\
+\hline
+\mbox{\tt in}  & {\em id} & Field ID returned in last iteration or U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+B\+E\+G\+IN to get first value. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+ID of the next field or U\+R\+\_\+\+I\+T\+E\+R\+\_\+\+E\+ND if no more fields are present. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+rec\+\_\+varlen\+\_\+size@{ur\+\_\+rec\+\_\+varlen\+\_\+size}}
+\index{ur\+\_\+rec\+\_\+varlen\+\_\+size@{ur\+\_\+rec\+\_\+varlen\+\_\+size}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+rec\+\_\+varlen\+\_\+size(const ur\+\_\+template\+\_\+t $\ast$tmplt, const void $\ast$rec)}{ur\_rec\_varlen\_size(const ur\_template\_t *tmplt, const void *rec)}}]{\setlength{\rightskip}{0pt plus 5cm}uint16\+\_\+t ur\+\_\+rec\+\_\+varlen\+\_\+size (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{const void $\ast$}]{rec}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a52dad8336d06db586dd23820263f5fc2}{}\label{unirec_8c_a52dad8336d06db586dd23820263f5fc2}
+
+
+Get size of variable sized part of Uni\+Rec record Get total size of all variable-\/length fields in an Uni\+Rec record. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template \\
+\hline
+\mbox{\tt in}  & {\em data} & Pointer to the beginning of a record \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Size of the variable part of Uni\+Rec record. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+set\+\_\+from\+\_\+string@{ur\+\_\+set\+\_\+from\+\_\+string}}
+\index{ur\+\_\+set\+\_\+from\+\_\+string@{ur\+\_\+set\+\_\+from\+\_\+string}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+set\+\_\+from\+\_\+string(const ur\+\_\+template\+\_\+t $\ast$tmpl, void $\ast$data, ur\+\_\+field\+\_\+id\+\_\+t f\+\_\+id, const char $\ast$v)}{ur\_set\_from\_string(const ur\_template\_t *tmpl, void *data, ur\_field\_id\_t f\_id, const char *v)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+set\+\_\+from\+\_\+string (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmpl, }
+\item[{void $\ast$}]{data, }
+\item[{ur\+\_\+field\+\_\+id\+\_\+t}]{f\+\_\+id, }
+\item[{const char $\ast$}]{v}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_ae60aa0708ffef7cadd5a1d7663eb8083}{}\label{unirec_8c_ae60aa0708ffef7cadd5a1d7663eb8083}
+
+
+Set value of a Uni\+Rec field. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmpl} & Pointer to Uni\+Rec template \\
+\hline
+\mbox{\tt out}  & {\em data} & Pointer to the beginning of a record \\
+\hline
+\mbox{\tt in}  & {\em f\+\_\+id} & Identifier of a field. It must be a constant beginning with U\+R\+\_\+, not its numeric value. \\
+\hline
+\mbox{\tt in}  & {\em v} & The value the field should be set to. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+0 on success, non-\/zero otherwise. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+set\+\_\+var@{ur\+\_\+set\+\_\+var}}
+\index{ur\+\_\+set\+\_\+var@{ur\+\_\+set\+\_\+var}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+set\+\_\+var(const ur\+\_\+template\+\_\+t $\ast$tmplt, void $\ast$rec, int field\+\_\+id, const void $\ast$val\+\_\+ptr, int val\+\_\+len)}{ur\_set\_var(const ur\_template\_t *tmplt, void *rec, int field\_id, const void *val\_ptr, int val\_len)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+set\+\_\+var (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{void $\ast$}]{rec, }
+\item[{int}]{field\+\_\+id, }
+\item[{const void $\ast$}]{val\+\_\+ptr, }
+\item[{int}]{val\+\_\+len}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_adc58a81c9f7eb5a1ec3ba36d97612068}{}\label{unirec_8c_adc58a81c9f7eb5a1ec3ba36d97612068}
+
+
+Set content of variable-\/length Uni\+Rec field Copy given data into variable-\/length Uni\+Rec field, set its offset and length in a record and move data which are behind this field. For better performance use function ur\+\_\+clear\+\_\+varlen, before setting all variable fields in record. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template \\
+\hline
+\mbox{\tt in}  & {\em rec} & Pointer to the beginning of a record. \\
+\hline
+\mbox{\tt in}  & {\em field\+\_\+id} & Identifier of a field. \\
+\hline
+\mbox{\tt in}  & {\em val\+\_\+ptr} & Pointer to data which should be copied into the record. \\
+\hline
+\mbox{\tt in}  & {\em val\+\_\+len} & Length of the copied data in bytes. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+OK if there is no problem. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+F\+I\+E\+L\+D\+\_\+\+ID if the ID is not in the template. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+template\+\_\+string\+\_\+delimiter@{ur\+\_\+template\+\_\+string\+\_\+delimiter}}
+\index{ur\+\_\+template\+\_\+string\+\_\+delimiter@{ur\+\_\+template\+\_\+string\+\_\+delimiter}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+template\+\_\+string\+\_\+delimiter(const ur\+\_\+template\+\_\+t $\ast$tmplt, int delimiter)}{ur\_template\_string\_delimiter(const ur\_template\_t *tmplt, int delimiter)}}]{\setlength{\rightskip}{0pt plus 5cm}char$\ast$ ur\+\_\+template\+\_\+string\+\_\+delimiter (
+\begin{DoxyParamCaption}
+\item[{const {\bf ur\+\_\+template\+\_\+t} $\ast$}]{tmplt, }
+\item[{int}]{delimiter}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_abfbfcce0fe6729ceb692d09541336c33}{}\label{unirec_8c_abfbfcce0fe6729ceb692d09541336c33}
+
+
+Receive data from interface with given context Receive data with specified template from libtrap interface with specified context. If the receiving template is subset of sending template, it will define new fields and expand receiving template. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em ctx} & context \\
+\hline
+\mbox{\tt in}  & {\em ifc\+\_\+num} & index of libtrap interface \\
+\hline
+\mbox{\tt in}  & {\em data} & pointer to memory where the data will be stored \\
+\hline
+\mbox{\tt in}  & {\em data\+\_\+size} & size of allocated space for data \\
+\hline
+\mbox{\tt in}  & {\em tmplt} & pointer to input template \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+return value of trap\+\_\+ctx\+\_\+recv\+Get string of a template Get names and sizes of fields separated by given delimiter. Return string has to be freed by user. 
+\end{DoxyReturn}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em tmplt} & Pointer to Uni\+Rec template \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+String 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+undefine\+\_\+field@{ur\+\_\+undefine\+\_\+field}}
+\index{ur\+\_\+undefine\+\_\+field@{ur\+\_\+undefine\+\_\+field}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+undefine\+\_\+field(const char $\ast$name)}{ur\_undefine\_field(const char *name)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+undefine\+\_\+field (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{name}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a3b7d40d098716943f035185d26aeff29}{}\label{unirec_8c_a3b7d40d098716943f035185d26aeff29}
+
+
+Undefine Uni\+Rec field by its name Undefine Uni\+Rec field created at run-\/time. It erases given field from Uni\+Rec structures and the field ID can be used for another field. By undefining field, all templates which were using the undefined field, has to be recreated. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em name} & Name of a field. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if there is an allocation problem. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+P\+A\+R\+A\+M\+E\+T\+ER if the field was not created at run-\/time or the field\+\_\+id does not exist. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id@{ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id}}
+\index{ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id@{ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id(ur\+\_\+field\+\_\+id\+\_\+t field\+\_\+id)}{ur\_undefine\_field\_by\_id(ur\_field\_id\_t field\_id)}}]{\setlength{\rightskip}{0pt plus 5cm}int ur\+\_\+undefine\+\_\+field\+\_\+by\+\_\+id (
+\begin{DoxyParamCaption}
+\item[{ur\+\_\+field\+\_\+id\+\_\+t}]{field\+\_\+id}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a0d8940c1aab20e50ab84da99715322fc}{}\label{unirec_8c_a0d8940c1aab20e50ab84da99715322fc}
+
+
+Undefine Uni\+Rec field by its id Undefine Uni\+Rec field created at run-\/time. It erases given field from Uni\+Rec structures and the field ID can be used for another field. By undefining field, all templates which were using the undefined field, has to be recreated. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em field\+\_\+id} & Identifier of a field. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+U\+R\+\_\+\+E\+\_\+\+M\+E\+M\+O\+RY if there is an allocation problem. U\+R\+\_\+\+E\+\_\+\+I\+N\+V\+A\+L\+I\+D\+\_\+\+P\+A\+R\+A\+M\+E\+T\+ER if the field was not created at run-\/time or the field\+\_\+id does not exist. 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end@{ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end}}
+\index{ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end@{ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end(uint32\+\_\+t start, uint32\+\_\+t end, int32\+\_\+t value)}{ur\_values\_get\_description\_start\_end(uint32\_t start, uint32\_t end, int32\_t value)}}]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ ur\+\_\+values\+\_\+get\+\_\+description\+\_\+start\+\_\+end (
+\begin{DoxyParamCaption}
+\item[{uint32\+\_\+t}]{start, }
+\item[{uint32\+\_\+t}]{end, }
+\item[{int32\+\_\+t}]{value}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_a2a2e25e5cdee3544c54e4abf4782dfb5}{}\label{unirec_8c_a2a2e25e5cdee3544c54e4abf4782dfb5}
+
+
+Returns description of specified value (Helper function) Helper function for ur\+\_\+values\+\_\+get\+\_\+description. This function returns description of specified value and field, which is defined in values file. Function needs start and end index of a field. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em start} & Index of first item to search the value in ur\+\_\+values array \\
+\hline
+\mbox{\tt in}  & {\em end} & Index of last item to search the value in ur\+\_\+values array \\
+\hline
+\mbox{\tt in}  & {\em value} & Value of an item to find \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to string or N\+U\+LL if the value was not found 
+\end{DoxyReturn}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end@{ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end}}
+\index{ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end@{ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end(uint32\+\_\+t start, uint32\+\_\+t end, int32\+\_\+t value)}{ur\_values\_get\_name\_start\_end(uint32\_t start, uint32\_t end, int32\_t value)}}]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ ur\+\_\+values\+\_\+get\+\_\+name\+\_\+start\+\_\+end (
+\begin{DoxyParamCaption}
+\item[{uint32\+\_\+t}]{start, }
+\item[{uint32\+\_\+t}]{end, }
+\item[{int32\+\_\+t}]{value}
+\end{DoxyParamCaption}
+)}\hypertarget{unirec_8c_adad09e518520d1791d94b29ee7af2487}{}\label{unirec_8c_adad09e518520d1791d94b29ee7af2487}
+
+
+Returns name of specified value (Helper function) Helper function for ur\+\_\+values\+\_\+get\+\_\+name. This function returns name of specified value and field, which is defined in values file. Function needs start and end index of a field. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\tt in}  & {\em start} & Index of first item to search the value in ur\+\_\+values array \\
+\hline
+\mbox{\tt in}  & {\em end} & Index of last item to search the value in ur\+\_\+values array \\
+\hline
+\mbox{\tt in}  & {\em value} & Value of an item to find. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Pointer to string or N\+U\+LL if the value was not found 
+\end{DoxyReturn}
+
+
+\subsection{Variable Documentation}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+field\+\_\+type\+\_\+size@{ur\+\_\+field\+\_\+type\+\_\+size}}
+\index{ur\+\_\+field\+\_\+type\+\_\+size@{ur\+\_\+field\+\_\+type\+\_\+size}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+field\+\_\+type\+\_\+size}{ur\_field\_type\_size}}]{\setlength{\rightskip}{0pt plus 5cm}const int ur\+\_\+field\+\_\+type\+\_\+size\mbox{[}$\,$\mbox{]}}\hypertarget{unirec_8c_a81f8d7af996a01f4b6e4ac086d483eb0}{}\label{unirec_8c_a81f8d7af996a01f4b6e4ac086d483eb0}
+{\bfseries Initial value\+:}
+\begin{DoxyCode}
+= \{
+    -1, 
+    -1, 
+    1, 
+    1, 
+    1, 
+    2, 
+    2, 
+    4, 
+    4, 
+    8, 
+    8, 
+    4, 
+    8, 
+    16, 
+    8, 
+\}
+\end{DoxyCode}
+\index{unirec.\+c@{unirec.\+c}!ur\+\_\+field\+\_\+type\+\_\+str@{ur\+\_\+field\+\_\+type\+\_\+str}}
+\index{ur\+\_\+field\+\_\+type\+\_\+str@{ur\+\_\+field\+\_\+type\+\_\+str}!unirec.\+c@{unirec.\+c}}
+\subsubsection[{\texorpdfstring{ur\+\_\+field\+\_\+type\+\_\+str}{ur\_field\_type\_str}}]{\setlength{\rightskip}{0pt plus 5cm}const char$\ast$ ur\+\_\+field\+\_\+type\+\_\+str\mbox{[}$\,$\mbox{]}}\hypertarget{unirec_8c_a2a84dc8eb5478757192b2df4004c148a}{}\label{unirec_8c_a2a84dc8eb5478757192b2df4004c148a}
+{\bfseries Initial value\+:}
+\begin{DoxyCode}
+= \{
+    \textcolor{stringliteral}{"string"}, 
+    \textcolor{stringliteral}{"bytes"}, 
+    \textcolor{stringliteral}{"char"}, 
+    \textcolor{stringliteral}{"uint8"}, 
+    \textcolor{stringliteral}{"int8"}, 
+    \textcolor{stringliteral}{"uint16"}, 
+    \textcolor{stringliteral}{"int16"}, 
+    \textcolor{stringliteral}{"uint32"}, 
+    \textcolor{stringliteral}{"int32"}, 
+    \textcolor{stringliteral}{"uint64"}, 
+    \textcolor{stringliteral}{"int64"}, 
+    \textcolor{stringliteral}{"float"}, 
+    \textcolor{stringliteral}{"double"}, 
+    \textcolor{stringliteral}{"ipaddr"}, 
+    \textcolor{stringliteral}{"time"}, 
+\}
+\end{DoxyCode}
