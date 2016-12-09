@@ -1,1 +1,3 @@
 include *.py README COPYING
+include test/*.py
+
