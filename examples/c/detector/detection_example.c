@@ -146,6 +146,7 @@ int main(int argc, char **argv)
          break;
       case 'a':
          ip_from_str(optarg, &ip);
+         break;
       default:
          fprintf(stderr, "Invalid arguments.\n");
          FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS);
