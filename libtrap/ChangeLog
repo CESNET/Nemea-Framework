@@ -1,3 +1,20 @@
+2016-12-03 (Tomas Cejka): libtrap: tests: add test of service ifc failure
+2016-12-03 (Tomas Cejka): libtrap: FEATURE TRAP_SOCKET_DIR environment variable
+2016-12-03 (Tomas Cejka): libtrap: BUGFIX segfault in service IFC
+2016-11-29 (Tomas Cejka): examples: minor changes of comments
+2016-11-29 (Tomas Cejka): examples: replace uint with uint32
+2016-11-29 (Jiri Havranek): libtrap: fixed issues with compilation
+2016-11-05 (Tomas Cejka): libtrap: tcpip: sender_send: don't block without clients
+2016-11-05 (Tomas Cejka): libtrap: tcpip: refactoring, changed order of tests
+2016-11-05 (Tomas Cejka): libtrap: tests: add error message
+2016-11-05 (Tomas Cejka): libtrap: tcpip: removed sectm from sender, blocking timeout
+2016-11-05 (Tomas Cejka): libtrap: finalize: change flush() in finalize() to non-blocking
+2016-10-26 (Jiri Havranek): libtrap: fixed 100% cpu load bug, closes #31
+2016-10-22 (Marek Svepes): libtrap: replaced "trap_default_socket_path" with "trap_default_socket_path_format"
+2016-10-18 (Tomas Cejka): libtrap: increase version and replace email
+2016-10-18 (Tomas Cejka): libtrap: change the name of sockets to shorter form
+2016-10-18 (Tomas Cejka): libtrap: Change path to sockets by configure
+
 2016-09-07 (Marek Svepes): libtrap: service ifc: removed useless output messages
 2016-09-02 (Tomas Jansky): libtrap: file ifc: timestamp of newly created files is now rounded according to the given time  period
 2016-08-12 (Marek Svepes): libtrap: tools: update of trap_stats program after adding new fields "num_clients" and "ifc_state" to JSON messages in service interface
