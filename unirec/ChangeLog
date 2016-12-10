@@ -1,3 +1,9 @@
+2016-12-08 (Tomas Cejka): unirec: generate new doxygen doc
+2016-12-08 (Tomas Cejka): unirec: add doxygen for ipaddr_cpp.h
+2016-12-03 (Tomas Cejka): unirec: add doxygen for ipaddr.h
+2016-11-30 (Vaclav Bartos): UniRec links: Removed unnecessary line from ur_free_links
+2016-11-28 (Tomas Cejka): unirec: fix parsing one-line UR_DEFINE(...)
+
 2016-07-26 (Tomas Cejka): unirec: fixed multiple execution of ur_processor.sh and ur_values.sh
 2016-07-20 (Tomas Cejka): unirec: RPM: disable debug and fixed dependency
 2016-07-20 (Tomas Cejka): unirec: configure: update checks
