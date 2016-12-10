@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules])
 AM_SILENT_RULES([yes])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
