@@ -68,24 +68,23 @@ UniRec data types
 
 An UniRec field may have one of the following types:
 
-|name    |size|  description				|
-|--------|----|-----------------------------|
-|int8    |  1 |8bit singed integer 			|
-|int16   |  2 |16bit singed integer 		|
-|int32   |  3 |32bit singed integer 		|
-|int32   |  3 |32bit singed integer 		|
-|int64   |  4 |64bit singed integer 		|
-|uint8   |  1 |8bit unsigned integer 		|
-|uint16  |  2 |16bit unsigned integer 		|
-|uint32  |  3 |32bit unsigned integer 		|
-|uint64  |  4 |64bit unsigned integer 		|
-|char    |  1 |A single ASCII character 	|
-|float   |  4 |Single precision floating point number (IEEE 754)|
-|double  |  8 |Double precision floating point number (IEEE 754)|
-|ipaddr  | 16 |Special type for IPv4/IPv6 addresses, see below for details|
-|time    |  8 |Special type for precise timestamps, see below for details |
-|string  |  - |Variable-length array of (mostly) printable characters  	  |
-|bytes   |  - |Variable-length array of bytes (not expected to be printable characters)|
+|name    |size|  description                                                 |
+|--------|----|--------------------------------------------------------------|
+|int8    |  1 |8bit singed integer                                           |
+|int16   |  2 |16bit singed integer                                          |
+|int32   |  4 |32bit singed integer                                          |
+|int64   |  8 |64bit singed integer                                          |
+|uint8   |  1 |8bit unsigned integer                                         |
+|uint16  |  2 |16bit unsigned integer                                        |
+|uint32  |  4 |32bit unsigned integer                                        |
+|uint64  |  8 |64bit unsigned integer                                        |
+|char    |  1 |A single ASCII character                                      |
+|float   |  4 |Single precision floating point number (IEEE 754)             |
+|double  |  8 |Double precision floating point number (IEEE 754)             |
+|ipaddr  | 16 |Special type for IPv4/IPv6 addresses, see below for details   |
+|time    |  8 |Special type for precise timestamps, see below for details    |
+|string  |  - |Variable-length array of (mostly) printable characters        |
+|bytes   |  - |Variable-length array of bytes (not expected to be printable characters) |
 
 
 Types "string" and "bytes" are the same from a machine point of view (both are
@@ -95,7 +94,7 @@ as text, "string" is usually printed directly as ASCII or UTF-8 string,
 
 A terminating null character ('\0') SHOULD NOT be included at the end of
 "string" values since this is specific for the C language and data in UniRec
-should be independent on a programming language.
+should be independent of a programming language.
 
 ### ipaddr type
 Structure to store both IPv4 and IPv6 addresses and associated functions.
