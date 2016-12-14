@@ -38,18 +38,13 @@ unirecinclude_HEADERS=unirec.h \
 
 bin_SCRIPTS=ur_values.sh ur_processor.sh
 
-EXTRA_DIST=values ur_values.sh ur_processor.sh
+EXTRA_DIST=values ur_values.sh ur_processor.sh debian/changelog debian/control debian/copyright debian/makedeb.sh debian/patches debian/patches/series debian/README.Debian debian/rules debian/source debian/source/format debian/source/local-options debian/unirec-dev.install debian/unirec.install
 
 include doxygen.am
 
 if DX_COND_doc
 
 doc: doxygen-doc
-
-clean-local: doxygen-clean
-	rm -rf doc/doxygen
-	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
-	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
 
 install-data-local:
 	mkdir -p "$(DESTDIR)$(docdir)/unirec" && cp -R doc/html/* "$(DESTDIR)$(docdir)/unirec" || echo "Documentation was not generated yet."
@@ -69,8 +64,23 @@ rpm:
 	make ${AM_MAKEFLAGS} distdir='$(RPMDIR)/SOURCES/$(RPMFILENAME)' distdir
 	( cd "$(RPMDIR)/SOURCES/"; tar -z -c -f $(RPMFILENAME)-$(RELEASE).tar.gz $(RPMFILENAME); rm -rf $(RPMFILENAME); )
 	$(RPMBUILD) -ba $(PACKAGE_NAME).spec --define "_topdir `pwd`/$(RPMDIR)";
+else
+endif
 
 rpm-clean:
 	rm -rf $(RPMDIR)
+
+if MAKE_DEB
+.PHONY: deb
+deb:
+	make distdir && cd unirec-@VERSION@ && debuild -i -us -uc -b
 else
 endif
+
+deb-clean:
+	rm -rf unirec_*.build unirec_*.changes unirec_*.deb unirec-dev_*.deb unirec_*.orig.tar.gz unirec-*.tar.gz unirec-@VERSION@
+
+clean-local: rpm-clean deb-clean
+	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
+	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
+

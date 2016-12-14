@@ -1,0 +1,18 @@
+2016-07-26 (Tomas Cejka): unirec: fixed multiple execution of ur_processor.sh and ur_values.sh
+2016-07-20 (Tomas Cejka): unirec: RPM: disable debug and fixed dependency
+2016-07-20 (Tomas Cejka): unirec: configure: update checks
+2016-07-20 (Tomas Cejka): unirec: ur_values.sh: update generated headers
+2016-07-20 (Tomas Cejka): unirec: RPM: update spec file
+2016-07-20 (Tomas Cejka): unirec: replace python script with bash&awk
+2016-07-19 (Tomas Cejka): unirec: publish generated doxygen
+2016-07-19 (Tomas Cejka): unirec: BUGFIX: processor used bad type for UniRec timestamps
+2016-04-22 (Tomas Cejka): unirec: add doc into RPM (installation)
+
+2016-04-02 (Zdenek Rosa): unirec: README bugfix in iteration functions
+2016-04-02 (Zdenek Rosa): unirec: test for iteration function added
+
+2016-03-18 (Tomas Cejka): unirec: allow stdc constants for c++
+2016-03-18 (Tomas Jansky): unirec: changed type ur_field_id_t to int16_t, so it can be compared with UR_E_INVALID_NAME
+
+2016-01-21 (Tomas Cejka): unirec: created bash script ur_processor.sh for generating fields files
+2016-01-01 (Zdenek Rosa): unirec: created unirec2
