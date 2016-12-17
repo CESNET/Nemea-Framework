@@ -38,7 +38,7 @@ unirecinclude_HEADERS=unirec.h \
 
 bin_SCRIPTS=ur_values.sh ur_processor.sh
 
-EXTRA_DIST=values ur_values.sh ur_processor.sh debian/changelog debian/control debian/copyright debian/makedeb.sh debian/patches debian/patches/series debian/README.Debian debian/rules debian/source debian/source/format debian/source/local-options debian/unirec-dev.install debian/unirec.install
+EXTRA_DIST=values ur_values.sh ur_processor.sh debian/changelog debian/control debian/copyright debian/compat debian/patches debian/patches/series debian/README.Debian debian/rules debian/source debian/source/format debian/source/local-options
 
 include doxygen.am
 
