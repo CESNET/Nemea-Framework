@@ -19,6 +19,9 @@ override_dh_auto_build:
 %:
 	dh $@ --with "autotools-dev"
 
+override_dh_auto_configure:
+	dh_auto_configure -- --bindir=\$${prefix}/bin/nemea
+
 # debmake generated override targets
 # For example, set multiarch library install file path.  
 # See dpkg-architecture(1)

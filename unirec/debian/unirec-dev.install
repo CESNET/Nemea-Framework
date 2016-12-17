@@ -1,8 +1,0 @@
-/usr/include/
-/usr/lib/*/libunirec.so
-/usr/lib/*/libunirec.a
-/usr/lib/*/libunirec.la
-/usr/lib/*/pkgconfig/unirec.pc
-/usr/share/
-
-
