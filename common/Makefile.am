@@ -37,7 +37,18 @@ EXTRA_DIST= README \
 	    super_fast_hash/README \
 	    cuckoo_hash_v2/README \
 	    b_plus_tree/README \
-	    cuckoo_hash/README
+	    cuckoo_hash/README \
+		debian/source/local-options \
+		debian/source/format \
+		debian/patches \
+		debian/patches/series \
+		debian/watch \
+		debian/copyright \
+		debian/changelog \
+		debian/control \
+		debian/rules \
+		debian/compat \
+		debian/README.Debian
 
 ACLOCAL_AMFLAGS=-I m4
 
@@ -65,5 +76,12 @@ rpm:
 
 rpm-clean:
 	rm -rf $(RPMDIR)
+else 
+endif
+
+if MAKE_DEB
+.PHONY: deb
+deb: 
+	make distdir && cd common-@VERSION@ && -i -us -uc -b
 else
 endif
