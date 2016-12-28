@@ -47,11 +47,7 @@ if DX_COND_doc
 doc: doxygen-doc
 
 install-data-local:
-	mkdir -p "$(DESTDIR)$(docdir)/unirec" && cp -R doc/html/* "$(DESTDIR)$(docdir)/unirec" || echo "Documentation was not generated yet."
-else
-clean-local:
-	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
-	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
+	mkdir -p "$(DESTDIR)$(docdir)/unirec" && cp -R doc/html/* "$(DESTDIR)$(docdir)/unirec" || echo "Documentation was not generated yet."	
 endif
 
 if MAKE_RPMS
@@ -79,8 +75,6 @@ endif
 
 deb-clean:
 	rm -rf unirec_*.build unirec_*.changes unirec_*.deb unirec-dev_*.deb unirec_*.orig.tar.gz unirec-*.tar.gz unirec-@VERSION@
-if !DX_COND_doc
 clean-local: rpm-clean deb-clean
 	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
 	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
-endif
