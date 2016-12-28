@@ -1,7 +1,7 @@
 Source: unirec
 Section: unknown
 Priority: extra
-Maintainer: Ladislav Macoun <macoulad@fit.cvut.cz>
+Maintainer: CESNET <nemea@cesnet.cz>
 Build-Depends: autotools-dev,
 	debhelper (>=9), libtrap-dev
 Standards-Version: 3.9.5

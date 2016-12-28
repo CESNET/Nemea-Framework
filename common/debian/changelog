@@ -1,0 +1,4 @@
+common (1.5.0) stable; urgency=high
+	* change of b+ tree API
+	* bugfixes : 
+		- prefix tree: number of children
