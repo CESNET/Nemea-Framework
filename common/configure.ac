@@ -77,6 +77,7 @@ AC_TYPE_UINT8_T
 RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
+AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
 
 AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
         [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
