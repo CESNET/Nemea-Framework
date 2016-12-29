@@ -1,4 +1,4 @@
-TESTS = basic_test_arg.test basic_test test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test
+TESTS = basic_test_arg.test basic_test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test
 
 if ENABLE_LONG_TESTS
 TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
@@ -12,7 +12,7 @@ endif
 
 EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh test_service_ifc_fail.test
 
-check_PROGRAMS = basic_test test_finalize
+check_PROGRAMS = basic_test test_finalize test_badparams
 
 if HAVE_CMOCKA
 check_PROGRAMS += trap_buffer
@@ -70,6 +70,8 @@ test_multi_recv_CPPFLAGS=$(COM_CPPFLAGS)
 
 valid_buffer_SOURCES=valid_buffer.c
 
+test_badparams_SOURCES=test_badparams.c
+test_badparams_CPPFLAGS=$(COM_CPPFLAGS)
 
 trap_buffer_SOURCES=$(top_builddir)/src/trap_buffer.c $(top_builddir)/src/trap_buffer.h test_trap_buffer.c
 trap_buffer_CPPFLAGS=-DUNIT_TESTING
