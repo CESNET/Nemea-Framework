@@ -30,8 +30,7 @@ def getIDEAtime(unirecField = None):
         ts = unirecField.toDatetime()
         return ts.strftime('%Y-%m-%dT%H:%M:%SZ')
     else:
-        t = time()
-        g = gmtime(t)
+        g = gmtime()
         iso = '%04d-%02d-%02dT%02d:%02d:%02dZ' % g[0:6]
     return iso
 
@@ -296,4 +295,3 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     if wardenclient:
         wardenclient.close()
     trap.finalize()
-
