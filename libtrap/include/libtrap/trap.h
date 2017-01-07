@@ -1066,13 +1066,13 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
  *
  * \param[in] ifc_priv_data  Pointer to output interface private structure.
  * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
- * \param[in] sock_d  Socket descriptor of the connection with the new input interface.
+ * \param[in] client_idx  Index of new connected client.
  *
  * \return NEG_RES_FAILED if sending the data to input interface fails,
  *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
  *             NEG_RES_OK signaling success (hello message successfully sent to input interface).
  */
-int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d);
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_idx);
 
 
 /**
