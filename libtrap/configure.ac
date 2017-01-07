@@ -68,6 +68,18 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
 PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
 AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
 
+PKG_CHECK_MODULES([openssl], [openssl], [have_openssl="yes"], [have_openssl="no"])
+AM_CONDITIONAL([HAVE_OPENSSL], [test x$have_openssl = xyes])
+AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if the openssl is available])
+
+if test x$have_openssl = xyes; then
+  LDFLAGS="$openssl_LDFLAGS $LDFLAGS"
+  LIBS="$openssl_LIBS $LIBS"
+  CFLAGS="$openssl_CFLAGS $CFLAGS"
+  CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
+  
+fi
+
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h stdarg.h string.h sys/socket.h sys/time.h unistd.h pthread.h endian.h locale.h sched.h sys/param.h sys/stat.h sys/types.h getopt.h])
 
@@ -246,6 +258,7 @@ echo "  CPPFLAGS.............: $CPPFLAGS"
 echo "  CFLAGS...............: $CFLAGS"
 echo "  CXXFLAGS.............: $CXXFLAGS"
 echo "  LDFLAGS..............: $LDFLAGS"
+echo "  LIBS.................: $LIBS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"

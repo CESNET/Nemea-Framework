@@ -174,6 +174,7 @@ extern char *trap_default_socket_path_format;
 #define TRAP_IFC_TYPE_GENERATOR 'g' ///< trap_ifc_dummy generator (input)
 #define TRAP_IFC_TYPE_BLACKHOLE 'b' ///< trap_ifc_dummy blackhole (output)
 #define TRAP_IFC_TYPE_TCPIP     't' ///< trap_ifc_tcpip (input&output part)
+#define TRAP_IFC_TYPE_TLS       'T' ///< trap_ifc_tls (input&output part)
 #define TRAP_IFC_TYPE_UNIX      'u' ///< trap_ifc_tcpip via UNIX socket(input&output part)
 #define TRAP_IFC_TYPE_SERVICE   's' ///< service ifc
 #define TRAP_IFC_TYPE_FILE      'f' ///< trap_ifc_file (input&output part)
