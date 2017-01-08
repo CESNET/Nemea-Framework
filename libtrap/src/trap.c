@@ -2052,7 +2052,7 @@ static inline int trapifc_in_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *if
          goto error;
       }
       break;
-#ifdef HAVE_OPENSSL
+#if HAVE_OPENSSL
    case TRAP_IFC_TYPE_TLS:
       if (create_tls_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of TLS input interface no. %i failed.", idx);
@@ -3505,8 +3505,8 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
 #if HAVE_OPENSSL
       } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
          tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-      }
 #endif
+      }
       neg_result = NEG_RES_FAILED;
       goto in_neg_exit;
    } else {

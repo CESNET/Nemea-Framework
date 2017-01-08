@@ -76,14 +76,15 @@ AC_ARG_WITH([openssl],
 	[PKG_CHECK_MODULES([openssl], [openssl], [have_openssl="yes"], [have_openssl="no"])])
 
 AM_CONDITIONAL([HAVE_OPENSSL], [test x$have_openssl = xyes])
-AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if the openssl is available])
 
 if test x$have_openssl = xyes; then
+  AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if the openssl is available])
   LDFLAGS="$openssl_LDFLAGS $LDFLAGS"
   LIBS="$openssl_LIBS $LIBS"
   CFLAGS="$openssl_CFLAGS $CFLAGS"
   CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
-  
+else
+  AC_DEFINE([HAVE_OPENSSL], [0], [Define to 1 if the openssl is available])
 fi
 
 # Checks for header files.
