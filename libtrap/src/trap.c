@@ -3272,7 +3272,7 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
    int ret_val = 0;
    int neg_result = NEG_RES_OK;
    int compare = 0;
-   int sock_d;
+   int sock_d = 0;
    file_private_t *file_ifc_priv = NULL;
    tcpip_sender_private_t *tcp_ifc_priv = NULL;
 #if HAVE_OPENSSL
