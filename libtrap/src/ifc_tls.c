@@ -97,56 +97,56 @@
 
 static SSL_CTX *tlsserver_create_context()
 {
-	const SSL_METHOD *method;
-	SSL_CTX *ctx;
+   const SSL_METHOD *method;
+   SSL_CTX *ctx;
 
-	method = SSLv23_server_method();
+   method = SSLv23_server_method();
 
-	ctx = SSL_CTX_new(method);
-	if (!ctx) {
-		perror("Unable to create SSL context");
-		ERR_print_errors_fp(stderr);
-	}
-	SSL_CTX_set_ecdh_auto(ctx, 1);
+   ctx = SSL_CTX_new(method);
+   if (!ctx) {
+      perror("Unable to create SSL context");
+      ERR_print_errors_fp(stderr);
+   }
+   SSL_CTX_set_ecdh_auto(ctx, 1);
 
-	return ctx;
+   return ctx;
 }
 
 static SSL_CTX *tlsclient_create_context()
 {
-	const SSL_METHOD *method;
-	SSL_CTX *ctx;
+   const SSL_METHOD *method;
+   SSL_CTX *ctx;
 
-	method = SSLv23_client_method();
+   method = SSLv23_client_method();
 
-	ctx = SSL_CTX_new(method);
-	if (!ctx) {
-		perror("Unable to create SSL context");
-		ERR_print_errors_fp(stderr);
-	}
+   ctx = SSL_CTX_new(method);
+   if (!ctx) {
+      perror("Unable to create SSL context");
+      ERR_print_errors_fp(stderr);
+   }
 
-	return ctx;
+   return ctx;
 }
 
 static int tlsserver_configure_context(SSL_CTX *ctx, const char *key, const char *crt)
 {
-	int ret;
+   int ret;
 
-	/* Set the key and cert */
-	ret = SSL_CTX_use_certificate_file(ctx, crt, SSL_FILETYPE_PEM);
-	if (ret != 1) {
-		VERBOSE(CL_ERROR, "Loading certificate (%s) failed. %s",
-				  crt, ERR_reason_error_string(ERR_get_error()));
-		return EXIT_FAILURE;
-	}
+   /* Set the key and cert */
+   ret = SSL_CTX_use_certificate_file(ctx, crt, SSL_FILETYPE_PEM);
+   if (ret != 1) {
+      VERBOSE(CL_ERROR, "Loading certificate (%s) failed. %s",
+            crt, ERR_reason_error_string(ERR_get_error()));
+      return EXIT_FAILURE;
+   }
 
-	ret = SSL_CTX_use_PrivateKey_file(ctx, key, SSL_FILETYPE_PEM);
-	if (ret != 1) {
-		VERBOSE(CL_ERROR, "Loading private key (%s) failed: %s",
-				  key, ERR_reason_error_string(ERR_get_error()));
-		return EXIT_FAILURE;
-	}
-	return EXIT_SUCCESS;
+   ret = SSL_CTX_use_PrivateKey_file(ctx, key, SSL_FILETYPE_PEM);
+   if (ret != 1) {
+      VERBOSE(CL_ERROR, "Loading private key (%s) failed: %s",
+            key, ERR_reason_error_string(ERR_get_error()));
+      return EXIT_FAILURE;
+   }
+   return EXIT_SUCCESS;
 }
 
 /***** TCPIP server *****/
@@ -218,7 +218,7 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
       if (retval > 0) {
          if (FD_ISSET(config->sd, &set)) {
             do {
-					recvb = SSL_read(config->ssl, data_p, numbytes);
+               recvb = SSL_read(config->ssl, data_p, numbytes);
                if (recvb < 1) {
                   if (recvb == 0) {
                      errno = EPIPE;
@@ -538,11 +538,11 @@ p = NULL; \
       if (config->connected == 1) {
          close(config->sd);
       }
-		SSL_CTX_free(config->sslctx);
+      SSL_CTX_free(config->sslctx);
       X(config->dest_addr);
       X(config->dest_port);
-		X(config->keyfile);
-		X(config->certfile);
+      X(config->keyfile);
+      X(config->certfile);
       X(config);
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
@@ -581,7 +581,7 @@ static void tls_receiver_create_dump(void *priv, uint32_t idx, const char *path)
            c->ext_buffer, c->ext_buffer_size,
            c->ctx->in_ifc_list[idx].datatimeout,
            TRAP_TIMEOUT_STR(c->ctx->in_ifc_list[idx].datatimeout),
-			  c->keyfile, c->certfile);
+           c->keyfile, c->certfile);
    fclose(f);
    f = NULL;
 
@@ -675,12 +675,12 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
 
    /* Parsing params */
    param_iterator = trap_get_param_by_delimiter(params, &dest_addr, TRAP_IFC_PARAM_DELIMITER);
-	/* error! we expect 2 parameters */
-	if ((dest_addr == NULL) || (strlen(dest_addr) == 0)) {
-		VERBOSE(CL_ERROR, "Expected parameters: 'destination address:port:keyfile:certfile' are missing.");
-		result = TRAP_E_BADPARAMS;
-		goto failsafe_cleanup;
-	}
+   /* error! we expect 2 parameters */
+   if ((dest_addr == NULL) || (strlen(dest_addr) == 0)) {
+      VERBOSE(CL_ERROR, "Expected parameters: 'destination address:port:keyfile:certfile' are missing.");
+      result = TRAP_E_BADPARAMS;
+      goto failsafe_cleanup;
+   }
    if (param_iterator != NULL) {
       param_iterator = trap_get_param_by_delimiter(param_iterator, &dest_port, TRAP_IFC_PARAM_DELIMITER
 );
@@ -701,13 +701,13 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
       param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
 );
    } else {
-		/* dest_addr skipped, move parameters */
-		certfile = keyfile;
-		keyfile = dest_port;
-		dest_port = dest_addr;
-		dest_addr = strdup("localhost");
+      /* dest_addr skipped, move parameters */
+      certfile = keyfile;
+      keyfile = dest_port;
+      dest_port = dest_addr;
+      dest_addr = strdup("localhost");
       VERBOSE(CL_ERROR, "Only 3 parameters given, using 'localhost' as a destination address.");
-	}
+   }
 
    /* set global buffer size */
    config->int_mess_header.data_length = DEFAULT_MAX_DATA_LENGTH;
@@ -729,15 +729,15 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
            "TDU size: %u\n", config->dest_addr, config->dest_port,
            config->int_mess_header.data_length);
 
-	config->sslctx = tlsclient_create_context();
-	if (config->sslctx == NULL) {
+   config->sslctx = tlsclient_create_context();
+   if (config->sslctx == NULL) {
       result = TRAP_E_MEMORY;
-		goto failsafe_cleanup;
-	}
-	if (tlsserver_configure_context(config->sslctx, keyfile, certfile) == EXIT_FAILURE) {
+      goto failsafe_cleanup;
+   }
+   if (tlsserver_configure_context(config->sslctx, keyfile, certfile) == EXIT_FAILURE) {
       result = TRAP_E_BADPARAMS;
-		goto failsafe_cleanup;
-	}
+      goto failsafe_cleanup;
+   }
 
    /*
     * In constructor, we do not know timeout yet.
@@ -781,11 +781,11 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
 failsafe_cleanup:
    X(dest_addr);
    X(dest_port);
-	X(config->keyfile);
-	X(config->certfile);
-	if (config != NULL && config->sslctx != NULL) {
-		SSL_CTX_free(config->sslctx);
-	}
+   X(config->keyfile);
+   X(config->certfile);
+   if (config != NULL && config->sslctx != NULL) {
+      SSL_CTX_free(config->sslctx);
+   }
    X(config);
    return result;
 #undef X
@@ -802,7 +802,7 @@ static void client_socket_disconnect(void *priv)
    DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv Disconnected."));
    if (config->connected == 1) {
       VERBOSE(CL_VERBOSE_BASIC, "TCPIP ifc client disconnecting");
-		SSL_free(config->ssl);
+      SSL_free(config->ssl);
       close(config->sd);
       config->connected = 0;
    }
@@ -846,159 +846,159 @@ static int wait_for_connection(int sock, struct timeval *tv)
  */
 static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
 {
-	int sockfd = -1, options;
-	union tls_socket_addr addr;
-	struct addrinfo *servinfo, *p = NULL;
-	int rv, addr_count = 0;
-	char s[INET6_ADDRSTRLEN];
+   int sockfd = -1, options;
+   union tls_socket_addr addr;
+   struct addrinfo *servinfo, *p = NULL;
+   int rv, addr_count = 0;
+   char s[INET6_ADDRSTRLEN];
 
-	if (c == NULL) {
-		return TRAP_E_BAD_FPARAMS;
-	}
-	if ((c->dest_addr == NULL) || (c->dest_port == NULL)) {
-		return TRAP_E_BAD_FPARAMS;
-	}
+   if (c == NULL) {
+      return TRAP_E_BAD_FPARAMS;
+   }
+   if ((c->dest_addr == NULL) || (c->dest_port == NULL)) {
+      return TRAP_E_BAD_FPARAMS;
+   }
 
-	memset(&addr, 0, sizeof(addr));
+   memset(&addr, 0, sizeof(addr));
 
-	addr.tls_addr.ai_family = AF_UNSPEC;
-	addr.tls_addr.ai_socktype = SOCK_STREAM;
+   addr.tls_addr.ai_family = AF_UNSPEC;
+   addr.tls_addr.ai_socktype = SOCK_STREAM;
 
-	if ((rv = getaddrinfo(c->dest_addr, c->dest_port, &addr.tls_addr, &servinfo)) != 0) {
-		VERBOSE(CL_ERROR, "getaddrinfo: %s", gai_strerror(rv));
-		return TRAP_E_IO_ERROR;
-	}
+   if ((rv = getaddrinfo(c->dest_addr, c->dest_port, &addr.tls_addr, &servinfo)) != 0) {
+      VERBOSE(CL_ERROR, "getaddrinfo: %s", gai_strerror(rv));
+      return TRAP_E_IO_ERROR;
+   }
 
-	DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv Try to connect"));
+   DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv Try to connect"));
 
-	if (tv != NULL) {
-		/* compute uniform intervals for all possible address */
-		for (p = servinfo; p != NULL; p = p->ai_next) {
-			addr_count++;
-		}
-		tv->tv_sec = (tv->tv_sec * 1000000 + tv->tv_usec) / addr_count;
-		tv->tv_usec = tv->tv_sec % 1000000;
-		tv->tv_sec /= 1000000;
-		VERBOSE(CL_VERBOSE_LIBRARY, "Every address will be tried for timeout: %"PRId64"s%"PRId64"us",
-				tv->tv_sec, tv->tv_usec);
-	}
+   if (tv != NULL) {
+      /* compute uniform intervals for all possible address */
+      for (p = servinfo; p != NULL; p = p->ai_next) {
+         addr_count++;
+      }
+      tv->tv_sec = (tv->tv_sec * 1000000 + tv->tv_usec) / addr_count;
+      tv->tv_usec = tv->tv_sec % 1000000;
+      tv->tv_sec /= 1000000;
+      VERBOSE(CL_VERBOSE_LIBRARY, "Every address will be tried for timeout: %"PRId64"s%"PRId64"us",
+            tv->tv_sec, tv->tv_usec);
+   }
 
-	// loop through all the results and connect to the first we can
-	for (p = servinfo; p != NULL; p = p->ai_next) {
-		if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-			continue;
-		}
-		options = fcntl(sockfd, F_GETFL);
-		if (options != -1) {
-			if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
-				VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
-			}
-		}
-		if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-			if (errno != EINPROGRESS && errno != EAGAIN) {
-				DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
-							strerror(errno)));
-				close(sockfd);
-				continue;
-			} else {
-				rv = wait_for_connection(sockfd, tv);
-				if (rv == TRAP_E_TIMEOUT) {
-					close(sockfd);
-					if (c->is_terminated) {
-						rv = TRAP_E_TERMINATED;
-						break;
-					}
-					/* try another address */
-					continue;
-				} else {
-					/* success */
-					rv = TRAP_E_OK;
-					break;
-				}
-			}
-		}
-		break;
-	}
+   // loop through all the results and connect to the first we can
+   for (p = servinfo; p != NULL; p = p->ai_next) {
+      if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+         continue;
+      }
+      options = fcntl(sockfd, F_GETFL);
+      if (options != -1) {
+         if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
+            VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
+         }
+      }
+      if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+         if (errno != EINPROGRESS && errno != EAGAIN) {
+            DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
+                     strerror(errno)));
+            close(sockfd);
+            continue;
+         } else {
+            rv = wait_for_connection(sockfd, tv);
+            if (rv == TRAP_E_TIMEOUT) {
+               close(sockfd);
+               if (c->is_terminated) {
+                  rv = TRAP_E_TERMINATED;
+                  break;
+               }
+               /* try another address */
+               continue;
+            } else {
+               /* success */
+               rv = TRAP_E_OK;
+               break;
+            }
+         }
+      }
+      break;
+   }
 
-	if (p != NULL) {
-		inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
-		VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
-	}
-	freeaddrinfo(servinfo); // all done with this structure
+   if (p != NULL) {
+      inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
+      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+   }
+   freeaddrinfo(servinfo); // all done with this structure
 
-	if (p == NULL) {
-		VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
-		return TRAP_E_TIMEOUT;
-	}
+   if (p == NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
+      return TRAP_E_TIMEOUT;
+   }
 
-	c->sd = sockfd;
-	c->ssl = SSL_new(c->sslctx);
-	SSL_set_fd(c->ssl, c->sd);
-	SSL_set_connect_state(c->ssl);
-	
-	do {
-		rv = SSL_connect(c->ssl);
-		if (rv < 1) {
-			rv = ERR_get_error();
-			switch (rv) {
-			case SSL_ERROR_NONE:
-			case SSL_ERROR_WANT_CONNECT:
-			case SSL_ERROR_WANT_X509_LOOKUP:
-			case SSL_ERROR_WANT_READ:
-			case SSL_ERROR_WANT_WRITE:
-				break;
-			default:
-				VERBOSE(CL_ERROR, "SSL connection failed. %s",
-						ERR_reason_error_string(ERR_get_error()));
-				SSL_free(c->ssl);
-				close(c->sd);
-				return TRAP_E_IO_ERROR;
-			}
-		}
-	} while (rv < 1);
-	VERBOSE(CL_ERROR, "SSL successfully connected")
+   c->sd = sockfd;
+   c->ssl = SSL_new(c->sslctx);
+   SSL_set_fd(c->ssl, c->sd);
+   SSL_set_connect_state(c->ssl);
+
+   do {
+      rv = SSL_connect(c->ssl);
+      if (rv < 1) {
+         rv = ERR_get_error();
+         switch (rv) {
+            case SSL_ERROR_NONE:
+            case SSL_ERROR_WANT_CONNECT:
+            case SSL_ERROR_WANT_X509_LOOKUP:
+            case SSL_ERROR_WANT_READ:
+            case SSL_ERROR_WANT_WRITE:
+               break;
+            default:
+               VERBOSE(CL_ERROR, "SSL connection failed. %s",
+                     ERR_reason_error_string(ERR_get_error()));
+               SSL_free(c->ssl);
+               close(c->sd);
+               return TRAP_E_IO_ERROR;
+         }
+      }
+   } while (rv < 1);
+   VERBOSE(CL_ERROR, "SSL successfully connected")
 
 
-	/** Input interface negotiation */
+      /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
-	switch(input_ifc_negotiation(c, TRAP_IFC_TYPE_TLS)) {
-	case NEG_RES_FMT_UNKNOWN:
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
-		close(sockfd);
-		return TRAP_E_TIMEOUT;
+      switch(input_ifc_negotiation(c, TRAP_IFC_TYPE_TLS)) {
+         case NEG_RES_FMT_UNKNOWN:
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
+            close(sockfd);
+            return TRAP_E_TIMEOUT;
 
-	case NEG_RES_CONT:
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
-		return TRAP_E_OK;
+         case NEG_RES_CONT:
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
+            return TRAP_E_OK;
 
-	case NEG_RES_FMT_CHANGED: // used on format change with JSON
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (format has changed; it was not first negotiation).");
-		return TRAP_E_OK;
+         case NEG_RES_FMT_CHANGED: // used on format change with JSON
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (format has changed; it was not first negotiation).");
+            return TRAP_E_OK;
 
-	case NEG_RES_RECEIVER_FMT_SUBSET: // used on format change with UniRec
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (required set of fields of the input interface is subset of the recevied format).");
-		return TRAP_E_OK;
+         case NEG_RES_RECEIVER_FMT_SUBSET: // used on format change with UniRec
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (required set of fields of the input interface is subset of the recevied format).");
+            return TRAP_E_OK;
 
-	case NEG_RES_SENDER_FMT_SUBSET: // used on format change with UniRec
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new recevied format specifier is subset of the old one; it was not first negotiation).");
-		return TRAP_E_OK;
+         case NEG_RES_SENDER_FMT_SUBSET: // used on format change with UniRec
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new recevied format specifier is subset of the old one; it was not first negotiation).");
+            return TRAP_E_OK;
 
-	case NEG_RES_FAILED:
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
-		return TRAP_E_FIELDS_MISMATCH;
+         case NEG_RES_FAILED:
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
+            return TRAP_E_FIELDS_MISMATCH;
 
-	case NEG_RES_FMT_MISMATCH:
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
-		return TRAP_E_FIELDS_MISMATCH;
+         case NEG_RES_FMT_MISMATCH:
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
+            return TRAP_E_FIELDS_MISMATCH;
 
-	default:
-		VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
-		break;
-	}
+         default:
+            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
+            break;
+      }
 #endif
 
 
-	return TRAP_E_OK;
+   return TRAP_E_OK;
 }
 
 /**
@@ -1014,7 +1014,7 @@ static void server_disconnected_client(tls_sender_private_t *c, int cl_id)
 {
    struct tlsclient_s *cl = &c->clients[cl_id];
    pthread_mutex_lock(&c->lock);
-	SSL_free(cl->ssl);
+   SSL_free(cl->ssl);
    close(cl->sd);
    cl->sd = -1;
    cl->client_state = TLSCURRENT_IDLE;
@@ -1039,17 +1039,17 @@ static int send_all_data(tls_sender_private_t *c, struct tlsclient_s *cl, void *
    int res = TRAP_E_TERMINATED;
 
 again:
-	sent_b = SSL_write(cl->ssl, p, numbytes);
+   sent_b = SSL_write(cl->ssl, p, numbytes);
    if (sent_b <= 0) {
       switch (SSL_get_error(cl->ssl, sent_b)) {
-		case SSL_ERROR_ZERO_RETURN:
-		case SSL_ERROR_SYSCALL:
+      case SSL_ERROR_ZERO_RETURN:
+      case SSL_ERROR_SYSCALL:
          VERBOSE(CL_VERBOSE_OFF, "Disconnected client (%i)", errno);
          res = TRAP_E_IO_ERROR;
          goto failure;
 
-		case SSL_ERROR_WANT_READ:
-		case SSL_ERROR_WANT_WRITE:
+      case SSL_ERROR_WANT_READ:
+      case SSL_ERROR_WANT_WRITE:
          if (block == 1) {
             usleep(NONBLOCKING_MINWAIT);
             goto again;
@@ -1414,11 +1414,11 @@ void tls_sender_destroy(void *priv)
    // Free private data
    if (c != NULL) {
 
-		SSL_CTX_free(c->sslctx);
+      SSL_CTX_free(c->sslctx);
 
       X(c->server_port);
-		X(c->keyfile);
-		X(c->certfile);
+      X(c->keyfile);
+      X(c->certfile);
       if (c->initialized) {
          /* cancel accepting new clients */
          pthread_cancel(c->accept_thread);
@@ -1434,9 +1434,9 @@ void tls_sender_destroy(void *priv)
          for (i = 0; i < c->clients_arr_size; i++) {
             cl = &c->clients[i];
             if (cl->sd > 0) {
-					if (cl->ssl) {
-						SSL_free(cl->ssl);
-					}
+               if (cl->ssl) {
+                  SSL_free(cl->ssl);
+               }
                close(cl->sd);
                cl->sd = -1;
                c->connected_clients--;
@@ -1561,9 +1561,9 @@ void tlsserver_disconnect_all_clients(void *priv)
       for (i = 0; i < c->clients_arr_size; i++) {
          cl = &c->clients[i];
          if (cl->sd > 0) {
-				if (cl->ssl) {
-					SSL_free(cl->ssl);
-				}
+            if (cl->ssl) {
+               SSL_free(cl->ssl);
+            }
             close(cl->sd);
             cl->sd = -1;
             c->connected_clients--;
@@ -1652,11 +1652,11 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       VERBOSE(CL_ERROR, "Missing 'certfile' for TLS IFC.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
-	}
+   }
    if (param_iterator != NULL) {
       /* still having something to parse... Rotate all parameters, the first one is probably max_clients*/
-		max_clients = keyfile;
-		keyfile = certfile;
+      max_clients = keyfile;
+      keyfile = certfile;
       param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
 );
    }
@@ -1710,9 +1710,9 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port=\"%s\"\nmax_clients=\"%s\"\n"
       "TDU size: %u\nKey file: %s\nCert file: %s\n(max_clients_num=\"%u\")",
-		priv->server_port, max_clients,
+      priv->server_port, max_clients,
       priv->int_mess_header.data_length, priv->keyfile, priv->certfile,
-		priv->clients_arr_size);
+      priv->clients_arr_size);
    X(max_clients);
 
    if (sem_init(&priv->have_clients, 0, 0) == -1) {
@@ -1731,15 +1731,15 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       priv->term_pipe[0] = 0;
    }
 
-	priv->sslctx = tlsserver_create_context();
-	if (priv->sslctx == NULL) {
+   priv->sslctx = tlsserver_create_context();
+   if (priv->sslctx == NULL) {
       result = TRAP_E_MEMORY;
-		goto failsafe_cleanup;
-	}
-	if (tlsserver_configure_context(priv->sslctx, keyfile, certfile) == EXIT_FAILURE) {
+      goto failsafe_cleanup;
+   }
+   if (tlsserver_configure_context(priv->sslctx, keyfile, certfile) == EXIT_FAILURE) {
       result = TRAP_E_BADPARAMS;
-		goto failsafe_cleanup;
-	}
+      goto failsafe_cleanup;
+   }
 
    // Fill struct defining the interface
    ifc->disconn_clients = tlsserver_disconnect_all_clients;
@@ -1826,47 +1826,47 @@ static void *accept_clients_thread(void *arg)
             pthread_mutex_lock(&c->lock);
 
             if (c->connected_clients < c->clients_arr_size) {
-					cl = NULL;
-					for (i = 0; i < c->clients_arr_size; ++i) {
-						if (c->clients[i].sd < 1) {
-							cl = &c->clients[i];
-							break;
-						}
-					}
-					if (cl == NULL) {
-						goto refuse_client;
-					}
-					cl->ssl = SSL_new(c->sslctx);
-					SSL_set_fd(cl->ssl, newclient);
+               cl = NULL;
+               for (i = 0; i < c->clients_arr_size; ++i) {
+                  if (c->clients[i].sd < 1) {
+                     cl = &c->clients[i];
+                     break;
+                  }
+               }
+               if (cl == NULL) {
+                  goto refuse_client;
+               }
+               cl->ssl = SSL_new(c->sslctx);
+               SSL_set_fd(cl->ssl, newclient);
 
-					if (SSL_accept(cl->ssl) <= 0) {
-						ERR_print_errors_fp(stderr);
-						SSL_free(cl->ssl);
-						goto refuse_client;
-					}
-					/** Output interface negotiation */
-					int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TLS, i);
-					if (ret_val == NEG_RES_OK) {
-						VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
-					} else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-						VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-						SSL_free(cl->ssl);
-						goto refuse_client;
-					} else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
-						VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-						SSL_free(cl->ssl);
-						goto refuse_client;
-					}
+               if (SSL_accept(cl->ssl) <= 0) {
+                  ERR_print_errors_fp(stderr);
+                  SSL_free(cl->ssl);
+                  goto refuse_client;
+               }
+               /** Output interface negotiation */
+               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TLS, i);
+               if (ret_val == NEG_RES_OK) {
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
+               } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
+                  SSL_free(cl->ssl);
+                  goto refuse_client;
+               } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
+                  SSL_free(cl->ssl);
+                  goto refuse_client;
+               }
 
-					cl->sd = newclient;
-					cl->client_state = TLSCURRENT_IDLE;
-					cl->sending_pointer = NULL;
-					cl->pending_bytes = 0;
-					c->connected_clients++;
+               cl->sd = newclient;
+               cl->client_state = TLSCURRENT_IDLE;
+               cl->sending_pointer = NULL;
+               cl->pending_bytes = 0;
+               c->connected_clients++;
 
-					if (sem_post(&c->have_clients) == -1) {
-						VERBOSE(CL_ERROR, "Semaphore post failed.");
-					}
+               if (sem_post(&c->have_clients) == -1) {
+                  VERBOSE(CL_ERROR, "Semaphore post failed.");
+               }
             } else {
 refuse_client:
                VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)",
@@ -1900,32 +1900,32 @@ static int server_socket_open(void *priv)
 
    memset(&addr, 0, sizeof(addr));
 
-	// get us a socket and bind it
-	addr.tls_addr.ai_family = AF_UNSPEC;
-	addr.tls_addr.ai_socktype = SOCK_STREAM;
-	addr.tls_addr.ai_flags = AI_PASSIVE;
-	if ((rv = getaddrinfo(NULL, c->server_port, &addr.tls_addr, &ai)) != 0) {
-		return trap_errorf(c->ctx, TRAP_E_IO_ERROR, "selectserver: %s\n", gai_strerror(rv));
-	}
+   // get us a socket and bind it
+   addr.tls_addr.ai_family = AF_UNSPEC;
+   addr.tls_addr.ai_socktype = SOCK_STREAM;
+   addr.tls_addr.ai_flags = AI_PASSIVE;
+   if ((rv = getaddrinfo(NULL, c->server_port, &addr.tls_addr, &ai)) != 0) {
+      return trap_errorf(c->ctx, TRAP_E_IO_ERROR, "selectserver: %s\n", gai_strerror(rv));
+   }
 
-	for (p = ai; p != NULL; p = p->ai_next) {
-		c->server_sd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-		if (c->server_sd < 0) {
-			continue;
-		}
+   for (p = ai; p != NULL; p = p->ai_next) {
+      c->server_sd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+      if (c->server_sd < 0) {
+         continue;
+      }
 
-		// lose the pesky "address already in use" error message
-		if (setsockopt(c->server_sd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
-			VERBOSE(CL_ERROR, "Failed to set socket to reuse address. (%d)", errno);
-		}
+      // lose the pesky "address already in use" error message
+      if (setsockopt(c->server_sd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+         VERBOSE(CL_ERROR, "Failed to set socket to reuse address. (%d)", errno);
+      }
 
-		if (bind(c->server_sd, p->ai_addr, p->ai_addrlen) < 0) {
-			close(c->server_sd);
-			continue;
-		}
-		break; /* found socket to bind */
-	}
-	freeaddrinfo(ai); // all done with this
+      if (bind(c->server_sd, p->ai_addr, p->ai_addrlen) < 0) {
+         close(c->server_sd);
+         continue;
+      }
+      break; /* found socket to bind */
+   }
+   freeaddrinfo(ai); // all done with this
 
    if (p == NULL) {
       // if we got here, it means we didn't get bound
@@ -1940,9 +1940,9 @@ static int server_socket_open(void *priv)
       return TRAP_E_IO_ERROR;
    }
 
-	if (pthread_create(&c->accept_thread, NULL, accept_clients_thread, priv) != 0) {
-		VERBOSE(CL_ERROR, "Failed to create accept_thread.");
-		return TRAP_E_IO_ERROR;
+   if (pthread_create(&c->accept_thread, NULL, accept_clients_thread, priv) != 0) {
+      VERBOSE(CL_ERROR, "Failed to create accept_thread.");
+      return TRAP_E_IO_ERROR;
    }
    c->initialized = 1;
    return 0;
