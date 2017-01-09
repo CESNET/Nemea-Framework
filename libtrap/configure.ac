@@ -146,6 +146,7 @@ AC_CONFIG_FILES([Makefile
                  tools/Makefile
                  libtrap.pc
                  libtrap.spec
+                 libtrap-varrun.conf
                  Doxyfile
                  devel-doxyfile
                  ])
