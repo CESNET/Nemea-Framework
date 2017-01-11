@@ -76,7 +76,7 @@ extern "C" {
 #define UR_NO_DYNAMIC_VALUES 0xffff    ///< Value of variable "first_dynamic" if no dynamic values are present
 #define UR_UNINITIALIZED 0          ///< Indicator if the UniRec has not been initialized by calling function ur_init.
 #define UR_INITIALIZED 1            ///< Indicator if the UniRec has been initialized by calling function ur_init.
-#define UR_INVALID_FIELD 0xffff    ///< ID of invalid field
+#define UR_INVALID_FIELD ((ur_field_id_t) 0xffff)    ///< ID of invalid field
 //return codes
 #define UR_E_INVALID_PARAMETER -6   ///< The given parameter is wrong
 #define UR_E_INVALID_FIELD_ID -5       ///< The field ID is not present in a template.
