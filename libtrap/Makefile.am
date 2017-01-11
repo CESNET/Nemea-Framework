@@ -11,7 +11,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtrap.pc
 
 ACLOCAL_AMFLAGS = -I m4
-EXTRA_DIST = README README.ifcspec.md mdconvert.sh doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian debian/libtrap.install debian/libtrap-dev.install
+EXTRA_DIST = README README.ifcspec.md mdconvert.sh libtrap-varrun.conf doc/index.txt doc/history.txt doc/index-devel.txt doc/develop-interface.txt debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian debian/libtrap.install debian/libtrap-dev.install
 
 include aminclude.am
 
@@ -30,13 +30,17 @@ endif
 if MAKE_RPMS
 
 RPMFILENAME=$(PACKAGE_NAME)-$(VERSION)
-.PHONY: rpm
-rpm:
+.PHONY: srpm
+srpm:
 	rm -rf "$(RPMDIR)/SOURCES/$(RPMFILENAME)"
 	mkdir -p $(RPMDIR)/BUILD/ $(RPMDIR)/SRPMS/ $(RPMDIR)/RPMS/ $(RPMDIR)/SOURCES
 	make ${AM_MAKEFLAGS} distdir='$(RPMDIR)/SOURCES/$(RPMFILENAME)' distdir
 	( cd "$(RPMDIR)/SOURCES/"; tar -z -c -f $(RPMFILENAME)-$(RELEASE).tar.gz $(RPMFILENAME); rm -rf $(RPMFILENAME); )
-	$(RPMBUILD) -ba $(PACKAGE_NAME).spec --define "_topdir `pwd`/$(RPMDIR)";
+	$(RPMBUILD) -bs $(PACKAGE_NAME).spec --define "_topdir `pwd`/$(RPMDIR)";
+
+.PHONY: rpm
+rpm: srpm
+	$(RPMBUILD) --define "_topdir `pwd`/$(RPMDIR)" --rebuild $(RPMDIR)/SRPMS/$(RPMFILENAME)-$(RELEASE).src.rpm;
 else
 endif
 
@@ -72,4 +76,6 @@ buffer:
 	gcc --coverage -g -O0 -DUNIT_TESTING -c src/trap_buffer.c
 	gcc -g -O0 -Wl,--wrap=_test_malloc -lcmocka --coverage -DUNIT_TESTING -o test_buffer test_trap_buffer.o trap_buffer.o
 
+tmpfilesddir=$(sysconfdir)/tmpfiles.d/
+tmpfilesd_DATA=libtrap-varrun.conf
 

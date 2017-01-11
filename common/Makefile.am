@@ -37,15 +37,24 @@ EXTRA_DIST= README \
 	    super_fast_hash/README \
 	    cuckoo_hash_v2/README \
 	    b_plus_tree/README \
-	    cuckoo_hash/README
+	    cuckoo_hash/README \
+	    debian/source/local-options \
+	    debian/source/format \
+	    debian/patches \
+	    debian/patches/series \
+	    debian/watch \
+	    debian/copyright \
+	    debian/changelog \
+	    debian/control \
+	    debian/rules \
+	    debian/compat \
+	    debian/README.Debian
 
 ACLOCAL_AMFLAGS=-I m4
 
 include aminclude.am
 
 if DX_COND_doc
-clean-local: doxygen-clean
-	rm -rf doc
 
 doc: doxygen-doc
 
@@ -62,8 +71,22 @@ rpm:
 	make ${AM_MAKEFLAGS} distdir='$(RPMDIR)/SOURCES/$(RPMFILENAME)' distdir
 	( cd "$(RPMDIR)/SOURCES/"; tar -z -c -f $(RPMFILENAME)-$(RELEASE).tar.gz $(RPMFILENAME); rm -rf $(RPMFILENAME); )
 	$(RPMBUILD) -ba $(PACKAGE_NAME).spec --define "_topdir `pwd`/$(RPMDIR)";
+else
+endif
 
 rpm-clean:
 	rm -rf $(RPMDIR)
+
+if MAKE_DEB
+.PHONY: deb
+deb:
+	make distdir && cd common-@VERSION@ && -i -us -uc -b
 else
 endif
+
+deb-clean:
+	rm -rf nemea-common*.build nemea-common*.changes nemea-common*.deb nemea-common-dev_*.deb nemea-common*.orig.tar.gz nemea-common-*.tar.gz nemea-common-@VERSION@
+
+clean-local: deb-clean rpm-clean
+	rm -rf doc
+

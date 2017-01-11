@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules])
 AM_SILENT_RULES([yes])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -34,6 +34,7 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 
 AC_C_INLINE
 
@@ -64,6 +65,8 @@ AC_FUNC_MKTIME
 RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
+
+AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
 
 if test "${repobuild}" = "false" -a -z "$TRAPLIB"; then
         PKG_CHECK_MODULES([LIBTRAP],[libtrap], [TRAPLIB="yes"], [AC_MSG_WARN([Libtrap was not found by pkg-config])])

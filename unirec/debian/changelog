@@ -1,0 +1,6 @@
+unirec (2.2.4-1) stable; urgency=high
+
+  * initial release of Debian package
+
+ -- Ladislav Macoun <ladislavmacoun@gmail.com>  Tue, 26 Jul 2016 13:56:30 +0200
+

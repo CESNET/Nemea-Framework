@@ -113,6 +113,8 @@ int trap_last_error = TRAP_E_OK;
 /* for backwards compatibility */
 const char *trap_last_error_msg = NULL;
 
+char error_msg_buffer[MAX_ERROR_MSG_BUFF_SIZE];
+
 /** Share semaphore between process? 0 for share between threads only. */
 #define SEM_PSHARED  0
 
@@ -835,6 +837,7 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx);
  */
 int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
 {
+   int le;
    if ((trap_glob_ctx != NULL) && (trap_glob_ctx->initialized != 0)) {
       return trap_error(trap_glob_ctx, TRAP_E_INITIALIZED);
    }
@@ -843,11 +846,16 @@ int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
       return TRAP_E_MEMORY;
    }
    if (trap_glob_ctx->trap_last_error != TRAP_E_OK) {
-      trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;
-      trap_last_error = trap_glob_ctx->trap_last_error;
+      le = trap_glob_ctx->trap_last_error;
+      strncpy(error_msg_buffer, trap_glob_ctx->trap_last_error_msg, MAX_ERROR_MSG_BUFF_SIZE);
+
+      le = trap_glob_ctx->trap_last_error;
       trap_finalize();
       trap_free_ctx_t(&trap_glob_ctx);
 
+      /* restore error message that was lost by finalize&free */
+      trap_last_error_msg = error_msg_buffer;
+      trap_last_error = le;
       return trap_last_error;
    }
    return trap_glob_ctx->trap_last_error;
@@ -2221,7 +2229,9 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
    int strlen_ifc_types = strlen(ifc_spec.types);
 
    if (strlen_ifc_types != (ctx->num_ifc_in + ctx->num_ifc_out)) {
-      trap_errorf(ctx, TRAP_E_BADPARAMS, "Number of given ifc types is not equal to number of input and output ifc from module_info.");
+      trap_errorf(ctx, TRAP_E_BADPARAMS, "Bad number of IFCs in IFC_SPEC.");
+      VERBOSE(CL_ERROR, "Got %d IFCs via -i, expected %d input and %d output IFCs.",
+              strlen_ifc_types, ctx->num_ifc_in, ctx->num_ifc_out);
       return ctx;
    }
 
