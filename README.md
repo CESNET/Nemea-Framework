@@ -10,7 +10,7 @@ The framework consists of:
  * [libtrap](./libtrap) -- communication interface for messages transfer between Nemea modules
  * [UniRec](./unirec) -- flexible and efficient data format of flow-records
  * [common](./common) -- usefull common functions and data structures
- * [python](./python) -- python wrapper for libtrap and UniRec that allows development of nemea modules in python
+ * [pytrap](./pytrap) -- python wrapper for libtrap and UniRec that allows development of nemea modules in python
  * [pycommon](./pycommon) -- python common modules and methods, there is currently a support of alerts creation in the [IDEA](https://idea.cesnet.cz/en/index) format that can be stored into MongoDB or sent to the [Warden](https://wardenw.cesnet.cz/) incident sharing system
 
 
@@ -36,7 +36,7 @@ Python parts must be installed separately when needed.
 It can be done using:
 
 ```
-cd python; sudo python setup.py install
+cd pytrap; sudo python setup.py install
 ```
 and
 ```
