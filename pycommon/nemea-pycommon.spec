@@ -33,6 +33,8 @@ The module contains methods for creation and submission of incident reports in I
 %package -n     python2-%{pypi_name}
 Summary:        Common Python modules and methods of the NEMEA system.
 %{?python_provide:%python_provide python2-%{pypi_name}}
+Requires:	python-nemea-pytrap
+BuildRequires:	python-nemea-pytrap
 
 %description -n python2-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
@@ -41,6 +43,8 @@ This package is compatible with python2.
 %package -n     python%{python3_pkgversion}-%{pypi_name}
 Summary:        Common Python modules and methods of the NEMEA system.
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
+Requires:	python%{python3_pkgversion}-nemea-pytrap
+BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
