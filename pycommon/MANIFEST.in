@@ -1,3 +1,3 @@
-include *.py README COPYING
+include *.py README README-RPM-release.md COPYING
 include test/*.py
 
