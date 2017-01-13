@@ -99,7 +99,7 @@ class IPPSNetwork(object):
         self.data = data    # any data
 
     def __str__(self):
-        return "'{}', '{}'".format(self.addr, self.data)
+        return "'{0}', '{1}'".format(self.addr, self.data)
 
     def __repr__(self):
         return "IPPSNetwork(" + str(self) + ")"

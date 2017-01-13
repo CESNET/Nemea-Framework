@@ -21,27 +21,33 @@ class DataTypesIPPSNetwork(unittest.TestCase):
                          "Network is not equal to its repr().")
 
         net1 = ip_prefix_search.IPPSNetwork("192.168.1.1/24", "aaa")
-        self.assertIsInstance(net1, ip_prefix_search.IPPSNetwork)
+        self.assertTrue(isinstance(net1, ip_prefix_search.IPPSNetwork))
         self.assertEqual(net1.addr, "192.168.1.1/24")
         self.assertEqual(net1.data, "aaa")
-        with self.assertRaises(TypeError):
+        try:
             ip_prefix_search.IPPSNetwork(19216811, "aaa")
+            self.fail("TypeError exception expected.")
+        except:
+            pass
 
         net1 = ip_prefix_search.IPPSNetwork("0::1/24", "aaa")
-        self.assertIsInstance(net1, ip_prefix_search.IPPSNetwork)
+        self.assertTrue(isinstance(net1, ip_prefix_search.IPPSNetwork))
         self.assertEqual(net1.addr, "0::1/24")
         self.assertEqual(net1.data, "aaa")
-        with self.assertRaises(TypeError):
+        try:
             ip_prefix_search.IPPSNetwork(19216811, "aaa")
+            self.fail("TypeError exception expected.")
+        except:
+            pass
 
 class DataTypesIPPSInterval(unittest.TestCase):
     def runTest(self):
         import ip_prefix_search
         import pytrap
         intex = ip_prefix_search.IPPSInterval("192.168.1.0/24")
-        self.assertIsInstance(intex, ip_prefix_search.IPPSInterval)
-        self.assertIsInstance(intex.start, pytrap.UnirecIPAddr)
-        self.assertIsInstance(intex.end, pytrap.UnirecIPAddr)
+        self.assertTrue(isinstance(intex, ip_prefix_search.IPPSInterval))
+        self.assertTrue(isinstance(intex.start, pytrap.UnirecIPAddr))
+        self.assertTrue(isinstance(intex.end, pytrap.UnirecIPAddr))
         self.assertTrue(intex.start.isIPv4)
         self.assertTrue(intex.end.isIPv4)
 
@@ -100,9 +106,9 @@ class DataTypesIPPSInterval(unittest.TestCase):
         self.assertEqual(len(intex2), 0, "init data test: simple data length - fail")
 
         first = ip_prefix_search.IPPSInterval("fd71:5693:e769:fc3f::/64")
-        self.assertIsInstance(first, ip_prefix_search.IPPSInterval)
-        self.assertIsInstance(first.start, pytrap.UnirecIPAddr)
-        self.assertIsInstance(first.end, pytrap.UnirecIPAddr)
+        self.assertTrue(isinstance(first, ip_prefix_search.IPPSInterval))
+        self.assertTrue(isinstance(first.start, pytrap.UnirecIPAddr))
+        self.assertTrue(isinstance(first.end, pytrap.UnirecIPAddr))
         self.assertTrue(first.start.isIPv6)
         self.assertTrue(first.end.isIPv6)
 
@@ -278,8 +284,8 @@ class DataTypesIPPPContext(unittest.TestCase):
                                      data=result_ip_v6[index][2])
 
                 self.assertEqual(interval.start, intex.start,
-                                 "IPv6 init low ip fail {}  {}".format(interval.start, intex.start))
-                self.assertEqual(interval.end, intex.end, "IPv6 init high ip fail {}   {}".format(interval.end, intex.end))
+                                 "IPv6 init low ip fail {0}  {1}".format(interval.start, intex.start))
+                self.assertEqual(interval.end, intex.end, "IPv6 init high ip fail {0}   {1}".format(interval.end, intex.end))
                 self.assertEqual(interval.get_data(), intex.get_data(), "IPv6 init data fail")
 
             networks = []
