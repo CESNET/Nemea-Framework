@@ -260,7 +260,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         # TRAP output
         if args.trap:
             try:
-                trap.send(0, json.dumps(idea))
+                trap.send(json.dumps(idea), 0)
             except pytrap.Terminated:
                 # don't exit immediately, first finish sending to other outputs
                 stop = True
