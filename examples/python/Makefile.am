@@ -1,1 +1,1 @@
-EXTRA_DIST=python_example.py detection_example.py README.md
+EXTRA_DIST=python_example.py detection_example.py protocol_aggr.py README.md
