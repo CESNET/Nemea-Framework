@@ -81,6 +81,13 @@ and finally 3) `detection_example.py`:
 
 Note: `buffer=off` sets the IFC to send messages one by one without using buffer. This is useful for the offline testing.
 
+## Protocol aggregation
+
+[./protocol_aggr.py](./protocol_aggr.py) was written for testing measurement using live traffic.  The module has just one interface that is use to receive basic flow records.  The module runs for a specified duration and it computes number of packets per each observed `PROTOCOL`.
+
+At the end, the module closes it's input IFC (finalizes TRAP) and prints out sorted data.
+
+
 ## Troubleshooting
 
 In case the example script fails with:
