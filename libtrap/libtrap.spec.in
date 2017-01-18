@@ -41,6 +41,7 @@ ldconfig
 
 %files
 %{_bindir}/nemea/trap_stats
+%{_bindir}/nemea/trap2man.sh
 %{_libdir}/libtrap.so.*
 %{_sysconfdir}/tmpfiles.d/libtrap-varrun.conf
 %defattr(-,-,-,1777)
