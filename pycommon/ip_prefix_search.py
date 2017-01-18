@@ -139,7 +139,7 @@ class IPPSInterval(pytrap.UnirecIPAddrRange):
             self.add_data(data)
 
     def __str__(self):
-        return '{} - {}, {}'.format(self.start, self.end, self._data)
+        return '{0} - {1}, {2}'.format(self.start, self.end, self._data)
 
     def __repr__(self):
         return "IPPSInterval("+str(self)+")"
@@ -199,7 +199,7 @@ class IPPSContext(object):
         return "IPPSContext(" + str(self) + ")"
 
     def __str__(self):
-        return 'IPv4{}\nIPv6{}'.format([str(item) for item in self.interval_list_v4],
+        return 'IPv4{0}\nIPv6{1}'.format([str(item) for item in self.interval_list_v4],
                                        [str(item) for item in self.interval_list_v6])
 
     def __len__(self):
