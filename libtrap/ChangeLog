@@ -1,3 +1,8 @@
+2017-01-19 (Tomas Cejka): libtrap: add script converting module's metadata into man page
+2017-01-09 (Tomas Cejka): libtrap: increased version, released RPM package
+2017-01-09 (Tomas Cejka): libtrap: make the socket dir set by configure
+2017-01-09 (Tomas Cejka): libtrap: add tmpfiles.d config
+2016-12-29 (Tomas Cejka): libtrap: improved error message
 2016-12-03 (Tomas Cejka): libtrap: tests: add test of service ifc failure
 2016-12-03 (Tomas Cejka): libtrap: FEATURE TRAP_SOCKET_DIR environment variable
 2016-12-03 (Tomas Cejka): libtrap: BUGFIX segfault in service IFC
