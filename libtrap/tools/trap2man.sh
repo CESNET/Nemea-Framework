@@ -29,19 +29,27 @@ done)"
 
 version="`grep AC_INIT "$config" | sed 's/^.*\[.*\], \[\(.*\)\], *\[.*\])/\1/'`"
 
-sed -n '/#define MODULE_BASIC_INFO(BASIC)/,/[^\]$/p; /#define MODULE_PARAMS(PARAM) \\/,/[^\]$/p' "$@" |
+(sed -n '/#define MODULE_BASIC_INFO(BASIC)/,/[^\]$/p;' "$@" |
+sed ':a; /\\$/{N;s/\\\n//;ba}; s/" *"//g';
+sed -n '/#define MODULE_PARAMS(PARAM) \\/,/[^\]$/p' "$@"; ) |
 awk '
-/^ *BASIC\(/ {
-sub(/^ *BASIC\(/, "");
+/^.*BASIC\(/ {
+sub(/^.*BASIC\(/, "");
 split($0, a, ",");
+s=length(a)
+inifc=a[s-1]
+outifc=a[s]
 gsub("\"", "", a[1])
 gsub("\"", "", a[2])
 name=a[1]
-descr=a[2]
-gsub(/ /, "", a[3])
-gsub(/[ )]/, "", a[4])
-inifc=a[3] != -1 ? a[3] : "variable"
-outifc=(a[4] != -1 ? a[4] : "variable")
+sub("^[^,]*,","")
+gsub(/ /, "", inifc)
+gsub(/[ )]/, "", outifc)
+if (inifc == -1) inifc = "variable"
+if (outifc == -1) outifc = "variable"
+sub("\",[^,]*,[^,]*)$", "")
+sub("^ *\"", "")
+descr=$0
 }
 
 /^ *PARAM\(/ {
