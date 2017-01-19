@@ -60,9 +60,12 @@ trap_module_info_t *module_info = NULL;
 
 //BASIC(char *, char *, int, int)
 
-// Definition of module parameters - every parameter has short_opt, long_opt, description, flag whether argument is required or it is optional
-// and argument type which is NULL in case the parameter does not need argument.
-// Module parameter argument types: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float, string
+/**
+ * Definition of module parameters - every parameter has short_opt, long_opt, description,
+ * flag whether an argument is required or it is optional and argument type which is NULL
+ * in case the parameter does not need argument.
+ * Module parameter argument types: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float, string
+ */
 #define MODULE_PARAMS(PARAM) \
   PARAM('s', "sampling", "param_description", no_argument, "none") \
   PARAM('p', "port", "param_description2", required_argument, "int8") \
@@ -70,9 +73,13 @@ trap_module_info_t *module_info = NULL;
   PARAM('h', "help", "param_description4", no_argument, "none") \
   PARAM('r', "records_num", "param_description5", required_argument, "uint16") \
   PARAM('f', "file", "param_description6", required_argument, "string")
-
 //PARAM(char, char *, char *, no_argument  or  required_argument, char *)
-
+/**
+ * To define parameter with no option ("param" instead of "-m param" or "--mult param"), use the following definition:
+ * PARAM('-', "", "Parameter description", required_argument, "string")
+ * There can by any argument type mentioned few lines before.
+ * This parameter will be listed in Additional parameters in module help output
+ */
 
 
 int main(int argc, char *argv[])

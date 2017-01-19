@@ -83,7 +83,14 @@ trap_module_info_t *module_info = NULL;
  */
 #define MODULE_PARAMS(PARAM) \
   PARAM('m', "mult", "Multiplies the sum of received numbers with ARG of the parameter.", required_argument, "int32")
-  //PARAM(char, char *, char *, no_argument  or  required_argument, char *)
+//PARAM(char, char *, char *, no_argument  or  required_argument, char *)
+/**
+ * To define parameter with no option ("param" instead of "-m param" or "--mult param"), use the following definition:
+ * PARAM('-', "", "Parameter description", required_argument, "string")
+ * There can by any argument type mentioned few lines before.
+ * This parameter will be listed in Additional parameters in module help output
+ */
+
 
 static int stop = 0;
 
