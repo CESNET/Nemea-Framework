@@ -404,7 +404,7 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
       }
 #endif
 
-      if (ctx->out_ifc_list[ifc].bufferswitch == 0) {
+      if (ctx->out_ifc_list[ifc].bufferswitch == 0 && ctx->out_ifc_list[ifc].buffer_occupied == 0) {
          insert_into_buffer(&ctx->out_ifc_list[ifc], data, size);
       }
 
@@ -439,6 +439,7 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
             ctx->counter_dropped_message[ifc]++;
          }
          if (trap_ctx_get_client_count(ctx, ifc) == 0) {
+            ctx->out_ifc_list[ifc].buffer_index = 0;
             ctx->out_ifc_list[ifc].buffer_occupied = 0;
          }
       }
