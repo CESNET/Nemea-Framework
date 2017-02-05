@@ -210,16 +210,16 @@ typedef struct {
       const char *spec = NULL;\
       uint8_t data_fmt;\
       if (trap_ctx_get_data_fmt(ctx, TRAPIFC_INPUT, ifc_num, &data_fmt, &spec) != TRAP_E_OK) {\
-         fprintf(stderr, "Data format was not loaded.");\
+         fprintf(stderr, "Data format was not loaded.\n");\
       } else {\
          tmplt = ur_define_fields_and_update_template(spec, tmplt);\
          if (tmplt == NULL) {\
-            fprintf(stderr, "Template could not be edited");\
+            fprintf(stderr, "Template could not be edited.\n");\
          } else {\
             if (tmplt->direction == UR_TMPLT_DIRECTION_BI) {\
                char * spec_cpy = ur_cpy_string(spec);\
                if (spec_cpy == NULL) {\
-                  fprintf(stderr, "Memory allocation problem.");\
+                  fprintf(stderr, "Memory allocation problem.\n");\
                } else {\
                   trap_ctx_set_data_fmt(ctx, tmplt->ifc_out, TRAP_FMT_UNIREC, spec_cpy);\
                }\
