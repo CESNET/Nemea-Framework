@@ -750,30 +750,6 @@ void trap_ctx_set_verbose_level(trap_ctx_t *ctx, int level);
 int trap_ctx_get_verbose_level(trap_ctx_t *ctx);
 
 /**
- * \brief Print common TRAP help message.
- *
- * The help message contains information from module_info and describes common
- * TRAP command-line parameters.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] module_info Pointer to struct containing info about the module.
- */
-void trap_ctx_print_help(trap_ctx_t *ctx, const trap_module_info_t *module_info);
-
-/**
- * \brief Print help about interface specifier.
- *
- * Prints help message about format of interface specifier and description of
- * all available interface types.
- * This message is normally a part of help printed by #trap_ctx_print_help(), this
- * function is useful when you don't use standard TRAP command-line parameters
- * but you still use the same format of interface specifier.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- */
-void trap_ctx_print_ifc_spec_help(trap_ctx_t *ctx);
-
-/**
  * \brief Control TRAP interface.
  *
  * \note Type and request types were changed from enum because of python wrapper.
