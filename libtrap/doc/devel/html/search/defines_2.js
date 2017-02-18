@@ -1,5 +1,7 @@
 var searchData=
 [
-  ['ifcdir2str',['ifcdir2str',['../trap_8c.html#a4aa0658cd79f30e7969f0d6821634b95',1,'trap.c']]],
-  ['in_5fifc_5fresults_5fsize',['IN_IFC_RESULTS_SIZE',['../trap_8c.html#a677fc595ea4a72363c8c0f1176a4911c',1,'trap.c']]]
+  ['dbg_5fprint',['DBG_PRINT',['../trap__buffer_8c.html#a76520932a9de1d3ad79aa033570ff22d',1,'trap_buffer.c']]],
+  ['debug_5fprints',['DEBUG_PRINTS',['../trap__buffer_8c.html#a58cc141c7897c4a5035c400ce2b83fb2',1,'trap_buffer.c']]],
+  ['default_5fmax_5fterminal_5fwidth',['DEFAULT_MAX_TERMINAL_WIDTH',['../trap__internal_8h.html#ad3274a76aef689d61eef22cfce054a32',1,'trap_internal.h']]],
+  ['default_5fsocket_5fformat',['DEFAULT_SOCKET_FORMAT',['../ifc__tcpip_8h.html#a3f82a78a0f6bc22720d5d62919a3a756',1,'ifc_tcpip.h']]]
 ];

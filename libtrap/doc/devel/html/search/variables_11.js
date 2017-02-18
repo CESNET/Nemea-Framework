@@ -12,6 +12,7 @@ var searchData=
   ['timeout_5fthread_5finitialized',['timeout_thread_initialized',['../structtrap__ctx__priv__s.html#a27971c02026630d913c42a00544b5145',1,'trap_ctx_priv_s']]],
   ['tm',['tm',['../structout__ifc__timeout__s.html#a083890569e8dd91e5e3566d15e4e857e',1,'out_ifc_timeout_s']]],
   ['trap_5fdebug',['trap_debug',['../group__debug.html#ga3b3befcce5bb831d533b29013308578e',1,'trap_debug():&#160;trap_internal.c'],['../group__debug.html#ga3b3befcce5bb831d533b29013308578e',1,'trap_debug():&#160;trap_internal.c']]],
+  ['trap_5fdefault_5fsocket_5fpath_5fformat',['trap_default_socket_path_format',['../group__commonapi.html#gaf7b7bed58a3f3c7900264fd442613526',1,'trap.h']]],
   ['trap_5ferr_5fmsg',['trap_err_msg',['../group__debug.html#gafd6d8c7c2da47f1dbec20f5f8ae28c0e',1,'trap_internal.h']]],
   ['trap_5fgit_5fversion',['trap_git_version',['../group__commonapi.html#gaf27b94a242d49569cd6f943023176083',1,'trap.h']]],
   ['trap_5fglob_5fctx',['trap_glob_ctx',['../group__debug.html#ga4fcc14efc331481c2957dab472950df5',1,'trap_glob_ctx():&#160;trap.c'],['../group__debug.html#ga4fcc14efc331481c2957dab472950df5',1,'trap_glob_ctx():&#160;trap.c']]],

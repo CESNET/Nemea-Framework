@@ -2,6 +2,7 @@ var searchData=
 [
   ['generator_5fdestroy',['generator_destroy',['../ifc__dummy_8c.html#a5f5b4ed13c71d88e3227816269408d7d',1,'ifc_dummy.c']]],
   ['generator_5fifc_5fget_5fid',['generator_ifc_get_id',['../ifc__dummy_8c.html#a1b40bee42c536c742a9533b56740e78e',1,'ifc_dummy.c']]],
+  ['generator_5fifc_5fis_5fconn',['generator_ifc_is_conn',['../ifc__dummy_8c.html#afd5cb06e77b00bc241680b7590698571',1,'ifc_dummy.c']]],
   ['generator_5frecv',['generator_recv',['../ifc__dummy_8c.html#a203edf773b635e53b635b60139495bdb',1,'ifc_dummy.c']]],
   ['generator_5fterminate',['generator_terminate',['../ifc__dummy_8c.html#a6987f7fe70dc8e21205dac583bb2457c',1,'ifc_dummy.c']]],
   ['get_5fin_5faddr',['get_in_addr',['../group__tcpip__ifc.html#ga67d03b167f8adca86cde7eeed5850982',1,'ifc_tcpip.c']]],
