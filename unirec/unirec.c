@@ -286,18 +286,19 @@ const char *ur_get_type_and_name_from_string(const char *source, char **name, ch
 {
    int length_type_2 = 0, length_name_2 = 0;
    const char *source_cpy;
-   source_cpy = source;
-   /* skip white spaces */
+   /* skip spaces */
    while (*source != 0 && isspace(*source)) {
       source++;
    }
    /* start of type */
+   source_cpy = source;
    while (*source != 0 && !isspace(*source)) {
       length_type_2++;
       source++;
    }
    /* end of type */
 
+   /* copy "type" string (realloc destination if needed) */
    if (length_type_2 >= *length_type) {
       if (*type != NULL) {
          free(*type);
@@ -322,6 +323,8 @@ const char *ur_get_type_and_name_from_string(const char *source, char **name, ch
       source++;
    }
    /* end of name */
+
+   /* copy "name" string (realloc destination if needed) */
    if (length_name_2 >= *length_name) {
       if (*name != NULL) {
          free(*name);
@@ -334,8 +337,12 @@ const char *ur_get_type_and_name_from_string(const char *source, char **name, ch
    }
    memcpy(*name, source_cpy, length_name_2);
    (*name)[length_name_2] = 0;
-   /* skip comma / leading spaces */
-   while ((*source == ',' || isspace(*source)) && *source != '\0') {
+   /* skip spaces */
+   while (*source != 0 && isspace(*source)) {
+      source++;
+   }
+   /* skip comma */
+   if (*source == ',') {
       source++;
    }
    return source;
@@ -368,21 +375,29 @@ char *ur_ifc_data_fmt_to_field_names(const char *ifc_data_fmt)
       //copy name
       source_cpy = p;
       name_len = 0;
-      while (*p != 0 && *p != ',') {
+      while (*p != 0 && *p != ',' && !isspace(*p)) {
          name_len++;
          p++;
       }
       assert(name_len + act_len + 1 <= str_len);
       memcpy(out_str + act_len, source_cpy, name_len);
       act_len += name_len;
-      if (*p == 0) {
-         break;
+      /* skip white spaces */
+      while (*p != 0 && isspace(*p)) {
+         p++;
       }
-      out_str[act_len] = ',';
-      act_len++;
       if (*p == ',') {
          p++;
       }
+      else if (*p == 0) {
+         break;
+      }
+      else {
+         free(out_str);
+         return NULL; /* name must be followed by a comma or end of string */
+      }
+      out_str[act_len] = ',';
+      act_len++;
    }
    return out_str;
 }
@@ -804,12 +819,19 @@ ur_template_t *ur_create_template(const char *fields, char **errstr)
 {
    // Count number of fields
    int n_fields = 0, written_fields = 0;
-   const char *tmp = fields;
-   if (fields != NULL && fields[0] != '\0') {
-      n_fields = 1;
-      while (*tmp != '\0') {
-         if (*(tmp++) == ',') {
-            n_fields++;
+   if (fields) {
+      /* skip leading spaces */
+      while (isspace(*fields) && *fields != '\0') {
+         fields++;
+      }
+      /* Count number of fields */
+      if (*fields != '\0') {
+         n_fields = 1;
+         const char *tmp = fields;
+         while (*tmp != '\0') {
+            if (*(tmp++) == ',') {
+               n_fields++;
+            }
          }
       }
    }
@@ -827,10 +849,6 @@ ur_template_t *ur_create_template(const char *fields, char **errstr)
    // Parse fields and fill the array
    const char *start_ptr = fields;
    const char *end_ptr;
-   /* skip leading spaces */
-   while (isspace(*start_ptr) && *start_ptr != '\0') {
-      start_ptr++;
-   }
    for (int i = 0; i < n_fields; i++) {
       // Get field name
       end_ptr = start_ptr;
