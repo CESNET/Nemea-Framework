@@ -414,10 +414,12 @@ void *trap_get_global_ctx();
 int trap_get_in_ifc_state(uint32_t ifc_idx);
 
 /** Parse command-line arguments.
- * Extract agruments needed by TRAP to set up interfaces (-i params) and return
- * the rest (argc and argv are modified). Extracted information is stored into
- * ifc_spec. These variables should be passed to trap_init.
- * Data in ifc_spec must be freed by trap_free_ifc_spec.
+ * Extract arguments needed by TRAP to set up interfaces (-i params), verbosity
+ * level (-v/-vv/-vvv) and return the rest (argc and argv are modified, i.e.
+ * processed parameter is removed). Extracted information is stored into
+ * ifc_spec. These variables should be passed to trap_init. Data in ifc_spec
+ * must be freed by trap_free_ifc_spec. If help is requested (-h/--help)
+ * TRAP_E_HELP is returned (argc and argv are modified also).
  * @param[in,out] argc Pointer to number of command-line arguments.
  * @param[in,out] argv Command-line arguments.
  * @param[out] ifc_spec Structure with specification of interface types and
