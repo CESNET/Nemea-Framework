@@ -111,7 +111,7 @@ int main(int argc, char **argv)
    // Read data from the record in the buffer
    {
       // Create another template with the same set of fields (the set of fields MUST be the same, even if we don't need to work with all fields)
-      ur_template_t *tmplt = ur_create_template("FOO,BAR,IP,STR1", NULL);
+      ur_template_t *tmplt = ur_create_template("FOO   ,  BAR\n,IP,STR1", NULL);
       if(tmplt == NULL){
          fprintf(stderr, "Error during creating record\n");
          return 1;
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 
    // -----
 
-  // Copy selected fields of the record into a new one and add two new fields,
+   // Copy selected fields of the record into a new one and add two new fields,
    // one is known before (STR2), one is newly defined (NEW)
    {
       // Define the field NEW
@@ -222,6 +222,43 @@ int main(int argc, char **argv)
          return 1;
       }
 
+      ur_free_template(tmplt);
+   }
+   {
+      ur_template_t *tmplt;
+      int ret;
+      const char *spec = "ipaddr ADDRA,   ipaddr ADDRB  , ipaddr  ADDRC ";
+      tmplt = ur_create_template_from_ifc_spec(spec);
+      if (tmplt != NULL) {
+         fprintf(stderr, "Allocation should have failed because of undefined fields.\n");
+         return 1;
+      }
+      if ((ret = ur_define_set_of_fields(spec)) != UR_OK) {
+         fprintf(stderr, "ur_define_set_of_fields() failed.");
+         return 1;
+      }
+      tmplt = ur_create_template_from_ifc_spec(spec);
+      if (tmplt == NULL) {
+         fprintf(stderr, "Allocation of template failed.\n");
+         return 1;
+      }
+
+      // The NEW field is already defined (it is stored globally) but we don't know its ID here
+      int new_id = ur_get_id_by_name("ADDRA");
+      if (new_id == UR_E_INVALID_NAME) {
+         fprintf(stderr, "field ADDRA was not found.\n");
+         return 1;
+      }
+      new_id = ur_get_id_by_name("ADDRB");
+      if (new_id == UR_E_INVALID_NAME) {
+         fprintf(stderr, "field ADDRB was not found.\n");
+         return 1;
+      }
+      new_id = ur_get_id_by_name("ADDRC");
+      if (new_id == UR_E_INVALID_NAME) {
+         fprintf(stderr, "field ADDRC was not found.\n");
+         return 1;
+      }
       ur_free_template(tmplt);
    }
    //deallocation

@@ -294,7 +294,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
 /** \brief Get name of UniRec field
  * Get name of any UniRec defined field.
  * \param[in] field_id ID of a field.
- * \return pointer to name (char*).
+ * \return pointer to name (char *).
  */
 #define ur_get_name(field_id) \
    ur_field_specs.ur_field_names[field_id]
@@ -326,7 +326,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Value of the field. Data type depends on the type of the field.
  */
 #define ur_get(tmplt, data, field_id) \
-   (*(field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id]))
+   (*(field_id ## _T*)((char *)(data) + (tmplt)->offset[field_id]))
 
 /** \brief Get pointer to UniRec field
  * Get pointer to fixed or varible length statically defined UniRec field.
@@ -338,20 +338,20 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Pointer to the field. Pointer type depends on the type of the field.
  */
 #define ur_get_ptr(tmplt, data, field_id) \
-   (field_id ## _T*)((char*) (ur_is_static(field_id) ? ((char*)(data) + (tmplt)->offset[field_id]) : \
-   (char*)(data) + (tmplt)->static_size + (*((uint16_t*)((char*)(data) + (tmplt)->offset[field_id])))))
+   (field_id ## _T*)((char *) (ur_is_static(field_id) ? ((char *)(data) + (tmplt)->offset[field_id]) : \
+   (char *)(data) + (tmplt)->static_size + (*((uint16_t *)((char *)(data) + (tmplt)->offset[field_id])))))
 
 /** \brief Get pointer to UniRec field
  * Get pointer to fixed or varible length UniRec field. In contrast to ur_get_ptr, field_id may
- * be a variable (not only F_ token). Returned pointer is always void*.
+ * be a variable (not only F_ token). Returned pointer is always void *.
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] data Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field. Token beginning with F_ or a numeric ID.
- * \return Pointer to the field (void*).
+ * \return Pointer to the field (void *).
  */
 #define ur_get_ptr_by_id(tmplt, data, field_id) \
-   (void*)((char*) (ur_is_static(field_id) ? ((char*)(data) + (tmplt)->offset[field_id]) : \
-      (char*)(data) + (tmplt)->static_size + (*((uint16_t*)((char*)(data) + (tmplt)->offset[field_id])))))
+   (void *)((char *) (ur_is_static(field_id) ? ((char *)(data) + (tmplt)->offset[field_id]) : \
+      (char *)(data) + (tmplt)->static_size + (*((uint16_t *)((char *)(data) + (tmplt)->offset[field_id])))))
 
 /** \brief Set value of UniRec (static) field
  * Set value of a fixed-length UniRec field. For variable-length fields, use ur_set_var.
@@ -362,7 +362,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \param[in] value The value the field should be set to.
  */
 #define ur_set(tmplt, data, field_id, value) \
-   (*(field_id ## _T*)((char*)(data) + (tmplt)->offset[field_id]) = (value))
+   (*(field_id ## _T*)((char *)(data) + (tmplt)->offset[field_id]) = (value))
 
 /** \brief Get offset of variable-length field in the record.
  * Get offset of a specified variable-length field in the record. Given field has to be part of the record.
@@ -372,7 +372,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Offset of the field in the record relative to the beginning of the record.
  */
 #define ur_get_var_offset(tmplt, rec, field_id) \
-   *((uint16_t*)((char*)rec + tmplt->offset[field_id]))
+   *((uint16_t *)((char *) rec + tmplt->offset[field_id]))
 
 /** \brief Get size of a variable sized field in the record.
  * Get size of a variable-length field in the record. Given field has to be part of the record.
@@ -382,7 +382,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \return Length of the field in the record in bytes.
  */
 #define ur_get_var_len(tmplt, rec, field_id) \
-   *((uint16_t*)((char*)rec + tmplt->offset[field_id] + 2))
+   *((uint16_t *)((char *) rec + tmplt->offset[field_id] + 2))
 
 /** \brief Set size of variable-length field in the record.
  * Set size of specified variable-length field in the record. Field has to be part of the record. It does
@@ -393,7 +393,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \param[in] len The value the length should be set to.
  */
 #define ur_set_var_len(tmplt, rec, field_id, len) \
-   *((uint16_t*)((char*)rec + tmplt->offset[field_id] + 2)) = (uint16_t)len
+   *((uint16_t *)((char *) rec + tmplt->offset[field_id] + 2)) = (uint16_t) len
 
 /** \brief Set offset of variable-length field in the record.
  * Set offset of specified variable-length field in the record. Field has to be part of the record. It does
@@ -404,7 +404,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \param[in] offset_val The value the offset should be set to.
  */
 #define ur_set_var_offset(tmplt, rec, field_id, offset_val) \
-   *((uint16_t*)((char*)rec + tmplt->offset[field_id])) = (uint16_t)offset_val
+   *((uint16_t *)((char *) rec + tmplt->offset[field_id])) = (uint16_t) offset_val
 
 /** \brief Get length of UniRec field
  * Get actual length of fixed or variable-length UniRec field.
@@ -561,7 +561,7 @@ int ur_get_id_by_name(const char *name);
  * \param[in] field2 Pointer to second field (field_spec_t)
  * \return -1 if f1 should go before f2, 0 if f1 is the same as f2, 1 otherwise
  */
-int compare_fields(const void* field1, const void* field2);
+int compare_fields(const void *field1, const void *field2);
 
 /** \brief Create UniRec template
  * Create new UniRec template specified by a string containing names of its
@@ -571,19 +571,19 @@ int compare_fields(const void* field1, const void* field2);
  * equivalent).
  * Template created by this function should be destroyed by ur_free_template.
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
  */
-ur_template_t *ur_create_template(const char* fields, char **errstr);
+ur_template_t *ur_create_template(const char *fields, char **errstr);
 
 /** \brief Create UniRec template and set it to input interface
  * Creates UniRec template (same like ur_create_template) and set this template
  * to input interface of a module.
  * \param[in] ifc interface number
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
@@ -596,7 +596,7 @@ ur_template_t *ur_create_template(const char* fields, char **errstr);
  * to ouput interface of a module.
  * \param[in] ifc interface number
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
@@ -609,24 +609,24 @@ ur_template_t *ur_create_template(const char* fields, char **errstr);
  * \param[in] ctx specified context
  * \param[in] ifc interface number
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
  */
-ur_template_t *ur_ctx_create_output_template(trap_ctx_t *ctx, int ifc, const char* fields, char **errstr);
+ur_template_t *ur_ctx_create_output_template(trap_ctx_t *ctx, int ifc, const char *fields, char **errstr);
 
 /** \brief Create UniRec template and set it to input interface on specified context
  * Creates UniRec template, same like ur_create_input_template, but context is specified.
  * \param[in] ctx specified context
  * \param[in] ifc interface number
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
  */
-ur_template_t *ur_ctx_create_input_template(trap_ctx_t *ctx, int ifc, const char* fields, char **errstr);
+ur_template_t *ur_ctx_create_input_template(trap_ctx_t *ctx, int ifc, const char *fields, char **errstr);
 
 
 /** \brief Set UniRec template to ouput interface on specified context
@@ -667,12 +667,12 @@ int ur_ctx_set_input_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt);
  * \param[in] ifc_in input interface number
  * \param[in] ifc_out output interface number
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
  */
-ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in, int ifc_out, const char* fields, char **errstr);
+ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in, int ifc_out, const char *fields, char **errstr);
 
 /** \brief Create UniRec template and set it to input and output interface
  * Creates UniRec template (same like ur_create_template) and set this template
@@ -680,7 +680,7 @@ ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in,
  * \param[in] ifc_in input interface number
  * \param[in] ifc_out output interface number
  * \param[in] fields String with names of fields delimited by comma
- * \param[in] errstr Pointer to char* string where the error message will be
+ * \param[in] errstr Pointer to char * string where the error message will be
  * allocated and written in case of error. NULL if you don't need error message.
  * In case of error, function will allocate string, which has to be freed by user.
  * \return Pointer to newly created template or NULL in case of error.
@@ -699,7 +699,7 @@ ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in,
  * \param[in] tmplt Pointer to an existing template.
  * \return Pointer to the updated template or NULL in case of error.
  */
-ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t * tmplt);
+ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t *tmplt);
 
 /** \brief Defined new fields and expand an UniRec template
  * Define new fields (function ur_define_set_of_fields) and create new UniRec
@@ -801,7 +801,7 @@ void ur_free_record(void *record);
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] rec Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field.
- * \return Requested field as a string (char*) or NULL on malloc error. It should be
+ * \return Requested field as a string (char *) or NULL on malloc error. It should be
  * freed using free().
  */
 char *ur_get_var_as_str(const ur_template_t *tmplt, const void *rec, ur_field_id_t field_id);
@@ -817,7 +817,7 @@ char *ur_get_var_as_str(const ur_template_t *tmplt, const void *rec, ur_field_id
  * \param[in] src_tmplt Pointer to source UniRec template
  * \param[in] src Pointer to source record
  */
-void ur_copy_fields(const ur_template_t *dst_tmplt, void* dst, const ur_template_t *src_tmplt, const void* src);
+void ur_copy_fields(const ur_template_t *dst_tmplt, void *dst, const ur_template_t *src_tmplt, const void *src);
 
 /**
  * \brief Copy data from one UniRec to another.
