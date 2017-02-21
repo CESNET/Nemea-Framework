@@ -286,7 +286,7 @@ const char *ur_get_type_and_name_from_string(const char *source, char **name, ch
 {
    int length_type_2 = 0, length_name_2 = 0;
    const char *source_cpy;
-   /* skip spaces */
+   /* skip white spaces */
    while (*source != 0 && isspace(*source)) {
       source++;
    }
@@ -312,7 +312,7 @@ const char *ur_get_type_and_name_from_string(const char *source, char **name, ch
    memcpy(*type, source_cpy, length_type_2);
    (*type)[length_type_2] = 0;
 
-   /* skip spaces */
+   /* skip white spaces */
    while (*source != 0 && isspace(*source)) {
       source++;
    }
@@ -337,7 +337,7 @@ const char *ur_get_type_and_name_from_string(const char *source, char **name, ch
    }
    memcpy(*name, source_cpy, length_name_2);
    (*name)[length_name_2] = 0;
-   /* skip spaces */
+   /* skip white spaces */
    while (*source != 0 && isspace(*source)) {
       source++;
    }
@@ -388,11 +388,9 @@ char *ur_ifc_data_fmt_to_field_names(const char *ifc_data_fmt)
       }
       if (*p == ',') {
          p++;
-      }
-      else if (*p == 0) {
+      } else if (*p == 0) {
          break;
-      }
-      else {
+      } else {
          free(out_str);
          return NULL; /* name must be followed by a comma or end of string */
       }
@@ -821,7 +819,7 @@ ur_template_t *ur_create_template(const char *fields, char **errstr)
    int n_fields = 0, written_fields = 0;
    if (fields) {
       /* skip leading spaces */
-      while (isspace(*fields) && *fields != '\0') {
+      while (*fields != '\0' && isspace(*fields)) {
          fields++;
       }
       /* Count number of fields */
