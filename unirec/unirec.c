@@ -371,7 +371,7 @@ char *ur_ifc_data_fmt_to_field_names(const char *ifc_data_fmt)
       while (*p != 0 && isspace(*p)) {
          p++;
       }
-      
+
       //copy name
       source_cpy = p;
       name_len = 0;
@@ -1138,8 +1138,10 @@ char *ur_get_var_as_str(const ur_template_t *tmplt, const void *rec, ur_field_id
 
 inline void *ur_clone_record(const ur_template_t *tmplt, const void *src)
 {
-    void *copy = ur_create_record(tmplt, ur_rec_size(tmplt, src));
-    memcpy(copy, src, ur_rec_size(tmplt, src));
+    void *copy = ur_create_record(tmplt, ur_rec_varlen_size(tmplt, src));
+    if (copy) {
+       memcpy(copy, src, ur_rec_size(tmplt, src));
+    }
     return copy;
 }
 
