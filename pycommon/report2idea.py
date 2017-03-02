@@ -261,6 +261,9 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         if args.trap:
             try:
                 trap.send(json.dumps(idea), 0)
+            except pytrap.TimeoutError:
+                # skip this message
+                pass
             except pytrap.Terminated:
                 # don't exit immediately, first finish sending to other outputs
                 stop = True
