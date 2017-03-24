@@ -1,4 +1,7 @@
-common (1.5.0) stable; urgency=high
-	* change of b+ tree API
-	* bugfixes : 
-		- prefix tree: number of children
+nemea-common (1.5.0) stable; urgency=high
+
+  * change of b+ tree API
+  * bugfixes:
+  	- prefix tree: number of children
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Tue, 24 Mar 2016 15:56:30 +0200

@@ -43,6 +43,8 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
+AC_CHECK_PROG(GIT, git, git, [""])
 
 
 m4_include([m4/ax_libxml2_check.m4])
