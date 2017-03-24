@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 
    /*
     * Macro allocates and initializes module_info structure according to MODULE_BASIC_INFO and MODULE_PARAMS
-    * definitions on the lines 69 and 77 of this file. It also creates a string with short_opt letters for getopt
+    * definitions on the lines 71 and 84 of this file. It also creates a string with short_opt letters for getopt
     * function called "module_getopt_string" and long_options field for getopt_long function in variable "long_options"
     */
    INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
