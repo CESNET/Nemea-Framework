@@ -165,7 +165,11 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     if args.warden:
         import warden_client
-        config = warden_client.read_cfg(args.warden)
+        try:
+            config = warden_client.read_cfg(args.warden)
+        except ValueError as e:
+            sys.stderr.write("{0}: Failed to load Warden config file '{1}'\n{2}\n".format(module_name, args.warden, e))
+            exit(1)
         config['name'] = args.name
         wardenclient = warden_client.Client(**config)
 
