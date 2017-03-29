@@ -1091,6 +1091,13 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    uint32_t i, j, failed, passed;
    int retval;
    ssize_t readbytes;
+   /* first timestamp for global timeout in this function...
+    * in the RESET state, we should check the timeout given by caller
+    * with elapsed time from entry_time.
+    * Timeout is in microseconds... */
+
+   uint64_t entry_time = get_cur_timestamp();
+   uint64_t curr_time = 0, elapsed_time;
 
    char block = ((timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0);
 
@@ -1170,11 +1177,21 @@ blocking_repeat:
    }
 
    retval = select(maxsd + 1, &disset, &set, NULL, tv_p);
-   if (retval == 0) {
+   if ((retval == 0) || (retval < 0 && errno == EINTR)) {
       if (block == 0) {
          /* non-blocking mode */
-         result = TRAP_E_TIMEOUT;
-         goto exit;
+         curr_time = get_cur_timestamp();
+         elapsed_time = (curr_time - entry_time);
+         if (elapsed_time >= timeout) {
+            result = TRAP_E_TIMEOUT;
+            goto exit;
+         } else {
+            /* elapsed_time is lower than timeout,
+             * decrease timeout and repeat the call.
+             */
+            timeout -= elapsed_time;
+            goto blocking_repeat;
+         }
       } else {
          /* blocking mode */
          goto blocking_repeat;
