@@ -61,7 +61,9 @@
  * Default max number of clients that can connect to output interface.
  * It takes effect when no value is given during interface initialization.
  */
+#ifndef TRAP_IFC_DEFAULT_MAX_CLIENTS
 #define TRAP_IFC_DEFAULT_MAX_CLIENTS 64
+#endif
 
 /**
  * \defgroup trap_ifc_api IFC API
