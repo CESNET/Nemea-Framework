@@ -106,7 +106,7 @@ char trap_ifc_type_supported[] = {
    0
 };
 
-trap_ctx_priv_t * trap_glob_ctx = NULL;
+trap_ctx_priv_t *trap_glob_ctx = NULL;
 
 /* for backwards compatibility */
 int trap_last_error = TRAP_E_OK;
@@ -964,8 +964,10 @@ int trap_get_data(uint32_t ifc_mask, const void **data, uint16_t *size, int time
 
 #define SEND_DATA() do { \
    int res = trap_ctx_send((trap_ctx_t *) trap_glob_ctx, ifcidx, data, size); \
-   trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;  \
-   trap_last_error = trap_glob_ctx->trap_last_error; \
+   if (res != TRAP_E_NOT_INITIALIZED) { \
+      trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;  \
+      trap_last_error = trap_glob_ctx->trap_last_error; \
+   } \
    return res; \
 } while (0);
 
@@ -986,8 +988,10 @@ int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size)
 {
    int res;
    res = trap_ctx_recv((trap_ctx_t *) trap_glob_ctx, ifcidx, data, size);
-   trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;
-   trap_last_error = trap_glob_ctx->trap_last_error;
+   if (res != TRAP_E_NOT_INITIALIZED) {
+      trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;
+      trap_last_error = trap_glob_ctx->trap_last_error;
+   }
    return res;
 }
 
@@ -1740,7 +1744,7 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
    int ret_val = 0;
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
    if ((c == NULL) || (c->initialized == 0)) {
-      return trap_error(c, TRAP_E_NOT_INITIALIZED);
+      return TRAP_E_NOT_INITIALIZED;
    }
    if (pthread_rwlock_rdlock(&c->context_lock) != 0) {
       VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
@@ -1914,8 +1918,8 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
    int ret_val = 0;
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
 
-   if (!c || !c->initialized) {
-      return trap_error(c, TRAP_E_NOT_INITIALIZED);
+   if (c == NULL || c->initialized == 0) {
+      return TRAP_E_NOT_INITIALIZED;
    }
    if (pthread_rwlock_rdlock(&c->context_lock) != 0) {
       VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
@@ -2955,9 +2959,10 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
    trap_ctx_priv_t *c = ctx;
    char *data_fmt_spec = (char *) va_arg(ap, char *);
 
-   assert(c != NULL);
-   assert(data_type != TRAP_FMT_UNKNOWN);
-   assert(out_ifc_idx < c->num_ifc_out);
+   if ((c == NULL) || (data_type == TRAP_FMT_UNKNOWN) || (out_ifc_idx >= c->num_ifc_out)) {
+      VERBOSE(CL_ERROR, "%s: Uninitialized libtrap context or bad parameters.", __func__);
+      return;
+   }
 
    ifc = &c->out_ifc_list[out_ifc_idx];
    /* If the data type is already set, disconnect all connected clients to this output interface (auto-negotiation will be performed again to get new data format and data spec) */
@@ -2985,7 +2990,10 @@ void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_t
 {
    va_list ap;
 
-   assert(ctx != NULL);
+   if (ctx == NULL) {
+      VERBOSE(CL_ERROR, "%s: Uninitialized libtrap context.", __func__);
+      return;
+   }
 
    va_start(ap, data_type);
    trap_ctx_vset_data_fmt(ctx, out_ifc_idx, data_type, ap);
@@ -2998,9 +3006,17 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
    trap_ctx_priv_t *c = ctx;
    char *req_data_fmt_spec = (char *) va_arg(ap, char *);
 
-   assert(c != NULL);
-   assert(data_type != TRAP_FMT_UNKNOWN);
-   assert(in_ifc_idx < c->num_ifc_in);
+   if (c == NULL) {
+      return TRAP_E_NOT_INITIALIZED;
+   }
+
+   if (data_type == TRAP_FMT_UNKNOWN) {
+      return TRAP_E_BADPARAMS;
+   }
+
+   if (in_ifc_idx >= c->num_ifc_in) {
+      return TRAP_E_BAD_IFC_INDEX;
+   }
 
    ifc = &c->in_ifc_list[in_ifc_idx];
    ifc->req_data_type = data_type;
@@ -3024,7 +3040,9 @@ int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data
    va_list ap;
    int res;
 
-   assert(ctx != NULL);
+   if (ctx == NULL) {
+      return TRAP_E_NOT_INITIALIZED;
+   }
 
    va_start(ap, data_type);
    res = trap_ctx_vset_required_fmt(ctx, in_ifc_idx, data_type, ap);
@@ -3038,14 +3056,21 @@ int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, ui
    trap_output_ifc_t *outifc;
    trap_ctx_priv_t *c = ctx;
 
-   assert(c != NULL);
+   if (ctx == NULL) {
+      return TRAP_E_NOT_INITIALIZED;
+   }
 
    if (ifc_dir == TRAPIFC_INPUT) {
-      assert(ifc_idx < c->num_ifc_in);
+      if (ifc_idx >= c->num_ifc_in) {
+         return TRAP_E_BAD_IFC_INDEX;
+      }
 
       inifc = &c->in_ifc_list[ifc_idx];
 
-      assert(inifc->data_type != TRAP_FMT_RAW);
+      if (inifc->data_type == TRAP_FMT_RAW) {
+         return TRAP_E_BADPARAMS;
+      }
+
       if (inifc->client_state == FMT_OK || inifc->client_state == FMT_CHANGED) {
          (*data_type) = inifc->data_type;
          if (inifc->data_type != TRAP_FMT_RAW) {
@@ -3058,11 +3083,16 @@ int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, ui
       }
    } else {
       /* TRAPIFC_OUTPUT */
-      assert(ifc_idx < c->num_ifc_out);
+      if (ifc_idx >= c->num_ifc_out) {
+         return TRAP_E_BAD_IFC_INDEX;
+      }
 
       outifc = &c->out_ifc_list[ifc_idx];
 
-      assert(outifc->data_type != TRAP_FMT_RAW);
+      if (outifc->data_type == TRAP_FMT_RAW) {
+         return TRAP_E_BADPARAMS;
+      }
+
       (*data_type) = outifc->data_type;
       if (*data_type != TRAP_FMT_RAW) {
          (*spec) = outifc->data_fmt_spec;
@@ -3122,7 +3152,7 @@ int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx)
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
 
    if (ifc_idx >= c->num_ifc_in) {
-      return trap_error(c, TRAP_E_BAD_IFC_INDEX);
+      return TRAP_E_BAD_IFC_INDEX;
    }
 
    return c->in_ifc_list[ifc_idx].client_state;
