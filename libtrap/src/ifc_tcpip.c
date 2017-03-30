@@ -136,7 +136,11 @@ static void *get_in_addr(struct sockaddr *sa)
 // Receiver is a client that connects itself to the source of data (to sender) = server
 
 /**
- * Receive data
+ * Receive chunk of data.
+ *
+ * Caller is responsible for checking elapsed time, since this function
+ * may finished before the given timeout without having data.
+ *
  * \param[in] priv      private IFC data
  * \param[out] data     received data
  * \param[in,out] size  expected size to wait for, it is used to return size that was not read
@@ -203,12 +207,11 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
             continue;
          }
       } else if ((retval == 0) || (retval < 0 && errno == EINTR)) {
-         /* Timeout expired or signal received.  Caller will decide to call
-          * this function again or not according to elapsed time from the
-          * calling. */
+         /* Timeout expired or signal received.  Caller of this function
+          * has to decide to call this function again or not according
+          * to elapsed time from the calling. */
          (*size) = numbytes;
          return TRAP_E_TIMEOUT;
-         continue;
       } else { // some error has occured
          VERBOSE(CL_VERBOSE_OFF, "select() returned %i (%s)", retval, strerror(errno));
          client_socket_disconnect(priv);
