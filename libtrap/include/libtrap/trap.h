@@ -290,8 +290,8 @@ int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...);
  *
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
  * \param[in] ifc_idx   index of IFC
- * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
+ * \param[out] data_type     format of messages defined by #trap_data_format_t
+ * \param[out] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
  * \return TRAP_E_OK on success, on error see trap_ctx_get_data_fmt().
  */
 int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
