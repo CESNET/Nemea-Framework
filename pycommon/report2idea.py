@@ -2,9 +2,17 @@ import sys, os.path
 import argparse
 import json
 import pytrap
+import pymongo
 from time import time, gmtime
 from uuid import uuid4
 from datetime import datetime
+import logging
+
+from reporterconfig import Config
+from reporterconfig.actions import DropMsg
+FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
+
+logger = logging.getLogger(__name__)
 
 def getRandomId():
     """Return unique ID of IDEA message. It is done by UUID in this implementation."""
@@ -82,22 +90,9 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # TRAP output
     arg_parser.add_argument('--trap', action='store_true',
                             help='Enable output via TRAP interface (JSON type with format id "IDEA"). Parameters are set using "-i" option as usual.')
-    # File output
-    arg_parser.add_argument('--file', metavar="FILE", type=str,
-                            help='Enable output to file (each IDEA message printed to new line in JSON format). Set to "-" to use standard output.')
-    arg_parser.add_argument('--file-indent', metavar="N", type=int,
-                            help='Pretty-format JSON in output file using N spaces for indentation.')
-    arg_parser.add_argument('--file-append', action='store_true',
-                            help='Append to file instead of overwrite.')
-    # MongoDB output
-    arg_parser.add_argument('--mongodb', metavar="DBNAME",
-                            help='Enable output to MongoDB. Connect to database named DBNAME.')
-    arg_parser.add_argument('--mongodb-coll', metavar="COLL", default='alerts',
-                            help='Put IDEA messages into collection named COLL (default: "alerts").')
-    arg_parser.add_argument('--mongodb-host', metavar="HOSTNAME", default='localhost',
-                            help='Connect to MongoDB running on HOSTNAME (default: "localhost").')
-    arg_parser.add_argument('--mongodb-port', metavar="PORT", type=int, default=27017,
-                            help='Connect to MongoDB running on port number PORT (default: 27017).')
+    # Config file
+    arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
+                            help='Specify YAML config file path which to load.')
     # Warden3 output
     arg_parser.add_argument('--warden', metavar="CONFIG_FILE",
                             help='Send IDEA messages to Warden server. Load configuration of Warden client from CONFIG_FILE.')
@@ -105,14 +100,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Other options
     arg_parser.add_argument('-n', '--name', metavar='NODE_NAME',
                             help='Name of the node, filled into "Node.Name" element of the IDEA message. Required if Warden output is used, recommended otherwise.')
-    arg_parser.add_argument('--test', action='store_true',
-                            help='Add "Test" to "Category" before sending a message to output(s).')
-    arg_parser.add_argument('-v', '--verbose', action='store_true',
-                            help="Enable verbose mode (may be used by some modules, common part donesn't print anything")
-    arg_parser.add_argument('--srcwhitelist-file', metavar="FILE", type=str,
-                            help="File with addresses/subnets in format: <ip address>/<mask>,<data>\\n \n where /<mask>,<data> is optional, <data> is a user-specific optional content. Whitelist is applied to SRC_IP field. If SRC_IP from the alert is on whitelist, the alert IS NOT reported.")
-    arg_parser.add_argument('--dstwhitelist-file', metavar="FILE", type=str,
-                            help="File with addresses/subnets, whitelist is applied on DST_IP, see --srcwhitelist-file help.")
+    arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
+                            help="""Enable verbose mode (may be used by some modules, common part donesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
@@ -120,21 +109,24 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Parse arguments
     args = arg_parser.parse_args()
 
+    # Set log level
+    logging.basicConfig(level=(args.verbose*10), format=FORMAT)
+
     # Check if at least one output is enabled
-    if not (args.file or args.trap or args.mongodb or args.warden):
-        sys.stderr.write(module_name+": Error: At least one output must be selected\n")
-        exit(1)
+    #if not (args.file or args.trap or args.mongodb or args.warden):
+    #    sys.stderr.write(module_name+": Error: At least one output must be selected\n")
+    #    exit(1)
 
     # Check if node name is set if Warden output is enabled
     if args.name is None:
-        if args.warden:
-            sys.stderr.write(module_name+": Error: Node name must be specified if Warden output is used (set param --name).\n")
-            exit(1)
-        else:
-            sys.stderr.write(module_name+": Warning: Node name is not specified.\n")
+        #if args.warden:
+        #    sys.stderr.write(module_name+": Error: Node name must be specified if Warden output is used (set param --name).\n")
+        #    exit(1)
+        logger.warning("Node name is not specified.")
 
     # *** Initialize TRAP ***
     trap = pytrap.TrapCtx()
+    logger.info("Trap arguments: %s", args.i)
     trap.init(["-i", args.i], 1, 1 if args.trap else 0)
     #trap.setVerboseLevel(3)
     #trap.registerDefaultSignalHandler()
@@ -142,51 +134,28 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Set required input format
     trap.setRequiredFmt(0, req_type, req_format)
 
+    # Initialize configuration
+    config = Config.Config(args.config, trap = trap)
+
     # If TRAP output is enabled, set output format (JSON, format id "IDEA")
-    if args.trap:
-        trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
+    #if args.trap:
+    #    trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
     # *** Create output handles/clients/etc ***
     filehandle = None
-    mongoclient = None
-    mongocoll = None
-    wardenclient = None
+    #wardenclient = None
 
-    if args.file:
-        if args.file == '-':
-            filehandle = sys.stdout
-        else:
-            filehandle = open(args.file, "a" if args.file_append else "w")
+    #if args.file:
+    #    if args.file == '-':
+    #        filehandle = sys.stdout
+    #    else:
+    #        filehandle = open(args.file, "a" if args.file_append else "w")
 
-    if args.mongodb:
-        import pymongo
-        mongoclient = pymongo.MongoClient(args.mongodb_host, args.mongodb_port)
-        mongocoll = mongoclient[args.mongodb][args.mongodb_coll]
-
-    if args.warden:
-        import warden_client
-        try:
-            config = warden_client.read_cfg(args.warden)
-        except ValueError as e:
-            sys.stderr.write("{0}: Failed to load Warden config file '{1}'\n{2}\n".format(module_name, args.warden, e))
-            exit(1)
-        config['name'] = args.name
-        wardenclient = warden_client.Client(**config)
-
-    # Check if a whitelist is set, parse the file and prepare context for binary search
-    import ip_prefix_search
-    if args.srcwhitelist_file:
-        if 'ipaddr SRC_IP' in req_format.split(","):
-            srcwhitelist = ip_prefix_search.IPPSContext.fromFile(args.srcwhitelist_file)
-    else:
-        srcwhitelist = None
-
-    if args.dstwhitelist_file:
-        if 'ipaddr DST_IP' in req_format.split(","):
-            dstwhitelist = ip_prefix_search.IPPSContext.fromFile(args.dstwhitelist_file)
-    else:
-        dstwhitelist = None
-
+    #if args.warden:
+    #    import warden_client
+    #    config = warden_client.read_cfg(args.warden)
+    #    config['name'] = args.name
+    #    wardenclient = warden_client.Client(**config)
 
     # *** Main loop ***
     URInputTmplt = None
@@ -196,11 +165,12 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     stop = False
     while not stop:
+        logger.info("Starting receiving")
         # *** Read data from input interface ***
         try:
             data = trap.recv()
         except pytrap.FormatMismatch:
-            sys.stderr.write(module_name+": Error: input data format mismatch\n")#Required: "+str((req_type,req_format))+"\nReceived: "+str(trap.get_data_fmt(trap.IFC_INPUT, 0))+"\n")
+            logger.error("Input data format mismatch in receiving from TRAP interface")#Required: "+str((req_type,req_format))+"\nReceived: "+str(trap.get_data_fmt(trap.IFC_INPUT, 0))+"\n")
             break
         except pytrap.FormatChanged as e:
             # TODO: This should be handled by trap.recv transparently
@@ -234,71 +204,41 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         else: # TRAP_FMT_RAW
             rec = data
 
-        # Check whitelists
-        if srcwhitelist and srcwhitelist.ip_search(rec.SRC_IP):
-             continue
-
-        if dstwhitelist and dstwhitelist.ip_search(rec.DST_IP):
-             continue
-
         # *** Convert input record to IDEA ***
 
         # Pass the input record to conversion function to create IDEA message
         idea = conv_func(rec, args)
 
         if idea is None:
-            continue # Record can't be converted - skip it (notice should be printed by the conv function)
+            # Record can't be converted - skip it
+            logger.warning("Record can't be converted")
+            continue
 
         if args.name is not None:
             idea['Node'][0]['Name'] = args.name
 
-        if args.test:
-            idea['Category'].append('Test')
-
         # *** Send IDEA to outputs ***
-
+        # Perform rule matching and action running on the idea message
+        try:
+            config.match(idea)
+        except pytrap.Terminated:
+            logger.error("PyTrap was terminated")
+            break
+        except DropMsg:
+            logger.info("Message was dropped")
+            continue
+        except pymongo.errors as e:
+            logger.error(str(e))
+            break
         # File output
-        if filehandle:
-            filehandle.write(json.dumps(idea, indent=args.file_indent)+'\n')
-
-        # TRAP output
-        if args.trap:
-            try:
-                trap.send(json.dumps(idea), 0)
-            except pytrap.TimeoutError:
-                # skip this message
-                pass
-            except pytrap.Terminated:
-                # don't exit immediately, first finish sending to other outputs
-                stop = True
-
-        # MongoDB output
-        if mongocoll:
-            # We need to change IDEA message here, but we may need it unchanged
-            # later -> copy it (shallow copy is sufficient)
-            idea2 = idea.copy()
-            # Convert timestamps from string to Date format
-            idea2['DetectTime'] = datetime.strptime(idea2['DetectTime'], "%Y-%m-%dT%H:%M:%SZ")
-            for i in [ 'CreateTime', 'EventTime', 'CeaseTime' ]:
-                if idea2.has_key(i):
-                    idea2[i] = datetime.strptime(idea2[i], "%Y-%m-%dT%H:%M:%SZ")
-
-            try:
-                mongocoll.insert(idea2)
-            except pymongo.errors.AutoReconnect:
-                sys.stderr.write(module_name+": Error: MongoDB connection failure.\n")
-                stop = True
+        #if filehandle:
+        #    filehandle.write(json.dumps(idea, indent=args.file_indent)+'\n')
 
         # Warden output
-        if wardenclient:
-            wardenclient.sendEvents([idea])
+        #if wardenclient:
+        #    wardenclient.sendEvents([idea])
 
 
-    # *** Cleanup ***
-    if filehandle and filehandle != sys.stdout:
-        filehandle.close()
-    if mongoclient:
-        mongoclient.close()
-    if wardenclient:
-        wardenclient.close()
+    #if wardenclient:
+    #    wardenclient.close()
     trap.finalize()
