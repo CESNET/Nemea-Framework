@@ -391,8 +391,6 @@ class RuleTreeTraverser():
         """
         if not operation in self.binops_logical:
             raise Exception("Invalid logical binary operation '{}'".format(operation))
-        if left is None or right is None:
-            return None
         result = self.binops_logical[operation](left, right)
         if result:
             return True
@@ -403,22 +401,15 @@ class RuleTreeTraverser():
         """
         Evaluate given comparison binary operation with given operands.
         """
-        print(left)
-        print(right)
-        print(type(right[0]))
         if not operation in self.binops_comparison:
             raise Exception("Invalid comparison binary operation '{}'".format(operation))
         if left is None or right is None:
-            print("first none")
             return None
         if not isinstance(left, list):
             left = [left]
         if not isinstance(right, list):
             right = [right]
         if not len(left) or not len(right):
-            print(left)
-            print(right)
-            print("second none")
             return None
         if operation in ['OP_IS']:
             res = self.binops_comparison[operation](left, right)
