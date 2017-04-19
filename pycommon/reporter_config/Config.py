@@ -13,20 +13,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Config():
-    """
-    Reporter Configuration Module
-
-    Author: Petr Stehlik <stehlik@cesnet.cz>
-    Copyright (C) 2017 CESNET, z.s.p.o.
-
-    Acknowledgements: Mentat team (namely Jan Mach) for their amazing work
-    on Mentat filtering module.
-
-    This module takes care of advanced filtering of IDEA messages.
-
-    The configuration is quite complex and is detailed in the README file (TBD).
-
-    """
 
     addrGroups = dict()
     actions = dict()
@@ -35,7 +21,7 @@ class Config():
     compiler = None
 
     def __init__(self, path, trap = None):
-        # Parse config gile
+        # Parse given config gile
         with open(path, 'r') as f:
             self.conf = Parser(f)
 
@@ -93,17 +79,11 @@ class Config():
                                     )
 
     def match(self, msg):
-        """Try to match the message with one of the rules.
-        If the rule has elseactions defined it will be performed in case of
-        not finding the match.
-
-        All rules are always applied and are dependent on each other
-        in given order.
-        """
         tmp_msg = msg
 
         for i in self.rules:
             res = self.rules[i].filter(msg)
+            #logger.debug("Filter by rule: %s \n message: %s\n\nresult: %s", self.rules[i].rule(), msg, res)
 
             if res:
                 # Perform actions on given message
@@ -112,6 +92,21 @@ class Config():
             else:
                 tmp_msg = self.rules[i].elseactions(tmp_msg)
                 logger.info("else action running")
+
+    def loglevel(self):
+        """Get logging level
+
+        CRITICAL	50
+        ERROR	    40
+        WARNING	    30
+        INFO	    20
+        DEBUG	    10
+        NOTSET  	 0
+        """
+        try:
+            return (self.conf["reporter"]["loglevel"]) * 10
+        except:
+            return 30
 
 if __name__ == "__main__":
     """Run basic tests

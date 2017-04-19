@@ -8,8 +8,8 @@ from uuid import uuid4
 from datetime import datetime
 import logging
 
-from reporterconfig import Config
-from reporterconfig.actions import DropMsg
+from reporter_config import Config
+from reporter_config.actions import DropMsg
 FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
 
 logger = logging.getLogger(__name__)
@@ -230,6 +230,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         except pymongo.errors as e:
             logger.error(str(e))
             break
+
         # File output
         #if filehandle:
         #    filehandle.write(json.dumps(idea, indent=args.file_indent)+'\n')

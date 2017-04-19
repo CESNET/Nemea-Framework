@@ -4,5 +4,5 @@ from Email  import EmailAction
 from File   import FileAction
 from Mark   import MarkAction
 from Mongo  import MongoAction
-from Trap	import TrapAction
+from Trap   import TrapAction
 from Warden import WardenAction
