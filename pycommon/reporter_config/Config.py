@@ -1,7 +1,7 @@
 from idea import lite
-from mentat.filtering.rules import *
-from mentat.filtering.filters import IDEAFilterCompiler, DataObjectFilter
-from mentat.filtering.gparser import MentatFilterParser
+from pynspect.rules import *
+from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
+from pynspect.gparser import MentatFilterParser
 
 from Parser import Parser
 from AddressGroup import AddressGroup

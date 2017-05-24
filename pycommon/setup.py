@@ -5,7 +5,7 @@ LONG_DESCRIPTION="""The module contains methods for creation and submission of i
 setup(name='nemea-pycommon',
       version='1.0.10',
       py_modules=['report2idea', 'ip_prefix_search'],
-      packages=[],
+      packages=['reporter_config'],
       author='Vaclav Bartos, CESNET',
       author_email='bartos@cesnet.cz',
       maintainer = 'Tomas Cejka',
@@ -14,6 +14,7 @@ setup(name='nemea-pycommon',
       license="BSD",
       test_suite="test",
       platforms = ["any"],
+      install_requires = [ 'pynspect', 'idea-format' ],
       classifiers = [
               'Development Status :: 4 - Beta',
               'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -27,5 +28,5 @@ setup(name='nemea-pycommon',
       ],
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION
-      )
+)
 

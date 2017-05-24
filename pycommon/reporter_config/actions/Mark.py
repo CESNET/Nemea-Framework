@@ -1,5 +1,5 @@
 import Action
-from mentat.filtering import jpath
+from pynspect import jpath
 
 class MarkAction(Action.Action):
     def __init__(self, action):
