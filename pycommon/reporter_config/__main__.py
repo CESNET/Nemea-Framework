@@ -1,7 +1,7 @@
 import sys
 
 from Config import Config
-from actions import DropMsg
+from actions.Drop import DropMsg
 import logging as log
 
 if __name__ == "__main__":

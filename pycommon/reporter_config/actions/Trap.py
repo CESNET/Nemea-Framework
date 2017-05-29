@@ -1,10 +1,11 @@
-import Action
+from actions.Action import Action
+
 import pytrap
 import logging
 
 logger = logging.getLogger(__name__)
 
-class TrapAction(Action.Action):
+class TrapAction(Action):
     def __init__(self, action, trap):
         self.actionId = action["id"]
         self.actionType = "trap"

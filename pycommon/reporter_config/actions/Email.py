@@ -1,6 +1,6 @@
-import Action
+from actions.Action import Action
 
-class EmailAction(Action.Action):
+class EmailAction(Action):
     def __init__(self, action):
         # Should import smtp lib here
         self.actionId = action["id"]

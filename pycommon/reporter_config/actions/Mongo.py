@@ -1,11 +1,12 @@
-import Action
+from actions.Action import Action
+
 from datetime import datetime
 import pymongo
 import logging as log
 
 logger = log.getLogger(__name__)
 
-class MongoAction(Action.Action):
+class MongoAction(Action):
     host = "localhost"
     port = 27017
     user = None

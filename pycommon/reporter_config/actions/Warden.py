@@ -1,10 +1,11 @@
-import Action
+from actions.Action import Action
+
 import warden_client
 import logging
 
 logger = logging.getLogger(__name__)
 
-class WardenAction(Action.Action):
+class WardenAction(Action):
     def __init__(self, action, name):
         self.actionId = action["id"]
         self.actionType = "warden"

@@ -1,7 +1,8 @@
-import Action
+from actions.Action import Action
+
 from pynspect import jpath
 
-class MarkAction(Action.Action):
+class MarkAction(Action):
     def __init__(self, action):
         self.actionId = action["id"]
         # TODO: parse path according to mentat jpath
