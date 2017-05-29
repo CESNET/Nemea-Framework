@@ -1,4 +1,4 @@
-Assignment
+Reporter Configuration
 ==========
 
 This Python module serves as an improved version of reporting modules of the NEMEA system. The work is based on modification and improvement of a shared python module called *report2idea*.
