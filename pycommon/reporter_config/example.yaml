@@ -17,7 +17,7 @@ custom_actions:
 - id: savefile
   type: file
   dir: true
-  path: "/var/log/nemea/events"
+  path: "/var/log/nemea/events.idea"
 addressgroups:
 - id: main_whitelist
   file: "/etc/nemea/reporters/whitelists/whitelist1"
@@ -38,9 +38,9 @@ rules:
   - mongo1
 - id: 2
   condition: >
-	   Node.SW == 'detector1' and
-	   Category == 'Recon.Scanning' and
-	   Target.IP4 in whitelist2
+    Node.SW == 'detector1' and
+    Category == 'Recon.Scanning' and
+    Target.IP4 in whitelist2
   actions:
   - marktest
 - id: 3
