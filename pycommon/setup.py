@@ -14,7 +14,7 @@ setup(name='nemea-pycommon',
       license="BSD",
       test_suite="test",
       platforms = ["any"],
-      install_requires = [ 'pynspect', 'idea-format' ],
+      install_requires = [ 'pynspect', 'idea-format', 'PyYAML', 'netaddr' ],
       classifiers = [
               'Development Status :: 4 - Beta',
               'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
