@@ -19,7 +19,7 @@ if __name__ == "__main__":
             }
         ],
         "Format" : "IDEA0",
-        "WinStartTime" : "2016-06-21 11:20:01Z",
+        "WinStartTime" : "2016-06-21T11:20:01Z",
         "_CESNET" : {
             "StorageTime" : 1466508305
         },

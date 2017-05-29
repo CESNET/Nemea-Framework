@@ -45,7 +45,7 @@ class MongoAction(Action):
         Convert '*Time' items to Datetime format.
         """
         for i in ["CreateTime", "DetectTime", "EventTime", "CeaseTime", "WinStartTime", "WinEndTime"]:
-            if record.has_key(i):
+            if i in record:
                 record[i] = datetime.strptime(record[i], "%Y-%m-%dT%H:%M:%SZ")
 
         return record
