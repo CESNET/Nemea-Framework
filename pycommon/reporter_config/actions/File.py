@@ -1,4 +1,4 @@
-from actions.Action import Action
+from .Action import Action
 
 import sys
 import os

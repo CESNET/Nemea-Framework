@@ -3,10 +3,10 @@ from pynspect.rules import *
 from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
 from pynspect.gparser import MentatFilterParser
 
-from actions.Drop import DropAction
-from Parser import Parser
-from AddressGroup import AddressGroup
-from Rule import Rule
+from .actions.Drop import DropAction
+from .Parser import Parser
+from .AddressGroup import AddressGroup
+from .Rule import Rule
 
 import logging
 
@@ -42,19 +42,19 @@ class Config():
 		# Parse all custom actions
 		for i in self.conf["custom_actions"]:
 			if i["type"] == "mark":
-				from actions.Mark import MarkAction
+				from .actions.Mark import MarkAction
 				self.actions[i["id"]] = MarkAction(i)
 
 			elif i["type"] == "mongo":
-				from actions.Mongo import MongoAction
+				from .actions.Mongo import MongoAction
 				self.actions[i["id"]] =  MongoAction(i)
 
 			elif i["type"] == "email":
-				from actions.Email import EmailAction
+				from .actions.Email import EmailAction
 				self.actions[i["id"]] = EmailAction(i)
 
 			elif i["type"] == "file":
-				from actions.File import FileAction
+				from .actions.File import FileAction
 				self.actions[i["id"]] = FileAction(i)
 
 			elif i["type"] == "warden":
@@ -62,7 +62,7 @@ class Config():
 				self.actions[i["id"]] = WardenAction(i)
 
 			elif i["type"] == "trap":
-				from actions.Trap import TrapAction
+				from .actions.Trap import TrapAction
 				self.actions[i["id"]] = TrapAction(i, trap)
 
 			else:

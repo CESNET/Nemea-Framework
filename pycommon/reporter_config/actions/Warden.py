@@ -1,4 +1,4 @@
-from actions.Action import Action
+from .Action import Action
 
 import warden_client
 import logging

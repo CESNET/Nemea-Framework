@@ -1,4 +1,4 @@
-from actions.Action import Action
+from .Action import Action
 
 class EmailAction(Action):
     def __init__(self, action):
