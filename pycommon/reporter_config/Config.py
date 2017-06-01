@@ -58,7 +58,7 @@ class Config():
 				self.actions[i["id"]] = FileAction(i)
 
 			elif i["type"] == "warden":
-				from actions.Warden import WardenAction
+				from .actions.Warden import WardenAction
 				self.actions[i["id"]] = WardenAction(i)
 
 			elif i["type"] == "trap":
