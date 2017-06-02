@@ -102,10 +102,10 @@ class Config():
 
 			if res:
 				# Perform actions on given message
-				tmp_msg = self.rules[i].actions(tmp_msg)
+				self.rules[i].actions(tmp_msg)
 				logger.info("action running")
 			else:
-				tmp_msg = self.rules[i].elseactions(tmp_msg)
+				self.rules[i].elseactions(tmp_msg)
 				logger.info("else action running")
 
 	def loglevel(self):
