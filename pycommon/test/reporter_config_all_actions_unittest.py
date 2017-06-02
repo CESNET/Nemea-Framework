@@ -20,8 +20,9 @@ class RCAllActionsTest(unittest.TestCase):
 		"""
 		Should:
 			* delete created file
-			* remove database test_reporter_config from mongoDB
+			* remove database test_reporter_config from mongoDB (not needed in this case)
 		"""
+		os.remove("testfile.idea")
 		pass
 
 	def test_01_init(self):
