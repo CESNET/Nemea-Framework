@@ -10,9 +10,8 @@ class RCBaseTest(unittest.TestCase):
 		"""
 		Example message created by a conv function in a reporter
 		"""
-		with open(os.path.dirname(__file__) + '/reporter_config_msg.json', 'r') as f:
+		with open(os.path.dirname(__file__) + '/rc_msg.json', 'r') as f:
 			self.msg = json.load(f)
-
 
 	def tearDown(self):
 		pass
