@@ -34,54 +34,57 @@ class Config():
 		self.addrGroups = dict()
 
 		# Create all address groups
-		for i in self.conf["addressgroups"]:
-			self.addrGroups[i["id"]] = AddressGroup(i)
+		if "addressgroups" in self.conf:
+			for i in self.conf["addressgroups"]:
+				self.addrGroups[i["id"]] = AddressGroup(i)
 
 		self.actions = dict()
 
 		# Parse and instantiate all custom actions
-		for i in self.conf["custom_actions"]:
-			if "mark" in i:
-				from .actions.Mark import MarkAction
-				self.actions[i["id"]] = MarkAction(i)
+		if "custom_actions" in self.conf:
+			for i in self.conf["custom_actions"]:
+				if "mark" in i:
+					from .actions.Mark import MarkAction
+					self.actions[i["id"]] = MarkAction(i)
 
-			elif "mongo" in i:
-				from .actions.Mongo import MongoAction
-				self.actions[i["id"]] =  MongoAction(i)
+				elif "mongo" in i:
+					from .actions.Mongo import MongoAction
+					self.actions[i["id"]] =  MongoAction(i)
 
-			elif "email" in i:
-				from .actions.Email import EmailAction
-				self.actions[i["id"]] = EmailAction(i)
+				elif "email" in i:
+					from .actions.Email import EmailAction
+					self.actions[i["id"]] = EmailAction(i)
 
-			elif "file" in i:
-				from .actions.File import FileAction
-				self.actions[i["id"]] = FileAction(i)
+				elif "file" in i:
+					from .actions.File import FileAction
+					self.actions[i["id"]] = FileAction(i)
 
-			elif "warden" in i:
-				from .actions.Warden import WardenAction
-				self.actions[i["id"]] = WardenAction(i)
+				elif "warden" in i:
+					from .actions.Warden import WardenAction
+					self.actions[i["id"]] = WardenAction(i)
 
-			elif "trap" in i:
-				from .actions.Trap import TrapAction
+				elif "trap" in i:
+					from .actions.Trap import TrapAction
 
-				if trap == None:
-					import pytrap
-					trap = pytrap.TrapCtx()
-					trap.init(['-i', 'u:input-socket,u:output-socket'], 1, 1)
-					trap.setRequiredFmt(0)
-				self.actions[i["id"]] = TrapAction(i["trap"], trap)
+					if trap == None:
+						import pytrap
+						trap = pytrap.TrapCtx()
+						trap.init(['-i', 'u:input-socket,u:output-socket'], 1, 1)
+						trap.setRequiredFmt(0)
+					self.actions[i["id"]] = TrapAction(i["trap"], trap)
 
-			elif "drop" in i:
-				logger.warning("Drop action musn't be specified in custom_actions!")
+				elif "drop" in i:
+					logger.warning("Drop action musn't be specified in custom_actions!")
 
-			else:
-				raise Exception("undefined action: " + str(i))
+				else:
+					raise Exception("undefined action: " + str(i))
 
 		self.actions["drop"] = DropAction()
 
 		self.rules = dict()
 
 		# Parse all rules and match them with actions and address groups
+		# There must be at least one rule (mandatory field)
 		for i in self.conf["rules"]:
 			self.rules[i["id"]] = Rule(i
 					, self.actions
