@@ -38,7 +38,7 @@ class MongoAction(Action):
         Before storing the record is transformed to be stored in more effective
         way using transform() method.
         """
-        self.collection.insert(self.transform(record))
+        self.collection.insert_one(self.transform(record))
 
     def transform(self, record):
         """Transform certain items in IDEA message
