@@ -5,7 +5,6 @@
 # No elseaction is specified
 custom_actions:
 - id: basic_mark
-  type: mark
   mark:
     path: 'Test'
     value: True

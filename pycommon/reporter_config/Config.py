@@ -39,29 +39,29 @@ class Config():
 
 		self.actions = dict()
 
-		# Parse all custom actions
+		# Parse and instantiate all custom actions
 		for i in self.conf["custom_actions"]:
-			if i["type"] == "mark":
+			if "mark" in i:
 				from .actions.Mark import MarkAction
 				self.actions[i["id"]] = MarkAction(i)
 
-			elif i["type"] == "mongo":
+			elif "mongo" in i:
 				from .actions.Mongo import MongoAction
 				self.actions[i["id"]] =  MongoAction(i)
 
-			elif i["type"] == "email":
+			elif "email" in i:
 				from .actions.Email import EmailAction
 				self.actions[i["id"]] = EmailAction(i)
 
-			elif i["type"] == "file":
+			elif "file" in i:
 				from .actions.File import FileAction
 				self.actions[i["id"]] = FileAction(i)
 
-			elif i["type"] == "warden":
+			elif "warden" in i:
 				from .actions.Warden import WardenAction
 				self.actions[i["id"]] = WardenAction(i)
 
-			elif i["type"] == "trap":
+			elif "trap" in i:
 				from .actions.Trap import TrapAction
 
 				if trap == None:
@@ -69,7 +69,10 @@ class Config():
 					trap = pytrap.TrapCtx()
 					trap.init(['-i', 'u:input-socket,u:output-socket'], 1, 1)
 					trap.setRequiredFmt(0)
-				self.actions[i["id"]] = TrapAction(i, trap)
+				self.actions[i["id"]] = TrapAction(i["trap"], trap)
+
+			elif "drop" in i:
+				logger.warning("Drop action musn't be specified in custom_actions!")
 
 			else:
 				raise Exception("undefined action: " + str(i))

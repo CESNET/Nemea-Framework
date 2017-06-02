@@ -5,9 +5,9 @@
 # No elseaction is specified
 custom_actions:
   - id: email
-    type: email
-    to: "nemea@localhost"
-    subject: "Example report"
+    email:
+      to: "nemea@localhost"
+      subject: "Example report"
 
 addressgroups:
 - id: whitelist

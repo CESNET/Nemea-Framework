@@ -19,8 +19,8 @@ class EmailAction(Action):
 
 	def __init__(self, action):
 		self.actionId = action["id"]
-		self.to = action["to"]
-		self.subject = action["subject"]
+		self.to = action["email"]["to"]
+		self.subject = action["email"]["subject"]
 
 		self.smtp = smtplib.SMTP('localhost')
 

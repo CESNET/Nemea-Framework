@@ -18,17 +18,17 @@ class MongoAction(Action):
         """
         self.actionId = action["id"]
 
-        if "host" in action:
-            self.host = action["host"]
-        if "port" in action:
-            self.port = action["port"]
+        if "host" in action["mongo"]:
+            self.host = action["mongo"]["host"]
+        if "port" in action["mongo"]:
+            self.port = action["mongo"]["port"]
 
-        self.db = action["db"]
-        self.collection = action["collection"]
+        self.db = action["mongo"]["db"]
+        self.collection = action["mongo"]["collection"]
 
-        if "user" in action and "password" in action:
-            self.user = action["user"]
-            self.password = action["password"]
+        if "user" in action["mongo"] and "password" in action["mongo"]:
+            self.user = action["mongo"]["user"]
+            self.password = action["mongo"]["password"]
 
         self.client = pymongo.MongoClient(self.host, self.port)
         self.collection = self.client[self.db][self.collection]

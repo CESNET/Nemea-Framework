@@ -9,20 +9,23 @@ logger = log.getLogger(__name__)
 
 class FileAction(Action):
 	"""Store IDEA message in a file
-	Depending on the given file path the messages can be stored in a single file
-	with new messages appended. Or it can store each message in separate file where
-	filename is the ID of the message with .idea extension.
+	Depending on the given file path the messages can be stored in:
+		* FILE: a single file with new messages appended to it
+		* DIR: each message in separate file where filename is the ID of the message
+		  with .idea extension
+		* STDOUT: message is written to STDOUT pipe
 	"""
 	def __init__(self, action):
 		self.actionId = action["id"]
 		self.actionType = "file"
-		self.path = action["path"]
-		self.dir = action["dir"] if "dir" in action else False
+		self.path = action["file"]["path"]
+		self.dir = action["file"]["dir"] if "dir" in action["file"] else False
 
 		if self.path == '-':
 			self.fileHandle = sys.stdout
 			self.dir = True
-		elif self.dir:
+		elif not self.dir:
+			# Open file if dir is not specified
 			self.fileHandle = open(self.path, "a")
 		else:
 			self.fileHandle = None
