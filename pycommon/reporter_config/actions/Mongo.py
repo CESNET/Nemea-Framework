@@ -3,6 +3,7 @@ from .Action import Action
 from datetime import datetime
 import pymongo
 import logging as log
+import copy
 
 logger = log.getLogger(__name__)
 
@@ -38,7 +39,11 @@ class MongoAction(Action):
         Before storing the record is transformed to be stored in more effective
         way using transform() method.
         """
-        self.collection.insert_one(self.transform(record))
+        # Must do a deepcopy so other actions won't be affted by this operation
+        rec = copy.deepcopy(record)
+
+        rec = self.transform(rec)
+        self.collection.insert_one(rec)
 
     def transform(self, record):
         """Transform certain items in IDEA message
