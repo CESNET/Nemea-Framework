@@ -18,6 +18,7 @@ class RCTrapTest(unittest.TestCase):
 	def tearDown(self):
 		pass
 
+	@unittest.skip("skipping TRAP test")
 	def test_01_receive_message(self):
 		"""
 		Load trap.yaml configuration file, parse it and analyze it
