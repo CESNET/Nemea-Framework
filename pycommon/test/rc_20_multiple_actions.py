@@ -47,7 +47,7 @@ class RCMultipleActionsTest(unittest.TestCase):
 		# The actions must be checked in reversed order
 
 		# Check if file created by File Action  exists
-		self.assertTrue("testfile.idea", True)
+		self.assertTrue(os.path.exists("testfile.idea"), True)
 
 		# Find the event in DB
 		rec = self.collection.find_one()
