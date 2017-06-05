@@ -65,16 +65,11 @@ class Config():
 
 				elif "trap" in i:
 					from .actions.Trap import TrapAction
-
-					if trap == None:
-						import pytrap
-						trap = pytrap.TrapCtx()
-						trap.init(['-i', 'u:input-socket,u:output-socket'], 1, 1)
-						trap.setRequiredFmt(0)
-					self.actions[i["id"]] = TrapAction(i["trap"], trap)
+					self.actions[i["id"]] = TrapAction(i, trap)
 
 				elif "drop" in i:
 					logger.warning("Drop action musn't be specified in custom_actions!")
+					continue
 
 				else:
 					raise Exception("undefined action: " + str(i))
