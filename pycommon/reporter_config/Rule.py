@@ -37,14 +37,14 @@ class Rule():
 		if (self.__condition != None):
 			self.parseRule()
 
-		self.__actions = dict()
-		self.__elseactions = dict()
+		self.__actions = list()
+		self.__elseactions = list()
 
 		# Associate actions
 		for actionId in rule["actions"]:
 			try:
 				logger.debug("Rule %s inserting %s", self.id, actionId)
-				self.__actions[actionId] = actions[actionId]
+				self.__actions.append(actions[actionId])
 			except KeyError as e:
 				raise Exception("Missing action with ID " + str(e))
 
@@ -52,7 +52,7 @@ class Rule():
 		if "elseactions" in rule:
 			for actionId in rule["elseactions"]:
 				try:
-					self.__elseactions[actionId] = actions[actionId]
+					self.__elseactions.append(actions[actionId])
 				except KeyError as e:
 					raise Exception("Missing elseaction with ID " + str(e))
 
@@ -90,11 +90,11 @@ class Rule():
 
 	def actions(self, record):
 		for action in self.__actions:
-			self.__actions[action].run(record)
+			action.run(record)
 
 	def elseactions(self, record):
 		for action in self.__elseactions:
-			self.__elseactions[action].run(record)
+			action.run(record)
 
 	def __repr__(self):
 		return self.__conditionRaw

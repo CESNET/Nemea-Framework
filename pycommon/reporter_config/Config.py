@@ -16,7 +16,7 @@ class Config():
 
 	addrGroups = dict()
 	actions = dict()
-	rules = dict()
+	rules = list()
 	parser = None
 	compiler = None
 
@@ -76,31 +76,31 @@ class Config():
 
 		self.actions["drop"] = DropAction()
 
-		self.rules = dict()
+		self.rules = list()
 
 		# Parse all rules and match them with actions and address groups
 		# There must be at least one rule (mandatory field)
 		for i in self.conf["rules"]:
-			self.rules[i["id"]] = Rule(i
+			self.rules.append(Rule(i
 					, self.actions
 					, self.addrGroups
 					, parser = self.parser
 					, compiler = self.compiler
-					)
+					))
 
 	def match(self, msg):
 		tmp_msg = msg
 
-		for i in self.rules:
-			res = self.rules[i].filter(msg)
+		for rule in self.rules:
+			res = rule.filter(msg)
 			#logger.debug("Filter by rule: %s \n message: %s\n\nresult: %s", self.rules[i].rule(), msg, res)
 
 			if res:
 				# Perform actions on given message
-				self.rules[i].actions(tmp_msg)
+				rule.actions(tmp_msg)
 				logger.info("action running")
 			else:
-				self.rules[i].elseactions(tmp_msg)
+				rule.elseactions(tmp_msg)
 				logger.info("else action running")
 
 	def loglevel(self):
