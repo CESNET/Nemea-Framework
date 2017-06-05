@@ -16,7 +16,6 @@ class RCMultipleActionsTest(unittest.TestCase):
 		with open(os.path.dirname(__file__) + '/rc_msg.json', 'r') as f:
 			self.msg = json.load(f)
 
-		logging.basicConfig(level=50)
 		self.client = pymongo.MongoClient("localhost", 27017)
 		self.collection = self.client["rc_test"]["alerts"]
 
@@ -40,7 +39,7 @@ class RCMultipleActionsTest(unittest.TestCase):
 		This shouldn't rise any exceptions, if action is performed, which it shouldn't,
 		it raises the DropMsg exception (uncaught here)
 		"""
-		self.config = Config(os.path.dirname(__file__) + '/rc_config/multiple_actions.yaml');
+		self.config = Config(os.path.dirname(__file__) + '/rc_config/multiple_elseactions.yaml');
 
 		self.assertNotEqual(self.config, None)
 		self.config.match(self.msg)
