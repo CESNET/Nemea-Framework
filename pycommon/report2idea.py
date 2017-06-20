@@ -112,11 +112,6 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Set log level
     logging.basicConfig(level=(args.verbose*10), format=FORMAT)
 
-    # Check if at least one output is enabled
-    #if not (args.file or args.trap or args.mongodb or args.warden):
-    #    sys.stderr.write(module_name+": Error: At least one output must be selected\n")
-    #    exit(1)
-
     # Check if node name is set if Warden output is enabled
     if args.name is None:
         #if args.warden:
@@ -137,25 +132,14 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Initialize configuration
     config = Config.Config(args.config, trap = trap)
 
-    # If TRAP output is enabled, set output format (JSON, format id "IDEA")
-    #if args.trap:
-    #    trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
-
     # *** Create output handles/clients/etc ***
-    filehandle = None
-    #wardenclient = None
+    wardenclient = None
 
-    #if args.file:
-    #    if args.file == '-':
-    #        filehandle = sys.stdout
-    #    else:
-    #        filehandle = open(args.file, "a" if args.file_append else "w")
-
-    #if args.warden:
-    #    import warden_client
-    #    config = warden_client.read_cfg(args.warden)
-    #    config['name'] = args.name
-    #    wardenclient = warden_client.Client(**config)
+    if args.warden:
+        import warden_client
+        config = warden_client.read_cfg(args.warden)
+        config['name'] = args.name
+        wardenclient = warden_client.Client(**config)
 
     # *** Main loop ***
     URInputTmplt = None
@@ -231,15 +215,11 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             logger.error(str(e))
             break
 
-        # File output
-        #if filehandle:
-        #    filehandle.write(json.dumps(idea, indent=args.file_indent)+'\n')
-
         # Warden output
-        #if wardenclient:
-        #    wardenclient.sendEvents([idea])
+        if wardenclient:
+            wardenclient.sendEvents([idea])
 
 
-    #if wardenclient:
-    #    wardenclient.close()
+    if wardenclient:
+        wardenclient.close()
     trap.finalize()
