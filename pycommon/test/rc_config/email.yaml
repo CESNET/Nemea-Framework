@@ -1,0 +1,21 @@
+# Simple Reporter Configuration File
+# Only one Mark Custom action is defined which is used in one simple rule
+# One address group with one IPv4 address (no subnet)
+# JPath is used in rule condition (Source.IP4) which is handled by pynspect
+# No elseaction is specified
+custom_actions:
+  - id: email
+    email:
+      to: "nemea@localhost"
+      subject: "Example report"
+
+addressgroups:
+- id: whitelist
+  list:
+  - 1.2.3.4
+
+rules:
+- id: 1
+  condition: Source.IP4 in whitelist
+  actions:
+  - email

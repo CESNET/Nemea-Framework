@@ -1,0 +1,30 @@
+# Simple Reporter Configuration File
+# Only one Mark Custom action is defined which is used in one simple rule
+# One address group with one IPv4 address (no subnet)
+# JPath is used in rule condition (Source.IP4) which is handled by pynspect
+# No elseaction is specified
+custom_actions:
+  - id: mark
+    mark:
+      path: Test
+      value: true
+  - id: "mark_nested"
+    mark:
+      path: "_CESNET.Status.Processed"
+      value: true
+
+addressgroups:
+- id: whitelist
+  list:
+  - 1.2.3.4
+
+rules:
+- id: 1
+  condition: Source.IP4 in whitelist
+  actions:
+  - mark
+
+- id: 2
+  condition: Target.IP4 in whitelist
+  actions:
+  - mark_nested

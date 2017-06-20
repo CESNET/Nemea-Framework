@@ -1,0 +1,38 @@
+# Simple Reporter Configuration File
+# Only one Mark Custom action is defined which is used in one simple rule
+# One address group with one IPv4 address (no subnet)
+# JPath is used in rule condition (Source.IP4) which is handled by pynspect
+# No elseaction is specified
+custom_actions:
+  - id: email
+    email:
+      to: "nobody@example.com"
+      subject: "Example report"
+  - id: file
+    file:
+      path: "testfile.idea"
+  - id: mark
+    mark:
+      path: 'Test'
+      value: True
+  - id: mongo
+    mongo:
+      host: localhost
+      db: test_reporter_config
+      collection: alerts
+#  - id: trap
+#    type: trap
+  - id: warden
+    warden:
+       configfile: "/home/nemea/Nemea/nemea-framework/pycommon/warden_client_3.0-beta2/warden_client.cfg.dist"
+
+addressgroups:
+- id: whitelist
+  list:
+  - 1.2.3.4
+
+rules:
+- id: 1
+  condition: Source.IP4 in whitelist
+  actions:
+  - mark
