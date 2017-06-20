@@ -34,7 +34,7 @@ The module contains methods for creation and submission of incident reports in I
 %package -n     python2-%{pypi_name}
 Summary:        Common Python modules and methods of the NEMEA system.
 %{?python_provide:%python_provide python2-%{pypi_name}}
-Requires:	python-nemea-pytrap
+Requires:	python-nemea-pytrap python-ply python-yaml
 BuildRequires:	python-nemea-pytrap
 
 %description -n python2-%{pypi_name}
@@ -44,7 +44,7 @@ This package is compatible with python2.
 %package -n     python%{python3_pkgversion}-%{pypi_name}
 Summary:        Common Python modules and methods of the NEMEA system.
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
-Requires:	python%{python3_pkgversion}-nemea-pytrap
+Requires:	python%{python3_pkgversion}-nemea-pytrap python%{python3_pkgversion}-ply python%{python3_pkgversion}-yaml
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
