@@ -24,6 +24,7 @@ class RCMongoTest(unittest.TestCase):
 		self.collection.drop()
 		self.client.close()
 
+	@unittest.skip("skipping mongodb test 1")
 	def test_01_store_record(self):
 		"""
 		Load mongo.yaml configuration file, parse it and analyze it
@@ -39,6 +40,7 @@ class RCMongoTest(unittest.TestCase):
 
 		self.assertEqual(self.collection.find().count(), 1)
 
+	@unittest.skip("skipping mongodb test 2")
 	def test_02_check_record(self):
 		"""
 		Load mongo.yaml configuration file, parse it and analyze it

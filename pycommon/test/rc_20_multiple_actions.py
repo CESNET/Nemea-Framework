@@ -27,6 +27,7 @@ class RCMultipleActionsTest(unittest.TestCase):
 		# Remove created file
 		os.remove("testfile.idea")
 
+	@unittest.skip("skipping mongodb test with actions")
 	def test_01_receive_message(self):
 		"""Perform multiple actions on matched message
 
