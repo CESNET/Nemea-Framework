@@ -18,6 +18,7 @@ class RCEMailTest(unittest.TestCase):
 	def tearDown(self):
 		pass
 
+	@unittest.skip("skipping send email test 1")
 	def test_01_send_email(self):
 		"""
 		Load email.yaml configuration file, parse it and analyze it
