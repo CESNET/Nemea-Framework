@@ -1,7 +1,14 @@
 import unittest
 import os
 import json
-import pymongo
+
+missing_pymongo = False
+
+try:
+	import pymongo
+except:
+	missing_pymongo = True
+
 
 from reporter_config.Config import Config
 
@@ -24,7 +31,7 @@ class RCMongoTest(unittest.TestCase):
 		self.collection.drop()
 		self.client.close()
 
-	@unittest.skip("skipping mongodb test 1")
+	@unittest.skipIf(missing_pymongo, "pymongo not installed, skipping mongodb test 1")
 	def test_01_store_record(self):
 		"""
 		Load mongo.yaml configuration file, parse it and analyze it
@@ -40,7 +47,7 @@ class RCMongoTest(unittest.TestCase):
 
 		self.assertEqual(self.collection.find().count(), 1)
 
-	@unittest.skip("skipping mongodb test 2")
+	@unittest.skipIf(missing_pymongo, "pymongo not installed, skipping mongodb test 2")
 	def test_02_check_record(self):
 		"""
 		Load mongo.yaml configuration file, parse it and analyze it

@@ -2,7 +2,6 @@ import sys, os.path
 import argparse
 import json
 import pytrap
-import pymongo
 from time import time, gmtime
 from uuid import uuid4
 from datetime import datetime
@@ -211,7 +210,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         except DropMsg:
             logger.info("Message was dropped")
             continue
-        except pymongo.errors as e:
+        except Exception as e:
             logger.error(str(e))
             break
 

@@ -2,7 +2,12 @@ import unittest
 import os
 import simplejson as json
 
-import pytrap
+# Skip pytrap test if we can't import pytrap itself
+pytrap_missing = False
+try:
+	import pytrap
+except:
+	pytrap_missing = True
 
 from reporter_config.Config import Config
 
@@ -18,7 +23,7 @@ class RCTrapTest(unittest.TestCase):
 	def tearDown(self):
 		pass
 
-	@unittest.skip("skipping TRAP test")
+	@unittest.skipIf(pytrap_missing, "missing pytrap module, skipping TRAP test")
 	def test_01_receive_message(self):
 		"""
 		Load trap.yaml configuration file, parse it and analyze it

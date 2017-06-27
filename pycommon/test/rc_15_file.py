@@ -1,6 +1,6 @@
 import unittest
 import os
-import simplejson as json
+import json
 
 from reporter_config.Config import Config
 
