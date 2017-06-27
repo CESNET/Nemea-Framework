@@ -4,6 +4,17 @@ import json
 
 from reporter_config.Config import Config
 
+skip_test = False
+
+# Try to import all needed modules, if any is missing skip this test
+try:
+	import pymongo
+	import warden_client
+	import pynspect
+	import pytrap
+except:
+	skip_test = True
+
 class RCAllActionsTest(unittest.TestCase):
 	"""Instantiate all custom_actions types
 	"""
@@ -28,7 +39,7 @@ class RCAllActionsTest(unittest.TestCase):
 		except:
 			pass
 
-	@unittest.skip("skipping all actions init test")
+	@unittest.skipIf(skip_test, "missing some modules, skipping all actions init test")
 	def test_01_init(self):
 		self.config = Config(os.path.dirname(__file__) + '/rc_config/all_actions.yaml')
 

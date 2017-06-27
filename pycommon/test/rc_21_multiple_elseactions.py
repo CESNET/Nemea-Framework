@@ -1,7 +1,12 @@
 import unittest
 import os
 import json
-import pymongo
+
+pymongo_missing = False
+try:
+	import pymongo
+except:
+	pymongo_missing = True
 
 import logging
 
@@ -26,7 +31,7 @@ class RCMultipleActionsTest(unittest.TestCase):
 		# Remove created file
 		os.remove("testfile.idea")
 
-	@unittest.skip("skipping mongodb test with elseactions")
+	@unittest.skipIf(pymongo_missing, "missing pymongo, skipping mongodb test with elseactions")
 	def test_01_receive_message(self):
 		"""Perform multiple elseactions on matched message
 
