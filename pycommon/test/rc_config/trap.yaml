@@ -6,7 +6,7 @@
 custom_actions:
   - id: trap
     trap:
-        config: "u:rc_testout,u:tc_testin"
+        config: f:/tmp/rc_testfile:buffer=off:w
 
 addressgroups:
 - id: whitelist

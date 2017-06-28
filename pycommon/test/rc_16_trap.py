@@ -1,6 +1,6 @@
 import unittest
 import os
-import simplejson as json
+import json
 
 # Skip pytrap test if we can't import pytrap itself
 pytrap_missing = False
@@ -21,32 +21,28 @@ class RCTrapTest(unittest.TestCase):
 			self.msg = json.load(f)
 
 	def tearDown(self):
-		pass
+		os.remove("/tmp/rc_testfile")
 
 	@unittest.skipIf(pytrap_missing, "missing pytrap module, skipping TRAP test")
 	def test_01_receive_message(self):
 		"""
 		Load trap.yaml configuration file, parse it and analyze it
 
-		This shouldn't rise any exceptions
+		TRAP is configured to store messages to file, the test "sends" the alert
+		and checks if the file exists.
 		"""
-		self.config = Config(os.path.dirname(__file__) + '/rc_config/trap.yaml');
-
-		self.assertNotEqual(self.config, None)
-		self.config.match(self.msg)
-
-		# Initialize TRAP interface
 		trap = pytrap.TrapCtx()
 
-		trap.setVerboseLevel(8)
+		self.config = Config(os.path.dirname(__file__) + '/rc_config/trap.yaml', trap = trap);
+		self.assertNotEqual(self.config, None)
 
-		print(self.config.conf["custom_actions"][0]["trap"]["config"])
+		# Initialize TRAP interface
+		trap.init(['-i', self.config.conf["custom_actions"][0]["trap"]["config"]], 0, 1)
 
-		trap.init(['-i', self.config.conf["custom_actions"][0]["trap"]["config"]], 1, 1)
+		trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
-		# Receive message from trap interface specified in config file
-		data = self.trap.recv()
+		self.config.match(self.msg)
 
-		idea = json.loads(data)
+		# Check if file exists
+		self.assertTrue(os.path.exists("/tmp/rc_testfile"), True)
 
-		self.assertTrue(self.content["ID"], "e214d2d9-359b-443d-993d-3cc5637107a0")

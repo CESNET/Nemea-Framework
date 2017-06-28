@@ -8,7 +8,7 @@ from datetime import datetime
 import logging
 
 from reporter_config import Config
-from reporter_config.actions import DropMsg
+from reporter_config.actions.Drop import DropMsg
 FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
 
 logger = logging.getLogger(__name__)

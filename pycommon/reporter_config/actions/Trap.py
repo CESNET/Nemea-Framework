@@ -14,10 +14,14 @@ class TrapAction(Action):
 		if trap == None:
 			# Initialize TRAP interface
 			self.trap = pytrap.TrapCtx()
-			self.trap.init(['-i', action["trap"]["config"]], 1, 1)
+
+			# Only output interface is needed
+			self.trap.init(['-i', action["trap"]["config"]], 0, 1)
 
 			# We must set output format to JSON with ID IDEA
 			self.trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
+		else:
+			self.trap = trap
 
 	def run(self, record):
 		self.trap.send(json.dumps(record).encode('utf8'), 0)
