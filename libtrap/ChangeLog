@@ -1,3 +1,7 @@
+2017-03-31 (Tomas Cejka): libtrap: BUGFIX replaced assert macros
+2017-03-30 (Tomas Cejka): libtrap: handle signal interrupts to allow alarm() in modules (#49)
+2017-03-29 (Jiri Havranek): libtrap: add --with-ifcmaxclients parameter to configure script allowing to change value of TRAP_IFC_DEFAULT_MAX_CLIENTS
+
 2017-01-19 (Tomas Cejka): libtrap: add script converting module's metadata into man page
 2017-01-09 (Tomas Cejka): libtrap: increased version, released RPM package
 2017-01-09 (Tomas Cejka): libtrap: make the socket dir set by configure
