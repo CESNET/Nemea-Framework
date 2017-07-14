@@ -12,7 +12,7 @@
 
 Name:	python-%{pypi_name}
 Version: 1.1.2
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
 BuildArch: noarch
@@ -45,6 +45,7 @@ Requires:	python-typedcols
 Requires:	python-ipranges
 Requires:	python-pynspect
 Requires:	python-pymongo
+Requires:	python-netaddr
 
 %description -n python2-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
@@ -62,6 +63,7 @@ Requires:	python%{python3_pkgversion}-typedcols
 Requires:	python%{python3_pkgversion}-ipranges
 Requires:	python%{python3_pkgversion}-pynspect
 Requires:	python%{python3_pkgversion}-pymongo
+Requires:	python%{python3_pkgversion}-netaddr
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
