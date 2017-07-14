@@ -33,6 +33,8 @@ class MongoAction(Action):
 
         self.client = pymongo.MongoClient(self.host, self.port)
         self.collection = self.client[self.db][self.collection]
+        if pymongo.version_tuple[0] < 3:
+            self.collection.insert_one = self.collection.insert
 
     def store(self, record):
         """Store IDEA message to MongoDB
