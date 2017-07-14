@@ -11,8 +11,8 @@
 %endif
 
 Name:	python-%{pypi_name}
-Version: 1.1.2
-Release:	3%{?dist}
+Version: 1.1.3
+Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
 BuildArch: noarch
