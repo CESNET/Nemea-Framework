@@ -1,26 +1,23 @@
 from .Action import Action
 
-import warden_client
 import logging
 import json
 
 logger = logging.getLogger(__name__)
 
 class WardenAction(Action):
-    def __init__(self, action):
+    def __init__(self, action, client):
         self.actionId = action["id"]
         self.actionType = "warden"
-        self.file = action["warden"]["configfile"]
-
-        try:
-            self.client = warden_client.Client(**warden_client.read_cfg(self.file))
-        except ValueError as e:
-            logger.error("Failed to load Warden config file '%s'\n%s\n", self.file, e)
-            exit(1)
+        if client is None:
+            logger.warning("Warden Client not instantiated! No records will be send.")
+        self.client = client
 
     def run(self, record):
-        self.client.sendEvents([json.dumps(record)])
+        if self.client != None:
+            self.client.sendEvents([json.dumps(record)])
+        else:
+            logger.warning("No event was sent because there is no Warden Client instance")
 
     def __del__(self):
-        self.client.close()
-
+        pass

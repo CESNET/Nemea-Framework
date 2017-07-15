@@ -20,7 +20,14 @@ class Config():
 	parser = None
 	compiler = None
 
-	def __init__(self, path, trap = None):
+	def __init__(self, path, trap = None, warden = None):
+	    """
+        :param path Path to YAML configuration file
+
+        :param trap Instance of TRAP client used in TrapAction
+
+        :param warden Instance of Warden Client used in WardenAction
+	    """
 		# Parse given config gile
 		with open(path, 'r') as f:
 			self.conf = Parser(f)
@@ -60,10 +67,16 @@ class Config():
 					self.actions[i["id"]] = FileAction(i)
 
 				elif "warden" in i:
+				    """
+				    Pass Warden Client instance to the Warden action
+				    """
 					from .actions.Warden import WardenAction
-					self.actions[i["id"]] = WardenAction(i)
+                    self.actions[i["id"]] = WardenAction(i, warden)
 
 				elif "trap" in i:
+				    """
+				    Pass TRAP context instance to the TRAP action
+				    """
 					from .actions.Trap import TrapAction
 					self.actions[i["id"]] = TrapAction(i, trap)
 
