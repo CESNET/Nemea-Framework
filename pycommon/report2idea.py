@@ -128,9 +128,6 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Set required input format
     trap.setRequiredFmt(0, req_type, req_format)
 
-    # Initialize configuration
-    config = Config.Config(args.config, trap = trap)
-
     # *** Create output handles/clients/etc ***
     wardenclient = None
 
@@ -139,6 +136,10 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         config = warden_client.read_cfg(args.warden)
         config['name'] = args.name
         wardenclient = warden_client.Client(**config)
+
+    # Initialize configuration
+    config = Config.Config(args.config, trap = trap, warden = wardenclient)
+
 
     # *** Main loop ***
     URInputTmplt = None
