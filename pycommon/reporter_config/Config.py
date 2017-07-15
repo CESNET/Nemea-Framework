@@ -67,11 +67,11 @@ class Config():
 					self.actions[i["id"]] = FileAction(i)
 
 				elif "warden" in i:
-				    """
-				    Pass Warden Client instance to the Warden action
-				    """
+					"""
+					Pass Warden Client instance to the Warden action
+					"""
 					from .actions.Warden import WardenAction
-                    self.actions[i["id"]] = WardenAction(i, warden)
+					self.actions[i["id"]] = WardenAction(i, warden)
 
 				elif "trap" in i:
 				    """
