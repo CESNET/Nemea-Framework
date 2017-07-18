@@ -74,37 +74,37 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # *** Parse command-line arguments ***
     if arg_parser is None:
-       arg_parser = argparse.ArgumentParser()
+        arg_parser = argparse.ArgumentParser()
     arg_parser.formatter_class = argparse.RawDescriptionHelpFormatter
 
     # Set description
     arg_parser.description = str.format(desc_template,
-        name=module_name,
-        type={pytrap.FMT_RAW:'raw', pytrap.FMT_UNIREC:'UniRec', pytrap.FMT_JSON:'JSON'}.get(req_type,'???'),
-        fmt=req_format,
-        original_desc = module_desc+"\n\n  " if module_desc else "",
-    )
+            name=module_name,
+            type={pytrap.FMT_RAW:'raw', pytrap.FMT_UNIREC:'UniRec', pytrap.FMT_JSON:'JSON'}.get(req_type,'???'),
+            fmt=req_format,
+            original_desc = module_desc+"\n\n  " if module_desc else "",
+            )
 
     # Add arguments defining outputs
     # TRAP output
     arg_parser.add_argument('--trap', action='store_true',
-                            help='Enable output via TRAP interface (JSON type with format id "IDEA"). Parameters are set using "-i" option as usual.')
+            help='Enable output via TRAP interface (JSON type with format id "IDEA"). Parameters are set using "-i" option as usual.')
     # Config file
     arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
-                            help='Specify YAML config file path which to load.')
+            help='Specify YAML config file path which to load.')
     # Warden3 output
     arg_parser.add_argument('--warden', metavar="CONFIG_FILE",
-                            help='Send IDEA messages to Warden server. Load configuration of Warden client from CONFIG_FILE.')
+            help='Send IDEA messages to Warden server. Load configuration of Warden client from CONFIG_FILE.')
 
     # Other options
     arg_parser.add_argument('-n', '--name', metavar='NODE_NAME',
-                            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required if Warden output is used, recommended otherwise.')
+            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required if Warden output is used, recommended otherwise.')
     arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
-                            help="""Enable verbose mode (may be used by some modules, common part donesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
+            help="""Enable verbose mode (may be used by some modules, common part donesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
-                           help='TODO (ideally this section should be added by TRAP')
+            help='TODO (ideally this section should be added by TRAP')
     # Parse arguments
     args = arg_parser.parse_args()
 
@@ -128,9 +128,6 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Set required input format
     trap.setRequiredFmt(0, req_type, req_format)
 
-    # Initialize configuration
-    config = Config.Config(args.config, trap = trap)
-
     # *** Create output handles/clients/etc ***
     wardenclient = None
 
@@ -139,6 +136,10 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         config = warden_client.read_cfg(args.warden)
         config['name'] = args.name
         wardenclient = warden_client.Client(**config)
+
+    # Initialize configuration
+    config = Config.Config(args.config, trap = trap, warden = wardenclient)
+
 
     # *** Main loop ***
     URInputTmplt = None
