@@ -81,7 +81,7 @@ enum fht_table
     FHT_INSERT_STASH_OK = 2,
     FHT_INSERT_STASH_LOST = 3,
     FHT_INSERT_FAILED = -1,
-    FHT_INSERT_FULL = -2,
+    FHT_INSERT_FULL = -2
 };
 
 /**
@@ -93,7 +93,7 @@ enum fht_iter
     FHT_ITER_RET_END =  1,
     FHT_ITER_START   = -1,
     FHT_ITER_STASH   = -2,
-    FHT_ITER_END     = -3,
+    FHT_ITER_END     = -3
 };
 
 /**
