@@ -449,8 +449,8 @@ fht_table_t * fht_init(uint32_t table_rows, uint32_t key_size, uint32_t data_siz
  */
 int fht_insert(fht_table_t *table, const void *key, const void *data, void *key_lost, void *data_lost)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
 
    //lock row
    while (__sync_lock_test_and_set(&table->lock_table[table_row], 1))
@@ -551,8 +551,8 @@ int fht_insert(fht_table_t *table, const void *key, const void *data, void *key_
  */
 int fht_insert_wr(fht_table_t *table, const void *key, const void *data)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
 
    //lock row
    while (__sync_lock_test_and_set(&table->lock_table[table_row], 1))
@@ -646,8 +646,8 @@ int fht_insert_wr(fht_table_t *table, const void *key, const void *data)
  */
 int fht_insert_with_stash(fht_table_t *table, const void *key, const void *data, void *key_lost, void *data_lost)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    uint32_t i;
 
    //lock row
@@ -807,8 +807,8 @@ int fht_insert_with_stash(fht_table_t *table, const void *key, const void *data,
  */
 int fht_insert_with_stash_wr(fht_table_t *table, const void *key, const void *data)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    uint32_t i;
 
    //lock row
@@ -955,8 +955,8 @@ int fht_insert_with_stash_wr(fht_table_t *table, const void *key, const void *da
  */
 int fht_remove(fht_table_t *table, const void *key)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    unsigned int i;
 
    //lock row
@@ -998,8 +998,8 @@ int fht_remove(fht_table_t *table, const void *key)
  */
 int fht_remove_locked(fht_table_t *table, const void *key, int8_t *lock_ptr)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    unsigned int i;
 
    if (lock_ptr == &table->lock_table[table_row]) {
@@ -1031,8 +1031,8 @@ int fht_remove_locked(fht_table_t *table, const void *key, int8_t *lock_ptr)
  */
 int fht_remove_with_stash(fht_table_t *table, const void *key)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    unsigned int i;
 
    //lock row
@@ -1094,8 +1094,8 @@ int fht_remove_with_stash(fht_table_t *table, const void *key)
  */
 int fht_remove_with_stash_locked(fht_table_t *table, const void *key, int8_t *lock_ptr)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    unsigned int i;
 
    if (lock_ptr == &table->lock_table[table_row]) {
@@ -1172,7 +1172,7 @@ int fht_remove_iter(fht_iter_t *iter)
  */
 void fht_clear(fht_table_t *table)
 {
-   unsigned long long i;
+   uint64_t i;
 
    for (i = 0; i < table->table_rows; i++) {
       //lock row
