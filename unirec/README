@@ -38,9 +38,9 @@ ur_set(tmplt, record, F_FIELD3, 56);
 
 // Read values of the record and print them to standard output
 printf("%i %i %i\n",
-   ur_get(tmplt, record, F_FIELD1);
-   ur_get(tmplt, record, F_FIELD2);
-   ur_get(tmplt, record, F_FIELD3);
+   ur_get(tmplt, record, F_FIELD1),
+   ur_get(tmplt, record, F_FIELD2),
+   ur_get(tmplt, record, F_FIELD3),
 );
 ```
 
