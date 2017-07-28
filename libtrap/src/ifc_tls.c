@@ -64,6 +64,10 @@
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 
 
 #include "../include/libtrap/trap.h"
@@ -94,6 +98,8 @@
 #ifndef MIN
 #define MIN(a,b) ((a)>(b)?(b):(a))
 #endif
+
+#define TRUSTED_CA_PATH "/home/hlavaj20/openssl/client/ca.crt"
 
 static SSL_CTX *tlsserver_create_context()
 {
@@ -131,6 +137,96 @@ static SSL_CTX *tlsclient_create_context()
    }
 
    return ctx;
+}
+
+static int verify_certificate(void *arg, int i)
+{
+   BIO *certbio = NULL, *outbio = NULL;
+   X509 *error_cert = NULL, *cert = NULL;
+   X509_NAME *certsubject = NULL;
+   X509_STORE *store = NULL;
+   X509_STORE_CTX *vrfy_ctx = NULL;
+   char *certfile = NULL;
+   int ret = 0;
+
+   if (i == 0) { /* server verification */
+      tls_receiver_private_t *c = (tls_receiver_private_t *) arg;
+      certfile = c->certfile;
+   } else { /* client verification */
+      tls_sender_private_t *c = (tls_sender_private_t *) arg;
+      certfile = c->certfile;
+   }
+
+   OpenSSL_add_all_algorithms(); //TODO do we need all algorithms
+   ERR_load_BIO_strings();
+   ERR_load_crypto_strings(); //TODO this is not required when memory usage is an issue
+
+   /* Create the Input/Output BIO's. */
+   certbio = BIO_new(BIO_s_file());
+   outbio  = BIO_new_fp(stdout, BIO_NOCLOSE); //TODO output stream, might want to change or get rid of
+
+   /* Initialize the global certificate validation store object. */
+   if (!(store=X509_STORE_new())){
+      BIO_printf(outbio, "Error creating X509_STORE_CTX object.\n");
+      return 1;
+   }
+
+   /* Create the context structure for the validation operation. */
+   vrfy_ctx = X509_STORE_CTX_new();
+   if (vrfy_ctx == NULL){
+      BIO_printf(outbio, "Error creating new X509_STORE_CTX for verification.\n");
+      return 1;
+   }
+
+   /* Load the certificate and cacert chain from file (PEM). */
+   ret = BIO_read_filename(certbio, certfile);
+   if (! (cert = PEM_read_bio_X509(certbio, NULL, 0, NULL))) {
+     BIO_printf(outbio, "Error loading cert into memory\n");
+     return 1;
+   }
+
+   // TODO implement chain file - I do not think we need this since we will be running our own CA
+   ret = X509_STORE_load_locations(store, TRUSTED_CA_PATH, NULL);
+   if (ret != 1){
+      BIO_printf(outbio, "Error loading CA cert or chain file\n");
+      return 1;
+   }
+
+   /* Initialize the ctx structure for a verification operation: *
+    * Set the trusted cert store, the unvalidated cert, and any  *
+    * potential certs that could be needed (here we set it NULL) */
+   X509_STORE_CTX_init(vrfy_ctx, store, cert, NULL); /* TODO initialise store with our CA */
+
+   /* Check the complete cert chain can be build and validated.  *
+    * Returns 1 on success, 0 on verification failures, and -1   *
+    * for trouble with the ctx object (i.e. missing certificate) */
+   ret = X509_verify_cert(vrfy_ctx);
+   BIO_printf(outbio, "Verification return code: %d\n", ret);
+
+   if(ret == 0 || ret == 1){
+      BIO_printf(outbio, "Verification result text: %s\n", X509_verify_cert_error_string(vrfy_ctx->error));
+   }
+
+   /* The error handling below shows how to get failure details from the offending certificate. */
+   if(ret == 0) {
+       /*  get the offending certificate causing the failure */
+       error_cert  = X509_STORE_CTX_get_current_cert(vrfy_ctx);
+       certsubject = X509_NAME_new();
+       certsubject = X509_get_subject_name(error_cert);
+       BIO_printf(outbio, "Verification failed cert:\n");
+       X509_NAME_print_ex(outbio, certsubject, 0, XN_FLAG_MULTILINE);
+       BIO_printf(outbio, "\n");
+   }
+
+   /* Free up all structures */
+   X509_STORE_CTX_free(vrfy_ctx);
+   X509_STORE_free(store);
+   X509_free(cert);
+   BIO_free_all(certbio);
+   BIO_free_all(outbio);
+   EVP_cleanup(); /* cleanup for OpenSSL_add_all_algorithms */
+   ERR_free_strings(); /* frees all previously loaded error strings */
+   return ret;
 }
 
 static int tlsserver_configure_context(SSL_CTX *ctx, const char *key, const char *crt)
@@ -963,6 +1059,13 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    } while (rv < 1);
    VERBOSE(CL_ERROR, "SSL successfully connected")
 
+   //TODOTODO
+   int ret_ver = verify_certificate(c, 0); /* passing 0 for server verification, TODO ENUM */
+   if (ret_ver != 1){
+      VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
+      SSL_free(c->ssl);
+      return 17; //TODO make new trap error of SSL problem
+   }
 
       /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
@@ -1849,6 +1952,16 @@ static void *accept_clients_thread(void *arg)
                   SSL_free(cl->ssl);
                   goto refuse_client;
                }
+
+               /** Verifying SSL certificate of client. */
+               //TODO verification of SSL certificate a local CA
+               int ret_ver = verify_certificate(c, 1); /* passing 1 for client certificate, TODO ENUM */
+               if (ret_ver != 1){
+                  VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify client's certificate");
+                  SSL_free(cl->ssl);
+                  goto refuse_client;
+               }
+
                /** Output interface negotiation */
                int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TLS, i);
                if (ret_val == NEG_RES_OK) {
