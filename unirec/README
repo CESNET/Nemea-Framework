@@ -267,7 +267,7 @@ Public functions and macros
 
 ### Definition of statically-known UniRec fields.
 ```
-UR_FIELDS(type name [, type name [, ...] ]);
+UR_FIELDS(type name [, type name [, ...] ])
 ```
 This macro allows to define fields used in the program and their types at
 compile-time. This allows to access such fields in UniRec records more easily
@@ -298,7 +298,7 @@ UR_FIELDS(
   uint16   SRC_PORT,
   uint16   DST_PORT,
   uint8    PROTO,
-);
+)
 ```
 This macro generates code allowing to use the defined fields in ur_get, ur_set
 and other macros which need symbolic constants to access the fields.
