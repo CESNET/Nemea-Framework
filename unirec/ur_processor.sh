@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # Copyright (C) 2016 CESNET
 #
@@ -179,13 +179,17 @@ hfile=hfile"#include <unirec/unirec.h>\n";
 }
 
 {
-   cnames=cnames"\n   \""$2"\",";
-   csizes=csizes"\n   "size_table[$1]", /* "$2" */";
-   cstatsizes=cstatsizes"\n   "type_table[$1]", /* "$2" */";
+   if ($2 == "") {
+      print "Error: empty line (NR): ", $0;
+   } else {
+      cnames=cnames"\n   \""$2"\",";
+      csizes=csizes"\n   "size_table[$1]", /* "$2" */";
+      cstatsizes=cstatsizes"\n   "type_table[$1]", /* "$2" */";
 
-   hfile=hfile"\n#define F_"$2"   "field_id;
-   hfile=hfile"\n#define F_"$2"_T   "c_types[$1];
-   field_id++;
+      hfile=hfile"\n#define F_"$2"   "field_id;
+      hfile=hfile"\n#define F_"$2"_T   "c_types[$1];
+      field_id++;
+   }
 }
 
 END {
