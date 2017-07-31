@@ -139,30 +139,22 @@ static SSL_CTX *tlsclient_create_context()
    return ctx;
 }
 
-static int verify_certificate(void *arg, int i)
+static int verify_certificate(SSL *arg)
 {
    BIO *certbio = NULL, *outbio = NULL;
    X509 *error_cert = NULL, *cert = NULL;
    X509_NAME *certsubject = NULL;
    X509_STORE *store = NULL;
    X509_STORE_CTX *vrfy_ctx = NULL;
-   char *certfile = NULL;
    int ret = 0;
 
-   if (i == 0) { /* server verification */
-      tls_receiver_private_t *c = (tls_receiver_private_t *) arg;
-      certfile = c->certfile;
-   } else { /* client verification */
-      tls_sender_private_t *c = (tls_sender_private_t *) arg;
-      certfile = c->certfile;
-   }
+   cert = SSL_get_certificate(arg);
 
    OpenSSL_add_all_algorithms(); //TODO do we need all algorithms
    ERR_load_BIO_strings();
    ERR_load_crypto_strings(); //TODO this is not required when memory usage is an issue
 
    /* Create the Input/Output BIO's. */
-   certbio = BIO_new(BIO_s_file());
    outbio  = BIO_new_fp(stdout, BIO_NOCLOSE); //TODO output stream, might want to change or get rid of
 
    /* Initialize the global certificate validation store object. */
@@ -176,13 +168,6 @@ static int verify_certificate(void *arg, int i)
    if (vrfy_ctx == NULL){
       BIO_printf(outbio, "Error creating new X509_STORE_CTX for verification.\n");
       return 1;
-   }
-
-   /* Load the certificate and cacert chain from file (PEM). */
-   ret = BIO_read_filename(certbio, certfile);
-   if (! (cert = PEM_read_bio_X509(certbio, NULL, 0, NULL))) {
-     BIO_printf(outbio, "Error loading cert into memory\n");
-     return 1;
    }
 
    // TODO implement chain file - I do not think we need this since we will be running our own CA
@@ -1042,25 +1027,25 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       if (rv < 1) {
          rv = ERR_get_error();
          switch (rv) {
-            case SSL_ERROR_NONE:
-            case SSL_ERROR_WANT_CONNECT:
-            case SSL_ERROR_WANT_X509_LOOKUP:
-            case SSL_ERROR_WANT_READ:
-            case SSL_ERROR_WANT_WRITE:
-               break;
-            default:
-               VERBOSE(CL_ERROR, "SSL connection failed. %s",
-                     ERR_reason_error_string(ERR_get_error()));
-               SSL_free(c->ssl);
-               close(c->sd);
-               return TRAP_E_IO_ERROR;
+         case SSL_ERROR_NONE:
+         case SSL_ERROR_WANT_CONNECT:
+         case SSL_ERROR_WANT_X509_LOOKUP:
+         case SSL_ERROR_WANT_READ:
+         case SSL_ERROR_WANT_WRITE:
+            break;
+         default:
+            VERBOSE(CL_ERROR, "SSL connection failed. %s",
+                  ERR_reason_error_string(ERR_get_error()));
+            SSL_free(c->ssl);
+            close(c->sd);
+            return TRAP_E_IO_ERROR;
          }
       }
    } while (rv < 1);
    VERBOSE(CL_ERROR, "SSL successfully connected")
 
    //TODOTODO
-   int ret_ver = verify_certificate(c, 0); /* passing 0 for server verification, TODO ENUM */
+   int ret_ver = verify_certificate(c->ssl); /* server certificate verification */
    if (ret_ver != 1){
       VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
       SSL_free(c->ssl);
@@ -1070,38 +1055,38 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
       switch(input_ifc_negotiation(c, TRAP_IFC_TYPE_TLS)) {
-         case NEG_RES_FMT_UNKNOWN:
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
-            close(sockfd);
-            return TRAP_E_TIMEOUT;
+      case NEG_RES_FMT_UNKNOWN:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
+         close(sockfd);
+         return TRAP_E_TIMEOUT;
 
-         case NEG_RES_CONT:
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
-            return TRAP_E_OK;
+      case NEG_RES_CONT:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
+         return TRAP_E_OK;
 
-         case NEG_RES_FMT_CHANGED: // used on format change with JSON
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (format has changed; it was not first negotiation).");
-            return TRAP_E_OK;
+      case NEG_RES_FMT_CHANGED: // used on format change with JSON
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (format has changed; it was not first negotiation).");
+         return TRAP_E_OK;
 
-         case NEG_RES_RECEIVER_FMT_SUBSET: // used on format change with UniRec
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (required set of fields of the input interface is subset of the recevied format).");
-            return TRAP_E_OK;
+      case NEG_RES_RECEIVER_FMT_SUBSET: // used on format change with UniRec
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (required set of fields of the input interface is subset of the recevied format).");
+         return TRAP_E_OK;
 
-         case NEG_RES_SENDER_FMT_SUBSET: // used on format change with UniRec
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new recevied format specifier is subset of the old one; it was not first negotiation).");
-            return TRAP_E_OK;
+      case NEG_RES_SENDER_FMT_SUBSET: // used on format change with UniRec
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new recevied format specifier is subset of the old one; it was not first negotiation).");
+         return TRAP_E_OK;
 
-         case NEG_RES_FAILED:
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
-            return TRAP_E_FIELDS_MISMATCH;
+      case NEG_RES_FAILED:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
+         return TRAP_E_FIELDS_MISMATCH;
 
-         case NEG_RES_FMT_MISMATCH:
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
-            return TRAP_E_FIELDS_MISMATCH;
+      case NEG_RES_FMT_MISMATCH:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
+         return TRAP_E_FIELDS_MISMATCH;
 
-         default:
-            VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
-            break;
+      default:
+         VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: default case");
+         break;
       }
 #endif
 
@@ -1955,7 +1940,7 @@ static void *accept_clients_thread(void *arg)
 
                /** Verifying SSL certificate of client. */
                //TODO verification of SSL certificate a local CA
-               int ret_ver = verify_certificate(c, 1); /* passing 1 for client certificate, TODO ENUM */
+               int ret_ver = verify_certificate(cl->ssl); /* new client certificate verification */
                if (ret_ver != 1){
                   VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify client's certificate");
                   SSL_free(cl->ssl);
