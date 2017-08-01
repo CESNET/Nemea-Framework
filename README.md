@@ -36,7 +36,7 @@ Python parts must be installed separately when needed.
 It can be done using:
 
 ```
-cd python; sudo python setup.py install
+cd pytrap; sudo python setup.py install
 ```
 and
 ```
