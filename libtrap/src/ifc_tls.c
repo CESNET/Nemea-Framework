@@ -99,7 +99,7 @@
 #define MIN(a,b) ((a)>(b)?(b):(a))
 #endif
 
-#define TRUSTED_CA_PATH "/home/hlavaj20/openssl/client/ca.crt"
+#define TRUSTED_CA_PATH "/tmp/openssl/ca.crt"
 
 static SSL_CTX *tlsserver_create_context()
 {
@@ -141,76 +141,20 @@ static SSL_CTX *tlsclient_create_context()
 
 static int verify_certificate(SSL *arg)
 {
-   BIO *certbio = NULL, *outbio = NULL;
-   X509 *error_cert = NULL, *cert = NULL;
-   X509_NAME *certsubject = NULL;
-   X509_STORE *store = NULL;
-   X509_STORE_CTX *vrfy_ctx = NULL;
+   X509 *cert = NULL;
    int ret = 0;
 
-   cert = SSL_get_certificate(arg);
-
-   OpenSSL_add_all_algorithms(); //TODO do we need all algorithms
-   ERR_load_BIO_strings();
-   ERR_load_crypto_strings(); //TODO this is not required when memory usage is an issue
-
-   /* Create the Input/Output BIO's. */
-   outbio  = BIO_new_fp(stdout, BIO_NOCLOSE); //TODO output stream, might want to change or get rid of
-
-   /* Initialize the global certificate validation store object. */
-   if (!(store=X509_STORE_new())){
-      BIO_printf(outbio, "Error creating X509_STORE_CTX object.\n");
+   cert = SSL_get_peer_certificate(arg);
+   if (cert != NULL) {
+      if (SSL_get_verify_result(arg) == X509_V_OK) {
+         printf("Verification successful!\n");
+      }
+   } else {
+      printf("Verification FAILED!\n");
       return 1;
    }
+   
 
-   /* Create the context structure for the validation operation. */
-   vrfy_ctx = X509_STORE_CTX_new();
-   if (vrfy_ctx == NULL){
-      BIO_printf(outbio, "Error creating new X509_STORE_CTX for verification.\n");
-      return 1;
-   }
-
-   // TODO implement chain file - I do not think we need this since we will be running our own CA
-   ret = X509_STORE_load_locations(store, TRUSTED_CA_PATH, NULL);
-   if (ret != 1){
-      BIO_printf(outbio, "Error loading CA cert or chain file\n");
-      return 1;
-   }
-
-   /* Initialize the ctx structure for a verification operation: *
-    * Set the trusted cert store, the unvalidated cert, and any  *
-    * potential certs that could be needed (here we set it NULL) */
-   X509_STORE_CTX_init(vrfy_ctx, store, cert, NULL); /* TODO initialise store with our CA */
-
-   /* Check the complete cert chain can be build and validated.  *
-    * Returns 1 on success, 0 on verification failures, and -1   *
-    * for trouble with the ctx object (i.e. missing certificate) */
-   ret = X509_verify_cert(vrfy_ctx);
-   BIO_printf(outbio, "Verification return code: %d\n", ret);
-
-   if(ret == 0 || ret == 1){
-      BIO_printf(outbio, "Verification result text: %s\n", X509_verify_cert_error_string(vrfy_ctx->error));
-   }
-
-   /* The error handling below shows how to get failure details from the offending certificate. */
-   if(ret == 0) {
-       /*  get the offending certificate causing the failure */
-       error_cert  = X509_STORE_CTX_get_current_cert(vrfy_ctx);
-       certsubject = X509_NAME_new();
-       certsubject = X509_get_subject_name(error_cert);
-       BIO_printf(outbio, "Verification failed cert:\n");
-       X509_NAME_print_ex(outbio, certsubject, 0, XN_FLAG_MULTILINE);
-       BIO_printf(outbio, "\n");
-   }
-
-   /* Free up all structures */
-   X509_STORE_CTX_free(vrfy_ctx);
-   X509_STORE_free(store);
-   X509_free(cert);
-   BIO_free_all(certbio);
-   BIO_free_all(outbio);
-   EVP_cleanup(); /* cleanup for OpenSSL_add_all_algorithms */
-   ERR_free_strings(); /* frees all previously loaded error strings */
    return ret;
 }
 
@@ -219,7 +163,7 @@ static int tlsserver_configure_context(SSL_CTX *ctx, const char *key, const char
    int ret;
 
    /* Set the key and cert */
-   ret = SSL_CTX_use_certificate_file(ctx, crt, SSL_FILETYPE_PEM);
+   ret = SSL_CTX_use_certificate_chain_file(ctx, crt);
    if (ret != 1) {
       VERBOSE(CL_ERROR, "Loading certificate (%s) failed. %s",
             crt, ERR_reason_error_string(ERR_get_error()));
@@ -232,6 +176,13 @@ static int tlsserver_configure_context(SSL_CTX *ctx, const char *key, const char
             key, ERR_reason_error_string(ERR_get_error()));
       return EXIT_FAILURE;
    }
+
+   if (SSL_CTX_load_verify_locations(ctx, "/tmp/openssl/ca.crt", NULL) != 1) {
+      printf("Couldn't verify location.\n");
+      return EXIT_FAILURE;
+   }
+   SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+
    return EXIT_SUCCESS;
 }
 
@@ -1021,7 +972,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    c->ssl = SSL_new(c->sslctx);
    SSL_set_fd(c->ssl, c->sd);
    SSL_set_connect_state(c->ssl);
-
+   
    do {
       rv = SSL_connect(c->ssl);
       if (rv < 1) {
@@ -1042,11 +993,10 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
          }
       }
    } while (rv < 1);
-   VERBOSE(CL_ERROR, "SSL successfully connected")
+   VERBOSE(CL_VERBOSE_BASIC, "SSL successfully connected")
 
-   //TODOTODO
    int ret_ver = verify_certificate(c->ssl); /* server certificate verification */
-   if (ret_ver != 1){
+   if (ret_ver != 0){
       VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
       SSL_free(c->ssl);
       return 17; //TODO make new trap error of SSL problem
@@ -1918,6 +1868,18 @@ static void *accept_clients_thread(void *arg)
 
             pthread_mutex_lock(&c->lock);
 
+            X509* certificate = X509_new();
+            BIO* bio_cert = BIO_new_file(c->certfile, "r");
+            PEM_read_bio_X509(bio_cert, &certificate, NULL, NULL);
+            if (certificate == NULL) {
+               printf("Didn't load certificate.\n");
+            }
+            if (SSL_CTX_add_client_CA(c->sslctx, certificate) != 1) {
+               printf("Didn't add certificate properly.\n");
+            }
+            X509_free(certificate);
+            BIO_free_all(bio_cert);
+
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
@@ -1934,16 +1896,15 @@ static void *accept_clients_thread(void *arg)
 
                if (SSL_accept(cl->ssl) <= 0) {
                   ERR_print_errors_fp(stderr);
+                  printf("No tak to proste neconnectne no a co'\n");
                   SSL_free(cl->ssl);
                   goto refuse_client;
                }
 
                /** Verifying SSL certificate of client. */
-               //TODO verification of SSL certificate a local CA
                int ret_ver = verify_certificate(cl->ssl); /* new client certificate verification */
-               if (ret_ver != 1){
+               if (ret_ver != 0){
                   VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify client's certificate");
-                  SSL_free(cl->ssl);
                   goto refuse_client;
                }
 
