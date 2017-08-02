@@ -25,12 +25,32 @@ Parameters when used as INPUT interface:
 ```
 <hostname or ip>:<port>
 ```
+If you leave hostname/ip blank, IFC assumes you want to use localhost.
 
 Parameters when used as OUTPUT interface:
 ```
 <port>:<max_num_of_clients>
 ```
 Maximal number of connected clients (input interfaces) is optional (64 by default).
+
+TLS interface ('T')
+-------------------
+
+Communicates through a TCP socket after establishing encrypted connection. You have to provide certificate, key and CA chain file with trusted CAs. Otherwise same as in TCP: Output interface listens on a given port, input interface connects to it. There may be more than one input interfaces connected to one output interface, every input interface will get the same data.
+
+Parameters when used as INPUT interface:
+```
+<hostname or ip>:<port>:<keyfile>:<certfile>:<CAfile>
+```
+If you leave hostname/ip blank, IFC assumes you want to use localhost.
+
+Parameters when used as OUTPUT interface:
+```
+<port>:<max_num_of_clients>:<keyfile>:<certfile>:<CAfile>
+```
+Maximal number of connected clients (input interfaces) is optional (64 by default).
+
+Parameters keyfile, certfile, CAfile expect a path to apropriate files in PEM format.
 
 UNIX domain socket ('u')
 ------------------------
