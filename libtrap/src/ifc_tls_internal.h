@@ -88,12 +88,15 @@ typedef struct tls_sender_private_s {
    /**
     * Path to private key file in PEM format.
     */
-
    char *keyfile;
    /**
     * Path to certificate in PEM format.
     */
    char *certfile;
+   /**
+    * Path to trusted CAs (can be chain file) file in PEM format.
+    */
+   char *cafile;
 
    int server_sd;
    SSL_CTX *sslctx;
@@ -152,12 +155,16 @@ typedef struct tls_receiver_private_s {
    /**
     * Path to private key file in PEM format.
     */
-
    char *keyfile;
    /**
     * Path to certificate in PEM format.
     */
    char *certfile;
+   /**
+    * Path to trusted CAs (can be chain file) file in PEM format.
+    */
+   char *cafile;
+
    SSL_CTX *sslctx;
    SSL *ssl;
 

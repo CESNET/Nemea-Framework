@@ -93,6 +93,7 @@ extern char *trap_default_socket_path_format;
 #define TRAP_E_IO_ERROR 14 ///< IO Error
 #define TRAP_E_TERMINATED 15 ///< Interface was terminated during reading/writing
 #define TRAP_E_NOT_SELECTED 16 ///< Interface was not selected reading/writing
+#define TRAP_E_BAD_CERT 17 ///< Wrong certificate given to TLS interface
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
 #define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
