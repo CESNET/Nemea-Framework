@@ -1,13 +1,15 @@
 /**
- * \file ifc_tcpip.c
- * \brief TRAP TCP/IP interfaces
+ * \file ifc_tls.c
+ * \brief TRAP TCP with TLS interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
+ * \author Jaroslav Hlavac <hlavaj20@fit.cvut.cz>
  * \date 2013
  * \date 2014
  * \date 2015
+ * \date 2017
  */
 /*
- * Copyright (C) 2013-2015 CESNET
+ * Copyright (C) 2013-2017 CESNET
  *
  * LICENSE TERMS
  *
@@ -105,8 +107,6 @@
    } \
 }
 
-#define TRUSTED_CA_PATH "/tmp/openssl/ca.crt"
-
 static SSL_CTX *tlsserver_create_context()
 {
    const SSL_METHOD *method;
@@ -179,7 +179,7 @@ static int verify_certificate(SSL *arg)
  * \return 1 on failure, 0 on success
  * Disabling undesired versions of TLS/SSL and adding supported CAs to SSL_CTX.
  */
-static int tls_server_configure_context(const char *cert, SSL_CTX *ctx)
+static int tls_server_configure_ctx(const char *cert, SSL_CTX *ctx)
 {
    X509* certificate = X509_new();
    BIO* bio_cert = BIO_new_file(cert, "r");
@@ -209,11 +209,12 @@ static int tls_server_configure_context(const char *cert, SSL_CTX *ctx)
  * \param[in] ctx  ssl context to be configured
  * \param[in] key  path to keyfile
  * \param[in] cert  path to certfile
+ * \param[in] ca  path to CA file
  * \return 1 on failure, 0 on success
  * Loading certificate and key to SSL_CTX. Setting location of CA that is used for verification of
  * incomming certificates. Also forcing peer to send it's certificate.
  */
-static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt)
+static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt, const char *ca)
 {
    int ret;
 
@@ -238,7 +239,7 @@ static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt)
    }
       
 
-   if (SSL_CTX_load_verify_locations(ctx, "/tmp/openssl/ca.crt", NULL) != 1) {
+   if (SSL_CTX_load_verify_locations(ctx, ca, NULL) != 1) {
       VERBOSE(CL_ERROR, "Could not load CA location used for verification.");
       return EXIT_FAILURE;
    }
@@ -353,11 +354,11 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
          VERBOSE(CL_VERBOSE_LIBRARY, "Timeout elapsed - non-blocking call used.");
          (*size) = numbytes;
          return TRAP_E_TIMEOUT;
-      } else if (retval < 0 && errno == EINTR) { // signal received
+      } else if (retval < 0 && errno == EINTR) { /* signal received */
          /** \todo continue with timeout minus time already waited */
          VERBOSE(CL_VERBOSE_BASIC, "select interrupted");
          continue;
-      } else { // some error has occured
+      } else { /* some error has occured */
          VERBOSE(CL_VERBOSE_OFF, "select() returned %i (%s)", retval, strerror(errno));
          client_socket_disconnect(priv);
          return TRAP_E_IO_ERROR;
@@ -543,13 +544,6 @@ conn_wait:
             /* ok, wait for header as we planned */
          } else {
             return TRAP_E_TERMINATED;
-//            /* failed, reseting... */
-//            if (timeout == TRAP_WAIT) { //TODO just quit
-//               /* Create a delay when blocking...
-//                * This is specific situation, many attempts would be unpleasant */
-//               sleep(1);
-//            }
-//            goto reset;
          }
       }
       goto head_wait;
@@ -639,6 +633,7 @@ void tls_receiver_destroy(void *priv)
       CHECK_AND_FREE(config->dest_port, free);
       CHECK_AND_FREE(config->keyfile, free);
       CHECK_AND_FREE(config->certfile, free);
+      CHECK_AND_FREE(config->cafile, free);
       CHECK_AND_FREE(config, free);
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
@@ -750,6 +745,7 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
    char *dest_port = NULL;
    char *keyfile = NULL;
    char *certfile = NULL;
+   char *cafile = NULL;
    tls_receiver_private_t *config = NULL;
 
    if (params == NULL) {
@@ -778,7 +774,7 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
       param_iterator = trap_get_param_by_delimiter(param_iterator, &dest_port, TRAP_IFC_PARAM_DELIMITER
 );
    } else {
-      VERBOSE(CL_ERROR, "Missing 'dest_port', 'keyfile' and 'certfile' parameters.");
+      VERBOSE(CL_ERROR, "Missing 'dest_port', 'keyfile', 'certfile' and trusted 'CAfile' parameters.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
@@ -786,7 +782,7 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
       param_iterator = trap_get_param_by_delimiter(param_iterator, &keyfile, TRAP_IFC_PARAM_DELIMITER
 );
    } else {
-      VERBOSE(CL_ERROR, "Missing 'keyfile' and 'certfile' parameters.");
+      VERBOSE(CL_ERROR, "Missing 'keyfile', 'certfile' and trusted 'CAfile' parameters.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
@@ -794,7 +790,16 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
       param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
 );
    } else {
+      VERBOSE(CL_ERROR, "Missing 'certfile' and trusted 'CAfile' parameters.");
+      result = TRAP_E_BADPARAMS;
+      goto failsafe_cleanup;
+   }
+   if (param_iterator != NULL) {
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER
+);
+   } else {
       /* dest_addr skipped, move parameters */
+      cafile = certfile;
       certfile = keyfile;
       keyfile = dest_port;
       dest_port = dest_addr;
@@ -810,6 +815,7 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
    config->dest_port = dest_port;
    config->keyfile = keyfile;
    config->certfile = certfile;
+   config->cafile = cafile;
 
    if ((config->dest_addr == NULL) || (config->dest_port == NULL)) {
       /* no delimiter found even if we expect two parameters */
@@ -827,7 +833,7 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
       result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
    }
-   if (tls_configure_ctx(config->sslctx, keyfile, certfile) == EXIT_FAILURE) {
+   if (tls_configure_ctx(config->sslctx, keyfile, certfile, cafile) == EXIT_FAILURE) {
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
@@ -876,6 +882,7 @@ failsafe_cleanup:
    CHECK_AND_FREE(dest_port, free);
    CHECK_AND_FREE(config->keyfile, free);
    CHECK_AND_FREE(config->certfile, free);
+   CHECK_AND_FREE(config->cafile, free);
    if (config != NULL && config->sslctx != NULL) {
       CHECK_AND_FREE(config->sslctx, SSL_CTX_free);
    }
@@ -975,7 +982,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
             tv->tv_sec, tv->tv_usec);
    }
 
-   // loop through all the results and connect to the first we can
+   /* loop through all the results and connect to the first we can */
    for (p = servinfo; p != NULL; p = p->ai_next) {
       if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
          continue;
@@ -1054,7 +1061,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    if (ret_ver != 0){
       VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
       CHECK_AND_FREE(c->ssl, SSL_free);
-      return 17; //TODO make new trap error of SSL problem
+      return TRAP_E_BAD_CERT;
    }
 
       /** Input interface negotiation */
@@ -1069,15 +1076,15 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success.");
          return TRAP_E_OK;
 
-      case NEG_RES_FMT_CHANGED: // used on format change with JSON
+      case NEG_RES_FMT_CHANGED: /* used on format change with JSON */
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (format has changed; it was not first negotiation).");
          return TRAP_E_OK;
 
-      case NEG_RES_RECEIVER_FMT_SUBSET: // used on format change with UniRec
+      case NEG_RES_RECEIVER_FMT_SUBSET: /* used on format change with UniRec */
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (required set of fields of the input interface is subset of the recevied format).");
          return TRAP_E_OK;
 
-      case NEG_RES_SENDER_FMT_SUBSET: // used on format change with UniRec
+      case NEG_RES_SENDER_FMT_SUBSET: /* used on format change with UniRec */
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: success (new recevied format specifier is subset of the old one; it was not first negotiation).");
          return TRAP_E_OK;
 
@@ -1508,14 +1515,14 @@ void tls_sender_destroy(void *priv)
    void *res;
    int32_t i;
 
-   // Free private data
+   /* free private data */
    if (c != NULL) {
-
       CHECK_AND_FREE(c->sslctx, SSL_CTX_free);
-
       CHECK_AND_FREE(c->server_port, free);
       CHECK_AND_FREE(c->keyfile, free);
       CHECK_AND_FREE(c->certfile, free);
+      CHECK_AND_FREE(c->cafile, free);
+
       if (c->initialized) {
          /* cancel accepting new clients */
          pthread_cancel(c->accept_thread);
@@ -1701,17 +1708,18 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    char *max_clients = NULL;
    char *keyfile = NULL;
    char *certfile = NULL;
+   char *cafile = NULL;
    tls_sender_private_t *priv = NULL;
    unsigned int max_num_client = 10;
    uint32_t i;
 
-   // Check parameter
+   /* Check parameters */
    if (params == NULL) {
       VERBOSE(CL_ERROR, "IFC requires at least three parameters (port:keyfile:certfile).");
       return TRAP_E_BADPARAMS;
    }
 
-   // Create structure to store private data
+   /* Create structure to store private data */
    priv = (tls_sender_private_t *) calloc(1, sizeof(tls_sender_private_t));
    if (priv == NULL) {
       result = TRAP_E_MEMORY;
@@ -1732,7 +1740,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       param_iterator = trap_get_param_by_delimiter(param_iterator, &keyfile, TRAP_IFC_PARAM_DELIMITER
 );
    } else {
-      VERBOSE(CL_ERROR, "Missing 'keyfile' and 'certfile' for TLS IFC.");
+      VERBOSE(CL_ERROR, "Missing 'keyfile', 'certfile' and trusted 'CAfile' for TLS IFC.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
@@ -1740,7 +1748,15 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
 );
    } else {
-      VERBOSE(CL_ERROR, "Missing 'certfile' for TLS IFC.");
+      VERBOSE(CL_ERROR, "Missing 'certfile' and trusted 'CAfile' for TLS IFC.");
+      result = TRAP_E_BADPARAMS;
+      goto failsafe_cleanup;
+   }
+   if (param_iterator != NULL) {
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER
+);
+   } else {
+      VERBOSE(CL_ERROR, "Missing trusted 'CAfile' for TLS IFC.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
@@ -1748,7 +1764,8 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       /* still having something to parse... Rotate all parameters, the first one is probably max_clients*/
       max_clients = keyfile;
       keyfile = certfile;
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
+      certfile = cafile;
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER
 );
    }
    if (max_clients == NULL) {
@@ -1774,8 +1791,6 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    }
 
    /* allocate buffer according to TRAP_IFC_MESSAGEQ_SIZE with additional space for message header */
-   //priv->message_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
-   //                        sizeof(trap_buffer_header_t));
    priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
                            sizeof(trap_buffer_header_t));
 
@@ -1795,15 +1810,16 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    priv->server_port = server_port;
    priv->keyfile = keyfile;
    priv->certfile = certfile;
+   priv->cafile = cafile;
    priv->is_terminated = 0;
    pthread_mutex_init(&priv->lock, NULL);
    pthread_mutex_init(&priv->sending_lock, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port=\"%s\"\nmax_clients=\"%s\"\n"
-      "TDU size: %u\nKey file: %s\nCert file: %s\n(max_clients_num=\"%u\")",
+      "TDU size: %u\nKey file: %s\nCert file: %s\nCA file: %s\n(max_clients_num=\"%u\")",
       priv->server_port, max_clients,
       priv->int_mess_header.data_length, priv->keyfile, priv->certfile,
-      priv->clients_arr_size);
+      priv->cafile, priv->clients_arr_size);
    CHECK_AND_FREE(max_clients, free);
 
    if (sem_init(&priv->have_clients, 0, 0) == -1) {
@@ -1827,12 +1843,19 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
    }
-   if (tls_configure_ctx(priv->sslctx, keyfile, certfile) == EXIT_FAILURE) {
+
+   if(tls_server_configure_ctx(priv->certfile, priv->sslctx) != 0) {
+      VERBOSE(CL_ERROR, "Configuring server context failed.");
+      goto failsafe_cleanup;
+   }
+
+   if (tls_configure_ctx(priv->sslctx, keyfile, certfile, cafile) == EXIT_FAILURE) {
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
 
-   // Fill struct defining the interface
+
+   /* Fill struct defining the interface */
    ifc->disconn_clients = tlsserver_disconnect_all_clients;
    ifc->send = tls_sender_send;
    ifc->terminate = tls_sender_terminate;
@@ -1872,7 +1895,7 @@ failsafe_cleanup:
 static void *accept_clients_thread(void *arg)
 {
    char remoteIP[INET6_ADDRSTRLEN];
-   struct sockaddr_storage remoteaddr; // client address
+   struct sockaddr_storage remoteaddr; /* client address */
    struct tlsclient_s *cl;
    socklen_t addrlen;
    int newclient, fdmax;
@@ -1880,7 +1903,7 @@ static void *accept_clients_thread(void *arg)
    tls_sender_private_t *c = (tls_sender_private_t *) arg;
    int i;
 
-   // handle new connections
+   /* handle new connections */
    addrlen = sizeof remoteaddr;
    while (1) {
       pthread_mutex_lock(&c->lock);
@@ -1914,11 +1937,6 @@ static void *accept_clients_thread(void *arg)
                   newclient);
 
             pthread_mutex_lock(&c->lock);
-
-            if(tls_server_configure_context(c->certfile, c->sslctx) != 0) {
-               VERBOSE(CL_ERROR, "Configuring server context failed.");
-               //TODO What to do in this case.
-            }
 
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
@@ -1955,7 +1973,7 @@ static void *accept_clients_thread(void *arg)
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
                   CHECK_AND_FREE(cl->ssl, SSL_free);
                   goto refuse_client;
-               } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
+               } else { /* ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client */
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
                   CHECK_AND_FREE(cl->ssl, SSL_free);
                   goto refuse_client;
@@ -1991,7 +2009,7 @@ refuse_client:
  */
 static int server_socket_open(void *priv)
 {
-   int yes = 1;        // for setsockopt() SO_REUSEADDR, below
+   int yes = 1;        /* for setsockopt() SO_REUSEADDR, below */
    int rv;
 
    union tls_socket_addr addr;
@@ -2003,7 +2021,7 @@ static int server_socket_open(void *priv)
 
    memset(&addr, 0, sizeof(addr));
 
-   // get us a socket and bind it
+   /* get us a socket and bind it */
    addr.tls_addr.ai_family = AF_UNSPEC;
    addr.tls_addr.ai_socktype = SOCK_STREAM;
    addr.tls_addr.ai_flags = AI_PASSIVE;
@@ -2017,7 +2035,7 @@ static int server_socket_open(void *priv)
          continue;
       }
 
-      // lose the pesky "address already in use" error message
+      /* lose the pesky "address already in use" error message */
       if (setsockopt(c->server_sd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
          VERBOSE(CL_ERROR, "Failed to set socket to reuse address. (%d)", errno);
       }
@@ -2031,14 +2049,13 @@ static int server_socket_open(void *priv)
    CHECK_AND_FREE(ai, freeaddrinfo); /* all done with this structure */
 
    if (p == NULL) {
-      // if we got here, it means we didn't get bound
+      /* if we got here, it means we didn't get bound */
       VERBOSE(CL_VERBOSE_LIBRARY, "selectserver: failed to bind");
       return TRAP_E_IO_ERROR;
    }
 
-   // listen
+   /* listen */
    if (listen(c->server_sd, c->clients_arr_size) == -1) {
-      //perror("listen");
       VERBOSE(CL_ERROR, "Listen failed");
       return TRAP_E_IO_ERROR;
    }
