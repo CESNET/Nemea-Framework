@@ -1,4 +1,4 @@
-TESTS = basic_test_arg.test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_blackhole
+TESTS = basic_test_arg.test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_blackhole test_fileifc
 
 if ENABLE_LONG_TESTS
 TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
@@ -12,7 +12,7 @@ endif
 
 EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh test_service_ifc_fail.test
 
-check_PROGRAMS = basic_test test_finalize test_badparams test_blackhole
+check_PROGRAMS = basic_test test_finalize test_badparams test_blackhole test_fileifc
 
 if HAVE_CMOCKA
 check_PROGRAMS += trap_buffer
@@ -25,6 +25,9 @@ COM_CPPFLAGS=-I../src -I../include -I${top_srcdir}/include -I${top_srcdir}/src
 
 test_blackhole_SOURCES=test_blackhole.c
 test_blackhole_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_fileifc_SOURCES=test_fileifc.c
+test_fileifc_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_tcpip_wclient_SOURCES=test_trap_ifc_tcpip_client.c
 test_tcpip_wclient_CPPFLAGS=-DWAITING $(COM_CPPFLAGS)
