@@ -2184,11 +2184,66 @@ error:
    return EXIT_FAILURE;
 }
 
+trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifcs, const char *ifc_spec, const char *service_ifc_name)
+{
+   trap_ctx_t *res = NULL;
+   trap_module_info_t module_info;
+   trap_ifc_spec_t ifcs;
+   int argc = 2;
+
+   char *argv[2] = {"-i", (char *) ifc_spec};
+
+   /* Prepare module info */
+   if (name != NULL) {
+      module_info.name = strdup(name);
+   } else {
+      module_info.name = strdup("nemea-module");
+   }
+   if (description != NULL) {
+      module_info.description = strdup(description);
+   } else {
+      module_info.description = strdup("");
+   }
+   module_info.num_ifc_in  = i_ifcs;
+   module_info.num_ifc_out = o_ifcs;
+
+   /* Prepare ifcs (trap_ifc_spec_t) */
+   int rv = trap_parse_params(&argc, argv, &ifcs);
+   if (rv != TRAP_E_OK) {
+      fprintf(stderr, "ERROR in parsing of parameters for TRAP: %s\n", trap_last_error_msg);
+      return NULL;
+   }
+
+   res = trap_ctx_init2(&module_info, ifcs, service_ifc_name);
+
+   free(module_info.name);
+   free(module_info.description);
+   trap_free_ifc_spec(ifcs);
+
+   return res;
+}
+
 /**
  *
  * \return context, NULL when allocation failed.
  */
 trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
+{
+   // service_sock_spec size is length of "service_PID" where PID is max 10 chars (8 + 10 + 1 zero terminating)
+   char service_sock_spec[19];
+   trap_ctx_t *res = NULL;
+
+   if (snprintf(service_sock_spec, 19, "service_%d", getpid()) < 1) {
+      VERBOSE(CL_ERROR, "Could not create service socket specifier in service routine.");
+      return NULL;
+   }
+
+   res = trap_ctx_init2(module_info, ifc_spec, service_sock_spec);
+
+   return res;
+}
+
+trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec, const char *service_ifc_name)
 {
    int i;
    if ((ifc_spec.types == NULL) || (ifc_spec.params == NULL)) {
@@ -2376,7 +2431,12 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
       ctx->timeout_thread_initialized = 1;
    }
 
-   // Implicit service thread creation
+   /*
+    * Set the name of service IFC, which is passed in context to service thread.
+    * Service thread creates service IFC (UNIX IFC) with the given name and handles client
+    * requests in the loop.
+    */
+   ctx->service_ifc_name = strdup(service_ifc_name);
    if (pthread_create(&ctx->service_thread, NULL, service_thread_routine, (void *) ctx) == 0) {
       ctx->service_thread_initialized = 1;
    } else {
@@ -2738,7 +2798,7 @@ void *service_thread_routine(void *arg)
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
    int ret_val, supervisor_sd;
-   trap_output_ifc_t *service_ifc = (trap_output_ifc_t *) calloc(1, sizeof(trap_output_ifc_t));
+   trap_output_ifc_t *service_ifc = NULL;
    tcpip_sender_private_t *priv;
    int i; /* loop var */
    struct client_s *cl;
@@ -2749,20 +2809,19 @@ void *service_thread_routine(void *arg)
 
    trap_ctx_priv_t *g_ctx = (trap_ctx_priv_t *) arg;
 
+   if (g_ctx->service_ifc_name == NULL) {
+      VERBOSE(CL_VERBOSE_OFF, "Service socket will not be created, its name is not specified.");
+      goto exit_service_thread;
+   }
+
+   service_ifc = (trap_output_ifc_t *) calloc(1, sizeof(trap_output_ifc_t));
    if (service_ifc == NULL) {
       VERBOSE(CL_ERROR, "Error: allocation of service IFC failed.");
       goto exit_service_thread;
    }
 
-   // service_sock_spec size is length of "service_PID" where PID is max 10 chars (8 + 10 + 1 zero terminating)
-   char service_sock_spec[19];
-   if (snprintf(service_sock_spec, 19, "service_%d", getpid()) < 1) {
-      VERBOSE(CL_ERROR, "Error: could not create service socket specifier in service routine.");
-      goto exit_service_thread;
-   }
-
    /* service port does not create thread for accepting clients */
-   if (create_tcpip_sender_ifc(NULL, service_sock_spec, service_ifc, 0, TRAP_IFC_TCPIP_SERVICE) != TRAP_E_OK) {
+   if (create_tcpip_sender_ifc(NULL, g_ctx->service_ifc_name, service_ifc, 0, TRAP_IFC_TCPIP_SERVICE) != TRAP_E_OK) {
       VERBOSE(CL_ERROR,"Error while creating service IFC.");
       free(service_ifc);
       service_ifc = NULL;
