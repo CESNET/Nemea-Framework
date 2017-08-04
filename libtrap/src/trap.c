@@ -168,7 +168,7 @@ void trap_free_global_vars(void)
    }
 }
 
-trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int i_ifcs, int o_ifcs, uint16_t param_count)
+trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int8_t i_ifcs, int8_t o_ifcs, uint16_t param_count)
 {
    trap_module_info_t *m = NULL;
 
@@ -3520,7 +3520,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
             ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);
             compare = TRAP_E_OK;
          }
-      
+
          if (ret_val != compare) {
             // Could not receive data formate specifier
             VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
