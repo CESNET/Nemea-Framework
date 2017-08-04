@@ -1836,6 +1836,7 @@ static int server_socket_open(void *priv)
          } else {
             /* error bind() failed */
             p = NULL;
+            VERBOSE(CL_ERROR, "Failed bind() with the following socket path: %s", addr.unix_addr.sun_path);
          }
       } else {
          VERBOSE(CL_ERROR, "Failed to create socket.");
