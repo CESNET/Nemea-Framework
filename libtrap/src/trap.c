@@ -2436,7 +2436,12 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
     * Service thread creates service IFC (UNIX IFC) with the given name and handles client
     * requests in the loop.
     */
-   ctx->service_ifc_name = strdup(service_ifc_name);
+   if (service_ifc_name != NULL) {
+      ctx->service_ifc_name = strdup(service_ifc_name);
+   } else {
+      ctx->service_ifc_name = NULL;
+   }
+
    if (pthread_create(&ctx->service_thread, NULL, service_thread_routine, (void *) ctx) == 0) {
       ctx->service_thread_initialized = 1;
    } else {
