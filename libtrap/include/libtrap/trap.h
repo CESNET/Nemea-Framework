@@ -657,6 +657,31 @@ void trap_send_flush(uint32_t ifc);
 trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /**
+ * \brief Initialize and return the context of libtrap.
+ *
+ * \param[in] module_info      Pointer to struct containing info about the module.
+ * \param[in] ifc_spec         Structure with specification of interface types and their parameters.
+ * \param[in] service_ifcname  Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
+ *
+ * \return Pointer to context, NULL on error.
+ */
+trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec, const char *service_ifcname);
+
+/**
+ * \brief Initialize and return the context of libtrap.
+ *
+ * \param[in] name   Name of the NEMEA module (libtrap context).
+ * \param[in] description - Detailed description of the module, can be NULL ("" will be used in such case)
+ * \param[in] i_ifcs Number of input IFCs, it can be -1 if o_ifcs > -1 (-1 means variable number of IFCs, it is then computed from ifc_spec).
+ * \param[in] o_ifcs Number of output IFCs, it can be -1 if i_ifcs > -1 (-1 means variable number of IFCs, it is then computed from ifc_spec).
+ * \param[in] ifc_spec  IFC_SPEC stringdescribed in README.ifcspec.md
+ * \param[in] service_ifcname Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
+ *
+ * \return Pointer to context, NULL on error.
+ */
+trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifc, const char *ifc_spec, const char *service_ifcname);
+
+/**
  * \brief Terminate libtrap context and free resources.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (trap_ctx_init()).

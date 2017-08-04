@@ -326,6 +326,11 @@ struct trap_ctx_priv_s {
    pthread_t service_thread;
 
    /**
+    * Name of the service IFC socket, it is disabled when NULL.
+    */
+   char *service_ifc_name;
+
+   /**
     * Indicator of initialized service thread
     */
    int service_thread_initialized;
