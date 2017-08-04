@@ -118,6 +118,28 @@ int main(int argc, char **argv)
 
   trap_ctx_finalize(&ctx);
 
+  fprintf(stderr, "Test 04: (illegal character in service IFC name))\n");
+  ctx = trap_ctx_init2(&module_info, ifc_spec, "a/b");
+  if (ctx == NULL) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  sleep(1);
+  if (check_socket("a/b") == 1) {
+     trap_ctx_finalize(&ctx);
+     return 1;
+  }
+  trap_ctx_finalize(&ctx);
+
+  fprintf(stderr, "Test 05: (disabled service IFC))\n");
+  ctx = trap_ctx_init2(&module_info, ifc_spec, NULL);
+  if (ctx == NULL) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  sleep(1);
+  trap_ctx_finalize(&ctx);
+
   return 0;
 }
 
