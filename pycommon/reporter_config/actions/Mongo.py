@@ -44,7 +44,7 @@ class MongoAction(Action):
         Before storing the record is transformed to be stored in more effective
         way using transform() method.
         """
-        # Must do a deepcopy so other actions won't be affted by this operation
+        # Must do a deepcopy so other actions won't be affected by this operation
         rec = copy.deepcopy(record)
 
         rec = self.transform(rec)

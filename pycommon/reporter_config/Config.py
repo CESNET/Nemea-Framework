@@ -85,7 +85,7 @@ class Config():
                     self.actions[i["id"]] = TrapAction(i, trap)
 
                 elif "drop" in i:
-                    logger.warning("Drop action musn't be specified in custom_actions!")
+                    logger.warning("Drop action mustn't be specified in custom_actions!")
                     continue
 
                 else:
