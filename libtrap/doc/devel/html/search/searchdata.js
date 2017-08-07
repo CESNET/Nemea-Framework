@@ -10,7 +10,7 @@ var indexSectionsWithContent =
   7: "bcefst",
   8: "_bdimstux",
   9: "bcefgimnost",
-  10: "dt"
+  10: "d"
 };
 
 var indexSectionNames =

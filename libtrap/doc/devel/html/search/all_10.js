@@ -16,6 +16,7 @@ var searchData=
   ['server_5fsocket_5fopen',['server_socket_open',['../group__tcpip__sender.html#gaf8253ffec1871584621b3dc838055d87',1,'ifc_tcpip.c']]],
   ['service_5fget_5fcom',['SERVICE_GET_COM',['../trap__internal_8h.html#a86478bb24d5a308d79f0425b0eedf54b',1,'trap_internal.h']]],
   ['service_5fget_5fdata',['service_get_data',['../group__supervisor.html#ga260e9f14321268444cab75b214a82811',1,'trap.c']]],
+  ['service_5fifc_5fname',['service_ifc_name',['../structtrap__ctx__priv__s.html#a2ff58b090a07f9fbc6795ecbcda326ee',1,'trap_ctx_priv_s']]],
   ['service_5fok_5freply',['SERVICE_OK_REPLY',['../trap__internal_8h.html#a1bccd80a7d96b96e9c01bdf6c18f039e',1,'trap_internal.h']]],
   ['service_5fsend_5fdata',['service_send_data',['../group__supervisor.html#ga8a8ad4e5c6ac70d1d8dece93d58da755',1,'trap.c']]],
   ['service_5fset_5fcom',['SERVICE_SET_COM',['../trap__internal_8h.html#a0f4ca0b39a8bbce034c63b8cbb227ba1',1,'trap_internal.h']]],

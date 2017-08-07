@@ -8,6 +8,7 @@ var searchData=
   ['sending_5fpointer',['sending_pointer',['../structclient__s.html#aa7ae0554314e538955d14a4bfe2ca6fc',1,'client_s']]],
   ['server_5fport',['server_port',['../structtcpip__sender__private__s.html#ad628d7081819b8236c693ba485cfd10b',1,'tcpip_sender_private_s']]],
   ['server_5fsd',['server_sd',['../structtcpip__sender__private__s.html#a7e0cc56dd2c6570b60ccbcfdfc6fc3ac',1,'tcpip_sender_private_s']]],
+  ['service_5fifc_5fname',['service_ifc_name',['../structtrap__ctx__priv__s.html#a2ff58b090a07f9fbc6795ecbcda326ee',1,'trap_ctx_priv_s']]],
   ['service_5fthread',['service_thread',['../structtrap__ctx__priv__s.html#a8679c035870a267754ced49a2d3260e9',1,'trap_ctx_priv_s']]],
   ['service_5fthread_5finitialized',['service_thread_initialized',['../structtrap__ctx__priv__s.html#a7e6b71dab19372c5baac9a9a8a6d27bd',1,'trap_ctx_priv_s']]],
   ['size',['size',['../structtb__block__data__s.html#abb85247a2cd374080e6e3f6d93965801',1,'tb_block_data_s']]],

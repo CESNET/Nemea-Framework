@@ -50,6 +50,8 @@ AM_CONDITIONAL([GCC], [test x$GCC = xyes])
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 AC_CHECK_PROG(GIT, git, git, [""])
+AC_CHECK_PROG(HAVE_DOT, dot, ["YES"], ["NO"])
+AC_SUBST([HAVE_DOT])
 
 if test -n "$GIT"; then
 	GIT_VERSION=$($GIT log --format="%h" HEAD^..HEAD | head -1)

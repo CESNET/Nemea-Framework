@@ -8,6 +8,7 @@ var searchData=
   ['generator_5frecv',['generator_recv',['../ifc__dummy_8c.html#a203edf773b635e53b635b60139495bdb',1,'ifc_dummy.c']]],
   ['generator_5fterminate',['generator_terminate',['../ifc__dummy_8c.html#a6987f7fe70dc8e21205dac583bb2457c',1,'ifc_dummy.c']]],
   ['get_5fclient_5fcount',['get_client_count',['../structtrap__output__ifc__s.html#aa135ef165a2e73933ab8eec7536fc82c',1,'trap_output_ifc_s']]],
+  ['get_5fcur_5ftimestamp',['get_cur_timestamp',['../group__tcpip__receiver.html#ga83472c2cd46eac526175b30d48495135',1,'ifc_tcpip.c']]],
   ['get_5fdata_5ftimeout',['get_data_timeout',['../structtrap__ctx__priv__s.html#a61f86431123ad98238d934e907b608a5',1,'trap_ctx_priv_s']]],
   ['get_5fid',['get_id',['../structtrap__input__ifc__s.html#a5edf9feb69e975253a087433793a26e2',1,'trap_input_ifc_s::get_id()'],['../structtrap__output__ifc__s.html#a28066d0bcee909ef82a308acd89c903c',1,'trap_output_ifc_s::get_id()']]],
   ['get_5fin_5faddr',['get_in_addr',['../group__tcpip__ifc.html#ga67d03b167f8adca86cde7eeed5850982',1,'ifc_tcpip.c']]],

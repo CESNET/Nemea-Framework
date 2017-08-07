@@ -1,6 +1,7 @@
 var searchData=
 [
   ['check_5fconnected_5fclients',['check_connected_clients',['../group__tcpip__sender.html#ga86bc8a32ffabaa87eaa11c09aaf295f2',1,'ifc_tcpip.c']]],
+  ['check_5fportrange',['check_portrange',['../group__tcpip__ifc.html#ga0925b2a05afa60bb981a19d2e76cc2d2',1,'ifc_tcpip.c']]],
   ['cl_5ferror',['CL_ERROR',['../group__debug.html#gga026a516df99452f5adc8c51e6703f5b5a7d2d5c2be626b647030d2a96dca9c25c',1,'trap_internal.h']]],
   ['cl_5fverbose_5fadvanced',['CL_VERBOSE_ADVANCED',['../group__debug.html#gga026a516df99452f5adc8c51e6703f5b5a70e0896f569c67e5ffd85846345fa494',1,'trap_internal.h']]],
   ['cl_5fverbose_5fbasic',['CL_VERBOSE_BASIC',['../group__debug.html#gga026a516df99452f5adc8c51e6703f5b5ac7c6ab33e3db6df58d41132611a86332',1,'trap_internal.h']]],
