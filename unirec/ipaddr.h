@@ -5,7 +5,7 @@
  * \date 2013
  * \date 2014
  *
- * \defgroup ur_ipaddr IP addresses API
+ * \defgroup uripaddr IP addresses API
  * @{
  *
  * \page ipaddr

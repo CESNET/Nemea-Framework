@@ -1,0 +1,16 @@
+/**
+\mainpage UniRec: Content of documentation
+
+For more comprehensive description, read this \ref md_doc_intro page.
+
+This documentation is divided into the following main sections:
+<ul>
+<li>\ref urtemplate</li>
+<li>\ref libtraphelpers</li>
+<li>\ref uripaddr</li>
+<li>\ref urtime</li>
+<li>\ref urlinks</li>
+</ul>
+
+*/
+

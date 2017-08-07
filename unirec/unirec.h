@@ -180,6 +180,14 @@ typedef struct {
    uint32_t ifc_out;   ///< output interface number (stored only if the direction == UR_TMPLT_DIRECTION_BI)
 } ur_template_t;
 
+/**
+ * \defgroup libtraphelpers Helpers for libtrap
+ *
+ * This module defines useful macros for handling data receive.
+ * When data format is changed, these macros create new UniRec template.
+ *
+ * @{
+ */
 /** \brief Receive data from interface
  * Receive data with specified template from libtrap interface. If the receiving template is
  * subset of sending template, it will define new fields and expand receiving template.
@@ -268,17 +276,39 @@ typedef struct {
    }\
    ret;\
 })*/
-/** \brief Get string of a template
- * Get names and sizes of fields separated by given delimiter. Return string has to be freed by user.
- * \param[in] tmplt Pointer to UniRec template
- * \return String
+
+/**
+ * @}
+ *//* libtraphelpers */
+
+/**
+ * \defgroup urtemplate UniRec templates and fields
+ *
+ * @{
  */
-char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
+/** \brief Get UniRec specifier of the `tmplt` template with `delimiter` between fields.
+ *
+ * Get names and sizes of fields separated by given delimiter.
+ *
+ * Example:
+ * \code
+ * ipaddr DST_IP,ipaddr SRC_IP
+ * \endcode
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] delimiter  Delimiter that is placed between the UniRec fields in the template specifier.
+ * \return String containing list of fields and their types.
+ * \note Caller must free the returned memory.
+ */
+char *ur_template_string_delimiter(const ur_template_t *tmplt, int delimiter);
 
 /** \brief Get string of a template
  * Get names and sizes of fields separated by comma. Return string has to be freed by user.
+ *
+ * \see ur_template_string_delimiter()
  * \param[in] tmplt Pointer to UniRec template
- * \return String
+ * \return String containing list of fields and their types.
+ * \note Caller must free the returned memory.
  */
 #define ur_template_string(tmplt) \
  ur_template_string_delimiter(tmplt, ',')
@@ -322,7 +352,8 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] data Pointer to the beginning of a record
  * \param[in] field_id Identifier of a field. It must be a token beginning with
- *                     F_, not a numeric ID.
+ *                     F_, not a numeric ID (e.g. F_SRC_IP for source IP
+ *                     defined in UR_FIELDS as SRC_IP).
  * \return Value of the field. Data type depends on the type of the field.
  */
 #define ur_get(tmplt, data, field_id) \
@@ -410,7 +441,7 @@ char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter);
  * Get actual length of fixed or variable-length UniRec field.
  * \param[in] tmplt Pointer to UniRec template
  * \param[in] rec Pointer to the beginning of a record
- * \param[in] field_id Identifier of a field.
+ * \param[in] field Identifier of a field - e.g. F_SRC_IP for source IP defined in UR_FIELDS as SRC_IP.
  * \return Length of the field in bytes.
  */
 #define ur_get_len(tmplt, rec, field) \
@@ -765,7 +796,7 @@ void ur_clear_varlen(const ur_template_t * tmplt, void *rec);
 /** \brief Get size of variable sized part of UniRec record
  * Get total size of all variable-length fields in an UniRec record
  * \param[in] tmplt Pointer to UniRec template
- * \param[in] data Pointer to the beginning of a record
+ * \param[in] rec Pointer to the record
  * \return Size of the variable part of UniRec record.
  */
 uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec);
@@ -875,9 +906,9 @@ ur_iter_t ur_iter_fields(const ur_template_t *tmplt, ur_iter_t id);
  *   }
  * The order of fields is given by the order in the record
  * \param[in] tmplt Template to iterate over.
- * \param[in] id Field ID returned in last iteration or UR_ITER_BEGIN to
+ * \param[in] index Field ID returned in last iteration or UR_ITER_BEGIN to
  *               get first value.
- * \return ID of the next field or UR_ITER_END if no more fields are present.
+ * \return Field ID of the next field or UR_ITER_END if no more fields are present.
  */
 ur_iter_t ur_iter_fields_record_order(const ur_template_t *tmplt, int index);
 
@@ -951,6 +982,10 @@ const char *ur_values_get_description_start_end(uint32_t start, uint32_t end, in
  */
 #define ur_values_get_description(field, value) \
    ur_values_get_description_start_end(UR_TYPE_START_ ## field, UR_TYPE_END_ ## field, value)
+
+/**
+ * @}
+ *//* urtemplate */
 
 #ifdef __cplusplus
 } // extern "C"

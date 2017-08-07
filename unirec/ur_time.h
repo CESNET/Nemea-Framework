@@ -50,7 +50,7 @@
 #include <stdint.h>
 
 /**
- * \defgroup ur_time Timestamps API
+ * \defgroup urtime Timestamps API
  * @{
  */
 
