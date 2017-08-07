@@ -219,11 +219,6 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             logger.error(str(e))
             break
 
-        # Warden output
-        if wardenclient:
-            wardenclient.sendEvents([idea])
-
-
     if wardenclient:
         wardenclient.close()
     trap.finalize()
