@@ -674,6 +674,12 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    char *ifc_spec_str = NULL;
    char *ifc_type = NULL;
    char *p;
+   int rv = TRAP_E_OK;
+
+   if (ifc_spec == NULL) {
+      VERBOSE(CL_ERROR, "Bad pointer 'ifc_spec' passed to trap_parse_params().";
+      return TRAP_E_BAD_FPARAMS;
+   }
 
    /* initialization of ifc_spec */
    memset(ifc_spec, 0, sizeof(trap_ifc_spec_t));
@@ -772,6 +778,11 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
          VERBOSE(CL_ERROR, "Bad IFC_SPEC '%s'. See -h trap for help.", ifc_spec_str);
          ifc_spec->params[i] = strdup("");
       }
+      if (ifc_spec->params[i] == NULL) {
+         VERBOSE(CL_ERROR, "Allocation failed.");
+         rv = TRAP_E_MEMORY;
+         goto clean_on_fail;
+      }
    }
 
    /* check for unsupported IFCs */
@@ -784,16 +795,8 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
       if (*ifc_type == 0) {
          /* not found */
          VERBOSE(CL_ERROR, "Unsupported IFC type '%c'.", ifc_spec->types[i]);
-         for (i = 0; i < ifc_count; i++) {
-            if (ifc_spec->params[i] != NULL) {
-               free(ifc_spec->params[i]);
-               ifc_spec->params[i] = NULL;
-            }
-         }
-         free(ifc_spec->types);
-         free(ifc_spec->params);
-         ifc_spec->types = NULL;
-         ifc_spec->params = NULL;
+         rv = TRAP_E_BADPARAMS;
+         goto clean_on_fail;
          return TRAP_E_BADPARAMS;
       }
    }
@@ -801,6 +804,23 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    trap_last_error = TRAP_E_OK;
    trap_last_error_msg = default_err_msg[TRAP_E_OK];
    return TRAP_E_OK;
+
+clean_on_fail:
+   for (i = 0; i < ifc_count; i++) {
+      /* set IFC type and skip to params */
+      if (ifc_spec->params[i] != NULL) {
+         free(ifc_spec->params[i]);
+         ifc_spec->params[i] = NULL;
+      }
+   }
+   if (ifc_spec->types != NULL) {
+      free(ifc_spec->types);
+   }
+   if (ifc_spec->params) {
+      free(ifc_spec->params);
+   }
+   memset(ifc_spec, 0, sizeof(trap_ifc_spec_t));
+   return rv;
 }
 
 /** Destructor of trap_ifc_spec_t structure.
