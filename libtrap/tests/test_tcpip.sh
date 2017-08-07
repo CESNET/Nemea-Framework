@@ -48,7 +48,7 @@
 EXPECT=100
 
 if [ $# -ne 2 ]; then
-	echo "$0 simple|ctx|2thr trapparams"
+	echo "Usage: $0 simple|ctx|2thr trapparams"
         exit 0
 fi
 
@@ -142,7 +142,7 @@ function run_ertest()
    if [ -n "$DEBUG" ]; then echo "Shutting sender"; fi
    kill -INT $echopid 2> /dev/null
    if [ -n "$DEBUG" ]; then echo "Wait for shutting client"; fi
-   sleep 1
+   sleep 3
    kill -INT $replypid 2> /dev/null
 
    RECV=$(grep "Last received value" "$REPLYOUT" | sed 's/.* \([0-9]*\)/\1/')
@@ -187,7 +187,7 @@ echo ldd $PROG_ECHO_REPLY
 ldd $PROG_ECHO_REPLY
 
 #run_ertest <duration in seconds> <size of message>
-run_ertest 5 65533
+run_ertest 5 65533 
 run_ertest 5 32767
 run_ertest 5 16383
 run_ertest 5 8191

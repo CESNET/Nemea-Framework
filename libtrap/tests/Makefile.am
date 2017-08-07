@@ -1,7 +1,7 @@
-TESTS = basic_test_arg.test basic_test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test
+TESTS = basic_test_arg.test basic_test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_tls.sh
 
 if ENABLE_LONG_TESTS
-TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
+TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_tls.test
 endif
 
 TESTS += libtrap_multiclient.test
