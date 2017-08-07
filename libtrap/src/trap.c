@@ -797,7 +797,6 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
          VERBOSE(CL_ERROR, "Unsupported IFC type '%c'.", ifc_spec->types[i]);
          rv = TRAP_E_BADPARAMS;
          goto clean_on_fail;
-         return TRAP_E_BADPARAMS;
       }
    }
 
