@@ -106,11 +106,18 @@ class Config():
                     ))
 
     def match(self, msg):
+        """
+        Check if msg matches rules from config file.
+
+        Return a list of bool values representing results of all tested rules.
+        """
         tmp_msg = msg
+        results = []
 
         for rule in self.rules:
             res = rule.filter(msg)
             #logger.debug("Filter by rule: %s \n message: %s\n\nresult: %s", self.rules[i].rule(), msg, res)
+            results.append(res)
 
             if res:
                 # Perform actions on given message
@@ -119,6 +126,7 @@ class Config():
             else:
                 rule.elseactions(tmp_msg)
                 logger.info("else action running")
+        return results
 
     def loglevel(self):
         """Get logging level
