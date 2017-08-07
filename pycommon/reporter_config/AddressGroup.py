@@ -1,5 +1,9 @@
 import ipranges
 
+import logging as log
+
+logger = log.getLogger(__name__)
+
 class AddressGroup:
     content = list()
 
@@ -11,17 +15,18 @@ class AddressGroup:
         if "file" in addrGroup:
             with open(addrGroup["file"], 'r') as f:
                 for line in f:
+                    line = line.strip('\n')
                     try:
-                        self.content.append(ipranges.from_str(line.strip('\n')))
+                        self.content.append(ipranges.from_str(line))
                     except ValueError as e:
-                        # TODO: Should log parsing IP error
+                        logger.error("IP address ({0}) could not be parsed.".format(line))
                         continue
         elif "list" in addrGroup:
             for ip in addrGroup["list"]:
                 try:
                     self.content.append(ipranges.from_str(ip))
                 except ValueError as e:
-                    # TODO: Should log parsing IP error
+                    logger.error("IP address ({0}) could not be parsed.".format(ip))
                     continue
         else:
             raise Exception("Only 'file' or 'list' keys are supported.")

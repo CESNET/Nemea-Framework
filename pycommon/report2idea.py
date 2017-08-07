@@ -176,8 +176,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
         # Check for "end-of-stream" record
         if len(data) <= 1:
-            # If we have output, send "end-of-stream" record and exit
             if args.trap:
+                # If we have output, send "end-of-stream" record and exit
                 trap.send(0, b"0")
             break
 
@@ -213,7 +213,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             logger.error("PyTrap was terminated")
             break
         except DropMsg:
-            logger.info("Message was dropped")
+            logger.info("Message was dropped by Drop action.")
             continue
         except Exception as e:
             logger.error(str(e))
