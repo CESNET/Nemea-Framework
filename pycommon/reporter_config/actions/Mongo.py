@@ -36,7 +36,7 @@ class MongoAction(Action):
             self.collection = self.client[self.db][self.collection]
             if pymongo.version_tuple[0] < 3:
                 self.collection.insert_one = self.collection.insert
-        except:
+        except Exception:
             self.client = None
 
     def store(self, record):
