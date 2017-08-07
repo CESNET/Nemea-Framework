@@ -2208,6 +2208,18 @@ trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_i
    module_info.num_ifc_in  = i_ifcs;
    module_info.num_ifc_out = o_ifcs;
 
+   if (module_info.name == NULL || module_info.description == NULL) {
+      VERBOSE(CL_ERROR, "Not enough memory.");
+      if (module_info.name != NULL) {
+         free(module_info.name);
+      }
+      if (module_info.description != NULL) {
+         free(module_info.description);
+      }
+
+      return NULL;
+   }
+
    /* Prepare ifcs (trap_ifc_spec_t) */
    int rv = trap_parse_params(&argc, argv, &ifcs);
    if (rv != TRAP_E_OK) {
