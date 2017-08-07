@@ -1,4 +1,4 @@
-import netaddr
+import ipranges
 
 class AddressGroup:
     content = list()
@@ -12,17 +12,19 @@ class AddressGroup:
             with open(addrGroup["file"], 'r') as f:
                 for line in f:
                     try:
-                        self.content.append(netaddr.IPNetwork(line.strip('\n')))
-                    except netaddr.core.AddrFormatError as e:
+                        self.content.append(ipranges.from_str(line.strip('\n')))
+                    except ValueError as e:
                         # TODO: Should log parsing IP error
                         continue
-        else:
+        elif "list" in addrGroup:
             for ip in addrGroup["list"]:
                 try:
-                    self.content.append(netaddr.IPNetwork(ip))
-                except netaddr.core.AddrFormatError as e:
+                    self.content.append(ipranges.from_str(ip))
+                except ValueError as e:
                     # TODO: Should log parsing IP error
                     continue
+        else:
+            raise Exception("Only 'file' or 'list' keys are supported.")
 
         self.id = addrGroup["id"]
 
@@ -33,18 +35,20 @@ class AddressGroup:
         l = list()
 
         for i in self.content:
-            if i.size > 1:
-                l.append(str(i))
-            else:
-                l.append(str(i.ip))
+            l.append(str(i))
 
         return repr(l)
 
     def isPresent(self, ip):
-        try:
-            pIp = netaddr.IPAddress(ip)
-        except ValueError:
-            pIp = netaddr.IPNetwork(ip)
+        """
+        Return True if `ip` is in the addressgroup.
+
+        This method may raise ValueError if the `ip` is not a valid IPv4/6 address or subnet.
+
+        :param str ip: IPv4 or IPv6 address or subnet
+        :return: True if `ip` is present, False otherwise.
+        """
+        pIp = ipranges.from_str(ip)
 
         for lIp in self.content:
             if pIp in lIp:
