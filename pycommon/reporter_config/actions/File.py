@@ -2,6 +2,7 @@ from .Action import Action
 
 import sys
 import os
+from stat import *
 import json
 import logging as log
 
@@ -19,7 +20,15 @@ class FileAction(Action):
         self.actionId = action["id"]
         self.actionType = "file"
         self.path = action["file"]["path"]
-        self.dir = action["file"]["dir"] if "dir" in action["file"] else False
+        if "dir" in action["file"]:
+            self.dir = action["file"]["dir"]
+        else:
+            try:
+                # path already exists, check if it is a directory
+                s = os.stat(self.path)
+                self.dir = S_ISDIR(s.st_mode)
+            except:
+                self.dir = False
 
         if self.path == '-':
             self.fileHandle = sys.stdout
@@ -30,12 +39,13 @@ class FileAction(Action):
         else:
             self.fileHandle = None
             if not os.path.exists(self.path):
+                # TODO set permissions to some better value
                 os.mkdir(self.path, 777)
 
     def run(self, record):
         if self.fileHandle:
             self.fileHandle.write(json.dumps(record) + '\n')
-
+            self.fileHandle.flush()
         else:
             """Store record in separate file
             """
