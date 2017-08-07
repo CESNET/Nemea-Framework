@@ -132,7 +132,11 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     wardenclient = None
 
     if args.warden:
-        import warden_client
+        try:
+            import warden_client
+        except:
+            logger.error("There is no available warden_client python module.  Install it or remove '--warden' from the module's arguments.")
+            sys.exit(1)
         config = warden_client.read_cfg(args.warden)
         config['name'] = args.name
         wardenclient = warden_client.Client(**config)
