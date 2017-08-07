@@ -1,7 +1,6 @@
 from .Action import Action
 
 from datetime import datetime
-import pymongo
 import logging as log
 import copy
 
@@ -19,22 +18,26 @@ class MongoAction(Action):
         """
         self.actionId = action["id"]
 
-        if "host" in action["mongo"]:
-            self.host = action["mongo"]["host"]
-        if "port" in action["mongo"]:
-            self.port = action["mongo"]["port"]
+        try:
+            import pymongo
+            if "host" in action["mongo"]:
+                self.host = action["mongo"]["host"]
+            if "port" in action["mongo"]:
+                self.port = action["mongo"]["port"]
 
-        self.db = action["mongo"]["db"]
-        self.collection = action["mongo"]["collection"]
+            self.db = action["mongo"]["db"]
+            self.collection = action["mongo"]["collection"]
 
-        if "user" in action["mongo"] and "password" in action["mongo"]:
-            self.user = action["mongo"]["user"]
-            self.password = action["mongo"]["password"]
+            if "user" in action["mongo"] and "password" in action["mongo"]:
+                self.user = action["mongo"]["user"]
+                self.password = action["mongo"]["password"]
 
-        self.client = pymongo.MongoClient(self.host, self.port)
-        self.collection = self.client[self.db][self.collection]
-        if pymongo.version_tuple[0] < 3:
-            self.collection.insert_one = self.collection.insert
+            self.client = pymongo.MongoClient(self.host, self.port)
+            self.collection = self.client[self.db][self.collection]
+            if pymongo.version_tuple[0] < 3:
+                self.collection.insert_one = self.collection.insert
+        except:
+            self.client = None
 
     def store(self, record):
         """Store IDEA message to MongoDB
@@ -59,8 +62,13 @@ class MongoAction(Action):
 
     def run(self, record):
         logger.debug("Storing record to mongoDB")
-        return self.store(record)
+        if self.client:
+            return self.store(record)
+        else:
+            logger.warning("Skipping mongo action, pymongo is not initialized.")
 
     def __del__(self):
         logger.debug("Closing connection to mongoDB")
-        self.client.close()
+        if self.client:
+            self.client.close()
+
