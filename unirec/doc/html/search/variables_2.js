@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['direction',['direction',['../structur__template__t.html#a099d176cd55c8e16d01a3e9eb6f8c6d4',1,'ur_template_t']]]
+  ['count',['count',['../unirec_8h.html#a3331d5fc7eeda55fbbb33543da5db0d9',1,'ur_template_t']]]
 ];

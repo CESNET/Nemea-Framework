@@ -303,8 +303,8 @@ UR_FIELDS(
 This macro generates code allowing to use the defined fields in ur_get, ur_set
 and other macros which need symbolic constants to access the fields.
 
-For each field specified by this macro, a #define constant named F_name is
-defined with a value of a unique numeric ID. Also, a constant F_name_T is
+For each field specified by this macro, a CPP macro is defined with `F_` prefix
+in the name and a value of a unique numeric ID.  Also, a constant F_name_T is
 defined with a value of the field's type (as defined in ur_field_type enum).
 Other internal variables and structures are defined.
 
@@ -364,13 +364,15 @@ This function is present only for cases when field names and/or types are not
 known until run-time.
 
 NOTE: Fields defined by this function can be accessed using their numeric IDs
-only. Symbolic (#define) constants are not created, of course.
+only. Symbolic CPP macros are not defined, of course.
 
 
 ### Run-time definition of a set of fields
+
 ```
 int ur_define_set_of_fields(const char *ifc_data_fmt);
 ```
+
 This function allows to define sef of fields at run-time.
 
 Define new UniRec fields at run-time. It adds new fields into existing structures.

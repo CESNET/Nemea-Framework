@@ -79,6 +79,11 @@ INLINE_IMPL int ip_from_str(const char *str, ip_addr_t *addr);
 INLINE_IMPL void ip_to_str(const ip_addr_t *addr, char *str);
 
 
+/**
+ * \brief Sizes of UniRec data types.
+ *
+ * Data types are defined in the #ur_field_type_str array.
+ */
 const int ur_field_type_size[] = {
    -1, /*UR_TYPE_STRING*/
    -1, /*UR_TYPE_BYTES*/
@@ -97,6 +102,11 @@ const int ur_field_type_size[] = {
    8, /*UR_TYPE_TIME*/
 };
 
+/**
+ * \brief UniRec data types.
+ *
+ * Sizes of data types are defined in the #ur_field_type_size array.
+ */
 const char *ur_field_type_str[] = {
    "string", /*UR_TYPE_STRING*/
    "bytes", /*UR_TYPE_BYTES*/
@@ -118,7 +128,7 @@ const char *ur_field_type_str[] = {
 ur_field_specs_t ur_field_specs;
 ur_static_field_specs_t UR_FIELD_SPECS_STATIC;
 
-const char UR_MEMORY_ERROR [] = "Memory allocation error";
+const char UR_MEMORY_ERROR[] = "Memory allocation error";
 
 int ur_init(ur_static_field_specs_t field_specs_static)
 {
