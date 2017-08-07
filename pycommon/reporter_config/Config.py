@@ -28,7 +28,7 @@ class Config():
 
         :param warden Instance of Warden Client used in WardenAction
         """
-        # Parse given config gile
+        # Parse given config file
         with open(path, 'r') as f:
             self.conf = Parser(f)
 
