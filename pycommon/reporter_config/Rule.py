@@ -2,6 +2,7 @@ from pynspect.rules import *
 from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
 from pynspect.gparser import MentatFilterParser
 from idea import lite
+import re
 
 import logging
 
@@ -120,8 +121,9 @@ class Rule():
 
         for key in addrGroups:
             if key in rule:
-                self.__condition = rule.replace(key, addrGroups[key].iplist())
+                rule = re.sub(r"\b{0}\b".format(key), addrGroups[key].iplist(), rule)
                 matched = True
+        self.__condition = rule
 
         return matched
 
