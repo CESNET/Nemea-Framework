@@ -677,7 +677,7 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    int rv = TRAP_E_OK;
 
    if (ifc_spec == NULL) {
-      VERBOSE(CL_ERROR, "Bad pointer 'ifc_spec' passed to trap_parse_params().";
+      VERBOSE(CL_ERROR, "Bad pointer 'ifc_spec' passed to trap_parse_params().");
       return TRAP_E_BAD_FPARAMS;
    }
 
