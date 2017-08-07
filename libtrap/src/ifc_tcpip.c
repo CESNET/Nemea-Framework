@@ -129,6 +129,37 @@ static void *get_in_addr(struct sockaddr *sa)
 }
 
 /**
+ * \brief Check if the given port is a correct port number.
+ *
+ * Port number for TCP socket must be a number in the range from 1 to 65535.
+ * It can also be a service name that is translated by getaddrinfo().
+ *
+ * \param[in] port  Port to check.
+ * \return EXIT_FAILURE if port is not given or it is a number < 1 or > 65535;
+ * EXIT_SUCCESS when port is a valid number or it is a service name.
+ */
+static int check_portrange(const char *port)
+{
+   uint32_t portnum = 0;
+   int ret;
+
+   if (port == NULL) {
+      return EXIT_FAILURE;
+   }
+
+   ret = sscanf(port, "%" SCNu32, &portnum);
+   if (ret == 1) {
+      if (portnum < 1 || portnum > 65535) {
+         VERBOSE(CL_ERROR, "Given port (%" PRIu32 ") number is out of the allowed range (1-65535).", portnum);
+         return EXIT_FAILURE;
+      }
+   }
+
+   /* port is not number (it is a service name) or it is correct */
+   return EXIT_SUCCESS;
+}
+
+/**
  * \addtogroup tcpip_receiver
  * @{
  */
@@ -778,6 +809,9 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    if ((config == NULL) || (dest_addr == NULL) || (dest_port == NULL) || (socket_descriptor == NULL)) {
       return TRAP_E_BAD_FPARAMS;
+   }
+   if (check_portrange(dest_port) == EXIT_FAILURE) {
+      return TRAP_E_BADPARAMS;
    }
 
    memset(&addr, 0, sizeof(addr));
@@ -1794,6 +1828,10 @@ static int server_socket_open(void *priv)
    memset(&addr, 0, sizeof(addr));
 
    if (c->socket_type == TRAP_IFC_TCPIP) {
+      if (check_portrange(c->server_port) == EXIT_FAILURE) {
+         return TRAP_E_BADPARAMS;
+      }
+
       // get us a socket and bind it
       addr.tcpip_addr.ai_family = AF_UNSPEC;
       addr.tcpip_addr.ai_socktype = SOCK_STREAM;
