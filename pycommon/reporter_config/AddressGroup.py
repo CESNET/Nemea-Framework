@@ -37,12 +37,7 @@ class AddressGroup:
         return "ID: '" + self.id + "' IPs: " + str(self.content)
 
     def iplist(self):
-        l = list()
-
-        for i in self.content:
-            l.append(str(i))
-
-        return repr(l)
+        return repr([str(i) for i in self.content])
 
     def isPresent(self, ip):
         """
@@ -53,10 +48,6 @@ class AddressGroup:
         :param str ip: IPv4 or IPv6 address or subnet
         :return: True if `ip` is present, False otherwise.
         """
-        pIp = ipranges.from_str(ip)
-
-        for lIp in self.content:
-            if pIp in lIp:
-                return True
-        return False
+        ip = ipranges.from_str(ip)
+        return any((ip in rng) for rng in self.content)
 
