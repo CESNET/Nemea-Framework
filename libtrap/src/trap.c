@@ -9,9 +9,10 @@
  * \date 2013
  * \date 2014
  * \date 2015
+ * \date 2017
  */
 /*
- * Copyright (C) 2013-2015 CESNET
+ * Copyright (C) 2013-2017 CESNET
  *
  * LICENSE TERMS
  *
