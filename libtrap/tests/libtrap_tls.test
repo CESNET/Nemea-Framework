@@ -1,0 +1,2 @@
+#!/bin/bash
+./test_tcpip.sh tls T:12345:tls-certificates/client.key:tls-certificates/client.crt:tls-certificates/ca.crt > libtrap_tls.log.rpt
