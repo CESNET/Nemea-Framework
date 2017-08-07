@@ -1,3 +1,6 @@
+version 2.2.6
+   * doc updates
+   * minor improvements and bugfixes
 version 2.2.3
    * update spec file dependencies and debug package
    * replaced python processor with bash&awk for ur_values
