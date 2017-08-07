@@ -2836,18 +2836,21 @@ void *service_thread_routine(void *arg)
                            VERBOSE(CL_VERBOSE_LIBRARY, "[ERROR] Service could not send data header.")
                            close(cl->sd);
                            cl->sd = -1;
+                           free(json_data);
+                           json_data = NULL;
                            continue;
                         }
                         if (service_send_data(supervisor_sd, header->data_size, (void **) &json_data) != TRAP_E_OK) {
                            VERBOSE(CL_VERBOSE_LIBRARY, "[ERROR] Service could not send data.")
                            close(cl->sd);
                            cl->sd = -1;
-                           continue;
-                        }
-                        if (json_data != NULL) {
                            free(json_data);
                            json_data = NULL;
+                           continue;
                         }
+
+                        free(json_data);
+                        json_data = NULL;
                      }
                   } else {
                      // Received unknown request -> disconnect client
