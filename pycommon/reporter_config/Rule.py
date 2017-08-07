@@ -121,7 +121,7 @@ class Rule():
 
         for key in addrGroups:
             if key in rule:
-                rule = re.sub(r"\b{0}\b".format(key), addrGroups[key].iplist(), rule)
+                rule = re.sub(r"\b{0}\b".format(re.escape(key)), addrGroups[key].iplist(), rule)
                 matched = True
         self.__condition = rule
 
