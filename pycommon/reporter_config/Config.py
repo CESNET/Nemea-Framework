@@ -85,7 +85,7 @@ class Config():
                     continue
 
                 else:
-                    raise Exception("undefined action: " + str(i))
+                    raise Exception("Undefined action: " + str(i))
 
         self.actions["drop"] = DropAction()
 
