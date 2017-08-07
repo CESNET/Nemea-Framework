@@ -187,7 +187,7 @@ echo ldd $PROG_ECHO_REPLY
 ldd $PROG_ECHO_REPLY
 
 #run_ertest <duration in seconds> <size of message>
-run_ertest 5 65533 
+run_ertest 5 65533
 run_ertest 5 32767
 run_ertest 5 16383
 run_ertest 5 8191
