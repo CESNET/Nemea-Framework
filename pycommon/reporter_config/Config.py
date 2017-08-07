@@ -41,9 +41,13 @@ class Config():
         self.addrGroups = dict()
 
         # Create all address groups
-        if "addressgroups" in self.conf:
-            for i in self.conf["addressgroups"]:
-                self.addrGroups[i["id"]] = AddressGroup(i)
+        try:
+            if "addressgroups" in self.conf:
+                for i in self.conf["addressgroups"]:
+                    self.addrGroups[i["id"]] = AddressGroup(i)
+        except Exception as e:
+            logger.error("Failed loading config file due to error(s) in addressgroups.")
+            raise e
 
         self.actions = dict()
 
