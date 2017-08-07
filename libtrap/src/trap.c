@@ -2394,27 +2394,29 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
    return ctx;
 
 freeall_on_failed:
-   for (i=0; i<ctx->num_ifc_out; ++i) {
-      pthread_mutex_destroy(&ctx->out_ifc_list[i].ifc_mtx);
-      if (ctx->out_ifc_list != NULL && ctx->out_ifc_list[i].destroy != NULL) {
-         if (ctx->out_ifc_list[i].priv != NULL) {
+   if (ctx->out_ifc_list != NULL) {
+      for (i=0; i<ctx->num_ifc_out; ++i) {
+         pthread_mutex_destroy(&ctx->out_ifc_list[i].ifc_mtx);
+         if (ctx->out_ifc_list[i].destroy != NULL && ctx->out_ifc_list[i].priv != NULL) {
             ctx->out_ifc_list[i].destroy(ctx->out_ifc_list[i].priv);
          }
       }
+
+      free(ctx->out_ifc_list);
+      ctx->out_ifc_list = NULL;
    }
-   free(ctx->out_ifc_list);
-   ctx->out_ifc_list = NULL;
 freein_on_failed:
-   for (i=0; i<ctx->num_ifc_in; ++i) {
-      pthread_mutex_destroy(&ctx->in_ifc_list[i].ifc_mtx);
-      if (ctx->in_ifc_list != NULL && ctx->in_ifc_list[i].destroy != NULL) {
-         if (ctx->in_ifc_list[i].priv != NULL) {
+   if (ctx->in_ifc_list != NULL) {
+      for (i=0; i<ctx->num_ifc_in; ++i) {
+         pthread_mutex_destroy(&ctx->in_ifc_list[i].ifc_mtx);
+         if (ctx->in_ifc_list[i].destroy != NULL && ctx->in_ifc_list[i].priv != NULL) {
             ctx->in_ifc_list[i].destroy(ctx->in_ifc_list[i].priv);
          }
-      }
-      if (ctx->in_ifc_list[i].buffer != NULL) {
-         free(ctx->in_ifc_list[i].buffer);
-         ctx->in_ifc_list[i].buffer = NULL;
+
+         if (ctx->in_ifc_list[i].buffer != NULL) {
+            free(ctx->in_ifc_list[i].buffer);
+            ctx->in_ifc_list[i].buffer = NULL;
+         }
       }
    }
 freein_readers:
