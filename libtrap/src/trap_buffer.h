@@ -158,22 +158,25 @@ trap_buffer_t *tb_init(uint16_t nblocks, uint32_t blocksize);
 
 /**
  * Free memory and set the pointer to NULL.
- * \param[in] Pointer to buffer.
+ * \param[in] tb Pointer to the TRAP buffer.
  */
 void tb_destroy(trap_buffer_t **tb);
 
 /**
  * Lock buffer before manipulation.
+ * \param[in] tb Pointer to the TRAP buffer.
  */
 int tb_lock(trap_buffer_t *tb);
 
 /**
  * Unlock buffer after manipulation.
+ * \param[in] tb Pointer to the TRAP buffer.
  */
 int tb_unlock(trap_buffer_t *tb);
 
 /**
  * Lock block before manipulation.
+ * \param[in] bl Pointer to the TRAP buffer.
  */
 int tb_block_lock(tb_block_t *bl);
 
@@ -228,7 +231,7 @@ int tb_pushmess2(trap_buffer_t *tb, const void *d1, uint16_t s1, const void *d2,
 /**
  * Go through all blocks and those which are not used (refcount) mark as free.
  *
- * \param[in] tb  Pointer to the buffer.
+ * \param[in] tb  Pointer to the TRAP buffer.
  */
 void tb_clear_unused(trap_buffer_t *tb);
 
@@ -236,6 +239,7 @@ void tb_clear_unused(trap_buffer_t *tb);
  * Move to the next block for writing.
  *
  * This function moves cur_block pointer to the next block (it overflows after nblocks).
+ * \param[in] tb Pointer to the TRAP buffer
  */
 void tb_next_wr_block(trap_buffer_t *tb);
 
@@ -243,6 +247,7 @@ void tb_next_wr_block(trap_buffer_t *tb);
  * Move to the first block for writing.
  *
  * This function moves cur_block pointer to the first block.
+ * \param[in] tb Pointer to the TRAP buffer
  */
 void tb_first_wr_block(trap_buffer_t *tb);
 
@@ -261,7 +266,7 @@ void tb_first_wr_block(trap_buffer_t *tb);
  *    TB_FILL_END(b, bl, s);
  * }
  *
- * \param[in] wdb  Pointer to the buffer.
+ * \param[in] wrb  Pointer to the buffer.
  * \param[out] bl  Pointer to block (tb_block_t **bl).
  * \param[out] res  Result of TB_FILL_START(), it is set to TB_SUCCESS or TB_FULL.
  */

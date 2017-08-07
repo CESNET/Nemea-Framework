@@ -247,6 +247,9 @@ typedef enum {
    TRAP_FMT_JSON = 3
 } trap_data_format_t;
 
+/**
+ * Possible states of an IFC during data format negotiation.
+ */
 typedef enum {
    /** Negotiation is not completed */
    FMT_WAITING = 0,
@@ -323,7 +326,7 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_idx   Index of the input interface
- * \return Value of #trap_in_ifc_state enum on success, otherwise TRAP_E_NOT_INITIALIZED when libtrap context is not initialized or
+ * \return Value of #trap_in_ifc_state_t on success, otherwise TRAP_E_NOT_INITIALIZED when libtrap context is not initialized or
  * TRAP_E_BAD_IFC_INDEX (ifc_idx >= number of input ifcs).
  */
 int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
@@ -679,7 +682,7 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
  *
  * \return Pointer to context, NULL on error.
  */
-trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifc, const char *ifc_spec, const char *service_ifcname);
+trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifcs, const char *ifc_spec, const char *service_ifcname);
 
 /**
  * \brief Terminate libtrap context and free resources.
