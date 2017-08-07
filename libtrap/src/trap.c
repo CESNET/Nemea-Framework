@@ -847,9 +847,8 @@ int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
    }
    if (trap_glob_ctx->trap_last_error != TRAP_E_OK) {
       le = trap_glob_ctx->trap_last_error;
-      strncpy(error_msg_buffer, trap_glob_ctx->trap_last_error_msg, MAX_ERROR_MSG_BUFF_SIZE);
+      strncpy(error_msg_buffer, trap_glob_ctx->trap_last_error_msg, MAX_ERROR_MSG_BUFF_SIZE - 1);
 
-      le = trap_glob_ctx->trap_last_error;
       trap_finalize();
       trap_free_ctx_t(&trap_glob_ctx);
 
