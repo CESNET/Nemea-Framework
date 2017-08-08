@@ -1,5 +1,7 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
+%global pypi_version 1.2.0
+
 
 %if 0%{?el6}
 %global python3_pkgversion 33
@@ -11,7 +13,7 @@
 %endif
 
 Name:	python-%{pypi_name}
-Version: 1.1.3
+Version: %{pypi_version}
 Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
