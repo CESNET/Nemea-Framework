@@ -45,7 +45,7 @@ class RCAddressGroupTest(unittest.TestCase):
                 for idea in self.messages_pass:
                     results = self.config.match(idea)
                     if True in results:
-                        print("Test OK")
+                        pass
                     else:
                         print("Test FAILED!!!")
 
@@ -53,7 +53,7 @@ class RCAddressGroupTest(unittest.TestCase):
                 for idea in self.messages_notpass:
                     results = self.config.match(idea)
                     if True not in results:
-                        print("Test OK")
+                        pass
                     else:
                         print("Test FAILED!!!")
 
