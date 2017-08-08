@@ -4,16 +4,18 @@ EX=0 #exit status of module
 PROG_ECHO="test_echo"
 PROG_ECHO_REPLY="test_echo_reply"
 
+test -z "$srcdir" && export srcdir=.
+
 #checking if some leftover tests are running
 pgrep "^$PROG_ECHO_REPLY$" > /dev/null && { echo "Existing process..."; exit 1; }
 pgrep "^$PROG_ECHO$" > /dev/null && { echo "Existing process..."; exit 1; }
 
-INTERFACE_SENDER="T:12345:tls-certificates/server.key:tls-certificates/server.crt:tls-certificates/ca.crt"
-INTERFACE_RECEIVER="T:12345:tls-certificates/unver.key:tls-certificates/unver.crt:tls-certificates/ca.crt"
+INTERFACE_SENDER="T:12345:${srcdir}/tls-certificates/server.key:${srcdir}/tls-certificates/server.crt:${srcdir}/tls-certificates/ca.crt"
+INTERFACE_RECEIVER="T:12345:${srcdir}/tls-certificates/unver.key:${srcdir}/tls-certificates/unver.crt:${srcdir}/tls-certificates/ca.crt"
 
 ECHOOUT=echoout-tls.log
 REPLYOUTOK=replyout-tls.log
-REPLYOUTBAD=replyout-tlsw-bad.log
+REPLYOUTBAD=replyout-tls-bad.log
 ERTIME=5
 ERSIZE=100
 
@@ -31,7 +33,7 @@ if [ "`pgrep "^$PROG_ECHO_REPLY$"`" != "" ]; then
    exit 1
 fi
 
-INTERFACE_RECEIVER="T:12345:tls-certificates/client.key:tls-certificates/client.crt:tls-certificates/ca.crt"
+INTERFACE_RECEIVER="T:12345:${srcdir}/tls-certificates/client.key:${srcdir}/tls-certificates/client.crt:${srcdir}/tls-certificates/ca.crt"
 
 #running the client with valid certificate
 ./$PROG_ECHO_REPLY -i $INTERFACE_RECEIVER > "$REPLYOUTOK" 2>&1 &

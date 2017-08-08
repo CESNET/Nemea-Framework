@@ -1,2 +1,5 @@
 #!/bin/bash
-./test_tcpip.sh tls T:12345:tls-certificates/client.key:tls-certificates/client.crt:tls-certificates/ca.crt > libtrap_tls.log.rpt
+
+test -z "$srcdir" && export srcdir=.
+
+./test_tcpip.sh tls T:12345:${srcdir}/tls-certificates/client.key:${srcdir}/tls-certificates/client.crt:${srcdir}/tls-certificates/ca.crt > libtrap_tls.log.rpt
