@@ -1,3 +1,4 @@
+import copy
 from idea import lite
 from pynspect.rules import *
 from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
@@ -111,7 +112,6 @@ class Config():
 
         Return a list of bool values representing results of all tested rules.
         """
-        tmp_msg = msg
         results = []
 
         for rule in self.rules:
@@ -119,6 +119,7 @@ class Config():
             #logger.debug("Filter by rule: %s \n message: %s\n\nresult: %s", self.rules[i].rule(), msg, res)
             results.append(res)
 
+            tmp_msg = copy.deepcopy(msg)
             if res:
                 # Perform actions on given message
                 rule.actions(tmp_msg)
