@@ -22,14 +22,14 @@ class RCEmptyFileTest(unittest.TestCase):
             self.config = Config(os.path.dirname(__file__) + '/rc_config/empty.yaml');
             self.fail("Empty configuration file shouldn't be loaded! It must contain rules.")
         except Exception as e:
-            self.assertEqual(e.message, "YAML file must contain `rules`.")
+            self.assertEqual(str(e), "YAML file must contain `rules`.")
 
     def test_01_load_basic_config(self):
         try:
             self.config = Config(os.path.dirname(__file__) + '/rc_config/incompleterules.yaml');
             self.fail("Rules must contain at least one rule.")
         except Exception as e:
-            self.assertEqual(e.message, "YAML file should contain at least one `rule` in `rules`.")
+            self.assertEqual(str(e), "YAML file should contain at least one `rule` in `rules`.")
 
     def test_02_onerule(self):
         self.config = Config(os.path.dirname(__file__) + '/rc_config/minimal.yaml');
