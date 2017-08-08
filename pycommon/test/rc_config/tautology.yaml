@@ -19,3 +19,31 @@ rules:
   condition: Null
   actions:
   - basic_mark
+- id: 2
+  condition: None
+  actions:
+  - basic_mark
+- id: 3
+  condition: true
+  actions:
+  - basic_mark
+- id: 4
+  condition: True
+  actions:
+  - basic_mark
+- id: 5
+  condition: TRUE
+  actions:
+  - basic_mark
+- id: 6
+  condition: false
+  actions:
+  - basic_mark
+- id: 7
+  condition: False
+  actions:
+  - basic_mark
+- id: 8
+  condition: FALSE
+  actions:
+  - basic_mark

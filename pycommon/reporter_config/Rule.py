@@ -60,8 +60,14 @@ class Rule():
 
 
     def parseRule(self):
-        self.__condition = self.parser.parse(self.__condition)
-        self.__condition = self.compiler.compile(self.__condition)
+        cond = str(self.__condition).lower()
+        if cond in ["none", "null", "true"]:
+            self.__condition = True
+        elif cond == "false":
+            self.__condition = False
+        else:
+            self.__condition = self.parser.parse(self.__condition)
+            self.__condition = self.compiler.compile(self.__condition)
 
     def filter(self, record):
         """
@@ -79,9 +85,11 @@ class Rule():
         logger.debug(record)
         logger.debug(self.__condition)
 
-        if self.__condition == None:
+        if self.__condition == None or self.__condition == True:
             # Rule condition is empty (tautology) - should always match the record
             res = True
+        elif self.__condition == False:
+            res = False
         else:
             # Match the record with non-empty rule's condition
             res = self.__filter.filter(self.__condition, record)
@@ -117,7 +125,7 @@ class Rule():
         Tautology - empty rule should always match
         Don't try to match or replace any address group
         """
-        if rule == None:
+        if rule == None or isinstance(rule, bool):
             return False
 
         for key in addrGroups:
