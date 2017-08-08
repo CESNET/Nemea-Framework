@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.2.0
+%global pypi_version 1.2.2
 
 
 %if 0%{?el6}
@@ -24,13 +24,6 @@ Vendor: Vaclav Bartos, CESNET <bartos@cesnet.cz>
 URL:           https://github.com/CESNET/Nemea-Framework
 Source0:       https://files.pythonhosted.org/packages/source/n/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 
-BuildRequires:  python-setuptools
-BuildRequires:  python2-devel
-BuildRequires:  python-nemea-pytrap
-
-BuildRequires:  python%{python3_pkgversion}-setuptools
-BuildRequires:  python%{python3_pkgversion}-devel
-BuildRequires:  python%{python3_pkgversion}-nemea-pytrap
 
 %description
 The module contains methods for creation and submission of incident reports in IDEA format.
@@ -47,6 +40,11 @@ Requires:	python-typedcols
 Requires:	python-ipranges
 Requires:	python-pynspect
 Requires:	python-pymongo
+BuildRequires:	python-setuptools
+BuildRequires:	python2-devel
+BuildRequires:	python-nemea-pytrap
+BuildRequires:	python-ply
+BuildRequires:	python-yaml
 
 %description -n python2-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
@@ -64,6 +62,12 @@ Requires:	python%{python3_pkgversion}-typedcols
 Requires:	python%{python3_pkgversion}-ipranges
 Requires:	python%{python3_pkgversion}-pynspect
 Requires:	python%{python3_pkgversion}-pymongo
+BuildRequires:	python%{python3_pkgversion}-setuptools
+BuildRequires:	python%{python3_pkgversion}-devel
+BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
+BuildRequires:	python%{python3_pkgversion}-ply
+BuildRequires:	python%{python3_pkgversion}-yaml
+
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.

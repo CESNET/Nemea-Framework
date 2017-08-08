@@ -3,7 +3,7 @@ from setuptools import setup
 DESCRIPTION="Common Python modules and methods of the NEMEA system."
 LONG_DESCRIPTION="""The module contains methods for creation and submission of incident reports in IDEA format."""
 setup(name='nemea-pycommon',
-      version='1.2.0',
+      version='1.2.2',
       py_modules=['report2idea', 'ip_prefix_search'],
       packages=['reporter_config', 'reporter_config.actions'],
       author='Vaclav Bartos, CESNET',
