@@ -33,6 +33,9 @@ class Config():
         with open(path, 'r') as f:
             self.conf = Parser(f)
 
+        if not self.conf:
+            raise Exception("Loading YAML file ({0}) failed. Isn't it empty?".format(path))
+
         # Build parser
         self.parser = MentatFilterParser()
         self.parser.build()
@@ -41,14 +44,10 @@ class Config():
 
         self.addrGroups = dict()
 
-        # Create all address groups
-        try:
-            if "addressgroups" in self.conf:
-                for i in self.conf["addressgroups"]:
-                    self.addrGroups[i["id"]] = AddressGroup(i)
-        except Exception as e:
-            logger.error("Failed loading config file due to error(s) in addressgroups.")
-            raise e
+        # Create all address groups if there are any
+        if "addressgroups" in self.conf:
+            for i in self.conf["addressgroups"]:
+                self.addrGroups[i["id"]] = AddressGroup(i)
 
         self.actions = dict()
 
@@ -98,13 +97,19 @@ class Config():
 
         # Parse all rules and match them with actions and address groups
         # There must be at least one rule (mandatory field)
-        for i in self.conf["rules"]:
-            self.rules.append(Rule(i
-                    , self.actions
-                    , self.addrGroups
-                    , parser = self.parser
-                    , compiler = self.compiler
-                    ))
+        if "rules" in self.conf:
+            if self.conf["rules"]:
+                for i in self.conf["rules"]:
+                    self.rules.append(Rule(i
+                            , self.actions
+                            , self.addrGroups
+                            , parser = self.parser
+                            , compiler = self.compiler
+                            ))
+            if not self.rules:
+                raise Exception("YAML file should contain at least one `rule` in `rules`.")
+        else:
+            raise Exception("YAML file must contain `rules`.")
 
     def match(self, msg):
         """
