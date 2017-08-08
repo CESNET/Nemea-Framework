@@ -146,8 +146,8 @@ static SSL_CTX *tlsclient_create_context()
 }
 
 /**
- * \brief Configure context of ssl server.
- * \param[in] arg  pointer to SSL 
+ * \brief Verify context of ssl.
+ * \param[in] arg  pointer to SSL (usually stored in tls_receiver_private_t resp. in an array of tlsclient_s inside tls_sender_private_t for input resp. output IFC)
  * \return 1 on failure, 0 on success
  * Disabling undesired versions of TLS/SSL and adding supported CAs to SSL_CTX.
  */
@@ -233,7 +233,7 @@ static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt, con
       return EXIT_FAILURE;
    }
 
-   if( SSL_CTX_check_private_key(ctx) == 0) {
+   if (SSL_CTX_check_private_key(ctx) == 0) {
       VERBOSE(CL_ERROR, "Private key does not match the certificate public key.");
       return EXIT_FAILURE;
    }
@@ -542,8 +542,17 @@ conn_wait:
          } else if (retval == TRAP_E_OK) {
             config->connected = 1;
             /* ok, wait for header as we planned */
-         } else {
+         } else if (TRAP_E_BAD_CERT) {
+            /* TODO replace with TRAP_E_IO_ERROR and change it in test_echo_reply.c */
             return TRAP_E_TERMINATED;
+         } else {
+            /* failed, reseting... */
+            if (timeout == TRAP_WAIT) {
+               /* Create a delay when blocking...
+                * This is specific situation, many attempts would be unpleasant */
+               sleep(1);
+            }
+            goto reset;
          }
       }
       goto head_wait;
@@ -771,32 +780,28 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &dest_port, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &dest_port, TRAP_IFC_PARAM_DELIMITER);
    } else {
       VERBOSE(CL_ERROR, "Missing 'dest_port', 'keyfile', 'certfile' and trusted 'CAfile' parameters.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &keyfile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &keyfile, TRAP_IFC_PARAM_DELIMITER);
    } else {
       VERBOSE(CL_ERROR, "Missing 'keyfile', 'certfile' and trusted 'CAfile' parameters.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER);
    } else {
       VERBOSE(CL_ERROR, "Missing 'certfile' and trusted 'CAfile' parameters.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER);
    } else {
       /* dest_addr skipped, move parameters */
       cafile = certfile;
@@ -1034,7 +1039,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    c->ssl = SSL_new(c->sslctx);
    SSL_set_fd(c->ssl, c->sd);
    SSL_set_connect_state(c->ssl);
-   
+
    do {
       rv = SSL_connect(c->ssl);
       if (rv < 1) {
@@ -1737,24 +1742,21 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &keyfile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &keyfile, TRAP_IFC_PARAM_DELIMITER);
    } else {
       VERBOSE(CL_ERROR, "Missing 'keyfile', 'certfile' and trusted 'CAfile' for TLS IFC.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &certfile, TRAP_IFC_PARAM_DELIMITER);
    } else {
       VERBOSE(CL_ERROR, "Missing 'certfile' and trusted 'CAfile' for TLS IFC.");
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
    if (param_iterator != NULL) {
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER);
    } else {
       VERBOSE(CL_ERROR, "Missing trusted 'CAfile' for TLS IFC.");
       result = TRAP_E_BADPARAMS;
@@ -1765,8 +1767,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       max_clients = keyfile;
       keyfile = certfile;
       certfile = cafile;
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &cafile, TRAP_IFC_PARAM_DELIMITER);
    }
    if (max_clients == NULL) {
       /* 2nd parameter became optional, set default value when missing */
@@ -1844,7 +1845,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       goto failsafe_cleanup;
    }
 
-   if(tls_server_configure_ctx(priv->certfile, priv->sslctx) != 0) {
+   if (tls_server_configure_ctx(priv->certfile, priv->sslctx) != 0) {
       VERBOSE(CL_ERROR, "Configuring server context failed.");
       goto failsafe_cleanup;
    }
@@ -1853,7 +1854,6 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       result = TRAP_E_BADPARAMS;
       goto failsafe_cleanup;
    }
-
 
    /* Fill struct defining the interface */
    ifc->disconn_clients = tlsserver_disconnect_all_clients;
@@ -1885,7 +1885,6 @@ failsafe_cleanup:
 
    return result;
 }
-
 
 /**
  * \brief Function for server thread - accepts incoming clients and disconnects them.

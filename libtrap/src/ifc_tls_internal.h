@@ -64,6 +64,9 @@
  * @{
  */
 
+/**
+ * \brief Structure for tls client send state.
+ */
 enum tlsclient_send_state {
    TLSCURRENT_IDLE, /**< waiting for a message in current buffer */
    TLSCURRENT_HEAD, /**< timeout in header */
@@ -72,50 +75,47 @@ enum tlsclient_send_state {
    TLSBACKUP_BUFFER /**< timeout in backup buffer */
 };
 
+/**
+ * \brief Structure for TLS IFC client information.
+ */
 struct tlsclient_s {
    int sd; /**< Socket descriptor */
-   SSL *ssl;
+   SSL *ssl; /**< Each client individual SSL info. */
    void *sending_pointer; /**< Array of pointers into buffer */
    void *buffer; /**< separate message buffer */
    uint32_t pending_bytes; /**< The size of data that must be sent */
    enum tlsclient_send_state client_state; /**< State of sending */
 };
 
+/**
+ * \brief Structure for TLS IFC client information.
+ */
 typedef struct tls_sender_private_s {
    trap_ctx_priv_t *ctx; /**< Libtrap context */
-   char *server_port;
+   char *server_port; /**< Server port */
 
-   /**
-    * Path to private key file in PEM format.
-    */
-   char *keyfile;
-   /**
-    * Path to certificate in PEM format.
-    */
-   char *certfile;
-   /**
-    * Path to trusted CAs (can be chain file) file in PEM format.
-    */
-   char *cafile;
+   char *keyfile; /**< Path to private key file in PEM format. */
+   char *certfile; /**< Path to certificate in PEM format. */
+   char *cafile; /**< Path to trusted CAs (can be chain file) file in PEM format. */
 
-   int server_sd;
-   SSL_CTX *sslctx;
+   int server_sd; /**< Server socket descriptor. */
+   SSL_CTX *sslctx; /**< Server SSL context. */
 
-   struct tlsclient_s *clients; /**< Array of clients */
+   struct tlsclient_s *clients; /**< Array of clients. */
 
-   int32_t connected_clients;
-   int32_t clients_arr_size;
-   sem_t have_clients;
-   trap_buffer_header_t int_mess_header; /**< Internal message header */
+   int32_t connected_clients; /**< Number of currently connected clients. */
+   int32_t clients_arr_size; /**< Size of connected clients clients. */
+   sem_t have_clients; /**< Semaphore indicating whether server has clients. */
+   trap_buffer_header_t int_mess_header; /**< Internal message header. */
 
    void *backup_buffer; /**< Internal backup buffer for message */
 
    const void *ext_buffer; /**< Pointer to buffer that was passed by higher layer - this is the place we write */
    uint32_t ext_buffer_size; /** size of content of the extbuffer */
 
-   char is_terminated;
+   char is_terminated; /**< Flag to show whether server is terminated. */
 
-   char initialized;
+   char initialized; /**< Flag to show whether server is initialized. */
 
    /**
     * File descriptor pair for select() termination.
@@ -127,10 +127,10 @@ typedef struct tls_sender_private_s {
     */
    int term_pipe[2];
 
-   pthread_mutex_t  lock;
-   pthread_mutex_t  sending_lock;
-   pthread_t        accept_thread;
-   uint32_t ifc_idx;
+   pthread_mutex_t  lock; /**< Lock used while working with clients array. */
+   pthread_mutex_t  sending_lock; /**< Lock used while working with whole structure. */
+   pthread_t        accept_thread; /**< Thread for accepting clients. */
+   uint32_t ifc_idx; /**< Index of IFC. */
 } tls_sender_private_t;
 
 #define tls_SENDER_STATE_STR(st) (st == TLSCURRENT_IDLE ? "TLSCURRENT_IDLE": \
@@ -149,34 +149,25 @@ typedef struct tls_sender_private_s {
  */
 typedef struct tls_receiver_private_s {
    trap_ctx_priv_t *ctx; /**< Libtrap context */
-   char *dest_addr;
-   char *dest_port;
+   char *dest_addr; /**< Destination address */
+   char *dest_port; /**< Destination port */
 
-   /**
-    * Path to private key file in PEM format.
-    */
-   char *keyfile;
-   /**
-    * Path to certificate in PEM format.
-    */
-   char *certfile;
-   /**
-    * Path to trusted CAs (can be chain file) file in PEM format.
-    */
-   char *cafile;
+   char *keyfile; /**< Path to private key file in PEM format. */
+   char *certfile; /**< Path to certificate in PEM format. */
+   char *cafile; /**< Path to trusted CAs (can be chain file) file in PEM format. */
 
-   SSL_CTX *sslctx;
-   SSL *ssl;
+   SSL_CTX *sslctx; /**< Whole client SSL context. */
+   SSL *ssl; /**< SSL conection info of client */
 
-   char connected;
-   char is_terminated;
-   int sd;
+   char connected; /**< Indicates whether client is connected to server. */
+   char is_terminated; /**< Indicates whether client should be destroyed. */
+   int sd; /**< Socket descriptor */
    void *data_pointer; /**< Pointer to next free byte, if NULL, we ended in header */
    uint32_t data_wait_size; /** Missing data to accept in the next function call */
    void *ext_buffer; /**< Pointer to buffer that was passed by higher layer - this is the place we write */
    uint32_t ext_buffer_size; /** size of content of the extbuffer */
    trap_buffer_header_t int_mess_header; /**< Internal message header - used for message_buffer payload size \note message_buffer size is sizeof(tls_tdu_header_t) + payload size */
-   uint32_t ifc_idx;
+   uint32_t ifc_idx; /**< Index of IFC */
 } tls_receiver_private_t;
 
 /**
