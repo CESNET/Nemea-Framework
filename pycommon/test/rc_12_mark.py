@@ -25,17 +25,20 @@ class RCMarkTest(unittest.TestCase):
 		self.config = Config(os.path.dirname(__file__) + '/rc_config/mark.yaml');
 
 		self.assertNotEqual(self.config, None)
+
 		self.config.match(self.msg)
 
-		self.assertEqual(self.msg['Test'], True)
+		of1 = "/tmp/output1.idea"
+		of2 = "/tmp/output2.idea"
 
-	def test_02_mark_nested(self):
-		self.msg["Target"][0]["IP4"].append("1.2.3.4")
+		with open(of1, "r") as f:
+			stored = json.load(f)
+		self.assertEqual(stored['Test'], True)
 
-		self.config = Config(os.path.dirname(__file__) + '/rc_config/mark.yaml');
+		with open(of2, "r") as f:
+			stored = json.load(f)
+		self.assertEqual(stored["_CESNET"]["Status"]["Processed"], True)
 
-		self.assertNotEqual(self.config, None)
-		self.config.match(self.msg)
-
-		self.assertEqual(self.msg["_CESNET"]["Status"]["Processed"], True)
+		os.unlink(of1)
+		os.unlink(of2)
 

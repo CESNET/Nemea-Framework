@@ -1,0 +1,6 @@
+rules:
+- id: 1
+  condition: true
+  actions:
+  - drop
+

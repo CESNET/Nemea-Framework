@@ -1,0 +1,16 @@
+custom_actions:
+- id: save
+  file:
+    path: /tmp/output1.idea
+
+rules:
+- id: 1
+  condition: true
+  actions:
+  - drop
+  - save
+- id: 2
+  condition: true
+  actions:
+  - save
+

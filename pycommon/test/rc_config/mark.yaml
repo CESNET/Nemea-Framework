@@ -12,19 +12,22 @@ custom_actions:
     mark:
       path: "_CESNET.Status.Processed"
       value: true
-
-addressgroups:
-- id: whitelist
-  list:
-  - 1.2.3.4
+  - id: store_file1
+    file:
+      path: /tmp/output1.idea
+  - id: store_file2
+    file:
+      path: /tmp/output2.idea
 
 rules:
 - id: 1
-  condition: Source.IP4 in whitelist
+  condition: true
   actions:
   - mark
+  - store_file1
 
 - id: 2
-  condition: Target.IP4 in whitelist
+  condition: true
   actions:
   - mark_nested
+  - store_file2

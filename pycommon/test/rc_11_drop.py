@@ -21,13 +21,10 @@ class RCDropTest(unittest.TestCase):
 		"""
 		Load drop.yaml configuration file, parse it and analyze it
 
-		This should rise DropMsg exception
 		"""
 		self.config = Config(os.path.dirname(__file__) + '/rc_config/drop.yaml');
 
 		self.assertNotEqual(self.config, None)
 
-		# Dropping a message should raise DropMsg exception
-		with self.assertRaises(DropMsg):
-			self.config.match(self.msg)
+		self.config.match(self.msg)
 

@@ -38,7 +38,11 @@ class RCBaseTest(unittest.TestCase):
 	def test_02_basic_match(self):
 		self.config = Config(os.path.dirname(__file__) + '/rc_config/basic.yaml');
 
-		self.config.match(self.msg)
+                results = [False]
+                try:
+                    results = self.config.match(self.msg)
+                except Exception:
+                    pass
 
-		self.assertEqual(self.msg['Test'], True)
+		self.assertEqual(results[0], True)
 
