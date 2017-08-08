@@ -21,5 +21,5 @@ class RCBaseTest(unittest.TestCase):
 
 		results = self.config.match(self.msg)
 
-		self.assertEqual(results[0], True)
+		self.assertEqual(results, 5*[True] + 3*[False])
 
