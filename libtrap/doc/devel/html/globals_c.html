@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Libtrap: Internal development docs
-   &#160;<span id="projectnumber">0.10.0</span>
+   &#160;<span id="projectnumber">0.11.0</span>
    </div>
   </td>
  </tr>
@@ -62,8 +62,12 @@ $(function() {
 <div class="textblock">Here is a list of all functions, variables, defines, enums, and typedefs with links to the files they belong to:</div>
 
 <h3><a id="index_c"></a>- c -</h3><ul>
+<li>CHECK_AND_FREE
+: <a class="el" href="group__tls__ifc.html#ga40906d533b47e9f9242d0bfee637b84b">ifc_tls.c</a>
+</li>
 <li>check_connected_clients()
 : <a class="el" href="group__tcpip__sender.html#ga86bc8a32ffabaa87eaa11c09aaf295f2">ifc_tcpip.c</a>
+, <a class="el" href="group__tls__sender.html#ga566ad038fc3be7b93c2a4905acd64402">ifc_tls.c</a>
 </li>
 <li>check_portrange()
 : <a class="el" href="group__tcpip__ifc.html#ga0925b2a05afa60bb981a19d2e76cc2d2">ifc_tcpip.c</a>
@@ -91,9 +95,11 @@ $(function() {
 </li>
 <li>client_socket_connect()
 : <a class="el" href="group__tcpip__receiver.html#gab162898982b46b7d50290308ef3eb769">ifc_tcpip.c</a>
+, <a class="el" href="group__tls__receiver.html#ga7108575bc12d369768a50cf8e6198e68">ifc_tls.c</a>
 </li>
 <li>client_socket_disconnect()
 : <a class="el" href="group__tcpip__receiver.html#ga7d3a1df60320e3e2c58be93bdec7e452">ifc_tcpip.c</a>
+, <a class="el" href="group__tls__receiver.html#ga7d3a1df60320e3e2c58be93bdec7e452">ifc_tls.c</a>
 </li>
 <li>compare_timeouts()
 : <a class="el" href="trap_8c.html#ab176e52a13ff0802a856c161aa963567">trap.c</a>
@@ -110,8 +116,8 @@ $(function() {
 , <a class="el" href="group__file__receiver.html#gadc3824536a691ef65c730c0047ae1f6c">ifc_file.h</a>
 </li>
 <li>create_file_send_ifc()
-: <a class="el" href="group__file__sender.html#ga5c7c2366ebad27e5ff4e66322ed7ec73">ifc_file.c</a>
-, <a class="el" href="group__file__sender.html#ga5c7c2366ebad27e5ff4e66322ed7ec73">ifc_file.h</a>
+: <a class="el" href="group__file__sender.html#ga5c7c2366ebad27e5ff4e66322ed7ec73">ifc_file.h</a>
+, <a class="el" href="group__file__sender.html#ga5c7c2366ebad27e5ff4e66322ed7ec73">ifc_file.c</a>
 </li>
 <li>create_filename_from_time()
 : <a class="el" href="group__file__ifc.html#ga7e8991b39e963f1e564288d52d984792">ifc_file.c</a>
@@ -128,11 +134,20 @@ $(function() {
 , <a class="el" href="group__tcpip__receiver.html#gae9c7c5600b33d5225fe4a8d04a1b3af2">ifc_tcpip.c</a>
 </li>
 <li>create_tcpip_sender_ifc()
-: <a class="el" href="group__tcpip__sender.html#ga19dfb1ff5fc8916e8c4bd1e0800bf9df">ifc_tcpip.c</a>
-, <a class="el" href="group__tcpip__sender.html#ga19dfb1ff5fc8916e8c4bd1e0800bf9df">ifc_tcpip.h</a>
+: <a class="el" href="group__tcpip__sender.html#ga19dfb1ff5fc8916e8c4bd1e0800bf9df">ifc_tcpip.h</a>
+, <a class="el" href="group__tcpip__sender.html#ga19dfb1ff5fc8916e8c4bd1e0800bf9df">ifc_tcpip.c</a>
+</li>
+<li>create_tls_receiver_ifc()
+: <a class="el" href="group__tls__receiver.html#ga825fd4776caae6897e8c8e941fe4de33">ifc_tls.c</a>
+, <a class="el" href="group__tls__receiver.html#ga825fd4776caae6897e8c8e941fe4de33">ifc_tls.h</a>
+</li>
+<li>create_tls_sender_ifc()
+: <a class="el" href="group__tls__sender.html#ga70f857962c64531165db580c0820f9d7">ifc_tls.h</a>
+, <a class="el" href="group__tls__sender.html#ga70f857962c64531165db580c0820f9d7">ifc_tls.c</a>
 </li>
 <li>CRIT_1VS2SEND
-: <a class="el" href="group__tcpip__ifc.html#gaa1aebd3c98a8a810d1ff3f933d415805">ifc_tcpip.c</a>
+: <a class="el" href="group__tls__ifc.html#gaa1aebd3c98a8a810d1ff3f933d415805">ifc_tls.c</a>
+, <a class="el" href="group__tcpip__ifc.html#gaa1aebd3c98a8a810d1ff3f933d415805">ifc_tcpip.c</a>
 </li>
 <li>CURRENT_COMPLETE
 : <a class="el" href="group__tcpip__sender.html#ggaf04b911ad265af7e9f2871d48cb9ba76a0ca445b9f24688896a9c9f3c8937f077">ifc_tcpip_internal.h</a>

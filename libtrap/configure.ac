@@ -70,6 +70,25 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
 PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
 AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
 
+AC_ARG_WITH([openssl],
+	[AS_HELP_STRING([--without-openssl], [Force to disable openssl])],
+	[if test x$withval = xyes; then
+        PKG_CHECK_MODULES([openssl], [openssl], [have_openssl="yes"], [have_openssl="no"])
+        fi],
+	[PKG_CHECK_MODULES([openssl], [openssl], [have_openssl="yes"], [have_openssl="no"])])
+
+AM_CONDITIONAL([HAVE_OPENSSL], [test x$have_openssl = xyes])
+
+if test x$have_openssl = xyes; then
+  AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if the openssl is available])
+  LDFLAGS="$openssl_LDFLAGS $LDFLAGS"
+  LIBS="$openssl_LIBS $LIBS"
+  CFLAGS="$openssl_CFLAGS $CFLAGS"
+  CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
+else
+  AC_DEFINE([HAVE_OPENSSL], [0], [Define to 1 if the openssl is available])
+fi
+
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h stdarg.h string.h sys/socket.h sys/time.h unistd.h pthread.h endian.h locale.h sched.h sys/param.h sys/stat.h sys/types.h getopt.h])
 
@@ -258,6 +277,7 @@ echo "  CPPFLAGS.............: $CPPFLAGS"
 echo "  CFLAGS...............: $CFLAGS"
 echo "  CXXFLAGS.............: $CXXFLAGS"
 echo "  LDFLAGS..............: $LDFLAGS"
+echo "  LIBS.................: $LIBS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"

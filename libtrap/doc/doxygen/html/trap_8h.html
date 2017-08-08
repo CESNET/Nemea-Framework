@@ -19,7 +19,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">libtrap
-   &#160;<span id="projectnumber">0.10.0</span>
+   &#160;<span id="projectnumber">0.11.0</span>
    </div>
   </td>
  </tr>
@@ -110,6 +110,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gae0d81b475cb6808af4a63fe27e34ebec"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errorcodes.html#gae0d81b475cb6808af4a63fe27e34ebec">TRAP_E_NOT_SELECTED</a>&#160;&#160;&#160;16</td></tr>
 <tr class="memdesc:gae0d81b475cb6808af4a63fe27e34ebec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface was not selected reading/writing.  <a href="group__errorcodes.html#gae0d81b475cb6808af4a63fe27e34ebec">More...</a><br /></td></tr>
 <tr class="separator:gae0d81b475cb6808af4a63fe27e34ebec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gafa94e2a269d90c1356914317b858974e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errorcodes.html#gafa94e2a269d90c1356914317b858974e">TRAP_E_BAD_CERT</a>&#160;&#160;&#160;17</td></tr>
+<tr class="memdesc:gafa94e2a269d90c1356914317b858974e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrong certificate given to TLS interface.  <a href="group__errorcodes.html#gafa94e2a269d90c1356914317b858974e">More...</a><br /></td></tr>
+<tr class="separator:gafa94e2a269d90c1356914317b858974e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga72b3751575ccae7cccb3c3610bd93974"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errorcodes.html#ga72b3751575ccae7cccb3c3610bd93974">TRAP_E_HELP</a>&#160;&#160;&#160;20</td></tr>
 <tr class="memdesc:ga72b3751575ccae7cccb3c3610bd93974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returned by parse_parameters when help is requested.  <a href="group__errorcodes.html#ga72b3751575ccae7cccb3c3610bd93974">More...</a><br /></td></tr>
 <tr class="separator:ga72b3751575ccae7cccb3c3610bd93974"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -157,6 +160,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaac77f233f3bbd4a99f05bc2816377562"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ifctypes.html#gaac77f233f3bbd4a99f05bc2816377562">TRAP_IFC_TYPE_TCPIP</a>&#160;&#160;&#160;'t'</td></tr>
 <tr class="memdesc:gaac77f233f3bbd4a99f05bc2816377562"><td class="mdescLeft">&#160;</td><td class="mdescRight">trap_ifc_tcpip (input&amp;output part)  <a href="group__ifctypes.html#gaac77f233f3bbd4a99f05bc2816377562">More...</a><br /></td></tr>
 <tr class="separator:gaac77f233f3bbd4a99f05bc2816377562"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga54311acf0e90b37e0c13fb201370882e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ifctypes.html#ga54311acf0e90b37e0c13fb201370882e">TRAP_IFC_TYPE_TLS</a>&#160;&#160;&#160;'T'</td></tr>
+<tr class="memdesc:ga54311acf0e90b37e0c13fb201370882e"><td class="mdescLeft">&#160;</td><td class="mdescRight">trap_ifc_tls (input&amp;output part)  <a href="group__ifctypes.html#ga54311acf0e90b37e0c13fb201370882e">More...</a><br /></td></tr>
+<tr class="separator:ga54311acf0e90b37e0c13fb201370882e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga91f122067a6b83738d2b3bc976e7bf0d"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__ifctypes.html#ga91f122067a6b83738d2b3bc976e7bf0d">TRAP_IFC_TYPE_UNIX</a>&#160;&#160;&#160;'u'</td></tr>
 <tr class="memdesc:ga91f122067a6b83738d2b3bc976e7bf0d"><td class="mdescLeft">&#160;</td><td class="mdescRight">trap_ifc_tcpip via UNIX socket(input&amp;output part)  <a href="group__ifctypes.html#ga91f122067a6b83738d2b3bc976e7bf0d">More...</a><br /></td></tr>
 <tr class="separator:ga91f122067a6b83738d2b3bc976e7bf0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -346,8 +352,8 @@ Functions</h2></td></tr>
 <tr class="memitem:ga19b26aef67596239ccc72a6f0f1d05fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__contextapi.html#ga19b26aef67596239ccc72a6f0f1d05fd">trap_ctx_create_ifc_dump</a> (<a class="el" href="trap_8h.html#a008a51aeb2d1f379beb493108407ce97">trap_ctx_t</a> *ctx, const char *path)</td></tr>
 <tr class="memdesc:ga19b26aef67596239ccc72a6f0f1d05fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create dump files.  <a href="group__contextapi.html#ga19b26aef67596239ccc72a6f0f1d05fd">More...</a><br /></td></tr>
 <tr class="separator:ga19b26aef67596239ccc72a6f0f1d05fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abbc0ad5925fb7cc3573f046cca6a186e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="trap_8h.html#abbc0ad5925fb7cc3573f046cca6a186e">output_ifc_negotiation</a> (void *ifc_priv_data, char ifc_type, int sock_d)</td></tr>
-<tr class="separator:abbc0ad5925fb7cc3573f046cca6a186e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a392fc5b75861ca76dd868dc05af20cdc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="trap_8h.html#a392fc5b75861ca76dd868dc05af20cdc">output_ifc_negotiation</a> (void *ifc_priv_data, char ifc_type, uint32_t client_idx)</td></tr>
+<tr class="separator:a392fc5b75861ca76dd868dc05af20cdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c722200cdfbd15e5ab203e88e44bc33"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="trap_8h.html#a2c722200cdfbd15e5ab203e88e44bc33">input_ifc_negotiation</a> (void *ifc_priv_data, char ifc_type)</td></tr>
 <tr class="separator:a2c722200cdfbd15e5ab203e88e44bc33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -433,8 +439,8 @@ Tomas Cejka <a href="#" onclick="location.href='mai'+'lto:'+'cej'+'ka'+'t@c'+'es
 
 </div>
 </div>
-<a id="abbc0ad5925fb7cc3573f046cca6a186e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abbc0ad5925fb7cc3573f046cca6a186e">&#9670;&nbsp;</a></span>output_ifc_negotiation()</h2>
+<a id="a392fc5b75861ca76dd868dc05af20cdc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a392fc5b75861ca76dd868dc05af20cdc">&#9670;&nbsp;</a></span>output_ifc_negotiation()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -454,8 +460,8 @@ Tomas Cejka <a href="#" onclick="location.href='mai'+'lto:'+'cej'+'ka'+'t@c'+'es
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>sock_d</em>&#160;</td>
+          <td class="paramtype">uint32_t&#160;</td>
+          <td class="paramname"><em>client_idx</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -469,7 +475,7 @@ Tomas Cejka <a href="#" onclick="location.href='mai'+'lto:'+'cej'+'ka'+'t@c'+'es
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">ifc_priv_data</td><td>Pointer to output interface private structure. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">ifc_type</td><td>Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">sock_d</td><td>Socket descriptor of the connection with the new input interface.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">client_idx</td><td>Index of new connected client.</td></tr>
   </table>
   </dd>
 </dl>

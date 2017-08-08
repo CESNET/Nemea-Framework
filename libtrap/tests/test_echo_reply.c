@@ -138,6 +138,8 @@ int main(int argc, char **argv)
             last_size = read_size;
          }
          last_value = (*cur_value);
+      } else if (ret == TRAP_E_TERMINATED) {
+         stop = 1;
       }
       iteration++;
       //usleep(1000);

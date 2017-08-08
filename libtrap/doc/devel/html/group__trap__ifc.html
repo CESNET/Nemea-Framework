@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Libtrap: Internal development docs
-   &#160;<span id="projectnumber">0.10.0</span>
+   &#160;<span id="projectnumber">0.11.0</span>
    </div>
   </td>
  </tr>
@@ -74,9 +74,10 @@ Collaboration diagram for TRAP communication module interface:</div>
 <div class="dyncontent">
 <center><table><tr><td><img src="group__trap__ifc.png" border="0" alt="" usemap="#group____trap____ifc"/>
 <map name="group____trap____ifc" id="group____trap____ifc">
-<area shape="rect" id="node1" href="group__tcpip__ifc.html" title="TCP/IP and UNIX socket\l communication interface\l module" alt="" coords="205,5,376,61"/>
-<area shape="rect" id="node2" href="group__trap__ifc__api.html" title="IFC API" alt="" coords="255,85,326,112"/>
-<area shape="rect" id="node4" href="group__file__ifc.html" title="file interface module" alt="" coords="221,136,360,163"/>
+<area shape="rect" id="node1" href="group__tcpip__ifc.html" title="TCP/IP and UNIX socket\l communication interface\l module" alt="" coords="215,5,385,61"/>
+<area shape="rect" id="node2" href="group__trap__ifc__api.html" title="IFC API" alt="" coords="265,85,335,112"/>
+<area shape="rect" id="node4" href="group__file__ifc.html" title="file interface module" alt="" coords="231,136,369,163"/>
+<area shape="rect" id="node5" href="group__tls__ifc.html" title="TLS communication interface\l module" alt="" coords="204,187,396,229"/>
 </map>
 </td></tr></table></center>
 </div>
@@ -88,6 +89,8 @@ Modules</h2></td></tr>
 <tr class="memitem:group__file__ifc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__file__ifc.html">file interface module</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:group__tcpip__ifc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__tcpip__ifc.html">TCP/IP and UNIX socket communication interface module</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:group__tls__ifc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__tls__ifc.html">TLS communication interface module</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
@@ -101,6 +104,8 @@ Data Structures</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:gad07bb879ce0202781a899975d34c8430"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__trap__ifc.html#gad07bb879ce0202781a899975d34c8430">NONBLOCKING_ATTEMPTS</a>&#160;&#160;&#160;3</td></tr>
 <tr class="separator:gad07bb879ce0202781a899975d34c8430"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga33baac16f74d5f127d28ae473daa22c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__trap__ifc.html#ga33baac16f74d5f127d28ae473daa22c5">NONBLOCKING_MINWAIT</a>&#160;&#160;&#160;1000</td></tr>
+<tr class="separator:ga33baac16f74d5f127d28ae473daa22c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga33baac16f74d5f127d28ae473daa22c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__trap__ifc.html#ga33baac16f74d5f127d28ae473daa22c5">NONBLOCKING_MINWAIT</a>&#160;&#160;&#160;1000</td></tr>
 <tr class="separator:ga33baac16f74d5f127d28ae473daa22c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaeacfd016f643e97abb67df075de9be83"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__trap__ifc.html#gaeacfd016f643e97abb67df075de9be83">TRAP_IFC_DEFAULT_MAX_CLIENTS</a>&#160;&#160;&#160;64</td></tr>
@@ -142,7 +147,24 @@ Functions</h2></td></tr>
 </div>
 </div>
 <a id="ga33baac16f74d5f127d28ae473daa22c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga33baac16f74d5f127d28ae473daa22c5">&#9670;&nbsp;</a></span>NONBLOCKING_MINWAIT</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ga33baac16f74d5f127d28ae473daa22c5">&#9670;&nbsp;</a></span>NONBLOCKING_MINWAIT <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define NONBLOCKING_MINWAIT&#160;&#160;&#160;1000</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>How long to sleep between two non-blocking attempts for send()? </p>
+
+<p class="definition">Definition at line <a class="el" href="ifc__tls__internal_8h_source.html#l00056">56</a> of file <a class="el" href="ifc__tls__internal_8h_source.html">ifc_tls_internal.h</a>.</p>
+
+</div>
+</div>
+<a id="ga33baac16f74d5f127d28ae473daa22c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga33baac16f74d5f127d28ae473daa22c5">&#9670;&nbsp;</a></span>NONBLOCKING_MINWAIT <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -242,7 +264,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="trap_8c_source.html#l01566">1566</a> of file <a class="el" href="trap_8c_source.html">trap.c</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8c_source.html#l01585">1585</a> of file <a class="el" href="trap_8c_source.html">trap.c</a>.</p>
 
 </div>
 </div>
@@ -288,7 +310,7 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="trap_8c_source.html#l01587">1587</a> of file <a class="el" href="trap_8c_source.html">trap.c</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8c_source.html#l01606">1606</a> of file <a class="el" href="trap_8c_source.html">trap.c</a>.</p>
 
 </div>
 </div>

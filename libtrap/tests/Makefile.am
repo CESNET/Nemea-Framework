@@ -1,16 +1,24 @@
-TESTS = basic_test_arg.test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_blackhole test_fileifc
+normal_tests=basic_test_arg.test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_tls.sh
+
+long_tests=libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_tls.test
+
+cmockadep_tests=trap_buffer
+
+tlscertfiles=tls-certificates/ca.crt tls-certificates/ca.key tls-certificates/client.crt tls-certificates/client.key tls-certificates/server.crt tls-certificates/server.key tls-certificates/unver.crt tls-certificates/unver.key
+
+disabled_tests=libtrap_multiclient.test
+
+TESTS = $(normal_tests)
 
 if ENABLE_LONG_TESTS
-TESTS += libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
+TESTS += $(long_tests)
 endif
-
-TESTS += libtrap_multiclient.test
 
 if HAVE_CMOCKA
-TESTS += trap_buffer
+TESTS += $(cmockadep_tests)
 endif
 
-EXTRA_DIST = basic_test_arg.test libtrap_simpleapi.test basic_test_timeouts.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_multiclient.test libtrap_disbuffer.test generate-report.sh test_reconnection.sh test_tcpip.sh test_service_ifc_fail.test
+EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh $(normal_tests) $(long_tests) $(tlscertfiles) $(cmockadep_tests) $(disabled_tests)
 
 check_PROGRAMS = basic_test test_finalize test_badparams test_blackhole test_fileifc
 
@@ -90,7 +98,7 @@ test_buffering$(EXEEXT):
 
 clean-local:
 	rm -f test_buffering
-	rm -f *.log.* *.rpt *.gcda *.gcno
+	rm -f *.log.* *.log *.rpt *.gcda *.gcno
 
 if ENABLE_LONG_TESTS
 check-hook:

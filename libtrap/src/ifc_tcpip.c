@@ -1759,20 +1759,6 @@ static void *accept_clients_thread(void *arg)
 
             pthread_mutex_lock(&c->lock);
 
-            /** Output interface negotiation */
-#ifdef ENABLE_NEGOTIATION
-            int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, newclient);
-            if (ret_val == NEG_RES_OK) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
-            } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-               goto refuse_client;
-            } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
-               VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-               goto refuse_client;
-            }
-#endif
-
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
@@ -1784,12 +1770,26 @@ static void *accept_clients_thread(void *arg)
                if (cl == NULL) {
                   goto refuse_client;
                }
-
                cl->sd = newclient;
                cl->client_state = CURRENT_IDLE;
                cl->sending_pointer = NULL;
                cl->pending_bytes = 0;
+
+               /** Output interface negotiation */
+#ifdef ENABLE_NEGOTIATION
+               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, i);
+               if (ret_val == NEG_RES_OK) {
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
+               } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
+                  goto refuse_client;
+               } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
+                  goto refuse_client;
+               }
+#endif
                c->connected_clients++;
+
 
                if (sem_post(&c->have_clients) == -1) {
                   VERBOSE(CL_ERROR, "Semaphore post failed.");

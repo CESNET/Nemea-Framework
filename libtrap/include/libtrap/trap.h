@@ -93,6 +93,7 @@ extern char *trap_default_socket_path_format;
 #define TRAP_E_IO_ERROR 14 ///< IO Error
 #define TRAP_E_TERMINATED 15 ///< Interface was terminated during reading/writing
 #define TRAP_E_NOT_SELECTED 16 ///< Interface was not selected reading/writing
+#define TRAP_E_BAD_CERT 17 ///< Wrong certificate given to TLS interface
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
 #define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
@@ -174,6 +175,7 @@ extern char *trap_default_socket_path_format;
 #define TRAP_IFC_TYPE_GENERATOR 'g' ///< trap_ifc_dummy generator (input)
 #define TRAP_IFC_TYPE_BLACKHOLE 'b' ///< trap_ifc_dummy blackhole (output)
 #define TRAP_IFC_TYPE_TCPIP     't' ///< trap_ifc_tcpip (input&output part)
+#define TRAP_IFC_TYPE_TLS       'T' ///< trap_ifc_tls (input&output part)
 #define TRAP_IFC_TYPE_UNIX      'u' ///< trap_ifc_tcpip via UNIX socket(input&output part)
 #define TRAP_IFC_TYPE_SERVICE   's' ///< service ifc
 #define TRAP_IFC_TYPE_FILE      'f' ///< trap_ifc_file (input&output part)
@@ -1069,13 +1071,13 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
  *
  * \param[in] ifc_priv_data  Pointer to output interface private structure.
  * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
- * \param[in] sock_d  Socket descriptor of the connection with the new input interface.
+ * \param[in] client_idx  Index of new connected client.
  *
  * \return NEG_RES_FAILED if sending the data to input interface fails,
  *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
  *             NEG_RES_OK signaling success (hello message successfully sent to input interface).
  */
-int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d);
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_idx);
 
 
 /**

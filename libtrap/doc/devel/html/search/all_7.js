@@ -11,7 +11,7 @@ var searchData=
   ['get_5fcur_5ftimestamp',['get_cur_timestamp',['../group__tcpip__receiver.html#ga83472c2cd46eac526175b30d48495135',1,'ifc_tcpip.c']]],
   ['get_5fdata_5ftimeout',['get_data_timeout',['../structtrap__ctx__priv__s.html#a61f86431123ad98238d934e907b608a5',1,'trap_ctx_priv_s']]],
   ['get_5fid',['get_id',['../structtrap__input__ifc__s.html#a5edf9feb69e975253a087433793a26e2',1,'trap_input_ifc_s::get_id()'],['../structtrap__output__ifc__s.html#a28066d0bcee909ef82a308acd89c903c',1,'trap_output_ifc_s::get_id()']]],
-  ['get_5fin_5faddr',['get_in_addr',['../group__tcpip__ifc.html#ga67d03b167f8adca86cde7eeed5850982',1,'ifc_tcpip.c']]],
+  ['get_5fin_5faddr',['get_in_addr',['../group__tcpip__ifc.html#ga67d03b167f8adca86cde7eeed5850982',1,'get_in_addr(struct sockaddr *sa):&#160;ifc_tcpip.c'],['../group__tls__ifc.html#ga67d03b167f8adca86cde7eeed5850982',1,'get_in_addr(struct sockaddr *sa):&#160;ifc_tls.c']]],
   ['get_5flevel',['get_level',['../trap__internal_8c.html#abc051816fb35ec8ec9cba4d99460acc4',1,'trap_internal.c']]],
   ['get_5fmodule_5fname',['get_module_name',['../trap_8c.html#ac7b9ed8ab44057b9ad6a53f98b81d4a4',1,'trap.c']]],
   ['get_5fnext_5ffile',['get_next_file',['../group__file__ifc.html#gac768d695486428c3f6bfec987284b433',1,'ifc_file.c']]],

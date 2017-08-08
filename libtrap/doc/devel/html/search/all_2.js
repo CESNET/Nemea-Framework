@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['backup_5fbuffer',['backup_buffer',['../structtcpip__sender__private__s.html#ae82f3e46b51cce1908d8321b71ceda22',1,'tcpip_sender_private_s::backup_buffer()'],['../group__tcpip__sender.html#ggaf04b911ad265af7e9f2871d48cb9ba76a65673a8b72b76e8ff280b5d0730beaec',1,'BACKUP_BUFFER():&#160;ifc_tcpip_internal.h']]],
+  ['backup_5fbuffer',['backup_buffer',['../structtcpip__sender__private__s.html#ae82f3e46b51cce1908d8321b71ceda22',1,'tcpip_sender_private_s::backup_buffer()'],['../structtls__sender__private__s.html#a3d53028718ca2d1d4b15604bbe8f07c0',1,'tls_sender_private_s::backup_buffer()'],['../group__tcpip__sender.html#ggaf04b911ad265af7e9f2871d48cb9ba76a65673a8b72b76e8ff280b5d0730beaec',1,'BACKUP_BUFFER():&#160;ifc_tcpip_internal.h']]],
   ['blackhole_5fdestroy',['blackhole_destroy',['../ifc__dummy_8c.html#ac56203fa44517d4715c2a3217106ced2',1,'ifc_dummy.c']]],
   ['blackhole_5fget_5fclient_5fcount',['blackhole_get_client_count',['../ifc__dummy_8c.html#a3a87d918cf7dc8762ca7b7c175e66afd',1,'ifc_dummy.c']]],
   ['blackhole_5fifc_5fget_5fid',['blackhole_ifc_get_id',['../ifc__dummy_8c.html#ad8ce96b416b251a97c0018dfe2d755be',1,'ifc_dummy.c']]],
@@ -9,7 +9,7 @@ var searchData=
   ['blocks',['blocks',['../structtrap__buffer__s.html#a0a31649b5fe0d900bf8c97adb57289ac',1,'trap_buffer_s']]],
   ['blocksize',['blocksize',['../structtrap__buffer__s.html#a8d4064cd679b85f0cfade94700ba32aa',1,'trap_buffer_s']]],
   ['blocksize_5ftotal',['BLOCKSIZE_TOTAL',['../trap__buffer_8c.html#a88cbdf447c9d32da63b49366c0e54f76',1,'trap_buffer.c']]],
-  ['buffer',['buffer',['../structclient__s.html#a81a7cfcfe10fdf65a2fd1abc5a42b2e9',1,'client_s::buffer()'],['../structtrap__input__ifc__s.html#a87780edf8780e7716d55f54071a5fa76',1,'trap_input_ifc_s::buffer()'],['../structtrap__output__ifc__s.html#a3860b137767201bea387a336e140e746',1,'trap_output_ifc_s::buffer()']]],
+  ['buffer',['buffer',['../structclient__s.html#a81a7cfcfe10fdf65a2fd1abc5a42b2e9',1,'client_s::buffer()'],['../structtlsclient__s.html#a221fbb3fed199decbf0fc651c59b84a6',1,'tlsclient_s::buffer()'],['../structtrap__input__ifc__s.html#a87780edf8780e7716d55f54071a5fa76',1,'trap_input_ifc_s::buffer()'],['../structtrap__output__ifc__s.html#a3860b137767201bea387a336e140e746',1,'trap_output_ifc_s::buffer()']]],
   ['buffer_5ffull',['buffer_full',['../structtrap__input__ifc__s.html#a8f5e9fa7ac7143759e68d2c367f9c1a5',1,'trap_input_ifc_s']]],
   ['buffer_5fheader',['buffer_header',['../structtrap__output__ifc__s.html#a0843bfffc9e89ec663a0543b736a3bef',1,'trap_output_ifc_s']]],
   ['buffer_5findex',['buffer_index',['../structtrap__output__ifc__s.html#ad6e0a6ee9778a6379b9d7d2277ee96f7',1,'trap_output_ifc_s']]],

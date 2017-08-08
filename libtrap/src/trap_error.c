@@ -57,7 +57,8 @@ const char* default_err_msg[256] = {
    "Input/Output error",                // 14 TRAP_E_IO_ERROR
    "Interface was terminated during read/write", // 15 TRAP_E_TERMINATED
    "Interface was not selected for read/write",  // 16 TRAP_E_NOT_SELECTED
-   0,0,0,                               // 17-19 unused
+   "TLS certificate verification failed",  // 17 TRAP_E_BAD_CERT
+   0,0,                                 // 18-19 unused
    0,0,0,0,0,0,0,0,0,0,                 // 20-29 unused
    0,0,0,0,0,0,0,0,0,0,                 // 30-39 unused
    0,0,0,0,0,0,0,0,0,0,                 // 40-49 unused
