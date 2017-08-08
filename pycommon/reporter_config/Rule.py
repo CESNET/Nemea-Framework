@@ -42,12 +42,13 @@ class Rule():
         self.__elseactions = list()
 
         # Associate actions
-        for actionId in rule["actions"]:
-            try:
-                logger.debug("Rule %s inserting %s", self.id, actionId)
-                self.__actions.append(actions[actionId])
-            except KeyError as e:
-                raise Exception("Missing action with ID " + str(e))
+        if "actions" in rule:
+            for actionId in rule["actions"]:
+                try:
+                    logger.debug("Rule %s inserting %s", self.id, actionId)
+                    self.__actions.append(actions[actionId])
+                except KeyError as e:
+                    raise Exception("Missing action with ID " + str(e))
 
         # Associate elseactions
         if "elseactions" in rule:

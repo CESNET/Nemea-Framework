@@ -17,12 +17,19 @@ class RCEmptyFileTest(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_01_load_basic_config(self):
+    def test_00_load_basic_config(self):
         try:
             self.config = Config(os.path.dirname(__file__) + '/rc_config/empty.yaml');
-            self.assertFail("Empty configuration file shouldn't be loaded! It should have at least one rule.")
-        except Exception:
-            pass
+            self.fail("Empty configuration file shouldn't be loaded! It must contain rules.")
+        except Exception as e:
+            self.assertEqual(e.message, "YAML file must contain `rules`.")
+
+    def test_01_load_basic_config(self):
+        try:
+            self.config = Config(os.path.dirname(__file__) + '/rc_config/incompleterules.yaml');
+            self.fail("Rules must contain at least one rule.")
+        except Exception as e:
+            self.assertEqual(e.message, "YAML file should contain at least one `rule` in `rules`.")
 
     def test_02_onerule(self):
         self.config = Config(os.path.dirname(__file__) + '/rc_config/minimal.yaml');
@@ -36,6 +43,9 @@ class RCEmptyFileTest(unittest.TestCase):
         self.assertEqual(results, [True])
 
     def test_04_secondruleterminated(self):
+        of = "/tmp/output1.idea"
+        if os.path.isfile(of):
+            os.unlink(of)
         self.config = Config(os.path.dirname(__file__) + '/rc_config/minimalfirstdrop.yaml');
         self.assertNotEqual(self.config, None)
 
@@ -43,7 +53,16 @@ class RCEmptyFileTest(unittest.TestCase):
         # only one rule should have been processed since drop was in the first rule
         self.assertEqual(results, [True])
 
-        if os.path.isfile("/tmp/output1.idea"):
-            unlink("/tmp/output1.idea")
+        if os.path.isfile(of) and os.stat(of).st_size:
+            os.unlink(of)
             self.fail("Drop action was the first one, file should not be existing.")
+        else:
+            os.unlink(of)
+
+    def test_05_malformedyaml(self):
+        try:
+            self.config = Config(os.path.dirname(__file__) + '/rc_config/malformedyaml.yaml');
+            self.fail("Malformed YAML must raise exception with error.")
+        except Exception:
+            pass
 
