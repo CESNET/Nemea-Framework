@@ -1,3 +1,28 @@
+2017-08-08 (Tomas Cejka): libtrap: update doc (with TLS IFC)
+2017-08-08 (Tomas Cejka): libtrap: tests set x permission for long TLS test
+2017-08-08 (Tomas Cejka): libtrap: tls: fixed distcheck (failing long tls out-of-date test)
+2017-08-08 (Jaroslav Hlaváč): added documentation for internal tls structures
+2017-08-08 (Jaroslav Hlaváč): README clarification, coding style improvements
+2017-08-08 (Jaroslav Hlaváč): added tests for TLS interface, and certificates to work with them
+2017-08-08 (Jaroslav Hlaváč): TLS ifc readme entry added
+2017-08-08 (Hlaváč Jaroslav): added CAfile as mandatory TRAP interface parameter, error messages improved, server ctx configuration moved to run only once
+2017-08-08 (Hlaváč Jaroslav): TLS: certificate verification complete, some leaks when closing connection
+2017-08-08 (Jaroslav Hlavac): getting the right certificates for verification from SSL
+2017-08-08 (Jaroslav Hlavac): added basic certification veryfication, needs testing
+2017-08-07 (Jaroslav Hlaváč): added tests for TLS interface, and certificates to work with them
+2017-08-02 (Jaroslav Hlaváč): TLS ifc readme entry added
+2017-08-02 (Hlaváč Jaroslav): added CAfile as mandatory TRAP interface parameter, error messages improved, server ctx configuration moved to run only once
+2017-08-01 (Hlaváč Jaroslav): TLS: certificate verification complete, some leaks when closing connection
+2017-07-31 (Jaroslav Hlavac): getting the right certificates for verification from SSL
+2017-07-28 (Jaroslav Hlavac): added basic certification veryfication, needs testing
+2017-01-08 (Tomas Cejka): libtrap: tls: fix build on ubuntu
+2017-01-08 (Tomas Cejka): libtrap: tls: coding style
+2017-01-08 (Tomas Cejka): libtrap: tls: fix without-openssl build
+2017-01-08 (Tomas Cejka): libtrap: fixed uninitialized variable
+2017-01-08 (Tomas Cejka): libtrap: tls: conditional compilation
+2017-01-07 (Tomas Cejka): libtrap: FEATURE tls input IFC, temporary version of negotiation
+2017-01-07 (Tomas Cejka): libtrap: FEATURE: new IFC using openssl for TLS connection
+
 2017-08-07 (Tomas Cejka): libtrap: fixed and updated doc
 2017-08-07 (Tomas Jansky): libtrap: removed dead code
 2017-08-07 (Tomas Cejka): libtrap: BUGFIX missing end bracket.
