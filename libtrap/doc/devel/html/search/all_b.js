@@ -5,6 +5,7 @@ var searchData=
   ['max_5fclients_5farr_5fsize',['MAX_CLIENTS_ARR_SIZE',['../group__tcpip__ifc.html#gad884d561977a239709b5c729f22608f2',1,'ifc_tcpip.c']]],
   ['max_5ferror_5fmsg_5fbuff_5fsize',['MAX_ERROR_MSG_BUFF_SIZE',['../trap__internal_8h.html#a7b6916131b97898f1808dc119f4fc94a',1,'trap_internal.h']]],
   ['max_5frecovery_5ftry',['MAX_RECOVERY_TRY',['../group__tcpip__ifc.html#gabd9ed2a4e39c7dde3a7c579902c47e2b',1,'ifc_tcpip.c']]],
+  ['mem',['mem',['../structtrap__buffer__s.html#a82aefee42bc886d7d8933f628d8bf2a6',1,'trap_buffer_s']]],
   ['message',['message',['../structtrap__multi__result.html#a6befb83ebd5cf113aedf4cf0eefb06ee',1,'trap_multi_result']]],
   ['message_5fsize',['message_size',['../structtrap__multi__result.html#a067c01951ed1c711a65795f695b0b41e',1,'trap_multi_result']]],
   ['min',['MIN',['../group__tcpip__ifc.html#ga3acffbd305ee72dcd4593c0d8af64a4f',1,'ifc_tcpip.c']]],

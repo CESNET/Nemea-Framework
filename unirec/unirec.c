@@ -52,6 +52,8 @@
 #include <time.h>
 #include <string.h>
 #include <regex.h>
+#include <assert.h>
+#include <ctype.h>
 #include "unirec.h"
 #include <libtrap/trap.h>
 #include <inttypes.h>
@@ -77,585 +79,621 @@ INLINE_IMPL int ip_from_str(const char *str, ip_addr_t *addr);
 INLINE_IMPL void ip_to_str(const ip_addr_t *addr, char *str);
 
 
+/**
+ * \brief Sizes of UniRec data types.
+ *
+ * Data types are defined in the #ur_field_type_str array.
+ */
 const int ur_field_type_size[] = {
-	-1, /*UR_TYPE_STRING*/
-	-1, /*UR_TYPE_BYTES*/
-	1, /*UR_TYPE_CHAR*/
-	1, /*UR_TYPE_UINT8*/
-	1, /*UR_TYPE_INT8*/
-	2, /*UR_TYPE_UINT16*/
-	2, /*UR_TYPE_INT16*/
-	4, /*UR_TYPE_UINT32*/
-	4, /*UR_TYPE_INT32*/
-	8, /*UR_TYPE_UINT64*/
-	8, /*UR_TYPE_INT64*/
-	4, /*UR_TYPE_FLOAT*/
-	8, /*UR_TYPE_DOUBLE*/
-	16, /*UR_TYPE_IP*/
-	8, /*UR_TYPE_TIME*/
+   -1, /*UR_TYPE_STRING*/
+   -1, /*UR_TYPE_BYTES*/
+   1, /*UR_TYPE_CHAR*/
+   1, /*UR_TYPE_UINT8*/
+   1, /*UR_TYPE_INT8*/
+   2, /*UR_TYPE_UINT16*/
+   2, /*UR_TYPE_INT16*/
+   4, /*UR_TYPE_UINT32*/
+   4, /*UR_TYPE_INT32*/
+   8, /*UR_TYPE_UINT64*/
+   8, /*UR_TYPE_INT64*/
+   4, /*UR_TYPE_FLOAT*/
+   8, /*UR_TYPE_DOUBLE*/
+   16, /*UR_TYPE_IP*/
+   8, /*UR_TYPE_TIME*/
 };
 
+/**
+ * \brief UniRec data types.
+ *
+ * Sizes of data types are defined in the #ur_field_type_size array.
+ */
 const char *ur_field_type_str[] = {
-	"string", /*UR_TYPE_STRING*/
-	"bytes", /*UR_TYPE_BYTES*/
-	"char", /*UR_TYPE_CHAR*/
-	"uint8", /*UR_TYPE_UINT8*/
-	"int8", /*UR_TYPE_INT8*/
-	"uint16", /*UR_TYPE_UINT16*/
-	"int16", /*UR_TYPE_INT16*/
-	"uint32", /*UR_TYPE_UINT32*/
-	"int32", /*UR_TYPE_INT32*/
-	"uint64", /*UR_TYPE_UINT64*/
-	"int64", /*UR_TYPE_INT64*/
-	"float", /*UR_TYPE_FLOAT*/
-	"double", /*UR_TYPE_DOUBLE*/
-	"ipaddr", /*UR_TYPE_IP*/
-	"time", /*UR_TYPE_TIME*/
+   "string", /*UR_TYPE_STRING*/
+   "bytes", /*UR_TYPE_BYTES*/
+   "char", /*UR_TYPE_CHAR*/
+   "uint8", /*UR_TYPE_UINT8*/
+   "int8", /*UR_TYPE_INT8*/
+   "uint16", /*UR_TYPE_UINT16*/
+   "int16", /*UR_TYPE_INT16*/
+   "uint32", /*UR_TYPE_UINT32*/
+   "int32", /*UR_TYPE_INT32*/
+   "uint64", /*UR_TYPE_UINT64*/
+   "int64", /*UR_TYPE_INT64*/
+   "float", /*UR_TYPE_FLOAT*/
+   "double", /*UR_TYPE_DOUBLE*/
+   "ipaddr", /*UR_TYPE_IP*/
+   "time", /*UR_TYPE_TIME*/
 };
 
 ur_field_specs_t ur_field_specs;
 ur_static_field_specs_t UR_FIELD_SPECS_STATIC;
 
-const char UR_MEMORY_ERROR [] = "Memory allocation error";
+const char UR_MEMORY_ERROR[] = "Memory allocation error";
 
 int ur_init(ur_static_field_specs_t field_specs_static)
 {
-	int i, j;
-	if (ur_field_specs.intialized == UR_INITIALIZED) {
-		return UR_OK;
-	}
-	//copy size
-	ur_field_specs.ur_last_statically_defined_id = field_specs_static.ur_last_id;
-	ur_field_specs.ur_last_id = field_specs_static.ur_last_id;
-	ur_field_specs.ur_allocated_fields = field_specs_static.ur_last_id + UR_INITIAL_SIZE_FIELDS_TABLE;
-	//copy field type
-	ur_field_specs.ur_field_types = (ur_field_type_t*) calloc (sizeof(ur_field_type_t), ur_field_specs.ur_allocated_fields);
-	if (ur_field_specs.ur_field_types == NULL) {
-		return UR_E_MEMORY;
-	}
-	memcpy(ur_field_specs.ur_field_types, field_specs_static.ur_field_types, sizeof(ur_field_type_t) * field_specs_static.ur_last_id);
-	//copy field sizes
-	ur_field_specs.ur_field_sizes = (short*) calloc (sizeof(short), ur_field_specs.ur_allocated_fields);
-	if (ur_field_specs.ur_field_sizes == NULL) {
-		free(ur_field_specs.ur_field_types);
-		return UR_E_MEMORY;
-	}
-	memcpy(ur_field_specs.ur_field_sizes, field_specs_static.ur_field_sizes, sizeof(short) * field_specs_static.ur_last_id);
-	//copy field names
-	ur_field_specs.ur_field_names = (char**) calloc (sizeof(char*), ur_field_specs.ur_allocated_fields);
-	if (ur_field_specs.ur_field_names == NULL) {
-		free(ur_field_specs.ur_field_types);
-		free(ur_field_specs.ur_field_sizes);
-		return UR_E_MEMORY;
-	}
-	for (i = 0; i < field_specs_static.ur_last_id; i++) {
-		ur_field_specs.ur_field_names[i] = (char*) calloc (sizeof(char), strlen(field_specs_static.ur_field_names[i]) + 1);
-		if (ur_field_specs.ur_field_names[i] == NULL) {
-			free(ur_field_specs.ur_field_types);
-			free(ur_field_specs.ur_field_sizes);
-			for (j = 0; j < i; j++) {
-				free(ur_field_specs.ur_field_names[j]);
-			}
-			free(ur_field_specs.ur_field_names);
-			return UR_E_MEMORY;
-		}
-		strcpy(ur_field_specs.ur_field_names[i], field_specs_static.ur_field_names[i]);
-	}
-	ur_field_specs.intialized = UR_INITIALIZED;
-	return UR_OK;
+   int i, j;
+   if (ur_field_specs.intialized == UR_INITIALIZED) {
+      return UR_OK;
+   }
+   //copy size
+   ur_field_specs.ur_last_statically_defined_id = field_specs_static.ur_last_id;
+   ur_field_specs.ur_last_id = field_specs_static.ur_last_id;
+   ur_field_specs.ur_allocated_fields = field_specs_static.ur_last_id + UR_INITIAL_SIZE_FIELDS_TABLE;
+   //copy field type
+   ur_field_specs.ur_field_types = (ur_field_type_t *) calloc(sizeof(ur_field_type_t), ur_field_specs.ur_allocated_fields);
+   if (ur_field_specs.ur_field_types == NULL) {
+      return UR_E_MEMORY;
+   }
+   memcpy(ur_field_specs.ur_field_types, field_specs_static.ur_field_types, sizeof(ur_field_type_t) * field_specs_static.ur_last_id);
+   //copy field sizes
+   ur_field_specs.ur_field_sizes = (short *) calloc(sizeof(short), ur_field_specs.ur_allocated_fields);
+   if (ur_field_specs.ur_field_sizes == NULL) {
+      free(ur_field_specs.ur_field_types);
+      return UR_E_MEMORY;
+   }
+   memcpy(ur_field_specs.ur_field_sizes, field_specs_static.ur_field_sizes, sizeof(short) * field_specs_static.ur_last_id);
+   //copy field names
+   ur_field_specs.ur_field_names = (char **) calloc(sizeof(char *), ur_field_specs.ur_allocated_fields);
+   if (ur_field_specs.ur_field_names == NULL) {
+      free(ur_field_specs.ur_field_types);
+      free(ur_field_specs.ur_field_sizes);
+      return UR_E_MEMORY;
+   }
+   for (i = 0; i < field_specs_static.ur_last_id; i++) {
+      ur_field_specs.ur_field_names[i] = (char *) calloc(sizeof(char), strlen(field_specs_static.ur_field_names[i]) + 1);
+      if (ur_field_specs.ur_field_names[i] == NULL) {
+         free(ur_field_specs.ur_field_types);
+         free(ur_field_specs.ur_field_sizes);
+         for (j = 0; j < i; j++) {
+            free(ur_field_specs.ur_field_names[j]);
+         }
+         free(ur_field_specs.ur_field_names);
+         return UR_E_MEMORY;
+      }
+      strcpy(ur_field_specs.ur_field_names[i], field_specs_static.ur_field_names[i]);
+   }
+   ur_field_specs.intialized = UR_INITIALIZED;
+   return UR_OK;
 }
 
-char *ur_template_string_delimiter(const ur_template_t * tmplt, int delimiter)
+char *ur_template_string_delimiter(const ur_template_t *tmplt, int delimiter)
 {
-	char *str = NULL, *strmove = NULL, *str_new = NULL;
-	int len = UR_DEFAULT_LENGTH_OF_TEMPLATE, act_len = 0;
+   char *str = NULL, *strmove = NULL, *str_new = NULL;
+   int len = UR_DEFAULT_LENGTH_OF_TEMPLATE, act_len = 0;
 
-	if (tmplt == NULL) {
-		return NULL;
-	}
+   if (tmplt == NULL) {
+      return NULL;
+   }
 
-	str = (char*) calloc (sizeof(char), len);
-	if (str == NULL) {
-		return NULL;
-	}
-	strmove = str;
-	for (int i = 0; i < tmplt->count; i++) {
-		act_len += strlen(ur_field_type_str[ur_get_type(tmplt->ids[i])]) + strlen(ur_get_name(tmplt->ids[i])) + 2;
-		if (act_len >= len) {
-			len *= 2;
-			str_new = (char*) realloc (str, sizeof(char) * len);
-			if (str_new == NULL) {
-				free(str);
-				return NULL;
-			}
-			strmove = str_new + (strmove - str);
-			str = str_new;
-		}
-		sprintf(strmove, "%s %s%c", ur_field_type_str[ur_get_type(tmplt->ids[i])], ur_get_name(tmplt->ids[i]), delimiter);
-		strmove += strlen(strmove);
-	}
-	if (tmplt->count != 0) {
-		strmove[-1] = '\0';
-	}
-	return str;
+   str = (char *) calloc(sizeof(char), len);
+   if (str == NULL) {
+      return NULL;
+   }
+   strmove = str;
+   for (int i = 0; i < tmplt->count; i++) {
+      act_len += strlen(ur_field_type_str[ur_get_type(tmplt->ids[i])]) + strlen(ur_get_name(tmplt->ids[i])) + 2;
+      if (act_len >= len) {
+         len *= 2;
+         str_new = (char *) realloc(str, sizeof(char) * len);
+         if (str_new == NULL) {
+            free(str);
+            return NULL;
+         }
+         strmove = str_new + (strmove - str);
+         str = str_new;
+      }
+      sprintf(strmove, "%s %s%c", ur_field_type_str[ur_get_type(tmplt->ids[i])], ur_get_name(tmplt->ids[i]), delimiter);
+      strmove += strlen(strmove);
+   }
+   if (tmplt->count != 0) {
+      strmove[-1] = '\0';
+   }
+   return str;
 }
 
 int ur_get_empty_id()
 {
-	ur_field_id_linked_list_t * first;
-	//check if UniRec is initialized, if not initialize it
-	if (ur_field_specs.intialized != UR_INITIALIZED) {
-		int init_val = ur_init(UR_FIELD_SPECS_STATIC);
-		if (init_val != UR_OK) {
-			return init_val;
-		}
-	}
-	//check undefined fields
-	if (ur_field_specs.ur_undefine_fields != NULL) {
-		//resuse old undefined fields
-		int id;
-		first = ur_field_specs.ur_undefine_fields;
-		ur_field_specs.ur_undefine_fields = ur_field_specs.ur_undefine_fields->next;
-		id = first->id;
-		free(first);
-		return id;
-	}
-	else {
-		//take new id
-		if (ur_field_specs.ur_last_id < ur_field_specs.ur_allocated_fields) {
-			//take value from remaining space
-			return ur_field_specs.ur_last_id++;
-		}
-		else if (ur_field_specs.ur_last_id < UR_FIELD_ID_MAX) {
-			//increase space for fields
-			int new_size;
+   ur_field_id_linked_list_t * first;
+   //check if UniRec is initialized, if not initialize it
+   if (ur_field_specs.intialized != UR_INITIALIZED) {
+      int init_val = ur_init(UR_FIELD_SPECS_STATIC);
+      if (init_val != UR_OK) {
+         return init_val;
+      }
+   }
+   //check undefined fields
+   if (ur_field_specs.ur_undefine_fields != NULL) {
+      //resuse old undefined fields
+      int id;
+      first = ur_field_specs.ur_undefine_fields;
+      ur_field_specs.ur_undefine_fields = ur_field_specs.ur_undefine_fields->next;
+      id = first->id;
+      free(first);
+      return id;
+   } else {
+      //take new id
+      if (ur_field_specs.ur_last_id < ur_field_specs.ur_allocated_fields) {
+         //take value from remaining space
+         return ur_field_specs.ur_last_id++;
+      } else if (ur_field_specs.ur_last_id < UR_FIELD_ID_MAX) {
+         //increase space for fields
+         int new_size;
 
-			char **ur_field_names_new;
-			short *ur_field_sizes_new;
-			ur_field_type_t *ur_field_types_new;
+         char **ur_field_names_new;
+         short *ur_field_sizes_new;
+         ur_field_type_t *ur_field_types_new;
 
-			new_size = ur_field_specs.ur_allocated_fields * 2 < UR_FIELD_ID_MAX ? ur_field_specs.ur_allocated_fields * 2 : UR_FIELD_ID_MAX;
+         new_size = ur_field_specs.ur_allocated_fields * 2 < UR_FIELD_ID_MAX ? ur_field_specs.ur_allocated_fields * 2 : UR_FIELD_ID_MAX;
 
-			//copy field type
-			ur_field_types_new = (ur_field_type_t*) realloc (ur_field_specs.ur_field_types, sizeof(ur_field_type_t) * new_size);
-			if (ur_field_types_new == NULL) {
-				return UR_E_MEMORY;
-			}
+         //copy field type
+         ur_field_types_new = (ur_field_type_t *) realloc(ur_field_specs.ur_field_types, sizeof(ur_field_type_t) * new_size);
+         if (ur_field_types_new == NULL) {
+            return UR_E_MEMORY;
+         }
 
-			//copy field sizes
-			ur_field_sizes_new = (short*) realloc (ur_field_specs.ur_field_sizes, sizeof(short) * new_size);
-			if (ur_field_sizes_new == NULL) {
-				free(ur_field_types_new);
-				return UR_E_MEMORY;
-			}
+         //copy field sizes
+         ur_field_sizes_new = (short *) realloc(ur_field_specs.ur_field_sizes, sizeof(short) * new_size);
+         if (ur_field_sizes_new == NULL) {
+            free(ur_field_types_new);
+            return UR_E_MEMORY;
+         }
 
-			//copy field names
-			ur_field_names_new = (char**) realloc (ur_field_specs.ur_field_names, sizeof(char*) * new_size);
-			if (ur_field_names_new == NULL) {
-				free(ur_field_types_new);
-				free(ur_field_sizes_new);
-				return UR_E_MEMORY;
-			}
-			//replace for new values
-			ur_field_specs.ur_field_names = ur_field_names_new;
-			ur_field_specs.ur_field_sizes = ur_field_sizes_new;
-			ur_field_specs.ur_field_types = ur_field_types_new;
-			ur_field_specs.ur_allocated_fields = new_size;
-			return ur_field_specs.ur_last_id++;
-		}
-		else {
-			//no more space for new fields
-			return UR_E_MEMORY;
-		}
-	}
+         //copy field names
+         ur_field_names_new = (char **) realloc(ur_field_specs.ur_field_names, sizeof(char *) * new_size);
+         if (ur_field_names_new == NULL) {
+            free(ur_field_types_new);
+            free(ur_field_sizes_new);
+            return UR_E_MEMORY;
+         }
+         //replace for new values
+         ur_field_specs.ur_field_names = ur_field_names_new;
+         ur_field_specs.ur_field_sizes = ur_field_sizes_new;
+         ur_field_specs.ur_field_types = ur_field_types_new;
+         ur_field_specs.ur_allocated_fields = new_size;
+         return ur_field_specs.ur_last_id++;
+      } else {
+         //no more space for new fields
+         return UR_E_MEMORY;
+      }
+   }
 }
 
-int ur_get_field_type_from_str(const char * type)
+int ur_get_field_type_from_str(const char *type)
 {
-	if (type == NULL) {
-		return UR_E_INVALID_TYPE;
-	}
-	for (int i = 0; i < UR_COUNT_OF_TYPES; i++) {
-		if (strcmp(type, ur_field_type_str[i]) == 0)
-			return i;
-	}
-	return UR_E_INVALID_TYPE;
+   if (type == NULL) {
+      return UR_E_INVALID_TYPE;
+   }
+   for (int i = 0; i < UR_COUNT_OF_TYPES; i++) {
+      if (strcmp(type, ur_field_type_str[i]) == 0) {
+         return i;
+      }
+   }
+   return UR_E_INVALID_TYPE;
 }
 
 const char *ur_get_type_and_name_from_string(const char *source, char **name, char **type, int *length_name, int *length_type)
 {
-	int length_type_2 = 0, length_name_2 = 0;
-	const char *source_cpy;
-	source_cpy = source;
-	while (*source != 0 && *source != ' ') {
-		length_type_2++;
-		source ++;
-	}
-	if (length_type_2 >= *length_type) {
-		if (*type != NULL) {
-			free(*type);
-		}
-		*type = (char*) malloc (sizeof(char) * (length_type_2 + 1));
-		if (*type == NULL) {
-			return NULL;
-		}
-		*length_type = length_type_2 + 1;
-	}
-	memcpy(*type, source_cpy, length_type_2);
-	(*type)[length_type_2] = 0;
-	source ++;
-	//copy name
-	source_cpy = source;
-	while (*source != 0 && *source != ',') {
-		length_name_2++;
-		source ++;
-	}
-	if (length_name_2 >= *length_name) {
-		if (*name != NULL) {
-			free(*name);
-		}
-		*name = (char*) malloc (sizeof(char) * (length_name_2 + 1));
-		if (*name == NULL) {
-			return NULL;
-		}
-		*length_name = length_name_2 + 1;
-	}
-	memcpy(*name, source_cpy, length_name_2);
-	(*name)[length_name_2] = 0;
-	if (*source == ',') {
-		source ++;
-	}
-	return source;
+   int length_type_2 = 0, length_name_2 = 0;
+   const char *source_cpy;
+   /* skip white spaces */
+   while (*source != 0 && isspace(*source)) {
+      source++;
+   }
+   /* start of type */
+   source_cpy = source;
+   while (*source != 0 && !isspace(*source)) {
+      length_type_2++;
+      source++;
+   }
+   /* end of type */
+
+   /* copy "type" string (realloc destination if needed) */
+   if (length_type_2 >= *length_type) {
+      if (*type != NULL) {
+         free(*type);
+      }
+      *type = (char *) malloc(sizeof(char) * (length_type_2 + 1));
+      if (*type == NULL) {
+         return NULL;
+      }
+      *length_type = length_type_2 + 1;
+   }
+   memcpy(*type, source_cpy, length_type_2);
+   (*type)[length_type_2] = 0;
+
+   /* skip white spaces */
+   while (*source != 0 && isspace(*source)) {
+      source++;
+   }
+   /* start of name */
+   source_cpy = source;
+   while (*source != 0 && !isspace(*source) && *source != ',') {
+      length_name_2++;
+      source++;
+   }
+   /* end of name */
+
+   /* copy "name" string (realloc destination if needed) */
+   if (length_name_2 >= *length_name) {
+      if (*name != NULL) {
+         free(*name);
+      }
+      *name = (char *) malloc(sizeof(char) * (length_name_2 + 1));
+      if (*name == NULL) {
+         return NULL;
+      }
+      *length_name = length_name_2 + 1;
+   }
+   memcpy(*name, source_cpy, length_name_2);
+   (*name)[length_name_2] = 0;
+   /* skip white spaces */
+   while (*source != 0 && isspace(*source)) {
+      source++;
+   }
+   /* skip comma */
+   if (*source == ',') {
+      source++;
+   }
+   return source;
 }
 
 char *ur_ifc_data_fmt_to_field_names(const char *ifc_data_fmt)
 {
-	const char *source_cpy = NULL;
-	char *out_str;
-	int name_len = 0, act_len = 0, str_len;
-	str_len = strlen(ifc_data_fmt);
-	out_str = (char*) malloc (sizeof(char) * (str_len));
-	if (out_str == NULL) {
-		return NULL;
-	}
-	while (*ifc_data_fmt != 0) {
-		while (*ifc_data_fmt != 0 && *ifc_data_fmt != ' ') {
-			ifc_data_fmt ++;
-		}
-		ifc_data_fmt ++;
-		//copy name
-		source_cpy = ifc_data_fmt;
-		name_len = 0;
-		while (*ifc_data_fmt != 0 && *ifc_data_fmt != ',') {
-			name_len++;
-			ifc_data_fmt ++;
-		}
-		if (name_len + act_len + 1 > str_len) {
-			char *str_new;
-			str_new = (char*) realloc (out_str, sizeof(char) * (str_len * 2));
-			if (str_new == NULL) {
-				return NULL;
-			}
-			str_len *= 2;
-			out_str = str_new;
-		}
-		memcpy(out_str + act_len, source_cpy, name_len);
-		act_len += name_len;
-		out_str[act_len] = ',';
-		act_len++;
-	}
-	if (act_len > 0) {
-		act_len--;
-	}
-	out_str[act_len] = '\0';
-	return out_str;
+   const char *source_cpy = NULL, *p = ifc_data_fmt;
+   char *out_str;
+   int name_len = 0, act_len = 0, str_len;
+   str_len = strlen(ifc_data_fmt);
+   out_str = (char *) calloc(str_len + 1, sizeof(char));
+   if (out_str == NULL) {
+      return NULL;
+   }
+   while (*p != 0) {
+      /* skip white spaces */
+      while (*p != 0 && isspace(*p)) {
+         p++;
+      }
+      /* field type */
+      while (*p != 0 && *p != ' ') {
+         p++;
+      }
+      /* skip white spaces */
+      while (*p != 0 && isspace(*p)) {
+         p++;
+      }
+
+      //copy name
+      source_cpy = p;
+      name_len = 0;
+      while (*p != 0 && *p != ',' && !isspace(*p)) {
+         name_len++;
+         p++;
+      }
+      assert(name_len + act_len + 1 <= str_len);
+      memcpy(out_str + act_len, source_cpy, name_len);
+      act_len += name_len;
+      /* skip white spaces */
+      while (*p != 0 && isspace(*p)) {
+         p++;
+      }
+      if (*p == ',') {
+         p++;
+      } else if (*p == 0) {
+         break;
+      } else {
+         free(out_str);
+         return NULL; /* name must be followed by a comma or end of string */
+      }
+      out_str[act_len] = ',';
+      act_len++;
+   }
+   return out_str;
 }
 
-ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t * tmplt)
+ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t *tmplt)
 {
-	int name_len = 0, act_len = 0, concat_str_len = strlen(ifc_data_fmt);
-	char *concat_str;
-	const char *source_cpy;
-	ur_tmplt_direction direction = UR_TMPLT_DIRECTION_NO;
-	uint32_t ifc_out = 0;
-	concat_str = (char*) malloc (sizeof(char) * concat_str_len);
-	if (concat_str == NULL) {
-		return NULL;
-	}
-	while (*ifc_data_fmt != 0) {
-		while (*ifc_data_fmt != 0 && *ifc_data_fmt != ' ') {
-			ifc_data_fmt ++;
-		}
-		ifc_data_fmt ++;
-		//copy name
-		source_cpy = ifc_data_fmt;
-		name_len = 0;
-		while (*ifc_data_fmt != 0 && *ifc_data_fmt != ',') {
-			name_len++;
-			ifc_data_fmt ++;
-		}
-		if (name_len + act_len + 1 > concat_str_len) {
-			char *str_new;
-			str_new = (char*) realloc (concat_str, sizeof(char) * (concat_str_len * 2));
-			if (str_new == NULL) {
-				return NULL;
-			}
-			concat_str_len *= 2;
-			concat_str = str_new;
-		}
-		memcpy(concat_str + act_len, source_cpy, name_len);
-		act_len += name_len;
-		concat_str[act_len] = ',';
-		act_len++;
-	}
-	if (tmplt != NULL) {
-		direction = tmplt->direction;
-		ifc_out = tmplt->ifc_out;
-		for (int i = 0; i < tmplt->count; i++) {
-			const char *f_name = ur_get_name(tmplt->ids[i]);
-			name_len = strlen(f_name);
-			if (name_len + act_len + 1 > concat_str_len) {
-				char *str_new;
-				str_new = (char*) realloc (concat_str, sizeof(char) * (concat_str_len * 2));
-				if (str_new == NULL) {
-					return NULL;
-				}
-				concat_str_len *= 2;
-				concat_str = str_new;
-			}
-			memcpy(concat_str + act_len, f_name, name_len);
-			act_len += name_len;
-			*(concat_str + act_len) = ',';
-			act_len++;
-		}
-		ur_free_template(tmplt);
-	}
-	if (act_len > 0) {
-		act_len--;
-		concat_str[act_len] = 0;
-	}
-	tmplt = ur_create_template(concat_str, NULL);
-	tmplt->direction = direction;
-	tmplt->ifc_out = ifc_out;
-	free(concat_str);
-	return tmplt;
+   int name_len = 0, act_len = 0, concat_str_len = strlen(ifc_data_fmt);
+   char *concat_str;
+   const char *source_cpy, *p = ifc_data_fmt;
+   ur_tmplt_direction direction = UR_TMPLT_DIRECTION_NO;
+   uint32_t ifc_out = 0;
+   concat_str = (char *) malloc(sizeof(char) * concat_str_len);
+   if (concat_str == NULL) {
+      return NULL;
+   }
+   while (*p != 0) {
+      while (*p != 0 && !isspace(*p)) {
+         p++;
+      }
+      p++;
+      //copy name
+      source_cpy = p;
+      name_len = 0;
+      while (*p != 0 && *p != ',') {
+         name_len++;
+         p++;
+      }
+      if (name_len + act_len + 1 > concat_str_len) {
+         char *str_new;
+         str_new = (char *) realloc(concat_str, sizeof(char) * (concat_str_len * 2));
+         if (str_new == NULL) {
+            /* XXX memory leak original concat_str? */
+            return NULL;
+         }
+         concat_str_len *= 2;
+         concat_str = str_new;
+      }
+      memcpy(concat_str + act_len, source_cpy, name_len);
+      act_len += name_len;
+      concat_str[act_len] = ',';
+      act_len++;
+   }
+   if (tmplt != NULL) {
+      direction = tmplt->direction;
+      ifc_out = tmplt->ifc_out;
+      for (int i = 0; i < tmplt->count; i++) {
+         const char *f_name = ur_get_name(tmplt->ids[i]);
+         name_len = strlen(f_name);
+         if (name_len + act_len + 1 > concat_str_len) {
+            char *str_new;
+            str_new = (char *) realloc(concat_str, sizeof(char) * (concat_str_len * 2));
+            if (str_new == NULL) {
+               /* XXX memory leak original concat_str? */
+               return NULL;
+            }
+            concat_str_len *= 2;
+            concat_str = str_new;
+         }
+         memcpy(concat_str + act_len, f_name, name_len);
+         act_len += name_len;
+         *(concat_str + act_len) = ',';
+         act_len++;
+      }
+      ur_free_template(tmplt);
+   }
+   if (act_len > 0) {
+      act_len--;
+      concat_str[act_len] = 0;
+   }
+   tmplt = ur_create_template(concat_str, NULL);
+   tmplt->direction = direction;
+   tmplt->ifc_out = ifc_out;
+   free(concat_str);
+   return tmplt;
 }
 
 int ur_define_set_of_fields(const char *ifc_data_fmt)
 {
-	const char *new_fields_move;
-	new_fields_move = ifc_data_fmt;
-	char *field_name, *field_type;
-	int field_name_length = UR_DEFAULT_LENGTH_OF_FIELD_NAME, field_type_length = UR_DEFAULT_LENGTH_OF_FIELD_TYPE;
-	int field_id = 0, field_type_id = 0;
-	field_name = (char*) malloc (sizeof(char) * field_name_length);
-	if (field_name == NULL) {
-		return UR_E_MEMORY;
-	}
-	field_type = (char*) malloc (sizeof(char) * field_type_length);
-	if (field_type == NULL) {
-		free(field_name);
-		return UR_E_MEMORY;
-	}
-	while (*new_fields_move != 0) {
-		new_fields_move = ur_get_type_and_name_from_string(new_fields_move, &field_name, &field_type, &field_name_length, &field_type_length);
-		if (new_fields_move == NULL) {
-			if (field_name != NULL) {
-				free(field_name);
-			}
-			if (field_type != NULL) {
-				free(field_type);
-			}
-			return UR_E_MEMORY;
-		}
-		//through all fields of receiver
-		field_type_id = ur_get_field_type_from_str(field_type);
-		if (field_type_id < 0) {
-			if (field_name != NULL) {
-				free(field_name);
-			}
-			free(field_type);
-			return field_type_id;
-		}
-		field_id = ur_define_field(field_name, field_type_id);
-		if (field_id < 0) {
-			if (field_name != NULL) {
-				free(field_name);
-			}
-			free(field_type);
-			return field_id;
-		}
-	}
-	if (field_name != NULL) {
-		free(field_name);
-	}
-	free(field_type);
-	return UR_OK;
+   const char *new_fields_move;
+   new_fields_move = ifc_data_fmt;
+   char *field_name, *field_type;
+   int field_name_length = UR_DEFAULT_LENGTH_OF_FIELD_NAME, field_type_length = UR_DEFAULT_LENGTH_OF_FIELD_TYPE;
+   int field_id = 0, field_type_id = 0;
+   field_name = (char *) malloc(sizeof(char) * field_name_length);
+   if (field_name == NULL) {
+      return UR_E_MEMORY;
+   }
+   field_type = (char *) malloc(sizeof(char) * field_type_length);
+   if (field_type == NULL) {
+      free(field_name);
+      return UR_E_MEMORY;
+   }
+   while (*new_fields_move != 0) {
+      new_fields_move = ur_get_type_and_name_from_string(new_fields_move, &field_name, &field_type, &field_name_length, &field_type_length);
+      if (new_fields_move == NULL) {
+         if (field_name != NULL) {
+            free(field_name);
+         }
+         if (field_type != NULL) {
+            free(field_type);
+         }
+         return UR_E_MEMORY;
+      }
+      //through all fields of receiver
+      field_type_id = ur_get_field_type_from_str(field_type);
+      if (field_type_id < 0) {
+         if (field_name != NULL) {
+            free(field_name);
+         }
+         free(field_type);
+         return field_type_id;
+      }
+      field_id = ur_define_field(field_name, field_type_id);
+      if (field_id < 0) {
+         if (field_name != NULL) {
+            free(field_name);
+         }
+         free(field_type);
+         return field_id;
+      }
+   }
+   if (field_name != NULL) {
+      free(field_name);
+   }
+   free(field_type);
+   return UR_OK;
 }
 
 ur_template_t *ur_define_fields_and_update_template(const char *ifc_data_fmt, ur_template_t *tmplt)
 {
-	ur_template_t *new_tmplt;
-	if (ur_define_set_of_fields(ifc_data_fmt) < 0) {
-		return NULL;
-	}
-	new_tmplt = ur_create_template_from_ifc_spec(ifc_data_fmt);
-	if (new_tmplt != NULL && tmplt != NULL) {
-		new_tmplt->ifc_out = tmplt->ifc_out;
-		new_tmplt->direction = tmplt->direction;
-		ur_free_template(tmplt);
-	}
-	return new_tmplt;
+   ur_template_t *new_tmplt;
+   if (ur_define_set_of_fields(ifc_data_fmt) < 0) {
+      return NULL;
+   }
+   new_tmplt = ur_create_template_from_ifc_spec(ifc_data_fmt);
+   if (new_tmplt != NULL && tmplt != NULL) {
+      new_tmplt->ifc_out = tmplt->ifc_out;
+      new_tmplt->direction = tmplt->direction;
+      ur_free_template(tmplt);
+   }
+   return new_tmplt;
 }
 
 ur_template_t *ur_create_template_from_ifc_spec(const char *ifc_data_fmt)
 {
-	char *field_names = ur_ifc_data_fmt_to_field_names(ifc_data_fmt);
-	if (field_names == NULL) {
-		return NULL;
-	}
-	ur_template_t *new_tmplt = ur_create_template(field_names, NULL);
-	free(field_names);
-	return new_tmplt;
+   char *field_names = ur_ifc_data_fmt_to_field_names(ifc_data_fmt);
+   if (field_names == NULL) {
+      return NULL;
+   }
+   ur_template_t *new_tmplt = ur_create_template(field_names, NULL);
+   free(field_names);
+   return new_tmplt;
 }
 
 int ur_define_field(const char *name, ur_field_type_t type)
 {
-	int insert_id;
-	char * name_copy;
-	int name_len;
-	if (name == NULL) {
-		return UR_E_INVALID_NAME;
-	}
-	//check the regural expression of a name
-	name_len = strlen(name);
-	if (name_len == 0) {
-		return UR_E_INVALID_NAME;
-	}
-	if (!((name[0] >= 'A' && name[0] <= 'Z') || (name[0] >= 'a' && name[0] <= 'z'))) {
-		return UR_E_INVALID_NAME;
-	}
-	for (int i = 1; i < name_len; i++) {
-		if (!((name[i] >= 'A' && name[i] <= 'Z') || (name[i] >= 'a' && name[i] <= 'z') || (name[i] >= '0' && name[i] <= '9') || name[i] == '_')) {
-			return UR_E_INVALID_NAME;
-		}
-	}
-	if (ur_field_specs.ur_allocated_fields == ur_field_specs.ur_last_statically_defined_id) {
-		int init_val = ur_init(UR_FIELD_SPECS_STATIC);
-		if (init_val != 0) {
-			return init_val;
-		}
-	}
-	//check if the field is already defined
-	for (int i = 0; i < ur_field_specs.ur_last_id; i++) {
-		if (ur_field_specs.ur_field_names[i] != NULL && strcmp(name, ur_field_specs.ur_field_names[i]) == 0) {
-			if (type == ur_field_specs.ur_field_types[i]) {
-				//name exists and type is equal
-				return i;
-			}
-			else {
-				//name exists, but type is different
-				return UR_E_TYPE_MISMATCH;
-			}
-		}
-	}
-	//create new field
-	name_copy = (char*) calloc (sizeof(char), strlen(name) + 1);
-	if (name_copy == NULL) {
-		//error during allocation
-		return UR_E_MEMORY;
-	}
-	strcpy(name_copy, name);
-	insert_id = ur_get_empty_id();
-	if (insert_id < 0) {
-		//error
-		free(name_copy);
-		return insert_id;
-	}
-	ur_field_specs.ur_field_names[insert_id] = name_copy;
-	ur_field_specs.ur_field_sizes[insert_id] = ur_size_of(type);
-	ur_field_specs.ur_field_types[insert_id] = type;
-	return insert_id;
+   int insert_id;
+   char * name_copy;
+   int name_len;
+   if (name == NULL) {
+      return UR_E_INVALID_NAME;
+   }
+   //check the regural expression of a name
+   name_len = strlen(name);
+   if (name_len == 0) {
+      return UR_E_INVALID_NAME;
+   }
+   if (!((name[0] >= 'A' && name[0] <= 'Z') || (name[0] >= 'a' && name[0] <= 'z'))) {
+      return UR_E_INVALID_NAME;
+   }
+   for (int i = 1; i < name_len; i++) {
+      if (!((name[i] >= 'A' && name[i] <= 'Z') || (name[i] >= 'a' && name[i] <= 'z') || (name[i] >= '0' && name[i] <= '9') || name[i] == '_')) {
+         return UR_E_INVALID_NAME;
+      }
+   }
+   if (ur_field_specs.ur_allocated_fields == ur_field_specs.ur_last_statically_defined_id) {
+      int init_val = ur_init(UR_FIELD_SPECS_STATIC);
+      if (init_val != 0) {
+         return init_val;
+      }
+   }
+   //check if the field is already defined
+   for (int i = 0; i < ur_field_specs.ur_last_id; i++) {
+      if (ur_field_specs.ur_field_names[i] != NULL && strcmp(name, ur_field_specs.ur_field_names[i]) == 0) {
+         if (type == ur_field_specs.ur_field_types[i]) {
+            //name exists and type is equal
+            return i;
+         } else {
+            //name exists, but type is different
+            return UR_E_TYPE_MISMATCH;
+         }
+      }
+   }
+   //create new field
+   name_copy = (char *) calloc(sizeof(char), strlen(name) + 1);
+   if (name_copy == NULL) {
+      //error during allocation
+      return UR_E_MEMORY;
+   }
+   strcpy(name_copy, name);
+   insert_id = ur_get_empty_id();
+   if (insert_id < 0) {
+      //error
+      free(name_copy);
+      return insert_id;
+   }
+   ur_field_specs.ur_field_names[insert_id] = name_copy;
+   ur_field_specs.ur_field_sizes[insert_id] = ur_size_of(type);
+   ur_field_specs.ur_field_types[insert_id] = type;
+   return insert_id;
 }
 
 int ur_undefine_field_by_id(ur_field_id_t field_id)
 {
-	if (field_id < ur_field_specs.ur_last_statically_defined_id || field_id >= ur_field_specs.ur_last_id) {
-		//id is invalid
-		return UR_E_INVALID_PARAMETER;
-	}
-	else if (ur_field_specs.ur_field_names[field_id] == NULL) {
-		//ID is already undefined
-		return UR_E_INVALID_PARAMETER;
-	}
-	else {
-		//undefine field
-		ur_field_id_linked_list_t *undefined_item;
-		undefined_item = (ur_field_id_linked_list_t*) calloc (sizeof(ur_field_id_linked_list_t),1);
-		if (undefined_item == NULL) {
-			//error during allocation
-			return UR_E_MEMORY;
-		}
-		free(ur_field_specs.ur_field_names[field_id]);
-		ur_field_specs.ur_field_names[field_id] = NULL;
-		undefined_item->id = field_id;
-		undefined_item->next = ur_field_specs.ur_undefine_fields;
-		ur_field_specs.ur_undefine_fields = undefined_item;
-	}
-	return UR_OK;
+   if (field_id < ur_field_specs.ur_last_statically_defined_id || field_id >= ur_field_specs.ur_last_id) {
+      //id is invalid
+      return UR_E_INVALID_PARAMETER;
+   } else if (ur_field_specs.ur_field_names[field_id] == NULL) {
+      //ID is already undefined
+      return UR_E_INVALID_PARAMETER;
+   } else {
+      //undefine field
+      ur_field_id_linked_list_t *undefined_item;
+      undefined_item = (ur_field_id_linked_list_t *) calloc(sizeof(ur_field_id_linked_list_t), 1);
+      if (undefined_item == NULL) {
+         //error during allocation
+         return UR_E_MEMORY;
+      }
+      free(ur_field_specs.ur_field_names[field_id]);
+      ur_field_specs.ur_field_names[field_id] = NULL;
+      undefined_item->id = field_id;
+      undefined_item->next = ur_field_specs.ur_undefine_fields;
+      ur_field_specs.ur_undefine_fields = undefined_item;
+   }
+   return UR_OK;
 }
 
 int ur_undefine_field(const char *name)
 {
-	int i;
-	//find id of field
-	for (i = ur_field_specs.ur_last_statically_defined_id; i < ur_field_specs.ur_last_id; i++) {
-		if (ur_field_specs.ur_field_names[i] != NULL && strcmp(name, ur_field_specs.ur_field_names[i]) == 0) {
-			return ur_undefine_field_by_id(i);
-		}
-	}
-	//field with given name was not found
-	return  UR_E_INVALID_NAME;
+   int i;
+   //find id of field
+   for (i = ur_field_specs.ur_last_statically_defined_id; i < ur_field_specs.ur_last_id; i++) {
+      if (ur_field_specs.ur_field_names[i] != NULL && strcmp(name, ur_field_specs.ur_field_names[i]) == 0) {
+         return ur_undefine_field_by_id(i);
+      }
+   }
+   //field with given name was not found
+   return  UR_E_INVALID_NAME;
 }
 
 
 void ur_finalize()
 {
-	if (ur_field_specs.intialized != UR_INITIALIZED) {
-		//there is no need for deallocation, because nothing has been allocated.
-		return;
-	}
-	if (ur_field_specs.ur_field_names != NULL) {
-		for (int i=0; i < ur_field_specs.ur_last_id; i++) {
-			if (ur_field_specs.ur_field_names[i] != NULL) {
-				free(ur_field_specs.ur_field_names[i]);
-			}
-		}
-		free(ur_field_specs.ur_field_names);
-	}
-	if (ur_field_specs.ur_undefine_fields != NULL) {
-		ur_field_id_linked_list_t *next, * act_del;
-		act_del = ur_field_specs.ur_undefine_fields;
-		while (act_del != NULL) {
-			next = act_del->next;
-			free(act_del);
-			act_del = next;
-		}
-	}
-	if (ur_field_specs.ur_field_sizes != NULL) {
-		free(ur_field_specs.ur_field_sizes);
-	}
-	if (ur_field_specs.ur_field_types != NULL) {
-		free(ur_field_specs.ur_field_types);
-	}
-	ur_field_specs.ur_field_names = UR_FIELD_SPECS_STATIC.ur_field_names;
-	ur_field_specs.ur_field_sizes = UR_FIELD_SPECS_STATIC.ur_field_sizes;
-	ur_field_specs.ur_field_types = UR_FIELD_SPECS_STATIC.ur_field_types;
-	ur_field_specs.ur_last_statically_defined_id = UR_FIELD_SPECS_STATIC.ur_last_id;
-	ur_field_specs.ur_last_id = UR_FIELD_SPECS_STATIC.ur_last_id;
-	ur_field_specs.ur_allocated_fields = UR_FIELD_SPECS_STATIC.ur_last_id;
-	ur_field_specs.ur_undefine_fields = NULL;
-	ur_field_specs.intialized = UR_UNINITIALIZED;
+   if (ur_field_specs.intialized != UR_INITIALIZED) {
+      //there is no need for deallocation, because nothing has been allocated.
+      return;
+   }
+   if (ur_field_specs.ur_field_names != NULL) {
+      for (int i=0; i < ur_field_specs.ur_last_id; i++) {
+         if (ur_field_specs.ur_field_names[i] != NULL) {
+            free(ur_field_specs.ur_field_names[i]);
+         }
+      }
+      free(ur_field_specs.ur_field_names);
+   }
+   if (ur_field_specs.ur_undefine_fields != NULL) {
+      ur_field_id_linked_list_t *next, * act_del;
+      act_del = ur_field_specs.ur_undefine_fields;
+      while (act_del != NULL) {
+         next = act_del->next;
+         free(act_del);
+         act_del = next;
+      }
+   }
+   if (ur_field_specs.ur_field_sizes != NULL) {
+      free(ur_field_specs.ur_field_sizes);
+   }
+   if (ur_field_specs.ur_field_types != NULL) {
+      free(ur_field_specs.ur_field_types);
+   }
+   ur_field_specs.ur_field_names = UR_FIELD_SPECS_STATIC.ur_field_names;
+   ur_field_specs.ur_field_sizes = UR_FIELD_SPECS_STATIC.ur_field_sizes;
+   ur_field_specs.ur_field_types = UR_FIELD_SPECS_STATIC.ur_field_types;
+   ur_field_specs.ur_last_statically_defined_id = UR_FIELD_SPECS_STATIC.ur_last_id;
+   ur_field_specs.ur_last_id = UR_FIELD_SPECS_STATIC.ur_last_id;
+   ur_field_specs.ur_allocated_fields = UR_FIELD_SPECS_STATIC.ur_last_id;
+   ur_field_specs.ur_undefine_fields = NULL;
+   ur_field_specs.intialized = UR_UNINITIALIZED;
 }
 
 // Find field ID given its name
@@ -670,324 +708,338 @@ int ur_get_id_by_name(const char *name)
 }
 
 // Return -1 if f1 should go before f2, 0 if f1 is the same as f2, 1 otherwise
-int compare_fields(const void* field1, const void* field2)
+int compare_fields(const void *field1, const void *field2)
 {
    const field_spec_t *f1 = field1;
    const field_spec_t *f2 = field2;
-   if (f1->size > f2->size)
+   if (f1->size > f2->size) {
       return -1;
-   else if (f1->size < f2->size)
+   } else if (f1->size < f2->size) {
       return 1;
-   else
+   } else {
       return strcmp(f1->name, f2->name);
+   }
 }
 
-ur_template_t *ur_ctx_create_input_template(trap_ctx_t *ctx, int ifc, const char* fields, char **errstr)
+ur_template_t *ur_ctx_create_input_template(trap_ctx_t *ctx, int ifc, const char *fields, char **errstr)
 {
-	ur_template_t *tmplt = ur_create_template(fields, errstr);
-	if (tmplt == NULL) {
-		return NULL;
-	}
-	if (ur_ctx_set_input_template(ctx, ifc, tmplt) != UR_OK) {
-		if (errstr != NULL) {
-			*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR) + 1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		ur_free_template(tmplt);
-		return NULL;
-	}
-	return tmplt;
+   ur_template_t *tmplt = ur_create_template(fields, errstr);
+   if (tmplt == NULL) {
+      return NULL;
+   }
+   if (ur_ctx_set_input_template(ctx, ifc, tmplt) != UR_OK) {
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      ur_free_template(tmplt);
+      return NULL;
+   }
+   return tmplt;
 }
 
-ur_template_t *ur_ctx_create_output_template(trap_ctx_t *ctx, int ifc, const char* fields, char **errstr)
+ur_template_t *ur_ctx_create_output_template(trap_ctx_t *ctx, int ifc, const char *fields, char **errstr)
 {
-	ur_template_t *tmplt = ur_create_template(fields, errstr);
-	if (tmplt == NULL) {
-		return NULL;
-	}
-	if (ur_ctx_set_output_template(ctx, ifc, tmplt) != UR_OK) {
-		if (errstr != NULL) {
-			*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR) + 1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		ur_free_template(tmplt);
-		return NULL;
-	}
-	return tmplt;
+   ur_template_t *tmplt = ur_create_template(fields, errstr);
+   if (tmplt == NULL) {
+      return NULL;
+   }
+   if (ur_ctx_set_output_template(ctx, ifc, tmplt) != UR_OK) {
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      ur_free_template(tmplt);
+      return NULL;
+   }
+   return tmplt;
 }
 
 int ur_ctx_set_output_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt)
 {
-	if (tmplt == NULL) {
-		return UR_OK;
-	}
-	if (tmplt->direction == UR_TMPLT_DIRECTION_IN) {
-		tmplt->direction = UR_TMPLT_DIRECTION_BI;
-	} else {
-		tmplt->direction = UR_TMPLT_DIRECTION_OUT;
-	}
-	tmplt->ifc_out = ifc;
-	char * tmplt_str = ur_template_string(tmplt);
-	if (tmplt_str == NULL) {
-		return UR_E_MEMORY;
-	}
-	trap_ctx_set_data_fmt(ctx, ifc, TRAP_FMT_UNIREC, tmplt_str);
-	free(tmplt_str);
-	return UR_OK;
+   if (tmplt == NULL) {
+      return UR_OK;
+   }
+   if (tmplt->direction == UR_TMPLT_DIRECTION_IN) {
+      tmplt->direction = UR_TMPLT_DIRECTION_BI;
+   } else {
+      tmplt->direction = UR_TMPLT_DIRECTION_OUT;
+   }
+   tmplt->ifc_out = ifc;
+   char * tmplt_str = ur_template_string(tmplt);
+   if (tmplt_str == NULL) {
+      return UR_E_MEMORY;
+   }
+   trap_ctx_set_data_fmt(ctx, ifc, TRAP_FMT_UNIREC, tmplt_str);
+   free(tmplt_str);
+   return UR_OK;
 }
 
 int ur_ctx_set_input_template(trap_ctx_t *ctx, int ifc, ur_template_t *tmplt)
 {
-	if (tmplt == NULL) {
-		return UR_OK;
-	}
-	if (tmplt->direction == UR_TMPLT_DIRECTION_OUT) {
-		tmplt->direction = UR_TMPLT_DIRECTION_BI;
-	} else {
-		tmplt->direction = UR_TMPLT_DIRECTION_IN;
-	}
-	char * tmplt_str = ur_template_string(tmplt);
-	if (tmplt_str == NULL) {
-		return UR_E_MEMORY;
-	}
-	trap_ctx_set_required_fmt(ctx, ifc, TRAP_FMT_UNIREC, tmplt_str);
-	free(tmplt_str);
-	return UR_OK;
+   if (tmplt == NULL) {
+      return UR_OK;
+   }
+   if (tmplt->direction == UR_TMPLT_DIRECTION_OUT) {
+      tmplt->direction = UR_TMPLT_DIRECTION_BI;
+   } else {
+      tmplt->direction = UR_TMPLT_DIRECTION_IN;
+   }
+   char * tmplt_str = ur_template_string(tmplt);
+   if (tmplt_str == NULL) {
+      return UR_E_MEMORY;
+   }
+   trap_ctx_set_required_fmt(ctx, ifc, TRAP_FMT_UNIREC, tmplt_str);
+   free(tmplt_str);
+   return UR_OK;
 }
 
-ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in, int ifc_out, const char* fields, char **errstr)
+ur_template_t *ur_ctx_create_bidirectional_template(trap_ctx_t *ctx, int ifc_in, int ifc_out, const char *fields, char **errstr)
 {
-	ur_template_t *tmplt = ur_create_template(fields, errstr);
-	if (tmplt == NULL) {
-		return NULL;
-	}
-	tmplt->direction = UR_TMPLT_DIRECTION_BI;
-	tmplt->ifc_out = ifc_out;
-	char * tmplt_str = ur_template_string(tmplt);
-	if (tmplt_str == NULL) {
-		if (errstr != NULL) {
-			*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR)+1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		ur_free_template(tmplt);
-		return NULL;
-	}
-	trap_ctx_set_required_fmt(ctx, ifc_in, TRAP_FMT_UNIREC, tmplt_str);
-	trap_ctx_set_data_fmt(ctx, ifc_out, TRAP_FMT_UNIREC, tmplt_str);
-	free(tmplt_str);
-	return tmplt;
+   ur_template_t *tmplt = ur_create_template(fields, errstr);
+   if (tmplt == NULL) {
+      return NULL;
+   }
+   tmplt->direction = UR_TMPLT_DIRECTION_BI;
+   tmplt->ifc_out = ifc_out;
+   char * tmplt_str = ur_template_string(tmplt);
+   if (tmplt_str == NULL) {
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      ur_free_template(tmplt);
+      return NULL;
+   }
+   trap_ctx_set_required_fmt(ctx, ifc_in, TRAP_FMT_UNIREC, tmplt_str);
+   trap_ctx_set_data_fmt(ctx, ifc_out, TRAP_FMT_UNIREC, tmplt_str);
+   free(tmplt_str);
+   return tmplt;
 }
 
-ur_template_t *ur_create_template(const char* fields, char **errstr)
+ur_template_t *ur_create_template(const char *fields, char **errstr)
 {
-	// Count number of fields
-	int n_fields = 0, written_fields = 0;
-	const char *tmp = fields;
-	if (fields != NULL && fields[0] != '\0') {
-		n_fields = 1;
-		while (*tmp != '\0') {
-			if (*(tmp++) == ',') {
-				n_fields++;
-			}
-		}
-	}
-	// Allocate array of field_spec structs
-	field_spec_t *fields_spec = malloc(n_fields * sizeof(field_spec_t));
-	if (fields_spec == NULL && n_fields > 0) {
-		if (errstr != NULL) {
-			*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR)+1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		return NULL;
-	}
-	// Parse fields and fill the array
-	const char *start_ptr = fields;
-	const char *end_ptr;
-	for (int i = 0; i < n_fields; i++) {
-		// Get field name
-		end_ptr = strchr(start_ptr, (i < n_fields-1) ? ',' : '\0'); // find next comma or the end of string
-		int len = end_ptr - start_ptr;
-		fields_spec[written_fields].name = malloc(len + 1);
-		if (fields_spec[written_fields].name == NULL) {
-			if (errstr != NULL) {
-				*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR)+1);
-				if (*errstr != NULL) {
-					strcpy(*errstr, UR_MEMORY_ERROR);
-				}
-			}
-			for (int j = 0; j < i; j++) {
-				free(fields_spec[j].name);
-			}
-			free(fields_spec);
-			return NULL;
-		}
-		memcpy(fields_spec[written_fields].name, start_ptr, len);
-		fields_spec[written_fields].name[len] = 0;
-		start_ptr = end_ptr + 1;
-		// Get field ID
-		int id_by_name = ur_get_id_by_name(fields_spec[written_fields].name);
-		if (id_by_name == UR_E_INVALID_NAME) {
-			// Unknown field name
-			if (errstr != NULL) {
-				*errstr = (char*) malloc(100);
-				if (*errstr != NULL) {
-					int n;
-					n = snprintf(*errstr, 100, "field: %s is not defined.", fields_spec[written_fields].name);
-					if (n >= 100) {
-						strcpy(*errstr, "given field is not defined");
-					}
-				}
-			}
-			for (int j = 0; j <= written_fields; j++) {
-				free(fields_spec[j].name);
-			}
-			free(fields_spec);
-			return NULL;
-		}
-		//check if the field is not in the template.
-		int in_the_template = 0;
-		for (int j = 0; j < written_fields; j++) {
-			if (fields_spec[j].id == id_by_name) {
-				in_the_template = 1;
-				break;
-			}
-		}
-		//if the field is not already int the template, copy values and move the index, otherwise just free the string with name.
-		if (in_the_template == 0) {
-			fields_spec[written_fields].id = id_by_name;
-			// Get field size
-			fields_spec[written_fields].size = ur_get_size(fields_spec[written_fields].id);
-			written_fields++;
-		} else {
-			free(fields_spec[written_fields].name);
-			fields_spec[written_fields].name = NULL;
-		}
-	}
-	// Sort fields according to UniRec specification (by size and names)
-	if (n_fields > 0) {
-		qsort(fields_spec, written_fields, sizeof(field_spec_t), compare_fields);
-	}
-	// Allocate memory for the template
-	ur_template_t *tmplt = (ur_template_t*) calloc(sizeof(ur_template_t),1);
-	if (tmplt == NULL) {
-		for (int i = 0; i < written_fields; i++) {
-			free(fields_spec[i].name);
-		}
-		free(fields_spec);
-		if (errstr != NULL) {
-			*errstr = (char*) malloc (strlen(UR_MEMORY_ERROR)+1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		return NULL;
-	}
-	//set no direction to the template
-	tmplt->direction = UR_TMPLT_DIRECTION_NO;
-	//allocate memory for offset table
-	tmplt->offset_size = ur_field_specs.ur_last_id;
-	tmplt->offset = malloc(ur_field_specs.ur_last_id * sizeof(uint16_t));
-	if (tmplt->offset == NULL) {
-		for (int i = 0; i < written_fields; i++) {
-			free(fields_spec[i].name);
-		}
-		free(fields_spec);
-		free(tmplt);
-		if (errstr != NULL) {
-			*errstr = (char*) malloc (strlen(UR_MEMORY_ERROR)+1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		return NULL;
-	}
-	// Set all fields to invalid offset
-	memset(tmplt->offset, 0xff, ur_field_specs.ur_last_id * sizeof(uint16_t));
-	// Fill offsets of all fields into the table
-	uint16_t offset = 0;
-	uint16_t first_dynamic = UR_NO_DYNAMIC_VALUES;
-	for (int i = 0; i < written_fields; i++) {
-		// Check whether offset is not already set
-		if (tmplt->offset[fields_spec[i].id] != 0xffff) {
-			// Offset is already set - duplicated field
-			for (int i = 0; i < written_fields; i++) {
-				free(fields_spec[i].name);
-			}
-			free(fields_spec);
-			free(tmplt);
-			if (errstr != NULL) {
-				*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR)+1);
-				if (*errstr != NULL) {
-					strcpy(*errstr, UR_MEMORY_ERROR);
-				}
-			}
-			return NULL;
-		}
-		// Set offset
-		if (fields_spec[i].size < 0) { // dynamic field
-		 	tmplt->offset[fields_spec[i].id] = offset;
-		 	offset += 4;
-		 	if (first_dynamic == UR_NO_DYNAMIC_VALUES) {
-		 		first_dynamic = i;
-		 	}
-		}
-		else { // static field
-		 	tmplt->offset[fields_spec[i].id] = offset;
-		 	offset += fields_spec[i].size;
-		}
-	}
-	tmplt->first_dynamic = first_dynamic;
-	tmplt->static_size = offset;
+   // Count number of fields
+   int n_fields = 0, written_fields = 0;
+   if (fields) {
+      /* skip leading spaces */
+      while (*fields != '\0' && isspace(*fields)) {
+         fields++;
+      }
+      /* Count number of fields */
+      if (*fields != '\0') {
+         n_fields = 1;
+         const char *tmp = fields;
+         while (*tmp != '\0') {
+            if (*(tmp++) == ',') {
+               n_fields++;
+            }
+         }
+      }
+   }
+   // Allocate array of field_spec structs
+   field_spec_t *fields_spec = malloc(n_fields * sizeof(field_spec_t));
+   if (fields_spec == NULL && n_fields > 0) {
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      return NULL;
+   }
+   // Parse fields and fill the array
+   const char *start_ptr = fields;
+   const char *end_ptr;
+   for (int i = 0; i < n_fields; i++) {
+      // Get field name
+      end_ptr = start_ptr;
+      /* go to the first space / comma / end-of-string */
+      while (!isspace(*end_ptr) && *end_ptr != ',' && *end_ptr != '\0') {
+         end_ptr++;
+      }
+      int len = end_ptr - start_ptr;
+      fields_spec[written_fields].name = malloc(len + 1);
+      if (fields_spec[written_fields].name == NULL) {
+         if (errstr != NULL) {
+            *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+            if (*errstr != NULL) {
+               strcpy(*errstr, UR_MEMORY_ERROR);
+            }
+         }
+         for (int j = 0; j < i; j++) {
+            free(fields_spec[j].name);
+         }
+         free(fields_spec);
+         return NULL;
+      }
+      memcpy(fields_spec[written_fields].name, start_ptr, len);
+      fields_spec[written_fields].name[len] = 0;
+      start_ptr = end_ptr;
+      while ((isspace(*start_ptr) || *start_ptr == ',') && *start_ptr != '\0') {
+         start_ptr++;
+      }
+      // Get field ID
+      int id_by_name = ur_get_id_by_name(fields_spec[written_fields].name);
+      if (id_by_name == UR_E_INVALID_NAME) {
+         // Unknown field name
+         if (errstr != NULL) {
+            *errstr = (char *) malloc(100);
+            if (*errstr != NULL) {
+               int n;
+               n = snprintf(*errstr, 100, "field: %s is not defined.", fields_spec[written_fields].name);
+               if (n >= 100) {
+                  strcpy(*errstr, "given field is not defined");
+               }
+            }
+         }
+         for (int j = 0; j <= written_fields; j++) {
+            free(fields_spec[j].name);
+         }
+         free(fields_spec);
+         return NULL;
+      }
+      //check if the field is not in the template.
+      int in_the_template = 0;
+      for (int j = 0; j < written_fields; j++) {
+         if (fields_spec[j].id == id_by_name) {
+            in_the_template = 1;
+            break;
+         }
+      }
+      //if the field is not already int the template, copy values and move the index, otherwise just free the string with name.
+      if (in_the_template == 0) {
+         fields_spec[written_fields].id = id_by_name;
+         // Get field size
+         fields_spec[written_fields].size = ur_get_size(fields_spec[written_fields].id);
+         written_fields++;
+      } else {
+         free(fields_spec[written_fields].name);
+         fields_spec[written_fields].name = NULL;
+      }
+   }
+   // Sort fields according to UniRec specification (by size and names)
+   if (n_fields > 0) {
+      qsort(fields_spec, written_fields, sizeof(field_spec_t), compare_fields);
+   }
+   // Allocate memory for the template
+   ur_template_t *tmplt = (ur_template_t *) calloc(sizeof(ur_template_t), 1);
+   if (tmplt == NULL) {
+      for (int i = 0; i < written_fields; i++) {
+         free(fields_spec[i].name);
+      }
+      free(fields_spec);
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      return NULL;
+   }
+   //set no direction to the template
+   tmplt->direction = UR_TMPLT_DIRECTION_NO;
+   //allocate memory for offset table
+   tmplt->offset_size = ur_field_specs.ur_last_id;
+   tmplt->offset = malloc(ur_field_specs.ur_last_id * sizeof(uint16_t));
+   if (tmplt->offset == NULL) {
+      for (int i = 0; i < written_fields; i++) {
+         free(fields_spec[i].name);
+      }
+      free(fields_spec);
+      free(tmplt);
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      return NULL;
+   }
+   // Set all fields to invalid offset
+   memset(tmplt->offset, 0xff, ur_field_specs.ur_last_id * sizeof(uint16_t));
+   // Fill offsets of all fields into the table
+   uint16_t offset = 0;
+   uint16_t first_dynamic = UR_NO_DYNAMIC_VALUES;
+   for (int i = 0; i < written_fields; i++) {
+      // Check whether offset is not already set
+      if (tmplt->offset[fields_spec[i].id] != 0xffff) {
+         // Offset is already set - duplicated field
+         for (int i = 0; i < written_fields; i++) {
+            free(fields_spec[i].name);
+         }
+         free(fields_spec);
+         free(tmplt);
+         if (errstr != NULL) {
+            *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+            if (*errstr != NULL) {
+               strcpy(*errstr, UR_MEMORY_ERROR);
+            }
+         }
+         return NULL;
+      }
+      // Set offset
+      if (fields_spec[i].size < 0) { // dynamic field
+         tmplt->offset[fields_spec[i].id] = offset;
+         offset += 4;
+         if (first_dynamic == UR_NO_DYNAMIC_VALUES) {
+            first_dynamic = i;
+         }
+      } else { // static field
+         tmplt->offset[fields_spec[i].id] = offset;
+         offset += fields_spec[i].size;
+      }
+   }
+   tmplt->first_dynamic = first_dynamic;
+   tmplt->static_size = offset;
 
-	//save ids to template
-	tmplt->ids = (ur_field_id_t*) malloc (sizeof(ur_field_id_t) * written_fields);
-	if (tmplt->ids == NULL) {
-		for (int i = 0; i < written_fields; i++) {
-			free(fields_spec[i].name);
-		}
-		free(fields_spec);
-		free(tmplt);
-		if (errstr != NULL) {
-			*errstr = (char*) malloc(strlen(UR_MEMORY_ERROR)+1);
-			if (*errstr != NULL) {
-				strcpy(*errstr, UR_MEMORY_ERROR);
-			}
-		}
-		return NULL;
-	}
-	tmplt->count = written_fields;
-	for (int i = 0; i < written_fields; i++) {
-		tmplt->ids[i] = fields_spec[i].id;
-	}
-	// Free array of field specs
-	for (int i = 0; i < written_fields; i++) {
-		free(fields_spec[i].name);
-	}
-	free(fields_spec);
-	return tmplt;
+   //save ids to template
+   tmplt->ids = (ur_field_id_t *) malloc(sizeof(ur_field_id_t) * written_fields);
+   if (tmplt->ids == NULL) {
+      for (int i = 0; i < written_fields; i++) {
+         free(fields_spec[i].name);
+      }
+      free(fields_spec);
+      free(tmplt);
+      if (errstr != NULL) {
+         *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
+         if (*errstr != NULL) {
+            strcpy(*errstr, UR_MEMORY_ERROR);
+         }
+      }
+      return NULL;
+   }
+   tmplt->count = written_fields;
+   for (int i = 0; i < written_fields; i++) {
+      tmplt->ids[i] = fields_spec[i].id;
+   }
+   // Free array of field specs
+   for (int i = 0; i < written_fields; i++) {
+      free(fields_spec[i].name);
+   }
+   free(fields_spec);
+   return tmplt;
 }
 
 void ur_free_template(ur_template_t *tmplt) {
-	if (tmplt == NULL) {
-		return;
-	}
-	//free offset table
-	if (tmplt->offset != NULL) {
-		free(tmplt->offset);
-	}
-	//free ids
-	if (tmplt->ids != NULL) {
-		free(tmplt->ids);
-	}
-	free(tmplt);
+   if (tmplt == NULL) {
+      return;
+   }
+   //free offset table
+   if (tmplt->offset != NULL) {
+      free(tmplt->offset);
+   }
+   //free ids
+   if (tmplt->ids != NULL) {
+      free(tmplt->ids);
+   }
+   free(tmplt);
 }
 
 // Print template
@@ -1004,64 +1056,64 @@ void ur_print_template(ur_template_t *tmplt)
 
 void ur_var_change_size(const ur_template_t * tmplt, void *rec, int field_id, int new_val_len)
 {
-	// pointer to field and size of a field
-	char * out_ptr = ur_get_ptr_by_id(tmplt, rec, field_id);
-	int old_size_of_field = ur_get_len(tmplt, rec, field_id);
-	//if the size is different, move following fields
-	if (old_size_of_field != new_val_len) {
-		uint16_t size = new_val_len;
-		uint16_t offset_static = ur_get_var_offset(tmplt, rec, field_id);
-		int index = 0;
-		//find index of changed field in record array
-		for (int i = 0; i< tmplt->count; i++) {
-			if (field_id == tmplt->ids[i]) {
-				index = i;
-			}
-		}
-		//set new offset for dynamic fields which are situated behind changed field
-		for (int i = index + 1; i < tmplt->count; i++) {
-			ur_set_var_offset(tmplt, rec, tmplt->ids[i], offset_static + size);
-			size += ur_get_len(tmplt, rec, tmplt->ids[i]);
-		}
-		memmove(out_ptr + new_val_len, out_ptr + old_size_of_field, size - new_val_len);
-		ur_set_var_len(tmplt, rec, field_id, new_val_len);
-	}
+   // pointer to field and size of a field
+   char * out_ptr = ur_get_ptr_by_id(tmplt, rec, field_id);
+   int old_size_of_field = ur_get_len(tmplt, rec, field_id);
+   //if the size is different, move following fields
+   if (old_size_of_field != new_val_len) {
+      uint16_t size = new_val_len;
+      uint16_t offset_static = ur_get_var_offset(tmplt, rec, field_id);
+      int index = 0;
+      //find index of changed field in record array
+      for (int i = 0; i< tmplt->count; i++) {
+         if (field_id == tmplt->ids[i]) {
+            index = i;
+         }
+      }
+      //set new offset for dynamic fields which are situated behind changed field
+      for (int i = index + 1; i < tmplt->count; i++) {
+         ur_set_var_offset(tmplt, rec, tmplt->ids[i], offset_static + size);
+         size += ur_get_len(tmplt, rec, tmplt->ids[i]);
+      }
+      memmove(out_ptr + new_val_len, out_ptr + old_size_of_field, size - new_val_len);
+      ur_set_var_len(tmplt, rec, field_id, new_val_len);
+   }
 }
 
 int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void *val_ptr, int val_len)
 {
-	if (tmplt->offset[field_id] == UR_INVALID_OFFSET) {
-		return UR_E_INVALID_FIELD_ID;
-	}
-	// wrong parameters or template does not contain dynamic fields
-	if (tmplt->first_dynamic == UR_NO_DYNAMIC_VALUES || ur_is_static(field_id)) {
-		return UR_E_INVALID_FIELD_ID;
-	}
-	// pointer to field and size of a field
-	char * out_ptr = ur_get_ptr_by_id(tmplt, rec, field_id);
-	//change size of a variable length field
-	ur_var_change_size(tmplt, rec, field_id, val_len);
-	//copy new value
-	memcpy(out_ptr, val_ptr, val_len);
-	return UR_OK;
+   if (tmplt->offset[field_id] == UR_INVALID_OFFSET) {
+      return UR_E_INVALID_FIELD_ID;
+   }
+   // wrong parameters or template does not contain dynamic fields
+   if (tmplt->first_dynamic == UR_NO_DYNAMIC_VALUES || ur_is_static(field_id)) {
+      return UR_E_INVALID_FIELD_ID;
+   }
+   // pointer to field and size of a field
+   char * out_ptr = ur_get_ptr_by_id(tmplt, rec, field_id);
+   //change size of a variable length field
+   ur_var_change_size(tmplt, rec, field_id, val_len);
+   //copy new value
+   memcpy(out_ptr, val_ptr, val_len);
+   return UR_OK;
 }
 
 void ur_clear_varlen(const ur_template_t * tmplt, void *rec)
 {
-	//set null offset and length for all dynamic fields
-	for (int i = tmplt->first_dynamic; i < tmplt->count; i++) {
-		ur_set_var_offset(tmplt, rec, tmplt->ids[i], 0);
-		ur_set_var_len(tmplt, rec, tmplt->ids[i], 0);
-	}
+   //set null offset and length for all dynamic fields
+   for (int i = tmplt->first_dynamic; i < tmplt->count; i++) {
+      ur_set_var_offset(tmplt, rec, tmplt->ids[i], 0);
+      ur_set_var_len(tmplt, rec, tmplt->ids[i], 0);
+   }
 }
 
-uint16_t ur_rec_varlen_size(const ur_template_t *tmplt,const  void *rec)
+uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec)
 {
-	int size = 0;
-	for (int i = tmplt->first_dynamic; i < tmplt->count; i++) {
-		size += ur_get_var_len(tmplt, rec, tmplt->ids[i]);
-	}
-	return size;
+   int size = 0;
+   for (int i = tmplt->first_dynamic; i < tmplt->count; i++) {
+      size += ur_get_var_len(tmplt, rec, tmplt->ids[i]);
+   }
+   return size;
 }
 
 // Allocate memory for UniRec record
@@ -1070,7 +1122,7 @@ void *ur_create_record(const ur_template_t *tmplt, uint16_t max_var_size)
    unsigned int size = (unsigned int)tmplt->static_size + max_var_size;
    if (size > 0xffff)
       size = 0xffff;
-   return (void*)calloc(size, 1);
+   return (void *) calloc(size, 1);
 }
 
 // Free UniRec record
@@ -1083,55 +1135,56 @@ void ur_free_record(void *record)
 char *ur_get_var_as_str(const ur_template_t *tmplt, const void *rec, ur_field_id_t field_id)
 {
    uint16_t size = ur_get_var_len(tmplt, rec, field_id);
-   char *str = malloc(size+1);
+   char *str = malloc(size + 1);
    if (str == NULL)
       return NULL;
    if (size > 0) {
-      const char* p = ur_get_ptr_by_id(tmplt, rec, field_id);
+      const char *p = ur_get_ptr_by_id(tmplt, rec, field_id);
       memcpy(str, p, size);
    }
    str[size] = '\0';
    return str;
 }
 
-inline void* ur_clone_record(const ur_template_t *tmplt, const void *src)
+inline void *ur_clone_record(const ur_template_t *tmplt, const void *src)
 {
-    void *copy = ur_create_record(tmplt, ur_rec_size(tmplt, src));
-    memcpy(copy, src, ur_rec_size(tmplt, src));
+    void *copy = ur_create_record(tmplt, ur_rec_varlen_size(tmplt, src));
+    if (copy) {
+       memcpy(copy, src, ur_rec_size(tmplt, src));
+    }
     return copy;
 }
 
-void ur_copy_fields(const ur_template_t *dst_tmplt, void* dst, const ur_template_t *src_tmplt, const void* src)
+void ur_copy_fields(const ur_template_t *dst_tmplt, void *dst, const ur_template_t *src_tmplt, const void *src)
 {
-	int size_of_field = 0;
-	void * ptr_dst = NULL;
-	void * ptr_src = NULL;
-	uint16_t size = src_tmplt->offset_size < dst_tmplt->offset_size ? src_tmplt->offset_size : dst_tmplt->offset_size;
-	//Fields with same template can be copied by fully by memcpy
-	if (src_tmplt == dst_tmplt) {
-		memcpy(dst,src,ur_rec_size(src_tmplt, src));
-		return;
+   int size_of_field = 0;
+   void * ptr_dst = NULL;
+   void * ptr_src = NULL;
+   uint16_t size = src_tmplt->offset_size < dst_tmplt->offset_size ? src_tmplt->offset_size : dst_tmplt->offset_size;
+   //Fields with same template can be copied by fully by memcpy
+   if (src_tmplt == dst_tmplt) {
+      memcpy(dst, src, ur_rec_size(src_tmplt, src));
+      return;
 
-	}
-	// minimal value from offset table size
-	for (int i = 0; i < size; i++) {
-		// if two templates have the same field
-		if (src_tmplt->offset[i] != UR_INVALID_OFFSET && dst_tmplt->offset[i] != UR_INVALID_OFFSET) {
-			size_of_field = ur_get_size(i);
-			if (size_of_field > 0) {
-				// static fields
-				ptr_dst = ur_get_ptr_by_id(dst_tmplt, dst, i);
-				ptr_src = ur_get_ptr_by_id(src_tmplt, src, i);
-				memcpy(ptr_dst, ptr_src, size_of_field);
-			}
-			else {
-				// variable-size fields
-				ptr_src = ur_get_ptr_by_id(src_tmplt, src, i);
-				size_of_field = ur_get_var_len(src_tmplt, src, i);
-				ur_set_var(dst_tmplt, dst, i, ptr_src, size_of_field);
-			}
-		}
-	}
+   }
+   // minimal value from offset table size
+   for (int i = 0; i < size; i++) {
+      // if two templates have the same field
+      if (src_tmplt->offset[i] != UR_INVALID_OFFSET && dst_tmplt->offset[i] != UR_INVALID_OFFSET) {
+         size_of_field = ur_get_size(i);
+         if (size_of_field > 0) {
+            // static fields
+            ptr_dst = ur_get_ptr_by_id(dst_tmplt, dst, i);
+            ptr_src = ur_get_ptr_by_id(src_tmplt, src, i);
+            memcpy(ptr_dst, ptr_src, size_of_field);
+         } else {
+            // variable-size fields
+            ptr_src = ur_get_ptr_by_id(src_tmplt, src, i);
+            size_of_field = ur_get_var_len(src_tmplt, src, i);
+            ur_set_var(dst_tmplt, dst, i, ptr_src, size_of_field);
+         }
+      }
+   }
 }
 
 // Function for iterating over all fields in a given template
@@ -1284,96 +1337,96 @@ failed_time_parsing:
 
 char *ur_cpy_string(const char *str)
 {
-	int str_len = strlen(str) + 1;
-	char *new_str = malloc(sizeof(char) * str_len);
-	if (new_str == NULL) {
-		return NULL;
-	}
-	memcpy(new_str, str, str_len);
-	return new_str;
+   int str_len = strlen(str) + 1;
+   char *new_str = malloc(sizeof(char) * str_len);
+   if (new_str == NULL) {
+      return NULL;
+   }
+   memcpy(new_str, str, str_len);
+   return new_str;
 }
 
 const char *ur_values_get_name_start_end(uint32_t start, uint32_t end, int32_t value)
 {
-	for (int i = start; i < end; i++) {
-		if (ur_values[i].value == value) {
-			return ur_values[i].name;
-		}
-	}
-	return NULL;
+   for (int i = start; i < end; i++) {
+      if (ur_values[i].value == value) {
+         return ur_values[i].name;
+      }
+   }
+   return NULL;
 }
 
 const char *ur_values_get_description_start_end(uint32_t start, uint32_t end, int32_t value)
 {
-	for (int i = start; i < end; i++) {
-		if (ur_values[i].value == value) {
-			return ur_values[i].description;
-		}
-	}
-	return NULL;
+   for (int i = start; i < end; i++) {
+      if (ur_values[i].value == value) {
+         return ur_values[i].description;
+      }
+   }
+   return NULL;
 }
 // *****************************************************************************
 // ** "Links" part - set of functions for handling LINK_BIT_FIELD
 
 // Create and initialize links structure.
-ur_links_t *ur_create_links(const char* mask)
+ur_links_t *ur_create_links(const char *mask)
 {
-	uint64_t checker;
-	unsigned int indexer;
-	ur_links_t *lm;
+   uint64_t checker;
+   unsigned int indexer;
+   ur_links_t *lm;
 
-	// Allocate memory for structure.
-	lm = (ur_links_t *) malloc(sizeof(ur_links_t));
-	if (lm == NULL) {
-		return NULL;
-	}
+   // Allocate memory for structure.
+   lm = (ur_links_t *) malloc(sizeof(ur_links_t));
+   if (lm == NULL) {
+      return NULL;
+   }
 
-	// Try to convert passed mask in string to uint64_t.
-	if (sscanf(mask, "%"SCNx64, &lm->link_mask) < 1) {
-		free(lm);
-		return NULL;
-	}
+   // Try to convert passed mask in string to uint64_t.
+   if (sscanf(mask, "%"SCNx64, &lm->link_mask) < 1) {
+      free(lm);
+      return NULL;
+   }
 
-	// Get link count.
-	lm->link_count = 0;
-	checker = 1;
-	for (int i = 0; i < MAX_LINK_COUNT; ++i) {
-		if (lm->link_mask & checker) {
-			lm->link_count++;
-		}
-		checker <<= 1;
-	}
-	if (lm->link_count == 0) {
-		free(lm);
-		return NULL;
-	}
-	// Allocate array for link indexes
-	lm->link_indexes = (uint64_t *) malloc(lm->link_count * sizeof(uint64_t));
-	if (lm->link_indexes == NULL) {
-		free(lm);
-		return NULL;
-	}
+   // Get link count.
+   lm->link_count = 0;
+   checker = 1;
+   for (int i = 0; i < MAX_LINK_COUNT; ++i) {
+      if (lm->link_mask & checker) {
+         lm->link_count++;
+      }
+      checker <<= 1;
+   }
+   if (lm->link_count == 0) {
+      free(lm);
+      return NULL;
+   }
+   // Allocate array for link indexes
+   lm->link_indexes = (uint64_t *) malloc(lm->link_count * sizeof(uint64_t));
+   if (lm->link_indexes == NULL) {
+      free(lm);
+      return NULL;
+   }
 
-	// Fill link indexes
-	indexer = 0;
-	checker = 1;
-	for (int i = 0; i < MAX_LINK_COUNT; ++i) {
-		if (lm->link_mask & checker) {
-			lm->link_indexes[indexer++] = i;
-		}
-		checker <<= 1;
-	}
+   // Fill link indexes
+   indexer = 0;
+   checker = 1;
+   for (int i = 0; i < MAX_LINK_COUNT; ++i) {
+      if (lm->link_mask & checker) {
+         lm->link_indexes[indexer++] = i;
+      }
+      checker <<= 1;
+   }
 
-	return lm;
+   return lm;
 }
 
 // Destroy links structure.
 void ur_free_links(ur_links_t *links)
 {
-	if (links != NULL) {
-		free(links->link_indexes);
-		free(links);
-	}
+   if (links != NULL) {
+      free(links->link_indexes);
+      free(links);
+   }
 }
 // Following functions are defined in links.h
 // (their headers are repeated here with INLINE_IMPL to generate externally
@@ -1393,3 +1446,4 @@ INLINE_IMPL unsigned int ur_get_link_count(ur_links_t *links);
 
 // END OF "Links" part *********************************************************
 // *****************************************************************************
+

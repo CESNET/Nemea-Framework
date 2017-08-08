@@ -1,6 +1,7 @@
 var searchData=
 [
   ['nemea_20module_20macros',['Nemea module macros',['../group__modulemacros.html',1,'']]],
+  ['nblocks',['nblocks',['../structtrap__buffer__s.html#a2453c17847a46d233a39d4bcf4c13329',1,'trap_buffer_s']]],
   ['neg_5finitialized',['neg_initialized',['../structfile__private__s.html#a6a49aa9f86e4da7c239d89f3a180ef8b',1,'file_private_s']]],
   ['neg_5fres_5fcont',['NEG_RES_CONT',['../group__negotiationretvals.html#gace5d606263806672a058c84561dc47bd',1,'trap_internal.h']]],
   ['neg_5fres_5ffailed',['NEG_RES_FAILED',['../group__negotiationretvals.html#gaf66581d55a468424f235f4de6af21246',1,'trap_internal.h']]],

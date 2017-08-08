@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.9.1], [nemea@cesnet.cz])
+AC_INIT([libtrap], [0.10.0], [nemea@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
@@ -24,7 +24,7 @@ AC_ARG_ENABLE([debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
                 CFLAGS="-Wall -g -O0 $CFLAGS"
-        fi], [CFLAGS="-Wall -O3 $CFLAGS"
+        fi], [CFLAGS="-Wall -g -O3 $CFLAGS"
               CPPFLAGS="-DNDEBUG=1"])
 
 LT_INIT()
@@ -50,6 +50,8 @@ AM_CONDITIONAL([GCC], [test x$GCC = xyes])
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 AC_CHECK_PROG(GIT, git, git, [""])
+AC_CHECK_PROG(HAVE_DOT, dot, ["YES"], ["NO"])
+AC_SUBST([HAVE_DOT])
 
 if test -n "$GIT"; then
 	GIT_VERSION=$($GIT log --format="%h" HEAD^..HEAD | head -1)
@@ -165,6 +167,7 @@ AC_CONFIG_FILES([Makefile
                  tools/Makefile
                  libtrap.pc
                  libtrap.spec
+                 libtrap-varrun.conf
                  Doxyfile
                  devel-doxyfile
                  ])
@@ -178,8 +181,17 @@ AC_ARG_WITH([ifcbuffersize],
 	TRAP_IFC_MESSAGEQ_SIZE=100000
 	]
 )
+AC_ARG_WITH([ifcmaxclients],
+	AC_HELP_STRING([--with-ifcmaxclients=NUMBER],[Set number of clients that can connect to output interface, default is 64.]),
+	[
+	TRAP_IFC_DEFAULT_MAX_CLIENTS=$withval
+	],
+	[
+	TRAP_IFC_DEFAULT_MAX_CLIENTS=64
+	]
+)
 
-CPPFLAGS="$CPPFLAGS -DTRAP_IFC_MESSAGEQ_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" "
+CPPFLAGS="$CPPFLAGS -DTRAP_IFC_MESSAGEQ_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" -DTRAP_IFC_DEFAULT_MAX_CLIENTS="$TRAP_IFC_DEFAULT_MAX_CLIENTS" "
 
 
 

@@ -14,6 +14,7 @@ var searchData=
   ['ifc_5fget_5fclient_5fcount_5ffunc_5ft',['ifc_get_client_count_func_t',['../group__trap__ifc__api.html#gaa49b0bc8ebc826ed9112a1cb228eeef1',1,'trap_ifc.h']]],
   ['ifc_5fget_5fid_5ffunc_5ft',['ifc_get_id_func_t',['../group__trap__ifc__api.html#gacb6c2dfcdb3afeeb6a61aa249ba2fcf6',1,'trap_ifc.h']]],
   ['ifc_5fidx',['ifc_idx',['../structfile__private__s.html#a8fde42ac826019a1de2caa53208d2773',1,'file_private_s::ifc_idx()'],['../structtcpip__sender__private__s.html#a80c87058c06716405b0fb99e8089afd1',1,'tcpip_sender_private_s::ifc_idx()'],['../structtcpip__receiver__private__s.html#aa6557670605b124f2a41f9474d94b5f7',1,'tcpip_receiver_private_s::ifc_idx()']]],
+  ['ifc_5fis_5fconn_5ffunc_5ft',['ifc_is_conn_func_t',['../group__trap__ifc__api.html#ga3d55759655bbae5059f00e151eafb5ff',1,'trap_ifc.h']]],
   ['ifc_5fmtx',['ifc_mtx',['../structtrap__input__ifc__s.html#a4058587a4584a7fc650bbfb4a6a73bee',1,'trap_input_ifc_s::ifc_mtx()'],['../structtrap__output__ifc__s.html#a1ccb40690e646da10a123308491d7899',1,'trap_output_ifc_s::ifc_mtx()']]],
   ['ifc_5frecv_5ffunc_5ft',['ifc_recv_func_t',['../group__trap__ifc__api.html#ga4df8e9b4c9b942e791128088c490bd58',1,'trap_ifc.h']]],
   ['ifc_5fsend_5ffunc_5ft',['ifc_send_func_t',['../group__trap__ifc__api.html#gae85ace25918982f8ff30c0ceaa6291f2',1,'trap_ifc.h']]],
@@ -32,6 +33,8 @@ var searchData=
   ['input_5fifc_5fnegotiation',['input_ifc_negotiation',['../trap_8c.html#a2c722200cdfbd15e5ab203e88e44bc33',1,'input_ifc_negotiation(void *ifc_priv_data, char ifc_type):&#160;trap.c'],['../trap_8h.html#a2c722200cdfbd15e5ab203e88e44bc33',1,'input_ifc_negotiation(void *ifc_priv_data, char ifc_type):&#160;trap.c']]],
   ['insert_5finto_5fbuffer',['insert_into_buffer',['../group__buffering.html#gac63e35af0cd7a9aa4285f00d94a68270',1,'trap.c']]],
   ['int_5fmess_5fheader',['int_mess_header',['../structtcpip__sender__private__s.html#a9be09b81ae5a43fc55ddcffec63d4429',1,'tcpip_sender_private_s::int_mess_header()'],['../structtcpip__receiver__private__s.html#a962be8fe5802e31ee65f689c5e2a8975',1,'tcpip_receiver_private_s::int_mess_header()']]],
+  ['is_5fconn',['is_conn',['../structtrap__input__ifc__s.html#aa6657d505447e117948bc0fca7f8ba79',1,'trap_input_ifc_s']]],
   ['is_5fterminated',['is_terminated',['../structgenerator__private__s.html#a892f8f16a299820033abbb9ef5c915de',1,'generator_private_s::is_terminated()'],['../structfile__private__s.html#aff4a8fb12ae452ebcc50581860764b32',1,'file_private_s::is_terminated()'],['../structtcpip__sender__private__s.html#a20a41fc7667d03bdc8134a5c5bee2229',1,'tcpip_sender_private_s::is_terminated()'],['../structtcpip__receiver__private__s.html#a7997188b334e7c35b9ea25bf81cc5eaa',1,'tcpip_receiver_private_s::is_terminated()']]],
+  ['input_20ifc',['Input IFC',['../group__trap__buffer__recv.html',1,'']]],
   ['ifc_20api',['IFC API',['../group__trap__ifc__api.html',1,'']]]
 ];

@@ -75,7 +75,7 @@ extern "C" {
 enum fhf_insert {
    FHF_INSERT_OK = 0,
    FHF_INSERT_FAILED = -1,
-   FHF_INSERT_FULL = -2,
+   FHF_INSERT_FULL = -2
 };
 
 /**
@@ -84,7 +84,7 @@ enum fhf_insert {
 enum fhf_resize {
    FHF_RESIZE_OK = 0,
    FHF_RESIZE_FAILED_ALLOC = 1,
-   FHF_RESIZE_FAILED_INSERT = 2,
+   FHF_RESIZE_FAILED_INSERT = 2
 };
 
 /**
@@ -92,7 +92,7 @@ enum fhf_resize {
  */
 enum fhf_found {
    FHF_FOUND = 0,
-   FHF_NOT_FOUND = 1,
+   FHF_NOT_FOUND = 1
 };
 
 /**
@@ -100,7 +100,7 @@ enum fhf_found {
  */
 enum fhf_remove {
    FHF_REMOVED = 0,
-   FHF_NOT_REMOVED = 1,
+   FHF_NOT_REMOVED = 1
 };
 
 /**
@@ -110,7 +110,7 @@ enum fhf_iter {
    FHF_ITER_RET_OK  =  0,
    FHF_ITER_RET_END =  1,
    FHF_ITER_START   = -1,
-   FHF_ITER_END     = -2,
+   FHF_ITER_END     = -2
 };
 
 /**

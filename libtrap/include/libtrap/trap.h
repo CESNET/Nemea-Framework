@@ -249,6 +249,9 @@ typedef enum {
    TRAP_FMT_JSON = 3
 } trap_data_format_t;
 
+/**
+ * Possible states of an IFC during data format negotiation.
+ */
 typedef enum {
    /** Negotiation is not completed */
    FMT_WAITING = 0,
@@ -292,9 +295,9 @@ int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...);
  *
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
  * \param[in] ifc_idx   index of IFC
- * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
- * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
+ * \param[out] data_type     format of messages defined by #trap_data_format_t
+ * \param[out] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
+ * \return TRAP_E_OK on success, on error see trap_ctx_get_data_fmt().
  */
 int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
 
@@ -325,8 +328,7 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_idx   Index of the input interface
- * \return An item from trap_in_ifc_state enum on success, else
- * TRAP_E_NOT_INITIALIZED (uninitiliazed context) or
+ * \return Value of #trap_in_ifc_state_t on success, otherwise TRAP_E_NOT_INITIALIZED when libtrap context is not initialized or
  * TRAP_E_BAD_IFC_INDEX (ifc_idx >= number of input ifcs).
  */
 int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
@@ -339,7 +341,7 @@ int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
  * \param[in] data_type     Format of messages defined by #trap_data_format_t.
  * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
  * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success.
+ * \return TRAP_E_OK on success, on error see #trap_ctx_vset_required_fmt().
  */
 int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...);
 
@@ -351,7 +353,7 @@ int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data
  * \param[in] data_type     Format of messages defined by #trap_data_format_t.
  * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
  * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success.
+ * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED when libtrap context is not initialized, TRAP_E_BAD_IFC_INDEX or TRAP_E_BADPARAMS on error.
  */
 int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap);
 
@@ -366,7 +368,7 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
  * \param[in] ifc_idx     Index of IFC.
  * \param[out] data_type   Format of messages defined by #trap_data_format_t.
  * \param[out] spec   Specifier of data format specifies the template (char *) is expected.
- * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
+ * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if libtrap context is not initialized or negotiation is not successful yet for input IFC, TRAP_E_BAD_IFC_INDEX or TRAP_E_BADPARAMS on error.
  */
 int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
 
@@ -410,16 +412,17 @@ void *trap_get_global_ctx();
  * Returns current state of an input interface on specified index.
  *
  * \param[in] ifc_idx   Index of the input interface
- * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
- *  else TRAP_E_NOT_INITIALIZED.
+ * \return See #trap_ctx_get_in_ifc_state().
  */
 int trap_get_in_ifc_state(uint32_t ifc_idx);
 
 /** Parse command-line arguments.
- * Extract agruments needed by TRAP to set up interfaces (-i params) and return
- * the rest (argc and argv are modified). Extracted information is stored into
- * ifc_spec. These variables should be passed to trap_init.
- * Data in ifc_spec must be freed by trap_free_ifc_spec.
+ * Extract arguments needed by TRAP to set up interfaces (-i params), verbosity
+ * level (-v/-vv/-vvv) and return the rest (argc and argv are modified, i.e.
+ * processed parameter is removed). Extracted information is stored into
+ * ifc_spec. These variables should be passed to trap_init. Data in ifc_spec
+ * must be freed by trap_free_ifc_spec. If help is requested (-h/--help)
+ * TRAP_E_HELP is returned (argc and argv are modified also).
  * @param[in,out] argc Pointer to number of command-line arguments.
  * @param[in,out] argv Command-line arguments.
  * @param[out] ifc_spec Structure with specification of interface types and
@@ -659,6 +662,31 @@ void trap_send_flush(uint32_t ifc);
 trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /**
+ * \brief Initialize and return the context of libtrap.
+ *
+ * \param[in] module_info      Pointer to struct containing info about the module.
+ * \param[in] ifc_spec         Structure with specification of interface types and their parameters.
+ * \param[in] service_ifcname  Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
+ *
+ * \return Pointer to context, NULL on error.
+ */
+trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec, const char *service_ifcname);
+
+/**
+ * \brief Initialize and return the context of libtrap.
+ *
+ * \param[in] name   Name of the NEMEA module (libtrap context).
+ * \param[in] description - Detailed description of the module, can be NULL ("" will be used in such case)
+ * \param[in] i_ifcs Number of input IFCs, it can be -1 if o_ifcs > -1 (-1 means variable number of IFCs, it is then computed from ifc_spec).
+ * \param[in] o_ifcs Number of output IFCs, it can be -1 if i_ifcs > -1 (-1 means variable number of IFCs, it is then computed from ifc_spec).
+ * \param[in] ifc_spec  IFC_SPEC stringdescribed in README.ifcspec.md
+ * \param[in] service_ifcname Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
+ *
+ * \return Pointer to context, NULL on error.
+ */
+trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifcs, const char *ifc_spec, const char *service_ifcname);
+
+/**
  * \brief Terminate libtrap context and free resources.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (trap_ctx_init()).
@@ -750,30 +778,6 @@ void trap_ctx_set_verbose_level(trap_ctx_t *ctx, int level);
  * \return Verbosity level currently set in the library.
  */
 int trap_ctx_get_verbose_level(trap_ctx_t *ctx);
-
-/**
- * \brief Print common TRAP help message.
- *
- * The help message contains information from module_info and describes common
- * TRAP command-line parameters.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] module_info Pointer to struct containing info about the module.
- */
-void trap_ctx_print_help(trap_ctx_t *ctx, const trap_module_info_t *module_info);
-
-/**
- * \brief Print help about interface specifier.
- *
- * Prints help message about format of interface specifier and description of
- * all available interface types.
- * This message is normally a part of help printed by #trap_ctx_print_help(), this
- * function is useful when you don't use standard TRAP command-line parameters
- * but you still use the same format of interface specifier.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- */
-void trap_ctx_print_ifc_spec_help(trap_ctx_t *ctx);
 
 /**
  * \brief Control TRAP interface.

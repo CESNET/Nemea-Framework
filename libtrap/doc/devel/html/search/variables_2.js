@@ -1,6 +1,8 @@
 var searchData=
 [
   ['backup_5fbuffer',['backup_buffer',['../structtcpip__sender__private__s.html#ae82f3e46b51cce1908d8321b71ceda22',1,'tcpip_sender_private_s']]],
+  ['blocks',['blocks',['../structtrap__buffer__s.html#a0a31649b5fe0d900bf8c97adb57289ac',1,'trap_buffer_s']]],
+  ['blocksize',['blocksize',['../structtrap__buffer__s.html#a8d4064cd679b85f0cfade94700ba32aa',1,'trap_buffer_s']]],
   ['buffer',['buffer',['../structclient__s.html#a81a7cfcfe10fdf65a2fd1abc5a42b2e9',1,'client_s::buffer()'],['../structtrap__input__ifc__s.html#a87780edf8780e7716d55f54071a5fa76',1,'trap_input_ifc_s::buffer()'],['../structtrap__output__ifc__s.html#a3860b137767201bea387a336e140e746',1,'trap_output_ifc_s::buffer()']]],
   ['buffer_5ffull',['buffer_full',['../structtrap__input__ifc__s.html#a8f5e9fa7ac7143759e68d2c367f9c1a5',1,'trap_input_ifc_s']]],
   ['buffer_5fheader',['buffer_header',['../structtrap__output__ifc__s.html#a0843bfffc9e89ec663a0543b736a3bef',1,'trap_output_ifc_s']]],

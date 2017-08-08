@@ -129,6 +129,37 @@ static void *get_in_addr(struct sockaddr *sa)
 }
 
 /**
+ * \brief Check if the given port is a correct port number.
+ *
+ * Port number for TCP socket must be a number in the range from 1 to 65535.
+ * It can also be a service name that is translated by getaddrinfo().
+ *
+ * \param[in] port  Port to check.
+ * \return EXIT_FAILURE if port is not given or it is a number < 1 or > 65535;
+ * EXIT_SUCCESS when port is a valid number or it is a service name.
+ */
+static int check_portrange(const char *port)
+{
+   uint32_t portnum = 0;
+   int ret;
+
+   if (port == NULL) {
+      return EXIT_FAILURE;
+   }
+
+   ret = sscanf(port, "%" SCNu32, &portnum);
+   if (ret == 1) {
+      if (portnum < 1 || portnum > 65535) {
+         VERBOSE(CL_ERROR, "Given port (%" PRIu32 ") number is out of the allowed range (1-65535).", portnum);
+         return EXIT_FAILURE;
+      }
+   }
+
+   /* port is not number (it is a service name) or it is correct */
+   return EXIT_SUCCESS;
+}
+
+/**
  * \addtogroup tcpip_receiver
  * @{
  */
@@ -136,7 +167,11 @@ static void *get_in_addr(struct sockaddr *sa)
 // Receiver is a client that connects itself to the source of data (to sender) = server
 
 /**
- * Receive data
+ * Receive chunk of data.
+ *
+ * Caller is responsible for checking elapsed time, since this function
+ * may finished before the given timeout without having data.
+ *
  * \param[in] priv      private IFC data
  * \param[out] data     received data
  * \param[in,out] size  expected size to wait for, it is used to return size that was not read
@@ -177,7 +212,6 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
                   }
                   switch (errno) {
                   case EINTR:
-                     VERBOSE(CL_ERROR, "EINTR occured");
                      if (config->is_terminated == 1) {
                         client_socket_disconnect(priv);
                         return TRAP_E_TERMINATED;
@@ -203,14 +237,12 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
          } else {
             continue;
          }
-      } else if (retval == 0) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "Timeout elapsed - non-blocking call used.");
+      } else if ((retval == 0) || (retval < 0 && errno == EINTR)) {
+         /* Timeout expired or signal received.  Caller of this function
+          * has to decide to call this function again or not according
+          * to elapsed time from the calling. */
          (*size) = numbytes;
          return TRAP_E_TIMEOUT;
-      } else if (retval < 0 && errno == EINTR) { // signal received
-         /** \todo continue with timeout minus time already waited */
-         VERBOSE(CL_VERBOSE_BASIC, "select interrupted");
-         continue;
       } else { // some error has occured
          VERBOSE(CL_VERBOSE_OFF, "select() returned %i (%s)", retval, strerror(errno));
          client_socket_disconnect(priv);
@@ -218,6 +250,22 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
       }
    }
    return TRAP_E_TERMINATED;
+}
+
+/**
+ * Return current time in microseconds.
+ *
+ * This is used to get current timestamp in tcpip_receiver_recv() and tcpip_sender_send().
+ *
+ * \return current timestamp
+ */
+static inline uint64_t get_cur_timestamp()
+{
+   struct timespec spec_time;
+
+   clock_gettime(CLOCK_MONOTONIC, &spec_time);
+   /* time in microseconds seconds -> secs * microsends + nanoseconds */
+   return spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
 }
 
 /**
@@ -266,15 +314,7 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
    void *p = &messageframe;
    struct timeval tm, *temptm;
    int retval;
-   /* first timestamp for global timeout in this function...
-    * in the RESET state, we should check the timeout given by caller
-    * with elapsed time from entry_time.
-    * Timeout is in microseconds... */
-   struct timespec spec_time;
-
-   clock_gettime(CLOCK_MONOTONIC, &spec_time);
-   /* entry_time is in microseconds seconds -> secs * microsends + nanoseconds */
-   uint64_t entry_time = spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
+   uint64_t entry_time = get_cur_timestamp();
    uint64_t curr_time = 0;
 
    /* sleeptime (in usec) with sleeptimespec are used to wait
@@ -336,8 +376,7 @@ reset:
 #endif
       } else {
          /* non-blocking mode, let's check elapsed time */
-         clock_gettime(CLOCK_MONOTONIC, &spec_time);
-         curr_time =  spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
+         curr_time =  get_cur_timestamp();
          if ((curr_time - entry_time) >= timeout) {
             return TRAP_E_TIMEOUT;
          } else {
@@ -370,8 +409,7 @@ reset:
             }
 
             /* update timeout that is used for recv after successful connection */
-            clock_gettime(CLOCK_MONOTONIC, &spec_time);
-            curr_time =  spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
+            curr_time =  get_cur_timestamp();
             sleeptime = timeout - (int) (curr_time - entry_time);
             if ((int) sleeptime > 0) {
                trap_set_timeouts(sleeptime, &tm, NULL);
@@ -772,6 +810,9 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    if ((config == NULL) || (dest_addr == NULL) || (dest_port == NULL) || (socket_descriptor == NULL)) {
       return TRAP_E_BAD_FPARAMS;
    }
+   if (check_portrange(dest_port) == EXIT_FAILURE) {
+      return TRAP_E_BADPARAMS;
+   }
 
    memset(&addr, 0, sizeof(addr));
 
@@ -1087,6 +1128,13 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    uint32_t i, j, failed, passed;
    int retval;
    ssize_t readbytes;
+   /* first timestamp for global timeout in this function...
+    * in the RESET state, we should check the timeout given by caller
+    * with elapsed time from entry_time.
+    * Timeout is in microseconds... */
+
+   uint64_t entry_time = get_cur_timestamp();
+   uint64_t curr_time = 0, elapsed_time;
 
    char block = ((timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0);
 
@@ -1166,11 +1214,21 @@ blocking_repeat:
    }
 
    retval = select(maxsd + 1, &disset, &set, NULL, tv_p);
-   if (retval == 0) {
+   if ((retval == 0) || (retval < 0 && errno == EINTR)) {
       if (block == 0) {
          /* non-blocking mode */
-         result = TRAP_E_TIMEOUT;
-         goto exit;
+         curr_time = get_cur_timestamp();
+         elapsed_time = (curr_time - entry_time);
+         if (elapsed_time >= timeout) {
+            result = TRAP_E_TIMEOUT;
+            goto exit;
+         } else {
+            /* elapsed_time is lower than timeout,
+             * decrease timeout and repeat the call.
+             */
+            timeout -= elapsed_time;
+            goto blocking_repeat;
+         }
       } else {
          /* blocking mode */
          goto blocking_repeat;
@@ -1770,6 +1828,10 @@ static int server_socket_open(void *priv)
    memset(&addr, 0, sizeof(addr));
 
    if (c->socket_type == TRAP_IFC_TCPIP) {
+      if (check_portrange(c->server_port) == EXIT_FAILURE) {
+         return TRAP_E_BADPARAMS;
+      }
+
       // get us a socket and bind it
       addr.tcpip_addr.ai_family = AF_UNSPEC;
       addr.tcpip_addr.ai_socktype = SOCK_STREAM;
@@ -1812,6 +1874,7 @@ static int server_socket_open(void *priv)
          } else {
             /* error bind() failed */
             p = NULL;
+            VERBOSE(CL_ERROR, "Failed bind() with the following socket path: %s", addr.unix_addr.sun_path);
          }
       } else {
          VERBOSE(CL_ERROR, "Failed to create socket.");

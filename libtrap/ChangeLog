@@ -1,3 +1,32 @@
+2017-08-07 (Tomas Cejka): libtrap: fixed and updated doc
+2017-08-07 (Tomas Jansky): libtrap: removed dead code
+2017-08-07 (Tomas Cejka): libtrap: BUGFIX missing end bracket.
+2017-08-07 (Tomas Cejka): libtrap: BUGFIX improved checking in trap_parse_params()
+2017-08-07 (Tomas Cejka): libtrap: BUGFIX check return value of strdup()
+2017-08-07 (Tomas Cejka): libtrap: updated license and years
+2017-08-07 (Tomas Cejka): libtrap: BUGFIX added new check - TCP port value
+2017-08-07 (Tomas Cejka): libtrap: tests: store and load data via file IFC
+2017-08-07 (Tomas Cejka): libtrap: tests: send messages into blackhole
+2017-08-07 (Tomas Cejka): libtrap: basic_test: added new test - disabled service IFC
+2017-08-07 (Tomas Cejka): libtrap: init: BUGFIX null service_ifc_name
+2017-08-07 (Tomas Cejka): libtrap: improved API: added 2 new constructors
+2017-08-07 (Tomas Cejka): libtrap: detailed error message when UNIX socket bind fails
+2017-08-07 (Tomas Cejka): libtrap: minor changes, typo, int->int8_t for number of IFCs
+2017-08-07 (Tomas Jansky): libtrap: fixed possible memory leaks
+2017-08-07 (Tomas Jansky): libtrap: fixed possible buffer overflow
+2017-08-07 (Tomas Jansky): libtrap: fixed possible NULL dereference
+2017-07-11 (Tomas Jansky): libtrap: increased version, updated ChangeLog, released RPM package
+2017-03-31 (Václav Bartoš): pytrap: doc: minor fix in func. doc
+
+2017-03-31 (Tomas Cejka): libtrap: BUGFIX replaced assert macros
+2017-03-30 (Tomas Cejka): libtrap: handle signal interrupts to allow alarm() in modules (#49)
+2017-03-29 (Jiri Havranek): libtrap: add --with-ifcmaxclients parameter to configure script allowing to change value of TRAP_IFC_DEFAULT_MAX_CLIENTS
+
+2017-01-19 (Tomas Cejka): libtrap: add script converting module's metadata into man page
+2017-01-09 (Tomas Cejka): libtrap: increased version, released RPM package
+2017-01-09 (Tomas Cejka): libtrap: make the socket dir set by configure
+2017-01-09 (Tomas Cejka): libtrap: add tmpfiles.d config
+2016-12-29 (Tomas Cejka): libtrap: improved error message
 2016-12-03 (Tomas Cejka): libtrap: tests: add test of service ifc failure
 2016-12-03 (Tomas Cejka): libtrap: FEATURE TRAP_SOCKET_DIR environment variable
 2016-12-03 (Tomas Cejka): libtrap: BUGFIX segfault in service IFC

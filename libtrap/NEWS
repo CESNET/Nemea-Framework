@@ -1,3 +1,11 @@
+Version 0.10.0
+   * extended API - new functions trap_ctx_init2() and trap_ctx_init3()
+   * changed name and path to sockets (/var/run/libtrap/)
+   * path to sockets can be specified in run-time (TRAP_SOCKET_DIR env variable)
+   * max clients of IFCs is configurable in compile-time
+   * many bugfixes
+   * added tests
+   * doc improved
 version 0.8.0
    * extended internal IFC API
    * documentation improved and revisited

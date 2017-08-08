@@ -83,7 +83,14 @@ trap_module_info_t *module_info = NULL;
  */
 #define MODULE_PARAMS(PARAM) \
   PARAM('m', "mult", "Multiplies the sum of received numbers with ARG of the parameter.", required_argument, "int32")
-  //PARAM(char, char *, char *, no_argument  or  required_argument, char *)
+//PARAM(char, char *, char *, no_argument  or  required_argument, char *)
+/**
+ * To define positional parameter ("param" instead of "-m param" or "--mult param"), use the following definition:
+ * PARAM('-', "", "Parameter description", required_argument, "string")
+ * There can by any argument type mentioned few lines before.
+ * This parameter will be listed in Additional parameters in module help output
+ */
+
 
 static int stop = 0;
 
@@ -102,7 +109,7 @@ int main(int argc, char **argv)
 
    /*
     * Macro allocates and initializes module_info structure according to MODULE_BASIC_INFO and MODULE_PARAMS
-    * definitions on the lines 69 and 77 of this file. It also creates a string with short_opt letters for getopt
+    * definitions on the lines 71 and 84 of this file. It also creates a string with short_opt letters for getopt
     * function called "module_getopt_string" and long_options field for getopt_long function in variable "long_options"
     */
    INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)

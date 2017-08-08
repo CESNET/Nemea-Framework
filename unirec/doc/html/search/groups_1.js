@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['links_20api',['Links API',['../group__ur__links.html',1,'']]]
+  ['ip_20addresses_20api',['IP addresses API',['../group__uripaddr.html',1,'']]]
 ];

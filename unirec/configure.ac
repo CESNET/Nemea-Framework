@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([unirec], [2.2.4], [traffic-analysis@cesnet.cz])
+AC_INIT([unirec], [2.2.6], [nemea@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules])
 AM_SILENT_RULES([yes])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -24,8 +24,8 @@ AC_ARG_ENABLE([debug],
                 CFLAGS="-Wall -g -O0 $CFLAGS"
                 CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
         fi],
-        [CFLAGS="-Wall -O3 $CFLAGS"
-        CXXFLAGS="-Wall -O3 $CXXFLAGS"])
+        [CFLAGS="-Wall -g -O3 $CFLAGS"
+        CXXFLAGS="-Wall -g -O3 $CXXFLAGS"])
 LT_INIT()
 # Checks for programs.
 AM_PROG_CC_C_O

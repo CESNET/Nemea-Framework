@@ -1,3 +1,14 @@
+2017-08-07 (Tomas Cejka): unirec: updated, fixed and improved doc for the next version
+2017-08-04 (Ulrik Haugen): link README.md to README in unirec.
+2017-07-28 (Ladislav Macoun): unirec: update ur_processor
+2017-07-28 (Ladislav Macoun): unirec: fixed issues with readme
+2017-07-28 (Ladislav Macoun): unirec: ur_processor now detects empty lines
+2017-07-27 (Ladislav Macoun): unirec: Update README
+2017-07-11 (Tomas Jansky): unirec: increased version, updated ChangeLog, released RPM package
+2017-03-01 (Pavel Krobot): BUGFIX: Improved ur_clone_record() function: (#48)
+
+2017-02-21 (Tomas Cejka): unirec: improved ur spec - can contain spaces, coding style fix (#46)
+
 2016-12-08 (Tomas Cejka): unirec: generate new doxygen doc
 2016-12-08 (Tomas Cejka): unirec: add doxygen for ipaddr_cpp.h
 2016-12-03 (Tomas Cejka): unirec: add doxygen for ipaddr.h

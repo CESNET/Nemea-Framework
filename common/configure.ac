@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-common], [1.5.1], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-common], [1.5.2], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([nemea-common.spec.in])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules subdir-objects])
@@ -20,8 +20,8 @@ AC_ARG_ENABLE([debug],
         [if test "$enableval" = "yes"; then
                 CFLAGS="-Wall -g -O0 $CFLAGS"
                 CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
-        fi], [CFLAGS="-Wall -O3 $CFLAGS"
-              CXXFLAGS="-Wall -O3 $CXXFLAGS"])
+        fi], [CFLAGS="-Wall -g -O3 $CFLAGS"
+              CXXFLAGS="-Wall -g -O3 $CXXFLAGS"])
 AM_CONDITIONAL(DEBUG, test x"$debug" = x"true")
 LT_INIT()
 
@@ -43,6 +43,8 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
+AC_CHECK_PROG(GIT, git, git, [""])
 
 
 m4_include([m4/ax_libxml2_check.m4])

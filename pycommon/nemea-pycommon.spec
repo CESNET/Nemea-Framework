@@ -3,6 +3,7 @@
 
 %if 0%{?el6}
 %global python3_pkgversion 33
+%global py3_build CFLAGS="-O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -mtune=generic" python3 setup.py build
 %endif
 
 %if x%{?python3_pkgversion} == x
@@ -10,7 +11,7 @@
 %endif
 
 Name:	python-%{pypi_name}
-Version: 1.0.8
+Version: 1.1.3
 Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
@@ -23,9 +24,11 @@ Source0:       https://files.pythonhosted.org/packages/source/n/%{pypi_name}/%{p
 
 BuildRequires:  python-setuptools
 BuildRequires:  python2-devel
+BuildRequires:  python-nemea-pytrap
 
 BuildRequires:  python%{python3_pkgversion}-setuptools
 BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  python%{python3_pkgversion}-nemea-pytrap
 
 %description
 The module contains methods for creation and submission of incident reports in IDEA format.
@@ -34,6 +37,16 @@ The module contains methods for creation and submission of incident reports in I
 Summary:        Common Python modules and methods of the NEMEA system.
 %{?python_provide:%python_provide python2-%{pypi_name}}
 
+Requires:	python-nemea-pytrap
+Requires:	python-ply
+Requires:	python-yaml
+Requires:	python-idea-format
+Requires:	python-typedcols
+Requires:	python-ipranges
+Requires:	python-pynspect
+Requires:	python-pymongo
+Requires:	python-netaddr
+
 %description -n python2-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
 This package is compatible with python2.
@@ -41,6 +54,16 @@ This package is compatible with python2.
 %package -n     python%{python3_pkgversion}-%{pypi_name}
 Summary:        Common Python modules and methods of the NEMEA system.
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
+
+Requires:	python%{python3_pkgversion}-nemea-pytrap
+Requires:	python%{python3_pkgversion}-ply
+Requires:	python%{python3_pkgversion}-yaml
+Requires:	python%{python3_pkgversion}-idea-format
+Requires:	python%{python3_pkgversion}-typedcols
+Requires:	python%{python3_pkgversion}-ipranges
+Requires:	python%{python3_pkgversion}-pynspect
+Requires:	python%{python3_pkgversion}-pymongo
+Requires:	python%{python3_pkgversion}-netaddr
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.

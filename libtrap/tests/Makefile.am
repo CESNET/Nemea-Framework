@@ -1,4 +1,4 @@
-normal_tests=basic_test_arg.test basic_test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_tls.sh
+normal_tests=basic_test_arg.test test_badparams test_finalize basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_tls.sh
 
 long_tests=libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_tls.test
 
@@ -20,7 +20,7 @@ endif
 
 EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh $(normal_tests) $(long_tests) $(tlscertfiles) $(cmockadep_tests) $(disabled_tests)
 
-check_PROGRAMS = basic_test test_finalize test_badparams
+check_PROGRAMS = basic_test test_finalize test_badparams test_blackhole test_fileifc
 
 if HAVE_CMOCKA
 check_PROGRAMS += trap_buffer
@@ -30,6 +30,12 @@ noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client tes
 
 AM_LDFLAGS=-static ../src/libtrap.la
 COM_CPPFLAGS=-I../src -I../include -I${top_srcdir}/include -I${top_srcdir}/src
+
+test_blackhole_SOURCES=test_blackhole.c
+test_blackhole_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_fileifc_SOURCES=test_fileifc.c
+test_fileifc_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_tcpip_wclient_SOURCES=test_trap_ifc_tcpip_client.c
 test_tcpip_wclient_CPPFLAGS=-DWAITING $(COM_CPPFLAGS)

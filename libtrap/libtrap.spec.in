@@ -29,7 +29,7 @@ if you want to develop your own TRAP module.
 %setup
 
 %build
-./configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --docdir=%{_docdir}/libtrap --with-defaultsocketdir=%{_localstatedir}/run/libtrap --disable-doxygen-pdf --disable-doxygen-ps --disable-tests -q;
+./configure --prefix=%{_prefix} --sysconfdir=%{_sysconfdir} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --docdir=%{_docdir}/libtrap --with-defaultsocketdir=%{_localstatedir}/run/libtrap --disable-doxygen-pdf --disable-doxygen-ps --disable-tests -q;
 make -j5
 make doc
 
@@ -41,7 +41,9 @@ ldconfig
 
 %files
 %{_bindir}/nemea/trap_stats
+%{_bindir}/nemea/trap2man.sh
 %{_libdir}/libtrap.so.*
+%{_sysconfdir}/tmpfiles.d/libtrap-varrun.conf
 %defattr(-,-,-,1777)
 %dir %{_localstatedir}/run/libtrap
 

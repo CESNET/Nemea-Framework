@@ -51,7 +51,7 @@
 #define _UNIREC_LINKS_H_
 
 /**
- * \defgroup ur_links Links API
+ * \defgroup urlinks Links API
  * @{
  */
 

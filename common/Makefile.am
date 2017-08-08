@@ -80,7 +80,7 @@ rpm-clean:
 if MAKE_DEB
 .PHONY: deb
 deb:
-	make distdir && cd common-@VERSION@ && -i -us -uc -b
+	make distdir && cd nemea-common-@VERSION@ && debuild -i -us -uc -b
 else
 endif
 

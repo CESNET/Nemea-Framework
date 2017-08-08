@@ -34,3 +34,95 @@ class TrapCtxInitTest(unittest.TestCase):
         c.init(["-i", "u:test_init"], 0, 1)
         c.finalize()
 
+class TrapCtxHelpTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.init(["-h"], 0, 1)
+            self.fail("Calling method of uninitialized context.")
+        except pytrap.TrapHelp:
+            pass
+        c.finalize()
+
+class TrapCtxHelpifcTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.init(["-h", "1"], 0, 1)
+            self.fail("Calling method of uninitialized context.")
+        except pytrap.TrapHelp:
+            pass
+        c.finalize()
+
+class TrapCtxNotInitTestGetdatafmt(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.getDataFmt()
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
+class TrapCtxNotInitTestSetrequiredfmt(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.setRequiredFmt(0)
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
+class TrapCtxNotInitTestGetinifcstate(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.getInIFCState(0)
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
+class TrapCtxNotInitTestIfcctl(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.ifcctl(0, True, CTL_IMEOUT, 0)
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
+class TrapCtxNotInitTestSend(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.send()
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
+class TrapCtxNotInitTestSendFlush(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.sendFlush()
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
+class TrapCtxNotInitTestRecv(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.TrapCtx()
+        try:
+            c.recv()
+            self.fail("Calling method of uninitialized context.")
+        except:
+            pass
+
