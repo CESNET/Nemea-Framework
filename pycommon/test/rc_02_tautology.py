@@ -19,7 +19,7 @@ class RCBaseTest(unittest.TestCase):
 	def test_02_basic_match(self):
 		self.config = Config(os.path.dirname(__file__) + '/rc_config/tautology.yaml');
 
-		self.config.match(self.msg)
+		results = self.config.match(self.msg)
 
-		self.assertEqual(self.msg['Test'], True)
+		self.assertEqual(results[0], True)
 
