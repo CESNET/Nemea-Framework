@@ -4,7 +4,7 @@ from pynspect.rules import *
 from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
 from pynspect.gparser import MentatFilterParser
 
-from .actions.Drop import DropAction
+from .actions.Drop import DropAction, DropMsg
 from .Parser import Parser
 from .AddressGroup import AddressGroup
 from .Rule import Rule
@@ -114,19 +114,24 @@ class Config():
         """
         results = []
 
-        for rule in self.rules:
-            res = rule.filter(msg)
-            #logger.debug("Filter by rule: %s \n message: %s\n\nresult: %s", self.rules[i].rule(), msg, res)
-            results.append(res)
+        try:
+            for rule in self.rules:
+                res = rule.filter(msg)
+                #logger.debug("Filter by rule: %s \n message: %s\n\nresult: %s", rule, msg, res)
+                #print("Filter by rule: %s \n message: %s\n\nresult: %s" % (rule.rule(), msg, res))
+                results.append(res)
 
-            tmp_msg = copy.deepcopy(msg)
-            if res:
-                # Perform actions on given message
-                rule.actions(tmp_msg)
-                logger.info("action running")
-            else:
-                rule.elseactions(tmp_msg)
-                logger.info("else action running")
+                tmp_msg = copy.deepcopy(msg)
+                if res:
+                    # Perform actions on given message
+                    rule.actions(tmp_msg)
+                    logger.info("action running")
+                else:
+                    rule.elseactions(tmp_msg)
+                    logger.info("else action running")
+        except DropMsg:
+            # This exception breaks the processing of rule list.
+            pass
         return results
 
     def loglevel(self):
