@@ -23,9 +23,14 @@ Communicates through a TCP socket. Output interface listens on a given port, inp
 
 Parameters when used as INPUT interface:
 ```
-<hostname or ip>:<port>
+t:<hostname or ip>:<port>
 ```
-If you leave hostname/ip blank, IFC assumes you want to use localhost.
+or
+
+```
+t:<port>
+```
+If you use the latter, IFC assumes you want to use localhost as a hostname.
 
 Parameters when used as OUTPUT interface:
 ```
@@ -40,9 +45,14 @@ Communicates through a TCP socket after establishing encrypted connection. You h
 
 Parameters when used as INPUT interface:
 ```
-<hostname or ip>:<port>:<keyfile>:<certfile>:<CAfile>
+T:<hostname or ip>:<port>:<keyfile>:<certfile>:<CAfile>
 ```
-If you leave hostname/ip blank, IFC assumes you want to use localhost.
+or
+
+```
+T:<port>:<keyfile>:<certfile>:<CAfile>
+```
+If you use the latter, IFC assumes you want to use localhost as a hostname.
 
 Parameters when used as OUTPUT interface:
 ```
