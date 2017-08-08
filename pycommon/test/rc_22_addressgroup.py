@@ -1,6 +1,7 @@
 import unittest
 import os
 import json
+import copy
 
 from reporter_config.Config import Config
 
@@ -13,33 +14,21 @@ class RCAddressGroupTest(unittest.TestCase):
                 with open("/tmp/testwhitelist", 'w') as f:
                         f.write("192.168.0.0/24\n10.0.1.1\n")
                 with open(os.path.dirname(__file__) + '/rc_msg.json', 'r') as f:
-                        self.msg = f.read()
+                        self.msg = json.load(f)
                 self.config = Config(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
 
                 # format from IDEA message: "Source": [{"IP4": ["1.2.3.4"]}]
                 self.messages_pass = []
-                msg = json.loads(self.msg)
-                self.messages_pass.append(msg)
-                msg = json.loads(self.msg)
-                msg["Source"][0]["IP4"][0] = "10.0.0.10"
-                self.messages_pass.append(msg)
-                msg = json.loads(self.msg)
-                msg["Source"][0]["IP4"][0] = "192.168.0.254"
-                self.messages_pass.append(msg)
-                msg = json.loads(self.msg)
-                msg["Source"][0]["IP4"][0] = "10.0.1.1"
-                self.messages_pass.append(msg)
+                for ip in ["10.0.0.9", "10.0.0.10", "192.168.0.254", "10.0.1.1"]:
+                    m = copy.deepcopy(self.msg)
+                    m["Source"][0]["IP4"][0] = ip
+                    self.messages_pass.append(m)
 
                 self.messages_notpass = []
-                msg = json.loads(self.msg)
-                msg["Source"][0]["IP4"][0] = "1.2.3.5"
-                self.messages_notpass.append(msg)
-                msg = json.loads(self.msg)
-                msg["Source"][0]["IP4"][0] = "10.10.0.1"
-                self.messages_notpass.append(msg)
-                msg = json.loads(self.msg)
-                msg["Source"][0]["IP4"][0] = "192.168.1.1"
-                self.messages_notpass.append(msg)
+                for ip in ["1.2.3.5", "10.10.0.1", "192.168.1.1"]:
+                    m = copy.deepcopy(self.msg)
+                    m["Source"][0]["IP4"][0] = ip
+                    self.messages_notpass.append(m)
 
         def test_01_list(self):
                 """
@@ -54,12 +43,18 @@ class RCAddressGroupTest(unittest.TestCase):
                 self.assertNotEqual(self.config, None)
                 print("passing rules")
                 for idea in self.messages_pass:
-                    print(self.config.match(idea))
+                    results = self.config.match(idea)
+                    if True in results:
+                        print("Test OK")
+                    else:
+                        print("Test FAILED!!!")
 
                 print("NOT passing rules")
                 for idea in self.messages_notpass:
-                    print(self.config.match(idea))
-
-
+                    results = self.config.match(idea)
+                    if True not in results:
+                        print("Test OK")
+                    else:
+                        print("Test FAILED!!!")
 
 
