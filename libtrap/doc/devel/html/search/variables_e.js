@@ -1,6 +1,4 @@
 var searchData=
 [
-  ['params',['params',['../structtrap__ifc__spec__s.html#a67f46fe3c5ea43d1c8894ce9b8f551ab',1,'trap_ifc_spec_s']]],
-  ['pending_5fbytes',['pending_bytes',['../structclient__s.html#a70807d3454b3edc69da68944c5361f82',1,'client_s']]],
-  ['priv',['priv',['../structtrap__input__ifc__s.html#a6fe747dbf5b4371b1d03072a4314d7b7',1,'trap_input_ifc_s::priv()'],['../structtrap__output__ifc__s.html#a144ca021f2c9ff608d539c49679fe0c5',1,'trap_output_ifc_s::priv()']]]
+  ['out_5fifc_5flist',['out_ifc_list',['../structtrap__ctx__priv__s.html#a7dc607a5c8f21a2ecc8501c3356ed14a',1,'trap_ctx_priv_s']]]
 ];

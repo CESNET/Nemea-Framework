@@ -1,5 +1,10 @@
 var searchData=
 [
+  ['tlsbackup_5fbuffer',['TLSBACKUP_BUFFER',['../group__tls__sender.html#gga31e27a4e78b29949b7edc71d7d73293ba44cce9416d55afdc613a507346c9609c',1,'ifc_tls_internal.h']]],
+  ['tlscurrent_5fcomplete',['TLSCURRENT_COMPLETE',['../group__tls__sender.html#gga31e27a4e78b29949b7edc71d7d73293ba1adf98c4061d98e9152a2e9fc41b5be8',1,'ifc_tls_internal.h']]],
+  ['tlscurrent_5fhead',['TLSCURRENT_HEAD',['../group__tls__sender.html#gga31e27a4e78b29949b7edc71d7d73293ba695cc100ed93ce8f84f3d4107a8f3f94',1,'ifc_tls_internal.h']]],
+  ['tlscurrent_5fidle',['TLSCURRENT_IDLE',['../group__tls__sender.html#gga31e27a4e78b29949b7edc71d7d73293baf74634242735711b55d346fb794d30ee',1,'ifc_tls_internal.h']]],
+  ['tlscurrent_5fpayload',['TLSCURRENT_PAYLOAD',['../group__tls__sender.html#gga31e27a4e78b29949b7edc71d7d73293bafee620b20fc21b99fc1553a73b18532e',1,'ifc_tls_internal.h']]],
   ['trap_5ffmt_5fjson',['TRAP_FMT_JSON',['../group__trap__mess__fmt.html#ggafbdd4209c0e285278d2134a0500164adab683cfedbefc09299295768bfc566aed',1,'trap.h']]],
   ['trap_5ffmt_5fraw',['TRAP_FMT_RAW',['../group__trap__mess__fmt.html#ggafbdd4209c0e285278d2134a0500164ada62494ba4588111acd4873a21f6a73262',1,'trap.h']]],
   ['trap_5ffmt_5funirec',['TRAP_FMT_UNIREC',['../group__trap__mess__fmt.html#ggafbdd4209c0e285278d2134a0500164ada6ac00a120fdc99b1ccef72e4c31310f2',1,'trap.h']]],

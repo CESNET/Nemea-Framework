@@ -84,7 +84,7 @@
  * @{
  */
 /**
- * \addtogroup tls_ifc TCP/IP and UNIX socket communication interface module
+ * \addtogroup tls_ifc TLS communication interface module
  * @{
  */
 
@@ -280,7 +280,7 @@ static void *get_in_addr(struct sockaddr *sa)
 }
 
 /**
- * \addtogroup tls_receiver
+ * \addtogroup tls_receiver TLS Input IFC
  * @{
  */
 /* Receiver (client socket) */
@@ -1116,7 +1116,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
  *//* tls_receiver */
 
 /**
- * \addtogroup tls_sender
+ * \addtogroup tls_sender TLS Output IFC
  * @{
  */
 

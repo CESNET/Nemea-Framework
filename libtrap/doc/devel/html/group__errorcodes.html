@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Libtrap: Internal development docs
-   &#160;<span id="projectnumber">0.10.0</span>
+   &#160;<span id="projectnumber">0.11.0</span>
    </div>
   </td>
  </tr>
@@ -104,6 +104,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gae0d81b475cb6808af4a63fe27e34ebec"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errorcodes.html#gae0d81b475cb6808af4a63fe27e34ebec">TRAP_E_NOT_SELECTED</a>&#160;&#160;&#160;16</td></tr>
 <tr class="memdesc:gae0d81b475cb6808af4a63fe27e34ebec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Interface was not selected reading/writing.  <a href="#gae0d81b475cb6808af4a63fe27e34ebec">More...</a><br /></td></tr>
 <tr class="separator:gae0d81b475cb6808af4a63fe27e34ebec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gafa94e2a269d90c1356914317b858974e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errorcodes.html#gafa94e2a269d90c1356914317b858974e">TRAP_E_BAD_CERT</a>&#160;&#160;&#160;17</td></tr>
+<tr class="memdesc:gafa94e2a269d90c1356914317b858974e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrong certificate given to TLS interface.  <a href="#gafa94e2a269d90c1356914317b858974e">More...</a><br /></td></tr>
+<tr class="separator:gafa94e2a269d90c1356914317b858974e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga72b3751575ccae7cccb3c3610bd93974"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__errorcodes.html#ga72b3751575ccae7cccb3c3610bd93974">TRAP_E_HELP</a>&#160;&#160;&#160;20</td></tr>
 <tr class="memdesc:ga72b3751575ccae7cccb3c3610bd93974"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returned by parse_parameters when help is requested.  <a href="#ga72b3751575ccae7cccb3c3610bd93974">More...</a><br /></td></tr>
 <tr class="separator:ga72b3751575ccae7cccb3c3610bd93974"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -128,6 +131,24 @@ Macros</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a id="gafa94e2a269d90c1356914317b858974e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gafa94e2a269d90c1356914317b858974e">&#9670;&nbsp;</a></span>TRAP_E_BAD_CERT</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define TRAP_E_BAD_CERT&#160;&#160;&#160;17</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Wrong certificate given to TLS interface. </p>
+
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00096">96</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+
+</div>
+</div>
 <a id="ga37d23208a014682eedb38ee051a95839"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga37d23208a014682eedb38ee051a95839">&#9670;&nbsp;</a></span>TRAP_E_BAD_FPARAMS</h2>
 
@@ -196,7 +217,7 @@ Macros</h2></td></tr>
 
 <p>Returned when receiver fields are not subset of sender fields. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00097">97</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00098">98</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
@@ -214,7 +235,7 @@ Macros</h2></td></tr>
 
 <p>Returned when receivers fields are subset of senders fields and both sets are not identical. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00098">98</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00099">99</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
@@ -232,7 +253,7 @@ Macros</h2></td></tr>
 
 <p>Returned by trap_recv when format or format spec of the receivers interface has been changed. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00099">99</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00100">100</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
@@ -250,7 +271,7 @@ Macros</h2></td></tr>
 
 <p>Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00100">100</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00101">101</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
@@ -268,7 +289,7 @@ Macros</h2></td></tr>
 
 <p>Returned by parse_parameters when help is requested. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00096">96</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00097">97</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
@@ -322,7 +343,7 @@ Macros</h2></td></tr>
 
 <p>Memory allocation error. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00102">102</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00103">103</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
@@ -340,7 +361,7 @@ Macros</h2></td></tr>
 
 <p>TRAP library not initilized. </p>
 
-<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00101">101</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="trap_8h_source.html#l00102">102</a> of file <a class="el" href="trap_8h_source.html">trap.h</a>.</p>
 
 </div>
 </div>
