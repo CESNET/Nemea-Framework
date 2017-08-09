@@ -43,7 +43,7 @@ class RCAddressGroupTest(unittest.TestCase):
                 self.assertNotEqual(self.config, None)
                 print("passing rules")
                 for idea in self.messages_pass:
-                    results = self.config.match(idea)
+                    results, actions = self.config.match(idea)
                     if True in results:
                         pass
                     else:
@@ -51,7 +51,7 @@ class RCAddressGroupTest(unittest.TestCase):
 
                 print("NOT passing rules")
                 for idea in self.messages_notpass:
-                    results = self.config.match(idea)
+                    results, actions = self.config.match(idea)
                     if True not in results:
                         pass
                     else:

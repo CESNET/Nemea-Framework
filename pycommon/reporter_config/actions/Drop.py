@@ -9,4 +9,5 @@ class DropAction(Action):
         super(DropAction, self).__init__(actionId = "drop", actionType = "drop")
 
     def run(self, record):
+        super(type(self), self).run(record)
         raise DropMsg()

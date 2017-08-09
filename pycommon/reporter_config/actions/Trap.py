@@ -20,6 +20,7 @@ class TrapAction(Action):
             self.trap = trap
 
     def run(self, record):
+        super(type(self), self).run(record)
         try:
             self.trap.send(json.dumps(record).encode('utf8'), 0)
         except Exception as e:

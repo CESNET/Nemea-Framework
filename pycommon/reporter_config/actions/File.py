@@ -46,6 +46,7 @@ class FileAction(Action):
                 os.mkdir(self.path, 777)
 
     def run(self, record):
+        super(type(self), self).run(record)
         try:
             if self.path == '-':
                 sys.stdout.write(json.dumps(record) + '\n')

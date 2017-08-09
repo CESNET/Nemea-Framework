@@ -1,6 +1,7 @@
 import logging as log
 
 class Action(object):
+    actionLog = []
     def __init__(self, actionId = None, actionType = None):
         super(Action, self).__init__()
         self.logger = log.getLogger(__name__)
@@ -8,5 +9,5 @@ class Action(object):
         self.actionType = actionType
 
     def run(self, record):
-        raise Exception("Run method not implemented")
+        self.actionLog.append(self)
 

@@ -13,4 +13,5 @@ class MarkAction(Action):
         return jpath.jpath_set(record, self.path, self.value)
 
     def run(self, record):
+        super(type(self), self).run(record)
         return self.mark(record)

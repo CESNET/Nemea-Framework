@@ -10,6 +10,7 @@ class WardenAction(Action):
         self.client = client
 
     def run(self, record):
+        super(type(self), self).run(record)
         try:
             if self.client != None:
                 self.client.sendEvents([json.dumps(record)])
