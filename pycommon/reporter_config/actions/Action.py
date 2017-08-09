@@ -4,6 +4,8 @@ class Action(object):
     def __init__(self, actionId = None, actionType = None):
         super(Action, self).__init__()
         self.logger = log.getLogger(__name__)
+        self.actionId = actionId
+        self.actionType = actionType
 
     def run(self, record):
         raise Exception("Run method not implemented")
