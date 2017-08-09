@@ -1,10 +1,7 @@
 from .Action import Action
 
 import pytrap
-import logging
 import json
-
-logger = logging.getLogger(__name__)
 
 class TrapAction(Action):
     def __init__(self, action, trap = None):
@@ -24,7 +21,10 @@ class TrapAction(Action):
             self.trap = trap
 
     def run(self, record):
-        self.trap.send(json.dumps(record).encode('utf8'), 0)
+        try:
+            self.trap.send(json.dumps(record).encode('utf8'), 0)
+        except Exception as e:
+            self.logger.error(e)
 
     def __del__(self):
         pass
