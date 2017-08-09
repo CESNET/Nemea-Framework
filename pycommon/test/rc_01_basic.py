@@ -38,9 +38,8 @@ class RCBaseTest(unittest.TestCase):
     def test_02_basic_match(self):
         self.config = Config(os.path.dirname(__file__) + '/rc_config/basic.yaml');
 
-        results = [False]
         try:
-            results = self.config.match(self.msg)
+            results, actions = self.config.match(self.msg)
         except Exception:
             pass
 

@@ -50,6 +50,7 @@ class EmailAction(Action):
 
         Record is pretty printed and headers are set according to the config
         """
+        super(type(self), self).run(record)
         self.messsage = MIMEText(json.dumps(record, indent=4))
         self.__setHeaders()
 

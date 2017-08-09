@@ -19,7 +19,16 @@ class RCBaseTest(unittest.TestCase):
     def test_02_basic_match(self):
         self.config = Config(os.path.dirname(__file__) + '/rc_config/tautology.yaml');
 
-        results = self.config.match(self.msg)
+        results, actions = self.config.match(self.msg)
 
         self.assertEqual(results, 5*[True] + 3*[False])
+        performedActions = []
+        for al in actions:
+            ruleactions = []
+            for a in al:
+                ruleactions.append(a.actionId)
+            performedActions.append(ruleactions)
+
+        expectedActions = 5*[['basic_mark']] + 3*[[]]
+        self.assertEqual(performedActions, expectedActions)
 

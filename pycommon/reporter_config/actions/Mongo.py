@@ -61,7 +61,7 @@ class MongoAction(Action):
         return record
 
     def run(self, record):
-        self.logger.debug("Storing record to mongoDB")
+        super(type(self), self).run(record)
         if self.client:
             return self.store(record)
         else:

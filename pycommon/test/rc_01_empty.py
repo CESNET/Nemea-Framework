@@ -39,7 +39,7 @@ class RCEmptyFileTest(unittest.TestCase):
         self.config = Config(os.path.dirname(__file__) + '/rc_config/minimaldrop.yaml');
         self.assertNotEqual(self.config, None)
 
-        results = self.config.match(self.msg)
+        results, actions = self.config.match(self.msg)
         self.assertEqual(results, [True])
 
     def test_04_secondruleterminated(self):
@@ -49,7 +49,7 @@ class RCEmptyFileTest(unittest.TestCase):
         self.config = Config(os.path.dirname(__file__) + '/rc_config/minimalfirstdrop.yaml');
         self.assertNotEqual(self.config, None)
 
-        results = self.config.match(self.msg)
+        results, actions = self.config.match(self.msg)
         # only one rule should have been processed since drop was in the first rule
         self.assertEqual(results, [True])
 
