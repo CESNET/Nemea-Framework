@@ -1,10 +1,7 @@
 from .Action import Action
 
 from datetime import datetime
-import logging as log
 import copy
-
-logger = log.getLogger(__name__)
 
 class MongoAction(Action):
     host = "localhost"
@@ -48,7 +45,10 @@ class MongoAction(Action):
         rec = copy.deepcopy(record)
 
         rec = self.transform(rec)
-        self.collection.insert_one(rec)
+        try:
+            self.collection.insert_one(rec)
+        except Exception as e:
+            self.logger.error(e)
 
     def transform(self, record):
         """Transform certain items in IDEA message
@@ -61,14 +61,14 @@ class MongoAction(Action):
         return record
 
     def run(self, record):
-        logger.debug("Storing record to mongoDB")
+        self.logger.debug("Storing record to mongoDB")
         if self.client:
             return self.store(record)
         else:
-            logger.warning("Skipping mongo action, pymongo is not initialized.")
+            self.logger.warning("Skipping mongo action, pymongo is not initialized.")
 
     def __del__(self):
-        logger.debug("Closing connection to mongoDB")
+        self.logger.debug("Closing connection to mongoDB")
         if self.client:
             self.client.close()
 
