@@ -151,8 +151,8 @@ typedef struct trap_module_info_s {
    char *name;           ///< Name of the module (short string)
    char *description;    /**< Detailed description of the module, can be a long
                               string with several lines or even paragraphs. */
-   int8_t num_ifc_in;  ///< Number of input interfaces
-   int8_t num_ifc_out; ///< Number of output interfaces
+   int num_ifc_in;  ///< Number of input interfaces
+   int num_ifc_out; ///< Number of output interfaces
    trap_module_info_parameter_t **params;
 } trap_module_info_t;
 
