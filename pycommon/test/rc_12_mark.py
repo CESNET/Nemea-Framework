@@ -40,6 +40,12 @@ class RCMarkTest(unittest.TestCase):
             stored = json.load(f)
         self.assertEqual(stored["_CESNET"]["Status"]["Processed"], True)
 
-        os.unlink(of1)
-        os.unlink(of2)
+        try:
+            os.unlink(of1)
+        except Exception:
+            pass
+        try:
+            os.unlink(of2)
+        except Exception:
+            pass
 
