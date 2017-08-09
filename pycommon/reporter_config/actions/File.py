@@ -5,6 +5,7 @@ import os
 from stat import *
 import json
 import logging as log
+import fcntl
 
 logger = log.getLogger(__name__)
 
@@ -17,18 +18,20 @@ class FileAction(Action):
         * STDOUT: message is written to STDOUT pipe
     """
     def __init__(self, action):
-        self.actionId = action["id"]
-        self.actionType = "file"
-        self.path = action["file"]["path"]
-        if "dir" in action["file"]:
-            self.dir = action["file"]["dir"]
-        else:
-            try:
-                # path already exists, check if it is a directory
-                s = os.stat(self.path)
-                self.dir = S_ISDIR(s.st_mode)
-            except:
-                self.dir = False
+        super(type(self), self).__init__(actionId = action["id"], actionType = "file")
+
+        a = action["file"]
+
+        self.path = a["path"] if "path" in a else None
+        if not self.path:
+            raise Exception("File action requires `path` argument.")
+
+        try:
+            # path already exists, check if it is a directory
+            s = os.stat(self.path)
+            self.dir = S_ISDIR(s.st_mode)
+        except:
+            self.dir = False
 
         if self.path == '-':
             self.fileHandle = sys.stdout
@@ -43,14 +46,23 @@ class FileAction(Action):
                 os.mkdir(self.path, 777)
 
     def run(self, record):
-        if self.fileHandle:
-            self.fileHandle.write(json.dumps(record) + '\n')
-            self.fileHandle.flush()
-        else:
-            """Store record in separate file
-            """
-            with open(os.path.join(self.path, record["ID"] + ".idea"), "w") as f:
-                f.write(json.dumps(record))
+        try:
+            if self.path == '-':
+                sys.stdout.write(json.dumps(record) + '\n')
+                sys.stdout.flush()
+            elif self.dir:
+                # Store record into separate file
+                with open(os.path.join(self.path, record["ID"] + ".idea"), "w") as f:
+                    f.write(json.dumps(record))
+            else:
+                # Open file if dir is not specified
+                with open(self.path, "a") as f:
+                    fcntl.flock(f, fcntl.LOCK_EX)
+                    f.write(json.dumps(record) + '\n')
+                    f.flush()
+                    fcntl.flock(f, fcntl.LOCK_UN)
+        except Exception as e:
+            self.logger.error(e)
 
     def __del__(self):
         if self.fileHandle:
