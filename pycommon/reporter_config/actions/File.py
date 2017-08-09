@@ -5,6 +5,7 @@ import os
 from stat import *
 import json
 import logging as log
+import fnctl
 
 logger = log.getLogger(__name__)
 
@@ -44,8 +45,11 @@ class FileAction(Action):
 
     def run(self, record):
         if self.fileHandle:
+            fcntl.flock(self.fileHandle, fcntl.LOCK_EX)
+            self.fileHandle.seek(0, 2)
             self.fileHandle.write(json.dumps(record) + '\n')
             self.fileHandle.flush()
+            fcntl.flock(fcntl.fileHandle, fcntl.LOCK_UN)
         else:
             """Store record in separate file
             """
