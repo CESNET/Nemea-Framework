@@ -9,8 +9,8 @@ class MarkAction(Action):
         self.path = action["mark"]["path"]
         self.value = action["mark"]["value"]
 
-    def mark(self, msg):
-        return jpath.jpath_set(msg, self.path, self.value)
+    def mark(self, record):
+        return jpath.jpath_set(record, self.path, self.value)
 
-    def run(self, msg):
-        return self.mark(msg)
+    def run(self, record):
+        return self.mark(record)
