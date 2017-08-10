@@ -13,7 +13,7 @@ class WardenAction(Action):
         super(type(self), self).run(record)
         try:
             if self.client != None:
-                self.client.sendEvents([json.dumps(record)])
+                self.client.sendEvents([record])
             else:
                 self.logger.warning("No event was sent because there is no Warden Client instance")
         except Exception as e:
