@@ -57,7 +57,10 @@ class RCEmptyFileTest(unittest.TestCase):
             os.unlink(of)
             self.fail("Drop action was the first one, file should not be existing.")
         else:
-            os.unlink(of)
+            try:
+                os.unlink(of)
+            except Exception:
+                pass
 
     def test_05_malformedyaml(self):
         try:
