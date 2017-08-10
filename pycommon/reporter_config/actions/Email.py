@@ -16,6 +16,8 @@ class EmailAction(Action):
         a = action["email"]
         if "to" in a:
             to = a["to"]
+            self.logger.info("To: {0}".format(to))
+            self.addrsTo = [email.strip() for email in to.split(",")]
         else:
             raise Exception("Email action needs `to` parameter, check your YAML config.")
 
@@ -84,5 +86,5 @@ class EmailAction(Action):
         """
         self.message['Subject'] = self.subject
         self.message['From'] = self.addrFrom
-        self.message['To'] = self.addrsTo
+        self.message['To'] = ",".join(self.addrsTo)
 
