@@ -13,9 +13,9 @@ class EmailAction(Action):
     def __init__(self, action):
         super(type(self), self).__init__(actionId = action["id"], actionType = "email")
 
+        a = action["email"]
         if "to" in a:
             to = a["to"]
-            self.addrsTo = [email.strip() for email in to.split(",")]
         else:
             raise Exception("Email action needs `to` parameter, check your YAML config.")
 
@@ -24,26 +24,30 @@ class EmailAction(Action):
         else:
             raise Exception("Email action needs `subject` parameter, check your YAML config.")
 
-        self.addrFrom   = a["from"]     if "from"     in a else "nemea@localhost"
-        self.smtpServer = a["server"]   if "server"   in a else "localhost"
-        self.smtpPort   = a["port"]     if "port"     in a else 25
-        self.smtpTLS    = a["startTLS"] if "startTLS" in a else False
-        self.smtpSSL    = a["forceSSL"] if "forceSSL" in a else False
-        self.smtpUser   = a["authuser"] if "authuser" in a else None
-        self.smtpPass   = a["authpass"] if "authpass" in a else None
-        key    = a["key"]   if "key"   in a else None
-        chain  = a["chain"] if "chain" in a else None
+        self.addrFrom   = a.get("from", "nemea@localhost")
+        self.smtpServer = a.get("server", "localhost")
+        self.smtpPort   = a.get("port", 25)
+        self.smtpTLS    = a.get("startTLS", False)
+        self.smtpSSL    = a.get("forceSSL", False)
+        self.smtpUser   = a.get("authuser", None)
+        self.smtpPass   = a.get("authpass", None)
+        key    = a.get("key", None)
+        chain  = a.get("chain", None)
 
-        try:
-            with open(key, "r") as f:
-                self.smtpKey = f.read()
-        except Exception:
-            self.smtpKey = None
-        try:
-            with open(chain, "r") as f:
-                self.smtpChain = f.read()
-        except Exception:
-            self.smtpChain = None
+        if key:
+            try:
+                with open(key, "r") as f:
+                    self.smtpKey = f.read()
+            except Exception as e:
+                self.smtpKey = None
+                self.logger.error(e)
+        if chain:
+            try:
+                with open(chain, "r") as f:
+                    self.smtpChain = f.read()
+            except Exception as e:
+                self.smtpChain = None
+                self.logger.error(e)
 
     def run(self, record):
         """Send the record via email
@@ -51,7 +55,7 @@ class EmailAction(Action):
         Record is pretty printed and headers are set according to the config
         """
         super(type(self), self).run(record)
-        self.messsage = MIMEText(json.dumps(record, indent=4))
+        self.message = MIMEText(json.dumps(record, indent=4))
         self.__setHeaders()
 
         smtp = None
@@ -66,6 +70,7 @@ class EmailAction(Action):
             if self.smtpUser and self.smtpPass:
                 smtp.login(self.smtpUser, self.smtpPass)
 
+            self.logger.info("Mail From: {0} To: {1} Subject: {2}".format(self.addrFrom, self.addrsTo, self.subject))
             smtp.sendmail(self.addrFrom, self.addrsTo, self.message.as_string())
         except Exception as e:
             self.logger.error(e)

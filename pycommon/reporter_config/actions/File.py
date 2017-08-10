@@ -22,7 +22,7 @@ class FileAction(Action):
 
         a = action["file"]
 
-        self.path = a["path"] if "path" in a else None
+        self.path = a.get("path", None)
         if not self.path:
             raise Exception("File action requires `path` argument.")
 
@@ -30,20 +30,8 @@ class FileAction(Action):
             # path already exists, check if it is a directory
             s = os.stat(self.path)
             self.dir = S_ISDIR(s.st_mode)
-        except:
+        except Exception:
             self.dir = False
-
-        if self.path == '-':
-            self.fileHandle = sys.stdout
-            self.dir = True
-        elif not self.dir:
-            # Open file if dir is not specified
-            self.fileHandle = open(self.path, "a")
-        else:
-            self.fileHandle = None
-            if not os.path.exists(self.path):
-                # TODO set permissions to some better value
-                os.mkdir(self.path, 777)
 
     def run(self, record):
         super(type(self), self).run(record)
@@ -64,9 +52,4 @@ class FileAction(Action):
                     fcntl.flock(f, fcntl.LOCK_UN)
         except Exception as e:
             self.logger.error(e)
-
-    def __del__(self):
-        if self.fileHandle:
-            if self.fileHandle != sys.stdout:
-                self.fileHandle.close()
 
