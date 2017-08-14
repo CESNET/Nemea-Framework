@@ -113,7 +113,7 @@ int main(int argc, char **argv)
       // Create another template with the same set of fields (the set of fields MUST be the same, even if we don't need to work with all fields)
       ur_template_t *tmplt = ur_create_template("FOO   ,  BAR\n,IP,STR1", NULL);
       if(tmplt == NULL){
-         fprintf(stderr, "Error during creating record\n");
+         fprintf(stderr, "Error during creating template\n");
          return 1;
       }
       template_string2 = ur_template_string(tmplt);
@@ -147,6 +147,36 @@ int main(int argc, char **argv)
 
       ur_free_template(tmplt);
    }
+
+   // -----
+
+   // Test ur_clone_record() function
+   {
+      ur_template_t *tmplt = ur_create_template("STR1,FOO,BAR,IP", NULL);
+      if (tmplt == NULL){
+         fprintf(stderr, "Error during creating template\n");
+         return 1;
+      }
+      // Create a clone of the record in the buffer
+      void *newrec = ur_clone_record(tmplt, buffer);
+      if (tmplt == NULL){
+         fprintf(stderr, "Error during cloning a record\n");
+         return 1;
+      }
+      // Check if the records are the same
+      if (ur_rec_size(tmplt, buffer) != ur_rec_size(tmplt, newrec)) {
+        fprintf(stderr, "Cloned record has different size than original\n");
+        return 1;
+      }
+      if (memcmp(buffer, newrec, ur_rec_size(tmplt, buffer))) {
+        fprintf(stderr, "Cloned record is different from original\n");
+        return 1;
+      }
+      // Free memory
+      ur_free_record(newrec);
+      ur_free_template(tmplt);
+   }
+
 
    // -----
 
