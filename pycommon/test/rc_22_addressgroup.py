@@ -41,20 +41,20 @@ class RCAddressGroupTest(unittest.TestCase):
                 self.config = Config(os.path.dirname(__file__) + '/rc_config/addressgroup.yaml');
 
                 self.assertNotEqual(self.config, None)
-                print("passing rules")
                 for idea in self.messages_pass:
                     results, actions = self.config.match(idea)
                     if True in results:
                         pass
                     else:
+                        print("passing rules")
                         print("Test FAILED!!!")
 
-                print("NOT passing rules")
                 for idea in self.messages_notpass:
                     results, actions = self.config.match(idea)
                     if True not in results:
                         pass
                     else:
+                        print("NOT passing rules")
                         print("Test FAILED!!!")
 
 
