@@ -5,7 +5,7 @@ Name: unirec
 Version: @PACKAGE_VERSION@
 Release: @RELEASE@
 URL: http://www.liberouter.org/
-Source: https://www.liberouter.org/repo/SOURCES/%{name}-%{version}-%{release}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/unirec/%{name}-%{version}.tar.gz
 Group: Liberouter
 License: BSD
 Vendor: CESNET, z.s.p.o.
