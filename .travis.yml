@@ -68,7 +68,7 @@ script:
 deploy:
   provider: pages
   skip_cleanup: true
-  local_dir: dists
+  local_dir: dist-pkgs
   github_token: $GITHUB_TOKEN
   target_branch: dist-packages
   on:
