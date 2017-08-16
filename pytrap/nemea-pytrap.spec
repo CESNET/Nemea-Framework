@@ -17,7 +17,7 @@ Summary:        Python extension of the NEMEA project
 
 License:        BSD
 URL:            https://github.com/CESNET/Nemea-Framework
-Source0:        https://files.pythonhosted.org/packages/source/n/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pytrap/%{name}-%{version}.tar.gz
 
 BuildRequires:  python-setuptools
 BuildRequires:  python2-devel

@@ -22,7 +22,7 @@ Group: Development/Libraries
 License: BSD
 Vendor: Vaclav Bartos, CESNET <bartos@cesnet.cz>
 URL:           https://github.com/CESNET/Nemea-Framework
-Source0:       https://files.pythonhosted.org/packages/source/n/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pycommon/%{name}-%{version}.tar.gz
 
 
 %description
