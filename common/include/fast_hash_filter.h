@@ -233,7 +233,7 @@ void fhf_destroy_iter(fhf_iter_t *iter);
  *             FHF_INSERT_FULL    if the row where the item should be inserted is full
  *                                and the item could not be inserted.
  */
-inline int fhf_insert(fhf_table_t *table, const void *key, const void *data)
+static inline int fhf_insert(fhf_table_t *table, const void *key, const void *data)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -336,7 +336,7 @@ inline int fhf_insert(fhf_table_t *table, const void *key, const void *data)
  *                                and the item could not be inserted.
  *                                !!ROW IS UNLOCKED!!
  */
-inline int fhf_insert_own_or_update(fhf_table_t *table, const void *key, int8_t **lock, void ** data_ptr)
+static inline int fhf_insert_own_or_update(fhf_table_t *table, const void *key, int8_t **lock, void ** data_ptr)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -428,7 +428,7 @@ inline int fhf_insert_own_or_update(fhf_table_t *table, const void *key, int8_t 
  *          FHF_NOT_FOUND     if item is not found, "lock" is NOT SET, "data_ptr" is NOT SET.
  *                            !!ROW IS UNLOCKED!!
  */
-inline int fhf_update_data(fhf_table_t *table, const void *key, int8_t **lock, void **data_ptr)
+static inline int fhf_update_data(fhf_table_t *table, const void *key, int8_t **lock, void **data_ptr)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -497,7 +497,7 @@ inline int fhf_update_data(fhf_table_t *table, const void *key, int8_t **lock, v
  * @return  FHF_FOUND         if item is found, "data_ptr" is set.
  *          FHF_NOT_FOUND     if item is not found, "data_ptr" is NOT SET.
  */
-inline int fhf_get_data(fhf_table_t *table, const void *key, const void **data_ptr)
+static inline int fhf_get_data(fhf_table_t *table, const void *key, const void **data_ptr)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -554,7 +554,7 @@ inline int fhf_get_data(fhf_table_t *table, const void *key, const void **data_p
  *          FHF_NOT_FOUND     if item is not found, "lock" is NOT SET, "data_ptr" is NOT SET.
  *                            !!ROW IS UNLOCKED!!
  */
-inline int fhf_get_data_locked(fhf_table_t *table, const void *key, int8_t **lock, const void **data_ptr)
+static inline int fhf_get_data_locked(fhf_table_t *table, const void *key, int8_t **lock, const void **data_ptr)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -614,7 +614,7 @@ inline int fhf_get_data_locked(fhf_table_t *table, const void *key, int8_t **loc
  *
  * @param lock      Pointer to lock variable.
  */
-inline void fhf_unlock_data(int8_t *lock)
+static inline void fhf_unlock_data(int8_t *lock)
 {
    __sync_lock_release(lock);
 }
@@ -632,7 +632,7 @@ inline void fhf_unlock_data(int8_t *lock)
  * @return  FHF_REMOVED       if item is found and removed.
  *          FHF_NOT_REMOVED   if item is not found and not removed.
  */
-inline int fhf_remove(fhf_table_t *table, const void *key)
+static inline int fhf_remove(fhf_table_t *table, const void *key)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -672,7 +672,7 @@ inline int fhf_remove(fhf_table_t *table, const void *key)
  *          FHF_NOT_REMOVED   if item is not found and not removed.
  *                            lock which is pointed to by lock_ptr !!REMAINS LOCKED!!
  */
-inline int fhf_remove_locked(fhf_table_t *table, const void *key, int8_t *lock_ptr)
+static inline int fhf_remove_locked(fhf_table_t *table, const void *key, int8_t *lock_ptr)
 {
    uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size, (uint64_t) table);
    uint64_t table_col_row = table_row * FHF_TABLE_COLS;
@@ -699,7 +699,7 @@ inline int fhf_remove_locked(fhf_table_t *table, const void *key, int8_t *lock_p
  * @return  FHF_REMOVED       if item is removed.
  *          FHF_NOT_REMOVED   if item is not removed.
  */
-inline int fhf_remove_iter(fhf_iter_t *iter)
+static inline int fhf_remove_iter(fhf_iter_t *iter)
 {
    switch(iter->row) {
       case FHF_ITER_START:
@@ -726,7 +726,7 @@ inline int fhf_remove_iter(fhf_iter_t *iter)
  *          FHF_ITER_RET_END  if iterator is in the end of the table and does not
  *                            contain any other item.
  */
-inline int fhf_get_next_iter(fhf_iter_t *iter)
+static inline int fhf_get_next_iter(fhf_iter_t *iter)
 {
    uint32_t i, j;
 
@@ -786,7 +786,7 @@ inline int fhf_get_next_iter(fhf_iter_t *iter)
  *          FHF_RESIZE_FAILED_INSERT   if table size was changed to maximal size and some item
  *                                     could not be inserted in new table.
  */
-inline int fhf_resize(fhf_table_t **table)
+static inline int fhf_resize(fhf_table_t **table)
 {
    int ret = 0;
    uint64_t new_table_rows;
