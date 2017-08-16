@@ -1,10 +1,5 @@
 .PHONY: rpm
 
-all-local:
-	(cd $(srcdir); $(PYTHON) setup.py build \
-	--build-base $(shell readlink -f $(builddir))/build \
-	--verbose)
-
 EXTRA_DIST=MANIFEST.in fields.c fields.h README README.md test.sh nemea-pytrap.spec setup.py pytrapmodule.c unirecmodule.c
 
 rpm:
