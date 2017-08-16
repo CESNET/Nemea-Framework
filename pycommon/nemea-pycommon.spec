@@ -12,7 +12,7 @@
 %global python3_pkgversion 3
 %endif
 
-Name:	python-%{pypi_name}
+Name:	%{pypi_name}
 Version: %{pypi_version}
 Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
