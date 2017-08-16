@@ -35,13 +35,20 @@
 # ===========================================================================
 #
 
+test -z "$srcdir" && export srcdir=.
+test -z "$builddir" && export builddir=.
+
+if [ "$srcdir" != "$builddir" ]; then
+exit 77
+fi
+
 # Check import pytrap, skip this test on import error
 
 python -c 'import pytrap' 2>/dev/null || exit 77
 
-python setup.py test || exit $?
+python $srcdir/setup.py test || exit $?
 
-path_to_logger=./$srcdir/../../modules/logger/logger
+path_to_logger="$srcdir"/../../modules/logger/logger
 
 input="
 H4sIAOwfilcAA8WW24/bRBSHJ0VIqKjcKqBcCqZUgKDxzozHM56uBM0m6WJtuvHaTukCxfgWiNRu
@@ -102,8 +109,8 @@ echo -n "$input" | base64 -d | gunzip > "$data"
 
 errors=0
 
-./$srcdir/../examples/python/python_example.py -i "f:$data,f:$out:w" | sed 's/ \([0-9]*\)L,/ \1,/g' > orig-data-parsed.txt
-./$srcdir/../examples/python/python_example.py -i "f:$out,b:" | sed 's/ \([0-9]*\)L,/ \1,/g' > processed-data-parsed.txt
+$srcdir/../examples/python/python_example.py -i "f:$data,f:$out:w" | sed 's/ \([0-9]*\)L,/ \1,/g' > orig-data-parsed.txt
+$srcdir/../examples/python/python_example.py -i "f:$out,b:" | sed 's/ \([0-9]*\)L,/ \1,/g' > processed-data-parsed.txt
 
 diff orig-data-parsed.txt <(echo -n "$expected" | base64 -d | gunzip) || {
    echo "Historically stored expected output does not match with the current one. Test failed."

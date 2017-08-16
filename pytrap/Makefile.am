@@ -1,5 +1,10 @@
 .PHONY: rpm
 
+all-local:
+	(cd $(srcdir); $(PYTHON) setup.py build \
+	--build-base $(shell readlink -f $(builddir))/build \
+	--verbose)
+
 EXTRA_DIST=MANIFEST.in fields.c fields.h README README.md test.sh nemea-pytrap.spec setup.py pytrapmodule.c unirecmodule.c
 
 rpm:
@@ -9,8 +14,7 @@ rpm:
 	rpmbuild  -ba nemea-pytrap.spec --define "_topdir `pwd`/RPMBUILD"
 	mv RPMBUILD/RPMS/*/*.rpm RPMBUILD/SRPMS/*.rpm dist/
 
-.PHONY: clean
-clean:
+clean-local:
 	rm -rf RPMBUILD dist build *.trs test.sh.log test-suite.log *.so *.egg-info coverage.info out/
 
 TESTS = test.sh
