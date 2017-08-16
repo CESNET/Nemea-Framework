@@ -10,7 +10,7 @@
 %global python3_pkgversion 3
 %endif
 
-Name:           python-%{pypi_name}
+Name:           %{pypi_name}
 Version:        0.9.9
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
@@ -30,6 +30,7 @@ Summary:        Python extension of the NEMEA project
 Requires: libtrap
 BuildRequires:  python-setuptools
 BuildRequires:  python-devel
+BuildRequires:  libtrap
 BuildRequires:  libtrap-devel
 BuildRequires:  unirec
 
@@ -44,6 +45,7 @@ Summary:        Python extension of the NEMEA project
 Requires: libtrap
 BuildRequires:  python%{python3_pkgversion}-setuptools
 BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  libtrap
 BuildRequires:  libtrap-devel
 BuildRequires:  unirec
 
@@ -70,8 +72,8 @@ rm -rf %{pypi_name}.egg-info
 
 
 %check
-%{__python2} setup.py test
-%{__python3} setup.py test
+TRAP_SOCKET_DIR=/tmp PAGER="" %{__python2} setup.py test
+TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test
 
 %files -n python2-%{pypi_name}
 %doc README
