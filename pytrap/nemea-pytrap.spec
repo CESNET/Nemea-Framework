@@ -10,14 +10,14 @@
 %global python3_pkgversion 3
 %endif
 
-Name:           %{pypi_name}
+Name:           python-%{pypi_name}
 Version:        0.9.9
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
 License:        BSD
 URL:            https://github.com/CESNET/Nemea-Framework
-Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pytrap/%{name}-%{version}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pytrap/%{pypi_name}-%{version}.tar.gz
 
 BuildRequires:  python-setuptools
 BuildRequires:  python2-devel
@@ -50,7 +50,7 @@ modules in Python.
 
 
 %prep
-%setup -n %{pypi_name}-%{version}
+%setup
 # Remove bundled egg-info
 rm -rf %{pypi_name}.egg-info
 
