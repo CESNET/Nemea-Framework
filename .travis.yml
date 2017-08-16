@@ -67,7 +67,7 @@ script:
   - mkdir dist-pkgs &&
     for d in libtrap unirec common; do make -C "$d" dist; done &&
     for d in pycommon pytrap; do (cd "$d" && python setup.py sdist && mv dist/*.tar.gz .;) done &&
-    for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar -xf *.tar.gz;) done
+    for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar --strip-components=1 -xf *.tar.gz;) done
 
 deploy:
   provider: pages
