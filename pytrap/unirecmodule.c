@@ -2077,6 +2077,22 @@ UnirecIPAddrRange_str(pytrap_unirecipaddrrange *self)
     return res;
 }
 
+long
+UnirecIPAddrRange_hash(pytrap_unirecipaddrrange *o)
+{
+    PyObject *tuple = PyTuple_New(2);
+    /* increase references because Tuple steals them */
+    Py_INCREF(o->start);
+    Py_INCREF(o->end);
+
+    PyTuple_SetItem(tuple, 0, (PyObject *) o->start);
+    PyTuple_SetItem(tuple, 1, (PyObject *) o->end);
+    long hash = PyObject_Hash(tuple);
+
+    Py_DECREF(tuple);
+    return hash;
+}
+
 static PyMemberDef UnirecIPAddrRange_members[] = {
     {"start", T_OBJECT_EX, offsetof(pytrap_unirecipaddrrange, start), 0,
      "Low IP address of range"},
@@ -2134,7 +2150,7 @@ static PyTypeObject pytrap_UnirecIPAddrRange = {
     0,                         /* tp_as_number */
     &UnirecIPAddrRange_seqmethods, /* tp_as_sequence */
     0,                         /* tp_as_mapping */
-    0,                         /* tp_hash  */
+    (hashfunc) UnirecIPAddrRange_hash, /* tp_hash  */
     0,                         /* tp_call */
     (reprfunc) UnirecIPAddrRange_str, /* tp_str */
     0,                         /* tp_getattro */

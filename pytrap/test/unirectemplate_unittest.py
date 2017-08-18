@@ -474,3 +474,18 @@ class DataTypesIPAddrRange(unittest.TestCase):
         intex2 = pytrap.UnirecIPAddrRange("192.168.1.0", pytrap.UnirecIPAddr("192.168.1.255"))
         result = intex == intex2
         self.assertTrue(result, "Equal operator - eq - fail")
+
+        # test if UnirecIPAddrRange is hashable (can be used in dict as a key)
+        rangemap = dict()
+        rangemap[ip1] = 1
+        rangemap[ip2] = 2
+        if ip1 not in rangemap:
+            self.fail("ip1 should be already in dict.")
+        if ip2 not in rangemap:
+            self.fail("ip2 should be already in dict.")
+        s = 0
+        for key in rangemap:
+            s += rangemap[key]
+        self.assertEqual(s, 3)
+
+
