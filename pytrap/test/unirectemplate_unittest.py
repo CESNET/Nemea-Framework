@@ -73,6 +73,29 @@ class DataTypesIPAddr(unittest.TestCase):
         self.assertFalse(i.isNull())
         self.assertTrue(i)
 
+        # __contains__
+        self.assertFalse(i3 in i4)
+        self.assertTrue(i4 in i4)
+        self.assertTrue(pytrap.UnirecIPAddr("1.2.3.4") in pytrap.UnirecIPAddr("1.2.3.4"))
+        ip = pytrap.UnirecIPAddr("1.2.3.4")
+        bl1 = pytrap.UnirecIPAddr("1.2.3.4")
+        bl2 = pytrap.UnirecIPAddrRange("1.0.0.0/8")
+        bl3 = pytrap.UnirecIPAddr("1.2.3.5")
+        bl4 = pytrap.UnirecIPAddrRange("2.0.0.0/8")
+        # both are True:
+        self.assertTrue(ip in bl1)
+        self.assertTrue(ip in bl2)
+        # both are False
+        self.assertFalse(ip in bl3)
+        self.assertFalse(ip in bl4)
+
+
+        try:
+            i = 1 in i4
+            self.fail("only UnirecIPAddr type supported.")
+        except TypeError:
+            # expected UnirecIPAddr type
+            pass
 
 def timedelta_total_seconds(timedelta):
     return (

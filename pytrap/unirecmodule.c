@@ -595,6 +595,26 @@ UnirecIPAddr_dec(pytrap_unirecipaddr *self)
     return (PyObject *) ip_dec;
 }
 
+static int
+UnirecIPAddr_contains(PyObject *o, PyObject *v)
+{
+    if (PyObject_IsInstance(v, (PyObject *) &pytrap_UnirecIPAddr)) {
+        pytrap_unirecipaddr *object = (pytrap_unirecipaddr *) o;
+        pytrap_unirecipaddr *value = (pytrap_unirecipaddr *) v;
+
+        if (ip_cmp(&object->ip, &value->ip) == 0) {
+            return 1;
+        } else {
+            return 0;
+        }
+
+    } else {
+        PyErr_SetString(PyExc_TypeError, "UnirecIPAddr object expected.");
+        return -1;
+    }
+}
+
+
 static PyMethodDef pytrap_unirecipaddr_methods[] = {
     {"isIPv4", (PyCFunction) UnirecIPAddr_isIPv4, METH_NOARGS,
         "Check if the address is IPv4.\n\n"
@@ -634,6 +654,19 @@ static PyNumberMethods UnirecIPAddr_numbermethods = {
 #else
     .nb_nonzero = (inquiry) UnirecIPAddr_bool,
 #endif
+};
+
+static PySequenceMethods UnirecIPAddr_seqmethods = {
+    0, /* lenfunc sq_length; */
+    0, /* binaryfunc sq_concat; */
+    0, /* ssizeargfunc sq_repeat; */
+    0, /* ssizeargfunc sq_item; */
+    0, /* void *was_sq_slice; */
+    0, /* ssizeobjargproc sq_ass_item; */
+    0, /* void *was_sq_ass_slice; */
+    (objobjproc) UnirecIPAddr_contains, /* objobjproc sq_contains; */
+    0, /* binaryfunc sq_inplace_concat; */
+    0 /* ssizeargfunc sq_inplace_repeat; */
 };
 
 int
@@ -701,8 +734,8 @@ static PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
     (reprfunc) UnirecIPAddr_repr, /* tp_repr */
-    &UnirecIPAddr_numbermethods,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
+    &UnirecIPAddr_numbermethods, /* tp_as_number */
+    &UnirecIPAddr_seqmethods,  /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     (hashfunc) UnirecIPAddr_hash,                         /* tp_hash  */
     0,                         /* tp_call */
