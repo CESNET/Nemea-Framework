@@ -1,3 +1,6 @@
+2017-08-15 (Tomas Cejka): travis: update source0 in specs and .travis.yml to contain sources
+2017-08-15 (Tomas Cejka): libtrap: tests: fixed dist - split list for EXTRA_DIST
+
 2017-08-08 (Tomas Cejka): libtrap: update doc (with TLS IFC)
 2017-08-08 (Tomas Cejka): libtrap: tests set x permission for long TLS test
 2017-08-08 (Tomas Cejka): libtrap: tls: fixed distcheck (failing long tls out-of-date test)
