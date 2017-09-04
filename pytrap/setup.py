@@ -4,7 +4,7 @@ import os
 SRC_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__), "."))
 
 pytrapmodule = Extension('pytrap',
-                    sources = ['pytrapmodule.c', 'unirecmodule.c', 'fields.c'],
+                    sources = ['src/pytrapmodule.c', 'src/unirecmodule.c', 'src/fields.c'],
                     libraries = ['trap', 'unirec'])
 
 setup(name = 'nemea-pytrap',
