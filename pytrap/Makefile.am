@@ -9,8 +9,7 @@ rpm:
 	rpmbuild  -ba nemea-pytrap.spec --define "_topdir `pwd`/RPMBUILD"
 	mv RPMBUILD/RPMS/*/*.rpm RPMBUILD/SRPMS/*.rpm dist/
 
-.PHONY: clean
-clean:
+clean-local:
 	rm -rf RPMBUILD dist build *.trs test.sh.log test-suite.log *.so *.egg-info coverage.info out/
 
 TESTS = test.sh

@@ -10,20 +10,14 @@
 %global python3_pkgversion 3
 %endif
 
-Name:           python-%{pypi_name}
+Name:           %{pypi_name}
 Version:        0.9.9
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
 License:        BSD
 URL:            https://github.com/CESNET/Nemea-Framework
-Source0:        https://files.pythonhosted.org/packages/source/n/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
-
-BuildRequires:  python-setuptools
-BuildRequires:  python2-devel
-
-BuildRequires:  python%{python3_pkgversion}-setuptools
-BuildRequires:  python%{python3_pkgversion}-devel
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pytrap/%{pypi_name}-%{version}.tar.gz
 
 %description
 The pytrap module is a native Python extension that allows for writing
@@ -33,6 +27,12 @@ modules in Python.
 %package -n     python2-%{pypi_name}
 Summary:        Python extension of the NEMEA project
 %{?python_provide:%python_provide python2-%{pypi_name}}
+Requires: libtrap
+BuildRequires:  python-setuptools
+BuildRequires:  python-devel
+BuildRequires:  libtrap
+BuildRequires:  libtrap-devel
+BuildRequires:  unirec
 
 %description -n python2-%{pypi_name}
 The pytrap module is a native Python extension that allows for writing
@@ -42,6 +42,12 @@ modules in Python.
 %package -n     python%{python3_pkgversion}-%{pypi_name}
 Summary:        Python extension of the NEMEA project
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
+Requires: libtrap
+BuildRequires:  python%{python3_pkgversion}-setuptools
+BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  libtrap
+BuildRequires:  libtrap-devel
+BuildRequires:  unirec
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The pytrap module is a native Python extension that allows for writing
@@ -50,7 +56,7 @@ modules in Python.
 
 
 %prep
-%setup -n %{pypi_name}-%{version}
+%setup
 # Remove bundled egg-info
 rm -rf %{pypi_name}.egg-info
 
@@ -66,8 +72,8 @@ rm -rf %{pypi_name}.egg-info
 
 
 %check
-%{__python2} setup.py test
-%{__python3} setup.py test
+TRAP_SOCKET_DIR=/tmp PAGER="" %{__python2} setup.py test
+TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test
 
 %files -n python2-%{pypi_name}
 %doc README

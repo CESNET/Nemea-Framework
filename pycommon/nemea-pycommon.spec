@@ -12,7 +12,7 @@
 %global python3_pkgversion 3
 %endif
 
-Name:	python-%{pypi_name}
+Name:	%{pypi_name}
 Version: %{pypi_version}
 Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
@@ -22,7 +22,7 @@ Group: Development/Libraries
 License: BSD
 Vendor: Vaclav Bartos, CESNET <bartos@cesnet.cz>
 URL:           https://github.com/CESNET/Nemea-Framework
-Source0:       https://files.pythonhosted.org/packages/source/n/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pycommon/%{pypi_name}-%{version}.tar.gz
 
 
 %description
@@ -74,7 +74,7 @@ The module contains methods for creation and submission of incident reports in I
 This package is compatible with python3.
 
 %prep
-%setup -n %{pypi_name}-%{version}
+%setup
 # Remove bundled egg-info
 rm -rf %{pypi_name}.egg-info
 

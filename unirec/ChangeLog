@@ -1,3 +1,6 @@
+2017-08-15 (Tomas Cejka): travis: update source0 in specs and .travis.yml to contain sources
+2017-08-14 (Václav Bartoš): unirec: ur_clone_record no longer computes record size twice
+
 2017-08-07 (Tomas Cejka): unirec: updated, fixed and improved doc for the next version
 2017-08-04 (Ulrik Haugen): link README.md to README in unirec.
 2017-07-28 (Ladislav Macoun): unirec: update ur_processor

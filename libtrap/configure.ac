@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.11.0], [nemea@cesnet.cz])
+AC_INIT([libtrap], [0.11.1], [nemea@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes]]))
 AC_CONFIG_SRCDIR([libtrap.spec.in])
 AC_CONFIG_HEADERS([config.h])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`

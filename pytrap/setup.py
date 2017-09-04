@@ -1,4 +1,7 @@
 from setuptools import setup, Extension
+import os
+
+SRC_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__), "."))
 
 pytrapmodule = Extension('pytrap',
                     sources = ['pytrapmodule.c', 'unirecmodule.c', 'fields.c'],
@@ -29,5 +32,7 @@ setup(name = 'nemea-pytrap',
               'Topic :: Software Development :: Libraries',
               'Topic :: System :: Networking :: Monitoring'
        ],
-       ext_modules = [pytrapmodule])
+       ext_modules = [pytrapmodule],
+       package_dir={ "": SRC_PATH, },
+       )
 

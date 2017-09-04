@@ -581,6 +581,7 @@ int ur_define_field(const char *name, ur_field_type_t type)
          return UR_E_INVALID_NAME;
       }
    }
+   // If this is the first dynamically allocated field, call ur_init
    if (ur_field_specs.ur_allocated_fields == ur_field_specs.ur_last_statically_defined_id) {
       int init_val = ur_init(UR_FIELD_SPECS_STATIC);
       if (init_val != 0) {
@@ -968,22 +969,6 @@ ur_template_t *ur_create_template(const char *fields, char **errstr)
    uint16_t offset = 0;
    uint16_t first_dynamic = UR_NO_DYNAMIC_VALUES;
    for (int i = 0; i < written_fields; i++) {
-      // Check whether offset is not already set
-      if (tmplt->offset[fields_spec[i].id] != 0xffff) {
-         // Offset is already set - duplicated field
-         for (int i = 0; i < written_fields; i++) {
-            free(fields_spec[i].name);
-         }
-         free(fields_spec);
-         free(tmplt);
-         if (errstr != NULL) {
-            *errstr = (char *) malloc(strlen(UR_MEMORY_ERROR) + 1);
-            if (*errstr != NULL) {
-               strcpy(*errstr, UR_MEMORY_ERROR);
-            }
-         }
-         return NULL;
-      }
       // Set offset
       if (fields_spec[i].size < 0) { // dynamic field
          tmplt->offset[fields_spec[i].id] = offset;
@@ -1148,9 +1133,10 @@ char *ur_get_var_as_str(const ur_template_t *tmplt, const void *rec, ur_field_id
 
 inline void *ur_clone_record(const ur_template_t *tmplt, const void *src)
 {
-    void *copy = ur_create_record(tmplt, ur_rec_varlen_size(tmplt, src));
+    uint16_t varsize = ur_rec_varlen_size(tmplt, src);
+    void *copy = ur_create_record(tmplt, varsize);
     if (copy) {
-       memcpy(copy, src, ur_rec_size(tmplt, src));
+       memcpy(copy, src, ur_rec_fixlen_size(tmplt) + varsize);
     }
     return copy;
 }
