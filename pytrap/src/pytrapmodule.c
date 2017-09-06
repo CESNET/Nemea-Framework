@@ -7,6 +7,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include "pytrapexceptions.h"
+
+PyObject *TrapError;
+
+PyObject *TimeoutError;
+
+PyObject *TrapTerminated;
+
+PyObject *TrapFMTChanged;
+
+PyObject *TrapFMTMismatch;
+
+PyObject *TrapHelp;
 
 int init_unirectemplate(PyObject *m);
 
@@ -22,17 +35,6 @@ extern void *trap_glob_ctx;
 
 TRAP_DEFAULT_SIGNAL_HANDLER((void) 0)
 
-PyObject *TrapError;
-
-static PyObject *TimeoutError;
-
-static PyObject *TrapTerminated;
-
-static PyObject *TrapFMTChanged;
-
-static PyObject *TrapFMTMismatch;
-
-static PyObject *TrapHelp;
 
 #define TRAP_LOCAL_INITIALIZATION(argc, argv, module_info) \
    {\
