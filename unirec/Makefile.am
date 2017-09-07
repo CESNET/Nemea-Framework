@@ -22,7 +22,7 @@ ur_values.py: ur_values.h
 lib_LTLIBRARIES=libunirec.la
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr_cpp.h ipaddr.h links.h ur_time.h
+libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h links.h ur_time.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
@@ -31,7 +31,6 @@ unirecincludedir=$(includedir)/unirec
 unirecinclude_HEADERS=unirec.h \
 		     inline.h \
 		     ipaddr.h \
-		     ipaddr_cpp.h \
 		     links.h  \
 		     ur_time.h \
 		     ur_values.h
@@ -47,7 +46,7 @@ if DX_COND_doc
 doc: doxygen-doc
 
 install-data-local:
-	mkdir -p "$(DESTDIR)$(docdir)/unirec" && cp -R doc/html/* "$(DESTDIR)$(docdir)/unirec" || echo "Documentation was not generated yet."	
+	mkdir -p "$(DESTDIR)$(docdir)/unirec" && cp -R doc/html/* "$(DESTDIR)$(docdir)/unirec" || echo "Documentation was not generated yet."
 endif
 
 if MAKE_RPMS
