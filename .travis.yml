@@ -64,11 +64,11 @@ after_success:
 script:
   - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
-    (cd pytrap && make coverage && $(pyenv which python) setup.py install;)
+    (cd pytrap && make coverage && sudo $(pyenv which python) setup.py install;)
   - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
   - mkdir dist-pkgs &&
     for d in libtrap unirec common; do make -C "$d" dist; done &&
-    for d in pycommon pytrap; do (cd "$d" && $(pyenv which python) setup.py sdist && mv dist/*.tar.gz .;) done &&
+    for d in pycommon pytrap; do (cd "$d" && sudo $(pyenv which python) setup.py sdist && mv dist/*.tar.gz .;) done &&
     for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar --strip-components=1 -xf *.tar.gz;) done
 
 deploy:
