@@ -4,32 +4,39 @@ from datetime import datetime
 import copy
 
 class MongoAction(Action):
-    host = "localhost"
-    port = 27017
-    user = None
-    password = None
 
     def __init__(self, action):
         """Parse action contents including info about MongoDB connection
         and create connection to database.
         """
         super(type(self), self).__init__(actionId = action["id"], actionType = "mongo")
+        a = action["mongo"]
+        self.host = a.get("host", "localhost")
+        self.port = a.get("port", 27017)
+
+        self.db = a.get("db", "nemeadb")
+        self.collection = a.get("collection", "alerts_new")
+
+        self.user = a.get("user", None)
+        self.password = a.get("password", None)
 
         try:
             import pymongo
-            if "host" in action["mongo"]:
-                self.host = action["mongo"]["host"]
-            if "port" in action["mongo"]:
-                self.port = action["mongo"]["port"]
+            try:
+                # Python 3.x
+                from urllib.parse import quote_plus
+            except ImportError:
+                # Python 2.x
+                from urllib import quote_plus
 
-            self.db = action["mongo"]["db"]
-            self.collection = action["mongo"]["collection"]
+            self.uri = "mongodb://"
+            if self.user and self.password:
+                self.uri += quote_plus(self.user) + ":" + quote_plus(self.password) + "@"
+                self.uri += self.host + ":" + str(port) + "/" + self.db
+            else:
+                self.uri += self.host + ":" + str(port)
 
-            if "user" in action["mongo"] and "password" in action["mongo"]:
-                self.user = action["mongo"]["user"]
-                self.password = action["mongo"]["password"]
-
-            self.client = pymongo.MongoClient(self.host, self.port)
+            self.client = pymongo.MongoClient(self.uri)
             self.collection = self.client[self.db][self.collection]
             if pymongo.version_tuple[0] < 3:
                 self.collection.insert_one = self.collection.insert
