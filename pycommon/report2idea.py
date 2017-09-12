@@ -49,7 +49,7 @@ def getIDEAtime(unirecField = None):
 
 # Template of module description
 desc_template = """
-TRAP module, libtrap version: [TODO]
+TRAP module - Reporter
 ===========================================
 Name: {name}
 Inputs: 1
@@ -58,18 +58,18 @@ Description:
   {original_desc}Required format of input:
     {type}: "{fmt}"
 
-  All '<something>2idea' modules convert reports from various detectors to Intrusion Detection Extensible Alert (IDEA) format. The IDEA messages may be send to any of the following outputs:
-    - TRAP interface (--trap)
-    - simple text file (--file)
-    - collection in MongoDB database (--mongodb)
-    - Warden3 server (--warden)
-  It is possible to define more than one outputs - the messages will be send to all of them.
+  All '<something>2idea' modules convert reports from various detectors to Intrusion Detection Extensible Alert (IDEA) format.
+  The IDEA messages may be send or stored using various actions, see http://nemea.liberouter.org/reporting/ for more information.
 """
 
 DEFAULT_NODE_NAME = "undefined"
 
 def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = None):
-    """ TODO doc
+    """Run the main loop of the reporter module called `module_name` with `module_desc` (used in help).
+
+    The module requires data format of `req_type` type and `req_format` specifier - these must be given by author of the module.
+
+    `conv_func(rec, args)` is a callback function that must translate given incoming alert `rec` (typically in UniRec according to `req_type`) into IDEA message. `args` contains CLI arguments parsed by ArgumentParser. `conv_func` must return dict().
     """
 
     # *** Parse command-line arguments ***
@@ -100,13 +100,13 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Other options
     arg_parser.add_argument('-n', '--name', metavar='NODE_NAME',
-            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required if Warden output is used, recommended otherwise.')
+            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required argument.')
     arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
-            help="""Enable verbose mode (may be used by some modules, common part donesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
+            help="""Enable verbose mode (may be used by some modules, common part doesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
-            help='TODO (ideally this section should be added by TRAP')
+            help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
     # Parse arguments
     args = arg_parser.parse_args()
 
