@@ -92,6 +92,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Config file
     arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
             help='Specify YAML config file path which to load.')
+    arg_parser.add_argument('-d', '--dry',  action='store_true',
+            help="""Do not run, just print loaded config.""")
     # Warden3 output
     arg_parser.add_argument('--warden', metavar="CONFIG_FILE",
             help='Send IDEA messages to Warden server. Load configuration of Warden client from CONFIG_FILE.')
@@ -145,79 +147,82 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     config = Config.Config(args.config, trap = trap, warden = wardenclient)
 
 
-    # *** Main loop ***
-    URInputTmplt = None
-    if req_type == pytrap.FMT_UNIREC and req_format != "":
-        URInputTmplt = pytrap.UnirecTemplate(req_format) # TRAP expects us to have predefined template for required set of fields
-        rec = URInputTmplt
-
-    stop = False
-    while not stop:
-        logger.info("Starting receiving")
-        # *** Read data from input interface ***
-        try:
-            data = trap.recv()
-        except pytrap.FormatMismatch:
-            logger.error("Input data format mismatch in receiving from TRAP interface")#Required: "+str((req_type,req_format))+"\nReceived: "+str(trap.get_data_fmt(trap.IFC_INPUT, 0))+"\n")
-            break
-        except pytrap.FormatChanged as e:
-            # TODO: This should be handled by trap.recv transparently
-            # Get negotiated input data format
-            (fmttype, fmtspec) = trap.getDataFmt(0)
-            # If data type is UniRec, create UniRec template
-            if fmttype == pytrap.FMT_UNIREC:
-                URInputTmplt = pytrap.UnirecTemplate(fmtspec)
-            else:
-                URInputTmplt = None
+    if not args.dry:
+        # *** Main loop ***
+        URInputTmplt = None
+        if req_type == pytrap.FMT_UNIREC and req_format != "":
+            URInputTmplt = pytrap.UnirecTemplate(req_format) # TRAP expects us to have predefined template for required set of fields
             rec = URInputTmplt
-            data = e.data
-        except pytrap.Terminated:
-            break
 
-        # Check for "end-of-stream" record
-        if len(data) <= 1:
-            if args.trap:
-                # If we have output, send "end-of-stream" record and exit
-                trap.send(0, b"0")
-            break
+        stop = False
+        while not stop:
+            logger.info("Starting receiving")
+            # *** Read data from input interface ***
+            try:
+                data = trap.recv()
+            except pytrap.FormatMismatch:
+                logger.error("Input data format mismatch in receiving from TRAP interface")
+                break
+            except pytrap.FormatChanged as e:
+                # Get negotiated input data format
+                (fmttype, fmtspec) = trap.getDataFmt(0)
+                # If data type is UniRec, create UniRec template
+                if fmttype == pytrap.FMT_UNIREC:
+                    URInputTmplt = pytrap.UnirecTemplate(fmtspec)
+                else:
+                    URInputTmplt = None
+                rec = URInputTmplt
+                data = e.data
+            except pytrap.Terminated:
+                break
 
-        # Assert that if UniRec input is required, input template is set
-        assert(req_type != pytrap.FMT_UNIREC or URInputTmplt is not None)
+            # Check for "end-of-stream" record
+            if len(data) <= 1:
+                if args.trap:
+                    # If we have output, send "end-of-stream" record and exit
+                    trap.send(0, b"0")
+                break
 
-        # Convert raw input data to UniRec object (if UniRec input is expected)
-        if req_type == pytrap.FMT_UNIREC:
-            rec.setData(data)
-        elif req_type == pytrap.FMT_JSON:
-            rec = json.loads(data)
-        else: # TRAP_FMT_RAW
-            rec = data
+            # Assert that if UniRec input is required, input template is set
+            assert(req_type != pytrap.FMT_UNIREC or URInputTmplt is not None)
 
-        # *** Convert input record to IDEA ***
+            # Convert raw input data to UniRec object (if UniRec input is expected)
+            if req_type == pytrap.FMT_UNIREC:
+                rec.setData(data)
+            elif req_type == pytrap.FMT_JSON:
+                rec = json.loads(data)
+            else: # TRAP_FMT_RAW
+                rec = data
 
-        # Pass the input record to conversion function to create IDEA message
-        idea = conv_func(rec, args)
+            # *** Convert input record to IDEA ***
 
-        if idea is None:
-            # Record can't be converted - skip it
-            logger.warning("Record can't be converted")
-            continue
+            # Pass the input record to conversion function to create IDEA message
+            idea = conv_func(rec, args)
 
-        if args.name is not None:
-            idea['Node'][0]['Name'] = args.name
+            if idea is None:
+                # Record can't be converted - skip it
+                logger.warning("Record can't be converted")
+                continue
 
-        # *** Send IDEA to outputs ***
-        # Perform rule matching and action running on the idea message
-        try:
-            config.match(idea)
-        except pytrap.Terminated:
-            logger.error("PyTrap was terminated")
-            break
-        except DropMsg:
-            logger.info("Message was dropped by Drop action.")
-            continue
-        except Exception as e:
-            logger.error(str(e))
-            break
+            if args.name is not None:
+                idea['Node'][0]['Name'] = args.name
+
+            # *** Send IDEA to outputs ***
+            # Perform rule matching and action running on the idea message
+            try:
+                config.match(idea)
+            except pytrap.Terminated:
+                logger.error("PyTrap was terminated")
+                break
+            except DropMsg:
+                logger.info("Message was dropped by Drop action.")
+                continue
+            except Exception as e:
+                logger.error(str(e))
+                break
+    else:
+        # DRY argument given, just print config and exit
+        print(config)
 
     if wardenclient:
         wardenclient.close()

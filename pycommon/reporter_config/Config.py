@@ -165,6 +165,12 @@ class Config():
             return (self.conf["reporter"]["loglevel"]) * 10
         except:
             return 30
+    def __str__(self):
+        ag = "\n".join([str(self.addrGroups[key]) for key in self.addrGroups])
+        a = "\n".join([key + ":\n\t" + str(self.actions[key]) for key in self.actions])
+        r = "\n".join([str(val) for val in self.rules])
+        string = "Address Groups:\n{0}\n----------------\nCustom Actions:\n{1}\n----------------\nRules:\n{2}\n".format(ag, a, r)
+        return string
 
 if __name__ == "__main__":
     """Run basic tests

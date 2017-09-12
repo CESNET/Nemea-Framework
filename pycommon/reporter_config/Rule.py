@@ -109,6 +109,18 @@ class Rule():
     def __repr__(self):
         return self.__conditionRaw
 
+    def __str__(self):
+        actions = []
+        for i in self.__actions:
+            actions.append("{0} ({1})".format(i.actionId, i.actionType))
+        elseactions = []
+        for i in self.__elseactions:
+            elseactions.append("{0} ({1})".format(i.actionId, i.actionType))
+
+        return "{0}: {1}\n{2}{3}".format(self.id, " ".join([i.strip() for i in self.__conditionRaw.split("\n")]),
+                                         "\tActions: " + (", ".join(actions)) + "\n" if actions else "",
+                                         "\tElse Actions: " + (", ".join(elseactions)) + "\n" if elseactions else "")
+
     def rule(self):
         return str(self.__condition)
 

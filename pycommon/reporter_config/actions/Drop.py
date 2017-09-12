@@ -11,3 +11,7 @@ class DropAction(Action):
     def run(self, record):
         super(type(self), self).run(record)
         raise DropMsg()
+
+    def __str__(self):
+        return "DROP\n"
+

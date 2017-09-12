@@ -33,6 +33,8 @@ class EmailAction(Action):
         self.smtpSSL    = a.get("forceSSL", False)
         self.smtpUser   = a.get("authuser", None)
         self.smtpPass   = a.get("authpass", None)
+        self.smtpKey    = None
+        self.smtpChain  = None
         key    = a.get("key", None)
         chain  = a.get("chain", None)
 
@@ -87,4 +89,24 @@ class EmailAction(Action):
         self.message['Subject'] = self.subject
         self.message['From'] = self.addrFrom
         self.message['To'] = ",".join(self.addrsTo)
+
+    def __str__(self):
+        f = []
+        f.append("Server: " + self.smtpServer)
+        f.append("Port: " + str(self.smtpPort))
+        f.append("STARTTLS: " + ("True" if self.smtpTLS else "False"))
+        f.append("SSL:" + ("True" if self.smtpSSL else "False"))
+        if self.smtpUser:
+            f.append("Username: " + self.smtpUser)
+        if self.smtpPass:
+            f.append("*PASSWORD*")
+        if self.smtpKey:
+            f.append("*KEYFILE*")
+        if self.smtpChain:
+            f.append("*CHAINFILE*")
+        f.append("From: " + self.addrFrom)
+        f.append("To: " + ",".join(self.addrsTo))
+        f.append("Subject: " + self.subject)
+        return ", ".join(f) + "\n"
+
 

@@ -72,3 +72,13 @@ class MongoAction(Action):
         if self.client:
             self.client.close()
 
+    def __str__(self):
+        f = []
+        f.append("Host: " + self.host)
+        f.append("Port: " + str(self.port))
+        f.append("DB: " + self.db)
+        f.append("Collection: " + self.collection)
+        if self.user and self.password:
+            f.append("Auth to DB using User: " + self.user + " and *PASSWORD*")
+        return ", ".join(f) + "\n"
+
