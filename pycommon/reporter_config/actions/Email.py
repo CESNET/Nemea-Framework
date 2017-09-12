@@ -70,7 +70,7 @@ class EmailAction(Action):
             else:
                 smtp = smtplib.SMTP(host = self.smtpServer, port = self.smtpPort)
                 if self.smtpTLS:
-                    smtp.starttls(keyfile = self.smtp, certfile = self.smtpChain)
+                    smtp.starttls(keyfile = self.smtpKey, certfile = self.smtpChain)
             if self.smtpUser and self.smtpPass:
                 smtp.login(self.smtpUser, self.smtpPass)
 
