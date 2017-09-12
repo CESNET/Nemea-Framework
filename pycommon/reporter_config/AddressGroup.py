@@ -16,6 +16,8 @@ class AddressGroup:
             with open(addrGroup["file"], 'r') as f:
                 for line in f:
                     line = line.strip('\n')
+                    if not line:
+                        continue
                     try:
                         self.content.append(ipranges.from_str(line))
                     except ValueError as e:
