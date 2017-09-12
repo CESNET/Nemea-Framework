@@ -66,8 +66,11 @@ class Rule():
         elif cond == "false":
             self.__condition = False
         else:
-            self.__condition = self.parser.parse(self.__condition)
-            self.__condition = self.compiler.compile(self.__condition)
+            try:
+                self.__condition = self.parser.parse(self.__condition)
+                self.__condition = self.compiler.compile(self.__condition)
+            except Exception as e:
+                print("Error while parsing condition: {0}\nOriginal exception: {1}".format(self.__condition, e))
 
     def filter(self, record):
         """
