@@ -34,27 +34,28 @@ class TrapCtxInitTest(unittest.TestCase):
         c.init(["-i", "u:test_init"], 0, 1)
         c.finalize()
 
-class TrapCtxHelpTest(unittest.TestCase):
-    def runTest(self):
-        import pytrap
-        c = pytrap.TrapCtx()
-        try:
-            c.init(["-h"], 0, 1)
-            self.fail("Calling method of uninitialized context.")
-        except pytrap.TrapHelp:
-            pass
-        c.finalize()
-
-class TrapCtxHelpifcTest(unittest.TestCase):
-    def runTest(self):
-        import pytrap
-        c = pytrap.TrapCtx()
-        try:
-            c.init(["-h", "1"], 0, 1)
-            self.fail("Calling method of uninitialized context.")
-        except pytrap.TrapHelp:
-            pass
-        c.finalize()
+#Skip tests that print help
+#class TrapCtxHelpTest(unittest.TestCase):
+#    def runTest(self):
+#        import pytrap
+#        c = pytrap.TrapCtx()
+#        try:
+#            c.init(["-h"], 0, 1)
+#            self.fail("Calling method of uninitialized context.")
+#        except pytrap.TrapHelp:
+#            pass
+#        c.finalize()
+#
+#class TrapCtxHelpifcTest(unittest.TestCase):
+#    def runTest(self):
+#        import pytrap
+#        c = pytrap.TrapCtx()
+#        try:
+#            c.init(["-h", "1"], 0, 1)
+#            self.fail("Calling method of uninitialized context.")
+#        except pytrap.TrapHelp:
+#            pass
+#        c.finalize()
 
 class TrapCtxNotInitTestGetdatafmt(unittest.TestCase):
     def runTest(self):
