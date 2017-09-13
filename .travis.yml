@@ -5,10 +5,6 @@ compiler:
 os:
   - linux
 
-python:
-  - 2.7
-  - 3.5
-
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -61,14 +57,18 @@ before_install:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
+install:
+   - pyenv install 2.7.13
+
 script:
+  - pyenv global 2.7.13
   - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
-    (cd pytrap && make coverage && sudo $(pyenv which python) setup.py install;)
+    (cd pytrap && make coverage && $(pyenv which python) setup.py install;)
   - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
   - mkdir dist-pkgs &&
     for d in libtrap unirec common; do make -C "$d" dist; done &&
-    for d in pycommon pytrap; do (cd "$d" && sudo $(pyenv which python) setup.py sdist && mv dist/*.tar.gz .;) done &&
+    for d in pycommon pytrap; do (cd "$d" && $(pyenv which python) setup.py sdist && mv dist/*.tar.gz .;) done &&
     for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar --strip-components=1 -xf *.tar.gz;) done
 
 deploy:
