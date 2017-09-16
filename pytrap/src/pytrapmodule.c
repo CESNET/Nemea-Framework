@@ -7,83 +7,52 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "pytrapexceptions.h"
+
+PyObject *TrapError;
+
+PyObject *TimeoutError;
+
+PyObject *TrapTerminated;
+
+PyObject *TrapFMTChanged;
+
+PyObject *TrapFMTMismatch;
+
+PyObject *TrapHelp;
 
 int init_unirectemplate(PyObject *m);
 
-static trap_module_info_t *module_info = NULL;
 static ur_template_t *in_tmplt = NULL;
 
 extern void *trap_glob_ctx;
 
-#define MODULE_BASIC_INFO(BASIC) \
-    BASIC("NEMEA module", "Module uses pytrap, it should handle help on its own.", 1, 0)
-
-#define MODULE_PARAMS(PARAM)
+typedef struct {
+    PyObject_HEAD
+    /**
+     * Libtrap context
+     */
+    trap_ctx_t *trap;
+} pytrap_trapcontext;
 
 TRAP_DEFAULT_SIGNAL_HANDLER((void) 0)
 
-PyObject *TrapError;
-
-static PyObject *TimeoutError;
-
-static PyObject *TrapTerminated;
-
-static PyObject *TrapFMTChanged;
-
-static PyObject *TrapFMTMismatch;
-
-static PyObject *TrapHelp;
-
-#define TRAP_LOCAL_INITIALIZATION(argc, argv, module_info) \
-   {\
-      trap_ifc_spec_t ifc_spec;\
-      int ret = trap_parse_params(&argc, argv, &ifc_spec);\
-      if (ret != TRAP_E_OK) {\
-         if (ret == TRAP_E_HELP) {\
-            trap_print_help(&module_info);\
-            FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS) \
-            return 2;\
-         }\
-         trap_free_ifc_spec(ifc_spec);\
-         fprintf(stderr, "ERROR in parsing of parameters for TRAP: %s\n", trap_last_error_msg);\
-         FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS) \
-         return 1;\
-      }\
-      ret = trap_init(&module_info, ifc_spec);\
-      if (ret != TRAP_E_OK) {\
-         trap_free_ifc_spec(ifc_spec);\
-         fprintf(stderr, "ERROR in TRAP initialization: %s\n", trap_last_error_msg);\
-         FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS) \
-         return 1;\
-      }\
-      trap_free_ifc_spec(ifc_spec);\
-   }
-
-static int
-local_trap_init(int argc, char **argv, trap_module_info_t *module_info, int ifcin, int ifcout)
-{
-    INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
-    module_info->num_ifc_in = ifcin;
-    module_info->num_ifc_out = ifcout;
-
-    TRAP_LOCAL_INITIALIZATION(argc, argv, *module_info);
-
-    TRAP_REGISTER_DEFAULT_SIGNAL_HANDLER();
-
-    return 0;
-}
-
 static PyObject *
-pytrap_init(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
-    char **argv = NULL;
-    char *arg;
-    PyObject *argvlist;
-    PyObject *strObj;
-    int argc = 0, i, ifcin = 1, ifcout = 0;
+    char *arg, *module_name = "nemea-python-module", *module_desc = "",
+         *service_ifcname = NULL, *ifc_spec = NULL;
+    char service_name[20], found = 0, print_help = 0;
+    PyObject *argvlist, *strObj;
+    int argc = 0, i, ifcin = 1, ifcout = 0, result;
 
-    static char *kwlist[] = {"argv", "ifcin", "ifcout", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!|ii", kwlist, &PyList_Type, &argvlist, &ifcin, &ifcout)) {
+    static char *kwlist[] = {"argv", "ifcin", "ifcout", "module_name", "module_desc",
+                             "service_ifcname", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!|iisss", kwlist, &PyList_Type, &argvlist,
+                                     &ifcin, &ifcout, &module_name, &module_desc, &service_ifcname)) {
         return NULL;
     }
 
@@ -92,43 +61,86 @@ pytrap_init(PyObject *self, PyObject *args, PyObject *keywds)
         PyErr_SetString(TrapError, "argv list must not be empty.");
         return NULL;
     }
-    argv = calloc(argc, sizeof(char *));
     for (i=0; i<argc; i++) {
         strObj = PyList_GetItem(argvlist, i);
 #if PY_MAJOR_VERSION >= 3
-        if (!PyUnicode_Check(strObj)) {
+        result = PyUnicode_Check(strObj);
 #else
-        if (!PyString_Check(strObj)) {
+        result = PyString_Check(strObj);
 #endif
+        if (!result) {
             PyErr_SetString(TrapError, "argv must contain string.");
             goto failure;
         }
 #if PY_MAJOR_VERSION >= 3
-        arg = PyUnicode_AsUTF8AndSize(strObj, NULL);
+        arg = PyUnicode_AsUTF8(strObj);
 #else
         arg = PyString_AS_STRING(strObj);
 #endif
-        argv[i] = arg;
+        if (found == 1) {
+            ifc_spec = arg;
+            found = 0;
+            continue;
+        }
+        if ((print_help == 1)) {
+            if (!strcmp(arg, "1") || !strcmp(arg, "trap")) {
+                trap_set_help_section(1);
+            }
+        } else if (strcmp(arg, "-i") == 0) {
+            found = 1;
+        } else if (!strncmp(arg, "-h", 2) || !strncmp(arg, "--help", 6)) {
+            if (!strcmp(arg, "-h1") || !strcmp(arg, "--help=trap")) {
+                trap_set_help_section(1);
+            }
+            print_help = 1;
+        }
     }
 
-    int ret = local_trap_init(argc, argv, module_info, ifcin, ifcout);
-    if (ret == 2) {
+    if (print_help) {
+        trap_module_info_t module_info = {
+            .name = module_name,
+            .description = module_desc,
+            .num_ifc_in =  ifcin,
+            .num_ifc_out = ifcout,
+            .params = NULL
+        };
+        trap_print_help(&module_info);
         PyErr_SetString(TrapHelp, "Printed help, skipped initialization.");
         return NULL;
     }
-    if (ret != 0) {
+
+    if (ifc_spec == NULL) {
+        PyErr_SetString(TrapError, "Missing -i argument.");
+        return NULL;
+    }
+
+    if (service_ifcname == NULL) {
+        snprintf(service_name, 20, "service_%d", getpid());
+        service_ifcname = service_name;
+    } else if (strlen(service_ifcname) == 0) {
+        service_ifcname = NULL;
+    }
+
+    self->trap = trap_ctx_init3(module_name,
+                                module_desc,
+                                ifcin, ifcout,
+                                ifc_spec,
+                                service_ifcname);
+
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "Initialization failed");
         return NULL;
     }
 
+    TRAP_REGISTER_DEFAULT_SIGNAL_HANDLER();
+
     Py_RETURN_NONE;
 failure:
-    free(argv);
     return NULL;
 }
 
 static PyObject *
-pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_send(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     uint32_t ifcidx = 0;
     PyObject *dataObj;
@@ -157,7 +169,7 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
 
     int ret;
     Py_BEGIN_ALLOW_THREADS
-    ret = trap_send(ifcidx, data, (uint16_t) data_size);
+    ret = trap_ctx_send(self->trap, ifcidx, data, (uint16_t) data_size);
     Py_END_ALLOW_THREADS
 
     if (ret == TRAP_E_TIMEOUT) {
@@ -175,7 +187,7 @@ pytrap_send(PyObject *self, PyObject *args, PyObject *keywds)
 }
 
 static PyObject *
-pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_recv(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     uint32_t ifcidx = 0;
     const void *in_rec;
@@ -187,14 +199,14 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
     if (!PyArg_ParseTupleAndKeywords(args, keywds, "|I", kwlist, &ifcidx)) {
         return NULL;
     }
-    if (trap_glob_ctx == NULL) {
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "TrapCtx is not initialized.");
         return NULL;
     }
 
     int ret;
     Py_BEGIN_ALLOW_THREADS
-    ret = trap_recv(ifcidx, &in_rec, &in_rec_size);
+    ret = trap_ctx_recv(self->trap, ifcidx, &in_rec, &in_rec_size);
     Py_END_ALLOW_THREADS
 
     if (ret == TRAP_E_TIMEOUT) {
@@ -225,7 +237,7 @@ pytrap_recv(PyObject *self, PyObject *args, PyObject *keywds)
 }
 
 static PyObject *
-pytrap_ifcctl(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_ifcctl(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     PyObject *dir_in;
     uint32_t request;
@@ -237,30 +249,31 @@ pytrap_ifcctl(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    if (trap_glob_ctx == NULL) {
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "TrapCtx is not initialized.");
         return NULL;
     }
 
-    trap_ifcctl((PyObject_IsTrue((PyObject *) dir_in) ? TRAPIFC_INPUT : TRAPIFC_OUTPUT),
+    trap_ctx_ifcctl(self->trap, (PyObject_IsTrue((PyObject *) dir_in) ? TRAPIFC_INPUT : TRAPIFC_OUTPUT),
                 ifcidx, request, value);
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-pytrap_terminate(PyObject *self, PyObject *args)
+pytrap_terminate(pytrap_trapcontext *self, PyObject *args)
 {
-    trap_terminate();
+    trap_ctx_terminate(self->trap);
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-pytrap_finalize(PyObject *self, PyObject *args)
+pytrap_finalize(pytrap_trapcontext *self, PyObject *args)
 {
     TRAP_DEFAULT_FINALIZATION();
-    // TODO FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS);
+    trap_ctx_finalize(&self->trap);
+    self->trap = NULL;
     ur_free_template(in_tmplt);
     ur_finalize();
 
@@ -268,7 +281,7 @@ pytrap_finalize(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-pytrap_sendFlush(PyObject *self, PyObject *args)
+pytrap_sendFlush(pytrap_trapcontext *self, PyObject *args)
 {
     uint32_t ifcidx = 0;
 
@@ -276,13 +289,13 @@ pytrap_sendFlush(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    trap_send_flush(ifcidx);
+    trap_ctx_send_flush(self->trap, ifcidx);
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-pytrap_setDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_setDataFmt(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     uint32_t ifcidx;
     uint8_t data_type = TRAP_FMT_UNIREC;
@@ -293,18 +306,18 @@ pytrap_setDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    if (trap_glob_ctx == NULL) {
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "TrapCtx is not initialized.");
         return NULL;
     }
 
-    trap_set_data_fmt(ifcidx, data_type, fmtspec);
+    trap_ctx_set_data_fmt(self->trap, ifcidx, data_type, fmtspec);
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-pytrap_getDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_getDataFmt(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     uint8_t data_type;
     uint32_t ifcidx = 0;
@@ -315,17 +328,17 @@ pytrap_getDataFmt(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    if (trap_glob_ctx == NULL) {
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "TrapCtx is not initialized.");
         return NULL;
     }
 
-    trap_get_data_fmt(TRAPIFC_INPUT, ifcidx, &data_type, &fmtspec);
+    trap_ctx_get_data_fmt(self->trap, TRAPIFC_INPUT, ifcidx, &data_type, &fmtspec);
     return Py_BuildValue("(is)", data_type, strdup(fmtspec));
 }
 
 static PyObject *
-pytrap_setVerboseLevel(PyObject *self, PyObject *args)
+pytrap_setVerboseLevel(pytrap_trapcontext *self, PyObject *args)
 {
     int level = 0;
 
@@ -338,13 +351,13 @@ pytrap_setVerboseLevel(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-pytrap_getVerboseLevel(PyObject *self, PyObject *args)
+pytrap_getVerboseLevel(pytrap_trapcontext *self, PyObject *args)
 {
     return PyLong_FromLong(trap_get_verbose_level());
 }
 
 static PyObject *
-pytrap_setRequiredFmt(PyObject *self, PyObject *args, PyObject *keywds)
+pytrap_setRequiredFmt(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     uint32_t ifcidx;
     uint8_t data_type = TRAP_FMT_UNIREC;
@@ -355,30 +368,30 @@ pytrap_setRequiredFmt(PyObject *self, PyObject *args, PyObject *keywds)
         return NULL;
     }
 
-    if (trap_glob_ctx == NULL) {
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "TrapCtx is not initialized.");
         return NULL;
     }
 
-    trap_set_required_fmt(ifcidx, data_type, fmtspec);
+    trap_ctx_set_required_fmt(self->trap, ifcidx, data_type, fmtspec);
 
     Py_RETURN_NONE;
 }
 
 static PyObject *
-pytrap_getInIFCState(PyObject *self, PyObject *args)
+pytrap_getInIFCState(pytrap_trapcontext *self, PyObject *args)
 {
     uint32_t ifcidx = 0;
 
     if (!PyArg_ParseTuple(args, "i", &ifcidx))
         return NULL;
 
-    if (trap_glob_ctx == NULL) {
+    if (self->trap == NULL) {
         PyErr_SetString(TrapError, "TrapCtx is not initialized.");
         return NULL;
     }
 
-    int state = trap_get_in_ifc_state(ifcidx);
+    int state = trap_ctx_get_in_ifc_state(self->trap, ifcidx);
     if (state == TRAP_E_BAD_IFC_INDEX) {
         PyErr_SetString(TrapError, "Bad index of IFC.");
         return NULL;
@@ -396,7 +409,11 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Args:\n"
         "    argv (list[str]): Arguments of the process.\n"
         "    ifcin (Optional[int]): `ifcin` is a number of input IFC (default: 1).\n"
-        "    ifcout (Optional[int]): `ifcout` is a number of output IFC (default: 0).\n\n"
+        "    ifcout (Optional[int]): `ifcout` is a number of output IFC (default: 0).\n"
+        "    module_name (Optional[str]): Set name of this module.\n"
+        "    module_desc (Optional[str]): Set description of this module.\n"
+        "    service_ifcname (Optional[str]): Set identifier of service IFC, PID is used when omitted, set to \"\" (empty string) to disable service IFC.\n"
+        "\n"
         "Raises:\n"
         "    TrapError: Initialization failed.\n"},
 
@@ -447,13 +464,13 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    Tuple(int, string): Type of format and specifier (see setRequiredFmt()).\n\n"
         },
 
-    {"terminate",   pytrap_terminate, METH_VARARGS,
+    {"terminate",   (PyCFunction) pytrap_terminate, METH_VARARGS,
         "Terminate TRAP."},
 
-    {"finalize",    pytrap_finalize, METH_VARARGS,
+    {"finalize",    (PyCFunction) pytrap_finalize, METH_VARARGS,
         "Free allocated memory."},
 
-    {"sendFlush",   pytrap_sendFlush, METH_VARARGS,
+    {"sendFlush",   (PyCFunction) pytrap_sendFlush, METH_VARARGS,
         "Force sending buffer for IFC with ifcidx index.\n\n"
         "Args:\n"
         "    ifcidx (Optional[int]): Index of IFC (default: 0).\n\n"
@@ -467,19 +484,19 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    spec (Optional[string]): Specifier of data format (default: \"\").\n"
         },
 
-    {"setVerboseLevel", pytrap_setVerboseLevel, METH_VARARGS,
+    {"setVerboseLevel", (PyCFunction) pytrap_setVerboseLevel, METH_VARARGS,
         "Set the verbose level of TRAP.\n\n"
         "Args:\n"
         "    level (int): Level of verbosity the higher value the more verbose (default: -1).\n"
         },
 
-    {"getVerboseLevel", pytrap_getVerboseLevel, METH_VARARGS,
+    {"getVerboseLevel", (PyCFunction) pytrap_getVerboseLevel, METH_VARARGS,
         "Get current verbose level.\n\n"
         "Returns:\n"
         "    int: Level of verbosity.\n"
         },
 
-    {"getInIFCState",   pytrap_getInIFCState, METH_VARARGS,
+    {"getInIFCState",   (PyCFunction) pytrap_getInIFCState, METH_VARARGS,
         "Get the state of input IFC.\n\n"
         "Args:\n"
         "    ifcidx (int): Index of IFC.\n\n"
@@ -495,7 +512,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
 static PyTypeObject pytrap_TrapContext = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.TrapCtx", /* tp_name */
-    0, /* tp_basicsize */
+    sizeof(pytrap_trapcontext), /* tp_basicsize */
     0, /* tp_itemsize */
     0, /* tp_dealloc */
     0, /* tp_print */
@@ -533,7 +550,22 @@ static PyTypeObject pytrap_TrapContext = {
     0  /* tp_new */
 };
 
+PyObject *
+pytrap_getTrapVersion(PyObject *self)
+{
+    PyObject *t = NULL;
+    t = Py_BuildValue("(ss)",
+                      strdup(trap_version),
+                      strdup(trap_git_version));
+
+    return t;
+}
+
 static PyMethodDef pytrap_methods[] = {
+    {"getTrapVersion", (PyCFunction) pytrap_getTrapVersion, METH_NOARGS,
+     "Get the version of libtrap.\n\n"
+     "Returns:\n"
+     "    tuple(str, str): libtrap version, git version.\n\n"},
     {NULL, NULL, 0, NULL}
 };
 

@@ -1261,7 +1261,7 @@ char *get_module_name(void)
       ret = strstr(p, "python");
       if (ret != NULL && ((ret[6] == 0) || (ret[6] == '2') || (ret[6] == '3'))) {
          p = strchr(p, 0);
-         p += 2;
+         p += 1;
       }
       ret = strrchr(p, '/');
       if (ret == NULL) {
