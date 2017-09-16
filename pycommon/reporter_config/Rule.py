@@ -66,8 +66,11 @@ class Rule():
         elif cond == "false":
             self.__condition = False
         else:
-            self.__condition = self.parser.parse(self.__condition)
-            self.__condition = self.compiler.compile(self.__condition)
+            try:
+                self.__condition = self.parser.parse(self.__condition)
+                self.__condition = self.compiler.compile(self.__condition)
+            except Exception as e:
+                print("Error while parsing condition: {0}\nOriginal exception: {1}".format(self.__condition, e))
 
     def filter(self, record):
         """
@@ -108,6 +111,18 @@ class Rule():
 
     def __repr__(self):
         return self.__conditionRaw
+
+    def __str__(self):
+        actions = []
+        for i in self.__actions:
+            actions.append("{0} ({1})".format(i.actionId, i.actionType))
+        elseactions = []
+        for i in self.__elseactions:
+            elseactions.append("{0} ({1})".format(i.actionId, i.actionType))
+
+        return "{0}: {1}\n{2}{3}".format(self.id, " ".join([i.strip() for i in self.__conditionRaw.split("\n")]),
+                                         "\tActions: " + (", ".join(actions)) + "\n" if actions else "",
+                                         "\tElse Actions: " + (", ".join(elseactions)) + "\n" if elseactions else "")
 
     def rule(self):
         return str(self.__condition)

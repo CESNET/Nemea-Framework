@@ -29,3 +29,6 @@ class TrapAction(Action):
     def __del__(self):
         pass
 
+    def __str__(self):
+        return "TRAP\n"
+

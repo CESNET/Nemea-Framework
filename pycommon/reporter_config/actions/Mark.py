@@ -15,3 +15,6 @@ class MarkAction(Action):
     def run(self, record):
         super(type(self), self).run(record)
         return self.mark(record)
+
+    def __str__(self):
+        return "Path: " + self.path + ", Value: " + self.value + "\n"

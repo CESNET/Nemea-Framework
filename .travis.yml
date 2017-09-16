@@ -5,15 +5,13 @@ compiler:
 os:
   - linux
 
-python:
-  - 2.7.10
-
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
    - secure: "i5wXM5UGRLxlcO+4Q+l3UjTka7mDE6wCD0gyU9LXVzMD5yACHKRQ2XQFVviMvBp5oXL3aBxnbZh1TdkzkI4+XIvMIPCwNQf0vpEclQ/zCdJtVZAA2G2dC/DL4RbPGN0ad5vLJCgmuOP5BqOpoIeC0+GLnmpRwcqNf9yeeaDqxLiGt24SFplPvwNnEDDUn2X8TiSfTh962utqO5UIgonWvTX1RVN4jLUl+G98inSZYuG0+oRmvb26PBqhkSRFVK1spbxoFQi15ySgmNKFTo9Miqq3VPxKLnVhEIrSY2pUW8swu+9d7+YYJUxO9w4WL4xLQqXiX/SXLr4jpaK0FS1otlT8zjlasTLGBfIYTZoE9pUz4h2R2vFPkiGkQGKHZHlPwqshy33w7IjwYJV41qvgpo0LYUj23rQ1LE24wbVpt1Nz+TQJaX7307nWrSaXYw9oYh2e32M1NPGZNFrEWvtmTZlyC6TFCwXtwFyzdLWhFfXO4U/bFcqKL00grtIzotSq+pdFVI2VFeDpepDAettYKYWEOv17GdlreQ53xtFCjmbH+IBkxH1JuFkk+uXYMR4Y7ramCA2aTppcteu7GB6dePfiHQDc2lrYyFUp58pQB3StDBUrAndbj3AwQRiF+6WKo7Z93aE1IWcmUESMxC4wFl76Tq4ESJR+a8Xq+aNZ+NE="
    - LD_LIBRARY_PATH=/tmp/nemea/lib
+   - PYTHONPATH=/usr/lib/python2.7/site-packages
 
 branches:
   except:
@@ -37,6 +35,10 @@ addons:
       - python-dev
       - python-pip
       - python-setuptools
+      - python3
+      - python3-dev
+      - python3-pip
+      - python3-setuptools
   coverity_scan:
     project:
       name: "CESNET/Nemea-Framework"
@@ -47,26 +49,23 @@ addons:
     branch_pattern: coverity
 
 before_install:
-  - ( wget -q https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz &&
-    tar -xJvf cmocka-1.0.1.tar.xz &&
-    mkdir -p cmocka-1.0.1/build && cd cmocka-1.0.1/build &&
-    cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr .. && make -j2 && sudo make install; )
-
-install:
-   - pyenv install 2.7.10
+  #- ( wget -q https://cmocka.org/files/1.0/cmocka-1.0.1.tar.xz &&
+  #  tar -xJvf cmocka-1.0.1.tar.xz &&
+  #  mkdir -p cmocka-1.0.1/build && cd cmocka-1.0.1/build &&
+  #  cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr .. && make -j2 && sudo make install; )
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - pyenv global 2.7.10
+  - pyenv global 2.7.13 3.5.3
   - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
-    (cd pytrap && make coverage && $(pyenv which python) setup.py install;)
-  - make check || { find . \( -name '*.log' -o -name '*.trs' \) ! -name config.log -print -exec cat {} \;; exit 1;}
+    (cd pytrap && make coverage; $(pyenv which python) setup.py install; $(pyenv which python3) setup.py install;)
+  - make check || { find . \( -name '*.sh.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1;}
   - mkdir dist-pkgs &&
     for d in libtrap unirec common; do make -C "$d" dist; done &&
-    for d in pycommon pytrap; do (cd "$d" && python setup.py sdist && mv dist/*.tar.gz .;) done &&
+    for d in pycommon pytrap; do (cd "$d" && $(pyenv which python) setup.py sdist && mv dist/*.tar.gz .;) done &&
     for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar --strip-components=1 -xf *.tar.gz;) done
 
 deploy:

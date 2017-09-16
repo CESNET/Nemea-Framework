@@ -53,3 +53,6 @@ class FileAction(Action):
         except Exception as e:
             self.logger.error(e)
 
+    def __str__(self):
+        return "Path: " + self.path + (" (Directory)" if self.dir else "") + "\n"
+

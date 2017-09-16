@@ -49,7 +49,7 @@ def getIDEAtime(unirecField = None):
 
 # Template of module description
 desc_template = """
-TRAP module, libtrap version: [TODO]
+TRAP module - Reporter
 ===========================================
 Name: {name}
 Inputs: 1
@@ -58,18 +58,18 @@ Description:
   {original_desc}Required format of input:
     {type}: "{fmt}"
 
-  All '<something>2idea' modules convert reports from various detectors to Intrusion Detection Extensible Alert (IDEA) format. The IDEA messages may be send to any of the following outputs:
-    - TRAP interface (--trap)
-    - simple text file (--file)
-    - collection in MongoDB database (--mongodb)
-    - Warden3 server (--warden)
-  It is possible to define more than one outputs - the messages will be send to all of them.
+  All '<something>2idea' modules convert reports from various detectors to Intrusion Detection Extensible Alert (IDEA) format.
+  The IDEA messages may be send or stored using various actions, see http://nemea.liberouter.org/reporting/ for more information.
 """
 
 DEFAULT_NODE_NAME = "undefined"
 
 def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = None):
-    """ TODO doc
+    """Run the main loop of the reporter module called `module_name` with `module_desc` (used in help).
+
+    The module requires data format of `req_type` type and `req_format` specifier - these must be given by author of the module.
+
+    `conv_func(rec, args)` is a callback function that must translate given incoming alert `rec` (typically in UniRec according to `req_type`) into IDEA message. `args` contains CLI arguments parsed by ArgumentParser. `conv_func` must return dict().
     """
 
     # *** Parse command-line arguments ***
@@ -92,19 +92,21 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Config file
     arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
             help='Specify YAML config file path which to load.')
+    arg_parser.add_argument('-d', '--dry',  action='store_true',
+            help="""Do not run, just print loaded config.""")
     # Warden3 output
     arg_parser.add_argument('--warden', metavar="CONFIG_FILE",
             help='Send IDEA messages to Warden server. Load configuration of Warden client from CONFIG_FILE.')
 
     # Other options
     arg_parser.add_argument('-n', '--name', metavar='NODE_NAME',
-            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required if Warden output is used, recommended otherwise.')
+            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required argument.')
     arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
-            help="""Enable verbose mode (may be used by some modules, common part donesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
+            help="""Enable verbose mode (may be used by some modules, common part doesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
-            help='TODO (ideally this section should be added by TRAP')
+            help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
     # Parse arguments
     args = arg_parser.parse_args()
 
@@ -145,79 +147,82 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     config = Config.Config(args.config, trap = trap, warden = wardenclient)
 
 
-    # *** Main loop ***
-    URInputTmplt = None
-    if req_type == pytrap.FMT_UNIREC and req_format != "":
-        URInputTmplt = pytrap.UnirecTemplate(req_format) # TRAP expects us to have predefined template for required set of fields
-        rec = URInputTmplt
-
-    stop = False
-    while not stop:
-        logger.info("Starting receiving")
-        # *** Read data from input interface ***
-        try:
-            data = trap.recv()
-        except pytrap.FormatMismatch:
-            logger.error("Input data format mismatch in receiving from TRAP interface")#Required: "+str((req_type,req_format))+"\nReceived: "+str(trap.get_data_fmt(trap.IFC_INPUT, 0))+"\n")
-            break
-        except pytrap.FormatChanged as e:
-            # TODO: This should be handled by trap.recv transparently
-            # Get negotiated input data format
-            (fmttype, fmtspec) = trap.getDataFmt(0)
-            # If data type is UniRec, create UniRec template
-            if fmttype == pytrap.FMT_UNIREC:
-                URInputTmplt = pytrap.UnirecTemplate(fmtspec)
-            else:
-                URInputTmplt = None
+    if not args.dry:
+        # *** Main loop ***
+        URInputTmplt = None
+        if req_type == pytrap.FMT_UNIREC and req_format != "":
+            URInputTmplt = pytrap.UnirecTemplate(req_format) # TRAP expects us to have predefined template for required set of fields
             rec = URInputTmplt
-            data = e.data
-        except pytrap.Terminated:
-            break
 
-        # Check for "end-of-stream" record
-        if len(data) <= 1:
-            if args.trap:
-                # If we have output, send "end-of-stream" record and exit
-                trap.send(0, b"0")
-            break
+        stop = False
+        while not stop:
+            logger.info("Starting receiving")
+            # *** Read data from input interface ***
+            try:
+                data = trap.recv()
+            except pytrap.FormatMismatch:
+                logger.error("Input data format mismatch in receiving from TRAP interface")
+                break
+            except pytrap.FormatChanged as e:
+                # Get negotiated input data format
+                (fmttype, fmtspec) = trap.getDataFmt(0)
+                # If data type is UniRec, create UniRec template
+                if fmttype == pytrap.FMT_UNIREC:
+                    URInputTmplt = pytrap.UnirecTemplate(fmtspec)
+                else:
+                    URInputTmplt = None
+                rec = URInputTmplt
+                data = e.data
+            except pytrap.Terminated:
+                break
 
-        # Assert that if UniRec input is required, input template is set
-        assert(req_type != pytrap.FMT_UNIREC or URInputTmplt is not None)
+            # Check for "end-of-stream" record
+            if len(data) <= 1:
+                if args.trap:
+                    # If we have output, send "end-of-stream" record and exit
+                    trap.send(0, b"0")
+                break
 
-        # Convert raw input data to UniRec object (if UniRec input is expected)
-        if req_type == pytrap.FMT_UNIREC:
-            rec.setData(data)
-        elif req_type == pytrap.FMT_JSON:
-            rec = json.loads(data)
-        else: # TRAP_FMT_RAW
-            rec = data
+            # Assert that if UniRec input is required, input template is set
+            assert(req_type != pytrap.FMT_UNIREC or URInputTmplt is not None)
 
-        # *** Convert input record to IDEA ***
+            # Convert raw input data to UniRec object (if UniRec input is expected)
+            if req_type == pytrap.FMT_UNIREC:
+                rec.setData(data)
+            elif req_type == pytrap.FMT_JSON:
+                rec = json.loads(data)
+            else: # TRAP_FMT_RAW
+                rec = data
 
-        # Pass the input record to conversion function to create IDEA message
-        idea = conv_func(rec, args)
+            # *** Convert input record to IDEA ***
 
-        if idea is None:
-            # Record can't be converted - skip it
-            logger.warning("Record can't be converted")
-            continue
+            # Pass the input record to conversion function to create IDEA message
+            idea = conv_func(rec, args)
 
-        if args.name is not None:
-            idea['Node'][0]['Name'] = args.name
+            if idea is None:
+                # Record can't be converted - skip it
+                logger.warning("Record can't be converted")
+                continue
 
-        # *** Send IDEA to outputs ***
-        # Perform rule matching and action running on the idea message
-        try:
-            config.match(idea)
-        except pytrap.Terminated:
-            logger.error("PyTrap was terminated")
-            break
-        except DropMsg:
-            logger.info("Message was dropped by Drop action.")
-            continue
-        except Exception as e:
-            logger.error(str(e))
-            break
+            if args.name is not None:
+                idea['Node'][0]['Name'] = args.name
+
+            # *** Send IDEA to outputs ***
+            # Perform rule matching and action running on the idea message
+            try:
+                config.match(idea)
+            except pytrap.Terminated:
+                logger.error("PyTrap was terminated")
+                break
+            except DropMsg:
+                logger.info("Message was dropped by Drop action.")
+                continue
+            except Exception as e:
+                logger.error(str(e))
+                break
+    else:
+        # DRY argument given, just print config and exit
+        print(config)
 
     if wardenclient:
         wardenclient.close()
