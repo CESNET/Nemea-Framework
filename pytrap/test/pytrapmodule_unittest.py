@@ -126,3 +126,9 @@ class TrapCtxNotInitTestRecv(unittest.TestCase):
         except:
             pass
 
+class TrapCtxGetVersion(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        c = pytrap.getTrapVersion()
+        print(c)
+

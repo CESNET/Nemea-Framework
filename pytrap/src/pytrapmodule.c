@@ -535,7 +535,22 @@ static PyTypeObject pytrap_TrapContext = {
     0  /* tp_new */
 };
 
+PyObject *
+pytrap_getTrapVersion(PyObject *self)
+{
+    PyObject *t = NULL;
+    t = Py_BuildValue("(ss)",
+                      strdup(trap_version),
+                      strdup(trap_git_version));
+
+    return t;
+}
+
 static PyMethodDef pytrap_methods[] = {
+    {"getTrapVersion", pytrap_getTrapVersion, METH_NOARGS,
+     "Get the version of libtrap.\n\n"
+     "Returns:\n"
+     "    tuple(str, str): libtrap version, git version.\n\n"},
     {NULL, NULL, 0, NULL}
 };
 
