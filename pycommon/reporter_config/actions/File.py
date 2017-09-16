@@ -25,6 +25,8 @@ class FileAction(Action):
         self.path = a.get("path", None)
         if not self.path:
             raise Exception("File action requires `path` argument.")
+        self.temp_path = a.get("temp_path", None)
+        self.save_path = self.temp_path if self.temp_path else self.path
 
         try:
             # path already exists, check if it is a directory
@@ -41,8 +43,13 @@ class FileAction(Action):
                 sys.stdout.flush()
             elif self.dir:
                 # Store record into separate file
-                with open(os.path.join(self.path, record["ID"] + ".idea"), "w") as f:
+                outfile = os.path.join(self.save_path, record["ID"] + ".idea")
+                with open(outfile, "w") as f:
                     f.write(json.dumps(record))
+
+                # if the save_path is temporary, we need to move the file
+                if self.temp_path:
+                    os.rename(outfile, self.path)
             else:
                 # Open file if dir is not specified
                 with open(self.path, "a") as f:
@@ -54,5 +61,5 @@ class FileAction(Action):
             self.logger.error(e)
 
     def __str__(self):
-        return "Path: " + self.path + (" (Directory)" if self.dir else "") + "\n"
+        return "Path: " + self.path + (" (Directory)" if self.dir else "") + ((" using temp: " + self.temp_path) if self.temp_path else "") + "\n"
 
