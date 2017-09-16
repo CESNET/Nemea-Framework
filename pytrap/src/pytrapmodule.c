@@ -38,24 +38,21 @@ typedef struct {
     trap_ctx_t *trap;
 } pytrap_trapcontext;
 
-#define MODULE_BASIC_INFO(BASIC) \
-    BASIC("NEMEA module", "Module uses pytrap, it should handle help on its own.", 1, 0)
-
-#define MODULE_PARAMS(PARAM)
-
 TRAP_DEFAULT_SIGNAL_HANDLER((void) 0)
-
 
 static PyObject *
 pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
-    char *arg, *module_name = NULL, *module_desc = NULL, *service_ifcname = NULL, *ifc_spec = NULL;
-    char service_name[20], found = 0;
+    char *arg, *module_name = "nemea-python-module", *module_desc = "",
+         *service_ifcname = NULL, *ifc_spec = NULL;
+    char service_name[20], found = 0, print_help = 0;
     PyObject *argvlist, *strObj;
     int argc = 0, i, ifcin = 1, ifcout = 0, result;
 
-    static char *kwlist[] = {"argv", "ifcin", "ifcout", "module_name", "module_desc", "service_ifcname", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!|iisss", kwlist, &PyList_Type, &argvlist, &ifcin, &ifcout, &module_name, &module_desc, &service_ifcname)) {
+    static char *kwlist[] = {"argv", "ifcin", "ifcout", "module_name", "module_desc",
+                             "service_ifcname", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!|iisss", kwlist, &PyList_Type, &argvlist,
+                                     &ifcin, &ifcout, &module_name, &module_desc, &service_ifcname)) {
         return NULL;
     }
 
@@ -82,11 +79,34 @@ pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 #endif
         if (found == 1) {
             ifc_spec = arg;
-            break;
+            found = 0;
+            continue;
         }
-        if (strcmp(arg, "-i") == 0) {
+        if ((print_help == 1)) {
+            if (!strcmp(arg, "1") || !strcmp(arg, "trap")) {
+                trap_set_help_section(1);
+            }
+        } else if (strcmp(arg, "-i") == 0) {
             found = 1;
+        } else if (!strncmp(arg, "-h", 2) || !strncmp(arg, "--help", 6)) {
+            if (!strcmp(arg, "-h1") || !strcmp(arg, "--help=trap")) {
+                trap_set_help_section(1);
+            }
+            print_help = 1;
         }
+    }
+
+    if (print_help) {
+        trap_module_info_t module_info = {
+            .name = module_name,
+            .description = module_desc,
+            .num_ifc_in =  ifcin,
+            .num_ifc_out = ifcout,
+            .params = NULL
+        };
+        trap_print_help(&module_info);
+        PyErr_SetString(TrapHelp, "Printed help, skipped initialization.");
+        return NULL;
     }
 
     if (ifc_spec == NULL) {
@@ -101,7 +121,7 @@ pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
         service_ifcname = NULL;
     }
 
-    self->trap = trap_ctx_init3(module_name != NULL ? module_name : "nemea-python-module",
+    self->trap = trap_ctx_init3(module_name,
                                 module_desc,
                                 ifcin, ifcout,
                                 ifc_spec,
