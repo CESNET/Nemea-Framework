@@ -45,6 +45,7 @@ BuildRequires:	python2-devel
 BuildRequires:	python-nemea-pytrap
 BuildRequires:	python-ply
 BuildRequires:	python-yaml
+BuildRequires:	python-pynspect
 
 %description -n python2-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
@@ -67,6 +68,7 @@ BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
 BuildRequires:	python%{python3_pkgversion}-ply
 BuildRequires:	python%{python3_pkgversion}-yaml
+BuildRequires:	python%{python3_pkgversion}-pynspect
 
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
