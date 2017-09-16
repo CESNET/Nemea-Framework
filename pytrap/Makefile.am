@@ -23,3 +23,7 @@ coverage:
 	@lcov --capture --directory . --output-file coverage.info 2>/dev/null && \
 	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"
 
+.PHONY: doc
+doc:
+	epydoc -o doc --html -v pytrap
+
