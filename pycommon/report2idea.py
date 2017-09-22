@@ -20,12 +20,19 @@ def getRandomId():
 def setAddr(idea_field, addr):
     """Set IP address into 'idea_field'.
 This method automatically recognize IPv4 vs IPv6 and sets the correct information into the IDEA message.
+If there is already a list of addresses, new `addr` is appended.
 Usage: setAddr(idea['Source'][0], rec.SRC_IP)"""
 
     if addr.isIPv4():
-        idea_field['IP4'] = [str(addr)]
+        if 'IP4' in idea_field:
+            idea_field['IP4'].append(str(addr))
+        else:
+            idea_field['IP4'] = [str(addr)]
     else:
-        idea_field['IP6'] = [str(addr)]
+        if 'IP6' in idea_field:
+            idea_field['IP6'].append(str(addr))
+        else:
+            idea_field['IP6'] = [str(addr)]
 
 def getIDEAtime(unirecField = None):
     """Return timestamp in IDEA format (string).
