@@ -94,7 +94,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Add arguments defining outputs
     # TRAP output
-    arg_parser.add_argument('--trap', action='store_true',
+    arg_parser.add_argument('-T', '--trap', action='store_true',
             help='Enable output via TRAP interface (JSON type with format id "IDEA"). Parameters are set using "-i" option as usual.')
     # Config file
     arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
@@ -102,7 +102,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     arg_parser.add_argument('-d', '--dry',  action='store_true',
             help="""Do not run, just print loaded config.""")
     # Warden3 output
-    arg_parser.add_argument('--warden', metavar="CONFIG_FILE",
+    arg_parser.add_argument('-W', '--warden', metavar="CONFIG_FILE",
             help='Send IDEA messages to Warden server. Load configuration of Warden client from CONFIG_FILE.')
 
     # Other options
