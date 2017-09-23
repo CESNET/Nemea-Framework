@@ -12,7 +12,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 
 Requires: openssl
 BuildRequires: gcc make doxygen pkgconfig openssl-devel
-Provides: libtrap openssl
+Provides: libtrap
 
 %description
 
@@ -20,6 +20,7 @@ Provides: libtrap openssl
 Summary: Libtrap development package
 Group: Liberouter
 Requires: libtrap = %{version}-%{release}
+Requires: openssl-devel
 Provides: libtrap-devel
 
 %description devel
