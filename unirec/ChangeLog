@@ -1,3 +1,6 @@
+2017-09-07 (Tomas Cejka): Remove useless ipaddr_cpp.h from API (#68)
+2017-08-24 (Václav Bartoš): unirec: ur_define_teplate: Removed unnecessary error check
+
 2017-08-15 (Tomas Cejka): travis: update source0 in specs and .travis.yml to contain sources
 2017-08-14 (Václav Bartoš): unirec: ur_clone_record no longer computes record size twice
 
