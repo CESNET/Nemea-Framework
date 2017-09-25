@@ -208,7 +208,6 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
             if idea is None:
                 # Record can't be converted - skip it
-                logger.warning("Record can't be converted")
                 continue
 
             if args.name is not None:
