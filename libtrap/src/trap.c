@@ -507,6 +507,7 @@ void *reader_threads_fn(void *arg)
       }
       /* call recv of my IFC and let it store results into multi-result array */
 #ifndef DISABLE_BUFFERING
+      /* handle buffering */
       retval = trap_read_from_buffer(ctx, thread_id, (const void **) &ctx->in_ifc_results[thread_id].message,
                                      &ctx->in_ifc_results[thread_id].message_size,
                                      ctx->get_data_timeout);
@@ -1806,6 +1807,7 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
    }
    if ((c->in_ifc_list[ifcidx].recv != NULL) && (c->in_ifc_list[ifcidx].priv != NULL)) {
 #ifndef DISABLE_BUFFERING
+       /* handle buffering */
       ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout);
       return ret_val;
 #else
