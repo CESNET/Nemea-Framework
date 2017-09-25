@@ -19,6 +19,7 @@ class MongoAction(Action):
 
         self.user = a.get("user", None)
         self.password = a.get("password", None)
+        self.err_printed = False
 
         try:
             import pymongo
@@ -71,8 +72,9 @@ class MongoAction(Action):
         super(type(self), self).run(record)
         if self.client:
             return self.store(record)
-        else:
+        elif not self.err_printed:
             self.logger.warning("Skipping mongo action, pymongo is not initialized.")
+            self.err_printed = True
 
     def __del__(self):
         self.logger.debug("Closing connection to mongoDB")
