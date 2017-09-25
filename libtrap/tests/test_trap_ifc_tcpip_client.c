@@ -79,9 +79,9 @@ int main(int argc, char **argv)
    ifc_spec.params = ifc_params;
 
    int timeout;
-   #ifndef CONTINUOUS
+#ifndef CONTINUOUS
    int i;
-   #endif
+#endif
 
    //verbose = CL_VERBOSE_LIBRARY;
    trap_verbose = CL_VERBOSE_OFF;
@@ -96,49 +96,49 @@ int main(int argc, char **argv)
    signal(SIGINT, signal_handler);
 
    //#define BLOCKING
-   #ifdef NONBLOCKING
+#ifdef NONBLOCKING
    timeout = TRAP_NO_WAIT;
-   #elif defined(BLOCKING)
+#elif defined(BLOCKING)
    timeout = TRAP_WAIT;
-   #else
+#else
    timeout = 5000000; /* wait for 5 secs */
-   #endif
+#endif
 
    VERBOSE(CL_VERBOSE_OFF, "Receiving...");
    // Read data from input, process them and write to output
-   #ifndef CONTINUOUS
+#ifndef CONTINUOUS
    for (i=0; i<100; ++i) {
-   #else
+#else
    while (!stop) {
-   #endif
+#endif
       const void *data_ptr;
       uint16_t data_size;
 
-      #ifndef CONTINUOUS
+#ifndef CONTINUOUS
       printf("%03i: ", i);
-      #endif
+#endif
 
       // Receive data from any interface, wait until data are available
       ret = trap_get_data(TRAP_MASK_ALL, &data_ptr, &data_size, timeout);
       if (ret == TRAP_E_OK) {
          recvdata = (char *) calloc(1, data_size + 1);
          memcpy(recvdata, data_ptr, data_size);
-         #ifndef DEBUG
+#ifndef DEBUG
          if (data_size > 10) {
             printf("recv(%hu): %.5s..%.5s\n", data_size, (char *) recvdata, (char *) (recvdata + data_size - 5));
          } else {
             printf("recv(%u): %s\n", (unsigned int) data_size, (char *) recvdata);
          }
-         #endif
+#endif
          free(recvdata);
       } else if ((ret == TRAP_E_TERMINATED) || (ret == TRAP_E_IO_ERROR)) {
          printf("terminated or IO error\n");
          break;
       } else if (ret == TRAP_E_TIMEOUT) {
          printf("trap_get_data() timeouted, this shouldn't happen!\n");
-         #ifdef WAITING
+#ifdef WAITING
          sleep(6);
-         #endif
+#endif
       } else {
          printf("Error: trap_get_data() returned %i (%s)\n", ret, trap_last_error_msg);
       }
