@@ -208,13 +208,13 @@ AC_ARG_ENABLE([debugifc], AC_HELP_STRING([--enable-debugifc],
       [AC_DEFINE(TRAP_DEBUG_IFC, [1], [Enable debug messages in IFC.])], [AC_DEFINE([TRAP_DEBUG_IFC], [0])])
 
 AC_ARG_ENABLE([debugbuffering], AC_HELP_STRING([--enable-debugbuffering],
-      [Compile IFC with debug messages]),
+      [Compile buffering with debug messages]),
       [AC_DEFINE(TRAP_DEBUG_BUFFERING, [1], [Enable debug messages in buffering.])], [AC_DEFINE([TRAP_DEBUG_BUFFERING], [0])])
 
 AC_ARG_ENABLE([negotiation], AC_HELP_STRING([--disable-negotiation],
-      [Compile interfaces with negotiation]),
+      [Compile interfaces without negotiation]),
       [if test "$enableval" = "yes"; then
-        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Disable negotiation between interfaces.])
+        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])
       fi],
       [AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])])
 
