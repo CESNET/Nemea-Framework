@@ -97,13 +97,13 @@ int main(int argc, char **argv)
    signal(SIGINT, signal_handler);
 
    //#define BLOCKING
-   #ifdef NONBLOCKING
+#ifdef NONBLOCKING
    timeout = TRAP_NO_WAIT;
-   #elif defined(BLOCKING)
+#elif defined(BLOCKING)
    timeout = TRAP_WAIT;
-   #else
+#else
    timeout = 5000000; /* wait for 5 secs */
-   #endif
+#endif
 
    if (argc > 1) {
       if (sscanf(argv[1], "%hu", &mess_size) != 1) {
@@ -111,13 +111,13 @@ int main(int argc, char **argv)
       } else {
          /* send mess_size - 1 x '*', '\0' */
          data_to_send = calloc(1, mess_size);
-         #ifdef SENDASTERIX
+#ifdef SENDASTERIX
          memset(data_to_send, '*', mess_size - 1);
-         #else
+#else
          for (i=0; i<mess_size; ++i) {
             data_to_send[i] = '0' + (i % 10);
          }
-         #endif
+#endif
       }
    } else {
       mess_size = strlen(argv[0]);
@@ -140,9 +140,9 @@ int main(int argc, char **argv)
          printf("T\n");
          //sleep(1);
       }
-      #ifdef WAITING
+#ifdef WAITING
       sleep(6);
-      #endif
+#endif
    }
 
    printf("ok: %"PRIu64"\ntimeout: %"PRIu64"\n", (uint64_t) countok, (uint64_t) countto);

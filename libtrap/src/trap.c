@@ -287,9 +287,9 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
          DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "read received new buffer new bf %"PRIu32" %p",
                 ctx->in_ifc_list[ifc_idx].buffer_full,
                 ctx->in_ifc_list[ifc_idx].buffer_pointer));
-         #ifdef TESTBUFFERING
+#ifdef TESTBUFFERING
          VERBOSE(CL_VERBOSE_OFF, "Received buffer of size %u.", ctx->in_ifc_list[ifc_idx].buffer_full);
-         #endif
+#endif
       } else {
          goto exit;
       }
@@ -1980,20 +1980,20 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
-   #ifndef DISABLE_BUFFERING
+#ifndef DISABLE_BUFFERING
    /* handle buffering */
    ret_val = trap_store_into_buffer(c, ifc, data, size, c->out_ifc_list[ifc].datatimeout, 0);
    if (ret_val == TRAP_E_OK) {
       c->counter_send_message[ifc]++;
    }
    return ret_val;
-   #else
+#else
    ret_val = c->out_ifc_list[ifc].send(c->out_ifc_list[ifc].priv, data, size, c->out_ifc_list[ifc].datatimeout);
    if (ret_val == TRAP_E_OK) {
       c->counter_send_message[ifc]++;
    }
    return ret_val;
-   #endif
+#endif
 }
 
 /**
