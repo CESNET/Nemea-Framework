@@ -7,7 +7,7 @@ custom_actions:
   - id: email
     email:
       to: "nemea@localhost"
-      subject: "Example report"
+      subject: "[NEMEA] $category ($node): $src_ip -> $tgt_ip"
 
 addressgroups:
 - id: whitelist

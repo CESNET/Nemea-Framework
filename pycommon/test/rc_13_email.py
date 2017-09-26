@@ -36,7 +36,7 @@ class RCEMailTest(unittest.TestCase):
 
         for key in m.iterkeys():
             # To be sure it is our email we will match TO, FROM and SUBJECT fields
-            if (m[key]['subject'] == 'Example report' and
+            if (m[key]['subject'] == 'Attempt.Login (cz.uhk.apate.cowrie): 1.2.3.4 -> 195.113.165.128/25' and
                 m[key]['from'] == 'nemea@localhost.localdomain' and
                 m[key]['to'] == 'nemea@localhost.localdomain'):
                     # Remove given email from mailbox
