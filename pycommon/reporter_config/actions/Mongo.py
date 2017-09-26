@@ -33,9 +33,9 @@ class MongoAction(Action):
             self.uri = "mongodb://"
             if self.user and self.password:
                 self.uri += quote_plus(self.user) + ":" + quote_plus(self.password) + "@"
-                self.uri += self.host + ":" + str(port) + "/" + self.db
+                self.uri += self.host + ":" + str(self.port) + "/" + self.db
             else:
-                self.uri += self.host + ":" + str(port)
+                self.uri += self.host + ":" + str(self.port)
 
             self.client = pymongo.MongoClient(self.uri)
             self.collection = self.client[self.db][self.collection]
