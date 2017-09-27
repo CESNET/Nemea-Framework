@@ -3,7 +3,7 @@
 
 %if 0%{?el6}
 %global python3_pkgversion 33
-%global py3_build CFLAGS="-O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -mtune=generic" python3 setup.py build
+%global py3_build CFLAGS="-O3 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -mtune=generic" python3 setup.py build
 %endif
 
 %if x%{?python3_pkgversion} == x
