@@ -136,6 +136,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Set required input format
     trap.setRequiredFmt(0, req_type, req_format)
+    if args.trap:
+       trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
     # *** Create output handles/clients/etc ***
     wardenclient = None

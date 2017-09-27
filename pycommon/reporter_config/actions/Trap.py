@@ -7,24 +7,19 @@ class TrapAction(Action):
     def __init__(self, action, trap = None):
         super(type(self), self).__init__(actionId = action["id"], actionType = "trap")
 
-        if trap == None:
-            # Initialize TRAP interface
-            self.trap = pytrap.TrapCtx()
-
-            # Only output interface is needed
-            self.trap.init(['-i', action["trap"]["config"]], 0, 1)
-
-            # We must set output format to JSON with ID IDEA
-            self.trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
-        else:
-            self.trap = trap
+        self.trap = trap
+        self.err_printed = False
 
     def run(self, record):
         super(type(self), self).run(record)
-        try:
-            self.trap.send(json.dumps(record).encode('utf8'), 0)
-        except Exception as e:
-            self.logger.error(e)
+        if self.trap:
+            try:
+                self.trap.send(json.dumps(record).encode('utf8'), 0)
+            except Exception as e:
+                self.logger.error(e)
+        elif not err_printed:
+            self.logger.warning("Skipping TRAP action, TRAP is not initialized.")
+            self.err_printed = True
 
     def __del__(self):
         pass
