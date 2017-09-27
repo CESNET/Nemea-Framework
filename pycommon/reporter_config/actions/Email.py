@@ -8,7 +8,15 @@ class EmailAction(Action):
     """Action to send an email with IDEA record to a specified address
 
     Mail is send by localhost SMTP server. In the future this
-    should be configurable in the config
+    should be configurable in the config.
+
+    Parameter "subject" may contain variables that are substituted by 
+    corresponding field from IDEA:
+      $category - Category (joined by ',' in case of multiple categories)
+      $node - Name of the last item in Node array (i.e. the original detector)
+      $src_ip - First IP address in Source, followed by "(...)" in case there 
+                are more than one.
+      $tgt_ip - The same as $src_ip, but with Target.
     """
     def __init__(self, action):
         super(type(self), self).__init__(actionId = action["id"], actionType = "email")
@@ -59,9 +67,32 @@ class EmailAction(Action):
         Record is pretty printed and headers are set according to the config
         """
         super(type(self), self).run(record)
-        self.message = MIMEText(json.dumps(record, indent=4))
-        self.__setHeaders()
 
+        # Set message body
+        self.message = MIMEText(json.dumps(record, indent=4))
+
+        # Set "Subject" header
+        category = ','.join(record.get('Category', [])) or 'N/A'
+        try:
+            node = record['Node'][-1]['Name']
+        except KeyError:
+            node = 'N/A'
+        src_ips = [ip for src in record.get('Source', []) for ip in src.get('IP4',[]) + src.get('IP6', [])]
+        src_ip = src_ips[0] + (' (...)' if len(src_ips) > 1 else '') if src_ips else 'N/A'
+        tgt_ips = [ip for tgt in record.get('Target', []) for ip in tgt.get('IP4',[]) + tgt.get('IP6', [])]
+        tgt_ip = tgt_ips[0] + (' (...)' if len(tgt_ips) > 1 else '') if tgt_ips else 'N/A'
+        self.message['Subject'] = self.subject\
+            .replace('$category', category)\
+            .replace('$node', node)\
+            .replace('$src_ip', src_ip)\
+            .replace('$tgt_ip', tgt_ip)
+
+        # Set other headers
+        self.message['From'] = self.addrFrom
+        self.message['To'] = ",".join(self.addrsTo)
+
+        # Send message
+        self.logger.info("Mail From: {0} To: {1} Subject: {2}".format(self.addrFrom, self.addrsTo, self.message['Subject']))
         smtp = None
         try:
             if self.smtpSSL:
@@ -73,22 +104,12 @@ class EmailAction(Action):
                     smtp.starttls(keyfile = self.smtpKey, certfile = self.smtpChain)
             if self.smtpUser and self.smtpPass:
                 smtp.login(self.smtpUser, self.smtpPass)
-
-            self.logger.info("Mail From: {0} To: {1} Subject: {2}".format(self.addrFrom, self.addrsTo, self.subject))
             smtp.sendmail(self.addrFrom, self.addrsTo, self.message.as_string())
         except Exception as e:
             self.logger.error(e)
         if smtp:
             smtp.quit()
 
-    def __setHeaders(self):
-        """Set email headers to message
-
-        This should only be used during the run method
-        """
-        self.message['Subject'] = self.subject
-        self.message['From'] = self.addrFrom
-        self.message['To'] = ",".join(self.addrsTo)
 
     def __str__(self):
         f = []
