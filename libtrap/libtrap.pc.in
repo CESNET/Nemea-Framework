@@ -9,4 +9,4 @@ Name: libtrap
 Version: @PACKAGE_VERSION@
 Description: Library contains modules of communication interface between TRAP modules.
 Libs: @LIBS@ -L${libdir} -ltrap
-Cflags: @CFLAGS@ -I${includedir}
+Cflags: -I${includedir}

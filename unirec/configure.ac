@@ -68,7 +68,10 @@ AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
 
-if test "${repobuild}" = "false" -a -z "$TRAPLIB"; then
+if test -z "${top_srcdir}"; then
+top_srcdir="."
+fi
+if test -z "$TRAPLIB"; then
         PKG_CHECK_MODULES([LIBTRAP],[libtrap], [TRAPLIB="yes"], [AC_MSG_WARN([Libtrap was not found by pkg-config])])
         LDFLAGS="$LIBTRAP_LDFLAGS $LDFLAGS"
         LIBS="$LIBTRAP_LIBS $LIBS"
@@ -77,9 +80,9 @@ if test "${repobuild}" = "false" -a -z "$TRAPLIB"; then
 fi
 if test -z "$TRAPLIB"; then
         # Check for TRAP toolkit as a superproject.
-        if test -d "$srcdir/../libtrap"; then
-        TRAPINC='$(top_srcdir)/../libtrap/include'
-        TRAPLIB='$(top_builddir)/../libtrap/src/.libs'
+        if test -d "${top_srcdir}/../libtrap"; then
+        TRAPINC='${top_srcdir}/../libtrap/include'
+        TRAPLIB='${top_builddir}/../libtrap/src/.libs'
         fi
         # AC_SUBST command line variables from TRAPLIB and TRAPINC.
         if test -n "$TRAPLIB"; then
