@@ -100,7 +100,7 @@ AC_CONFIG_FILES([Makefile
 		 Doxyfile
                  tests/Makefile])
 
-AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile without testing modules]),
         [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_TESTS], [true])])
 
