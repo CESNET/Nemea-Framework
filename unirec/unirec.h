@@ -764,6 +764,17 @@ ur_template_t *ur_create_template_from_ifc_spec(const char *ifc_data_fmt);
  */
 void ur_free_template(ur_template_t *tmplt);
 
+/** \brief Compares fields of two UniRec templates
+ * Function compares only sets of UniRec fields (direction is not compared).
+ * \note As it holds for UniRec templates in general, function returns invalid results if some
+ * UniRec field is redefined (i.e. undefined and defined as something else).
+ * \param[in] tmpltA Pointer to the first template.
+ * \param[in] tmpltB Pointer to the second template.
+ * \return If templates matches non-zero (1) value is returned, 0 othervise.
+ */
+int ur_template_compare(const ur_template_t *tmpltA, const ur_template_t *tmpltB);
+
+
 /** \brief Print UniRec template
  * Print static_size, first_dynamic and table of offsets to stdout (for debugging).
  * If template does not contain any dynamic fields, print '-' instead.
@@ -964,8 +975,8 @@ const char *ur_values_get_name_start_end(uint32_t start, uint32_t end, int32_t v
 const char *ur_values_get_description_start_end(uint32_t start, uint32_t end, int32_t value);
 
 /** \brief Returns name of specified value
- * This function returns name of specified value and field, which is defined in 
- * values file. 
+ * This function returns name of specified value and field, which is defined in
+ * values file.
  * \param[in] field Name of field to search value in
  * \param[in] value Value of an item to find
  * \return Pointer to string or NULL if the value was not found
@@ -973,9 +984,9 @@ const char *ur_values_get_description_start_end(uint32_t start, uint32_t end, in
 #define ur_values_get_name(field, value) \
    ur_values_get_name_start_end(UR_TYPE_START_ ## field, UR_TYPE_END_ ## field, value)
 
-/** \brief Returns description of specified value 
- * This function returns description of specified value and field, which is defined in 
- * values file. 
+/** \brief Returns description of specified value
+ * This function returns description of specified value and field, which is defined in
+ * values file.
  * \param[in] field Name of field to search value in
  * \param[in] value Value of an item to find
  * \return Pointer to string or NULL if the value was not found

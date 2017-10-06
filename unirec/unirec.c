@@ -1027,6 +1027,17 @@ void ur_free_template(ur_template_t *tmplt) {
    free(tmplt);
 }
 
+// Compare fields of two templates
+int ur_template_compare(const ur_template_t *tmpltA, const ur_template_t *tmpltB)
+{
+   if (tmpltA->count == tmpltB->count) {
+      return memcmp(tmpltA->ids, tmpltB->ids, sizeof(uint16_t) * tmpltA->count) == 0;
+   } else {
+      return 0;
+   }
+}
+
+
 // Print template
 void ur_print_template(ur_template_t *tmplt)
 {
