@@ -770,7 +770,7 @@ void ur_free_template(ur_template_t *tmplt);
  * UniRec field is redefined (i.e. undefined and defined as something else).
  * \param[in] tmpltA Pointer to the first template.
  * \param[in] tmpltB Pointer to the second template.
- * \return If templates matches non-zero (1) value is returned, 0 othervise.
+ * \return Returns non-zero (1) value if templates matches. Otherwise, it returns 0.
  */
 int ur_template_compare(const ur_template_t *tmpltA, const ur_template_t *tmpltB);
 
