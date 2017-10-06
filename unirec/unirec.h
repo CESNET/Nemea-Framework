@@ -766,8 +766,9 @@ void ur_free_template(ur_template_t *tmplt);
 
 /** \brief Compares fields of two UniRec templates
  * Function compares only sets of UniRec fields (direction is not compared).
- * \note As it holds for UniRec templates in general, function returns invalid results if some
- * UniRec field is redefined (i.e. undefined and defined as something else).
+ * \note Function does not check if arguments are valid UniRec templates. Caller must check validity
+ * before calling this function. Return value is undefined when any argument IS NOT a valid UniRec
+ * template (i.e. some of its field is redefined, etc).
  * \param[in] tmpltA Pointer to the first template.
  * \param[in] tmpltB Pointer to the second template.
  * \return Returns non-zero (1) value if templates matches. Otherwise, it returns 0.
