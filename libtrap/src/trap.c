@@ -761,7 +761,7 @@ int trap_parse_params(int *argc, char **argv, trap_ifc_spec_t *ifc_spec)
    /* count the number of IFC parameters, the format is:
     * type1:param1:param1_2,type2:,type3:param3 */
    p = ifc_spec_str;
-   while (p != NULL) {
+   while (p && *p != '\0') {
       p = strchr(p, TRAP_IFC_DELIMITER);
       if (p != NULL && *p == TRAP_IFC_DELIMITER) {
          p++;
@@ -1743,6 +1743,11 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
    if (c->in_ifc_results != NULL) {
       free(c->in_ifc_results);
       c->in_ifc_results = NULL;
+   }
+
+   if (c->service_ifc_name != NULL) {
+      free(c->service_ifc_name);
+      c->service_ifc_name = NULL;
    }
 
    c->terminated = 1;
