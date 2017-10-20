@@ -66,13 +66,13 @@ int main(int argc, char **argv)
    }
 
    ur_template_t *tmpltA2 = ur_create_template("PACKETS,URL,BYTES,PROTOCOL,SRC_IP,DST_IP", NULL);
-   if (tmpltA1 == NULL) {
+   if (tmpltA2 == NULL) {
       fprintf(stderr, "Error when creating UniRec template.\n");
       return 1;
    }
 
    ur_template_t *tmpltB = ur_create_template("SRC_IP,DST_IP,PROTOCOL,PACKETS,BYTES,MESSAGE_CMP", NULL);
-   if (tmpltA1 == NULL) {
+   if (tmpltB == NULL) {
       fprintf(stderr, "Error when creating UniRec template.\n");
       return 1;
    }
