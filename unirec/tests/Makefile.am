@@ -7,9 +7,9 @@ fields.h: fields.c
 fields.c:
 	${top_srcdir}/ur_processor.sh -i ${top_srcdir} -o ./
 
-check_PROGRAMS=test_basic test_creation  test_ipaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
+check_PROGRAMS=test_basic test_creation  test_ipaddr test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
 
-TESTS = test_basic test_creation  test_ipaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
+TESTS = test_basic test_creation  test_ipaddr test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
 
 AM_LDFLAGS=-static ../libunirec.la
 COM_CPPFLAGS=-I../../ -I../ -I${top_srcdir}/../../
@@ -22,6 +22,9 @@ test_creation_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_ipaddr_SOURCES=test_ipaddr.c fields.c
 test_ipaddr_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_macaddr_SOURCES=test_macaddr.c fields.c
+test_macaddr_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_iter_SOURCES=test_iter.c
 test_iter_CPPFLAGS=$(COM_CPPFLAGS)
