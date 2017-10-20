@@ -82,7 +82,7 @@ An UniRec field may have one of the following types:
 |float   |  4 |Single precision floating point number (IEEE 754)             |
 |double  |  8 |Double precision floating point number (IEEE 754)             |
 |ipaddr  | 16 |Special type for IPv4/IPv6 addresses, see below for details   |
-|macaddr |  8 |Special type for MAC address, see below for details   |
+|macaddr |  6 |Special type for MAC address, see below for details           |
 |time    |  8 |Special type for precise timestamps, see below for details    |
 |string  |  - |Variable-length array of (mostly) printable characters        |
 |bytes   |  - |Variable-length array of bytes (not expected to be printable characters) |

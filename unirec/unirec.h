@@ -105,7 +105,7 @@ typedef enum {
    UR_TYPE_FLOAT, ///< float (32b)
    UR_TYPE_DOUBLE,   ///< double (64b)
    UR_TYPE_IP,    ///< IP address (128b)
-   UR_TYPE_MAC,    ///< MAC address (64b)
+   UR_TYPE_MAC,    ///< MAC address (48b)
    UR_TYPE_TIME   ///< time (64b)
 } ur_field_type_t;
 

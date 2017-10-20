@@ -58,7 +58,7 @@ extern "C" {
 /**
  * Structure containing MAC address bytes.
  */
-typedef struct mac_addr_s {
+typedef struct __attribute__((packed)) mac_addr_s {
    uint8_t bytes[6];
 } mac_addr_t;
 
@@ -72,7 +72,6 @@ INLINE mac_addr_t mac_from_bytes(uint8_t *array)
 {
    mac_addr_t tmp;
 
-   memset(&tmp, 0, sizeof(mac_addr_t));
    memcpy(&tmp.bytes, array, 6);
 
    return tmp;
@@ -92,7 +91,6 @@ INLINE int mac_from_str(const char *str, mac_addr_t *addr)
    if (tmp == NULL) {
       return 0;
    } else {
-      memset(addr, 0, sizeof(mac_addr_t));
       memcpy(addr->bytes, tmp->ether_addr_octet, 6);
    }
 

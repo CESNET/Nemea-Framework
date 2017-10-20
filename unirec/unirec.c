@@ -105,7 +105,7 @@ const int ur_field_type_size[] = {
    4, /*UR_TYPE_FLOAT*/
    8, /*UR_TYPE_DOUBLE*/
    16, /*UR_TYPE_IP*/
-   8, /*UR_TYPE_MAC*/
+   6, /*UR_TYPE_MAC*/
    8, /*UR_TYPE_TIME*/
 };
 
