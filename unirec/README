@@ -82,6 +82,7 @@ An UniRec field may have one of the following types:
 |float   |  4 |Single precision floating point number (IEEE 754)             |
 |double  |  8 |Double precision floating point number (IEEE 754)             |
 |ipaddr  | 16 |Special type for IPv4/IPv6 addresses, see below for details   |
+|macaddr |  6 |Special type for MAC address, see below for details           |
 |time    |  8 |Special type for precise timestamps, see below for details    |
 |string  |  - |Variable-length array of (mostly) printable characters        |
 |bytes   |  - |Variable-length array of bytes (not expected to be printable characters) |
@@ -98,6 +99,9 @@ should be independent of a programming language.
 
 ### ipaddr type
 Structure to store both IPv4 and IPv6 addresses and associated functions.
+
+### macaddr type
+Structure to store MAC address and associated functions.
 
 ### time type
 Structure to store timestamps and associated types, macros and function.
@@ -194,7 +198,7 @@ byte      0       1       2       3
 
 ### Endianness
 
-All values, except IP addresses, are in little endian. IP addresses are treated
+All values, except IP and MAC addresses, are in little endian. IP and MAC addresses are treated
 rather as sequences of bytes than numbers, so they are left in network order,
 i.e. big-endian (however, they are encapsulated in a special data type and
 shouldn't be accessed directly so the internal format should be needed to know).
@@ -233,6 +237,7 @@ enum ur_field_type {
    UR_TYPE_FLOAT,
    UR_TYPE_DOUBLE,
    UR_TYPE_IP,
+   UR_TYPE_MAC,
    UR_TYPE_TIME,
    UR_TYPE_STRING,
    UR_TYPE_BYTES,

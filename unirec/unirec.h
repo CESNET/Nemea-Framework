@@ -56,6 +56,7 @@ extern "C" {
 #include <stdint.h>
 
 #include "ipaddr.h"
+#include "macaddr.h"
 #include "ur_time.h"
 #include "links.h"
 #include "ur_values.h"
@@ -88,7 +89,7 @@ extern "C" {
 
 
 /** \brief Constants for all possible types of UniRec fields */
-#define UR_COUNT_OF_TYPES 15 ///< Count of types of UniRec fields
+#define UR_COUNT_OF_TYPES 16 ///< Count of types of UniRec fields
 typedef enum {
    UR_TYPE_STRING,   ///< var-len fields (string where only printable characters are expected; '\0' at the end should NOT be included)
    UR_TYPE_BYTES,    ///< var-len fields (generic string of bytes)
@@ -104,6 +105,7 @@ typedef enum {
    UR_TYPE_FLOAT, ///< float (32b)
    UR_TYPE_DOUBLE,   ///< double (64b)
    UR_TYPE_IP,    ///< IP address (128b)
+   UR_TYPE_MAC,    ///< MAC address (48b)
    UR_TYPE_TIME   ///< time (64b)
 } ur_field_type_t;
 

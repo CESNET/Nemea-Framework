@@ -78,6 +78,12 @@ INLINE_IMPL int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2);
 INLINE_IMPL int ip_from_str(const char *str, ip_addr_t *addr);
 INLINE_IMPL void ip_to_str(const ip_addr_t *addr, char *str);
 
+INLINE_IMPL mac_addr_t mac_from_bytes(uint8_t *array);
+INLINE_IMPL int mac_from_str(const char *str, mac_addr_t *addr);
+INLINE_IMPL int mac_cmp(const mac_addr_t *addr1, const mac_addr_t *addr2);
+INLINE_IMPL void mac_to_str(const mac_addr_t *addr, char *str);
+INLINE_IMPL void mac_to_bytes(const mac_addr_t *addr, uint8_t *array);
+
 
 /**
  * \brief Sizes of UniRec data types.
@@ -99,6 +105,7 @@ const int ur_field_type_size[] = {
    4, /*UR_TYPE_FLOAT*/
    8, /*UR_TYPE_DOUBLE*/
    16, /*UR_TYPE_IP*/
+   6, /*UR_TYPE_MAC*/
    8, /*UR_TYPE_TIME*/
 };
 
@@ -122,6 +129,7 @@ const char *ur_field_type_str[] = {
    "float", /*UR_TYPE_FLOAT*/
    "double", /*UR_TYPE_DOUBLE*/
    "ipaddr", /*UR_TYPE_IP*/
+   "macaddr", /*UR_TYPE_MAC*/
    "time", /*UR_TYPE_TIME*/
 };
 
@@ -1217,6 +1225,7 @@ ur_iter_t ur_iter_fields_record_order(const ur_template_t *tmplt, int index)
 int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v)
 {
    ip_addr_t *addr_p = NULL, addr;
+   mac_addr_t *macaddr_p = NULL, macaddr;
    int rv = 0;
    struct tm t;
    char *res = NULL;
@@ -1291,6 +1300,15 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
       }
       addr_p = (ip_addr_t *) ptr;
       (*addr_p) = addr;
+      break;
+   case UR_TYPE_MAC:
+      // IP address - convert to human-readable format and print
+      if (mac_from_str(v, &macaddr) == 0) {
+         rv = 1;
+         break;
+      }
+      macaddr_p = (mac_addr_t *) ptr;
+      (*macaddr_p) = macaddr;
       break;
    case UR_TYPE_TIME:
       // Timestamp - convert from human-readable format
