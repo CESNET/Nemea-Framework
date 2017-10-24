@@ -120,7 +120,7 @@ class Rule():
         for i in self.__elseactions:
             elseactions.append("{0} ({1})".format(i.actionId, i.actionType))
 
-        return "{0}: {1}\n{2}{3}".format(self.id, " ".join([i.strip() for i in self.__conditionRaw.split("\n")]),
+        return "{0}: {1}\n{2}{3}".format(self.id, " ".join([i.strip() for i in str(self.__conditionRaw).split("\n")]),
                                          "\tActions: " + (", ".join(actions)) + "\n" if actions else "",
                                          "\tElse Actions: " + (", ".join(elseactions)) + "\n" if elseactions else "")
 
