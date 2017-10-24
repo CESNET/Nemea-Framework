@@ -15,7 +15,7 @@ class MongoAction(Action):
         self.port = a.get("port", 27017)
 
         self.db = a.get("db", "nemeadb")
-        self.collection = a.get("collection", "alerts_new")
+        self.collection_name = a.get("collection", "alerts_new")
 
         self.user = a.get("user", None)
         self.password = a.get("password", None)
@@ -38,7 +38,7 @@ class MongoAction(Action):
                 self.uri += self.host + ":" + str(self.port)
 
             self.client = pymongo.MongoClient(self.uri)
-            self.collection = self.client[self.db][self.collection]
+            self.collection = self.client[self.db][self.collection_name]
             if pymongo.version_tuple[0] < 3:
                 self.collection.insert_one = self.collection.insert
         except Exception:
@@ -86,7 +86,7 @@ class MongoAction(Action):
         f.append("Host: " + self.host)
         f.append("Port: " + str(self.port))
         f.append("DB: " + self.db)
-        f.append("Collection: " + self.collection)
+        f.append("Collection: " + self.collection_name)
         if self.user and self.password:
             f.append("Auth to DB using User: " + self.user + " and *PASSWORD*")
         return ", ".join(f) + "\n"
