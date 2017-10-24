@@ -43,13 +43,15 @@ class FileAction(Action):
                 sys.stdout.flush()
             elif self.dir:
                 # Store record into separate file
-                outfile = os.path.join(self.save_path, record["ID"] + ".idea")
+                filename = record["ID"] + ".idea"
+                outfile = os.path.join(self.save_path, filename)
                 with open(outfile, "w") as f:
                     f.write(json.dumps(record))
 
                 # if the save_path is temporary, we need to move the file
                 if self.temp_path:
-                    os.rename(outfile, self.path)
+                    targetfile = os.path.join(self.path, filename)
+                    os.rename(outfile, targetfile)
             else:
                 # Open file if dir is not specified
                 with open(self.path, "a") as f:
