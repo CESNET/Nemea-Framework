@@ -6,7 +6,6 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -37,8 +36,6 @@ typedef struct {
      */
     trap_ctx_t *trap;
 } pytrap_trapcontext;
-
-TRAP_DEFAULT_SIGNAL_HANDLER((void) 0)
 
 static PyObject *
 pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
@@ -131,8 +128,6 @@ pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
         PyErr_SetString(TrapError, "Initialization failed");
         return NULL;
     }
-
-    TRAP_REGISTER_DEFAULT_SIGNAL_HANDLER();
 
     Py_RETURN_NONE;
 failure:
