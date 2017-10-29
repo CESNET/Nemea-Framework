@@ -525,7 +525,10 @@ static PyTypeObject pytrap_TrapContext = {
     0, /* tp_setattro */
     0, /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "libtrap context", /* tp_doc */
+    "TrapCtx()\n"
+    "    Class represents libtrap context. It must be initialized using init()\n"
+    "    and finalized and the end of usage finalize().\n"
+    "    To terminate blocking libtrap functions use terminate().\n", /* tp_doc */
     0, /* tp_traverse */
     0, /* tp_clear */
     0, /* tp_richcompare */
