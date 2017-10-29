@@ -438,7 +438,12 @@ static PyTypeObject pytrap_UnirecTime = {
         Py_TPFLAGS_CHECKTYPES |
 #endif
         Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Class for UniRec timestamp storage and base data access.", /* tp_doc */
+    "UnirecTime(int(seconds), [int(miliseconds)])\n"
+    "UnirecTime(double(secs_and_msecs))\n"
+    "    Class for UniRec timestamp storage and base data access.\n\n"
+    "    Args:\n"
+    "        double or int: number of seconds\n"
+    "        Optional[int]: number of miliseconds (when the first argument is int)\n", /* tp_doc */
     0, /* tp_traverse */
     0, /* tp_clear */
     (richcmpfunc) UnirecTime_compare, /* tp_richcompare */
@@ -1438,7 +1443,13 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Class for UniRec template storage and base data access.",         /* tp_doc */
+    "UnirecTime(spec)\n"
+    "    Class for UniRec template storage and base data access.\n\n"
+    "    Example:\n"
+    "        UnirecTemplate(\"ipaddr SRC_IP,uint16 SRC_PORT,time START\")\n"
+    "        creates a template with tree fields.\n\n"
+    "    Args:\n"
+    "        spec (str): UniRec template specifier - list of field types and names\n", /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */

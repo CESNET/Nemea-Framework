@@ -297,7 +297,10 @@ PyTypeObject pytrap_UnirecIPAddr = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Class for UniRec IP Address storage and base data access.",         /* tp_doc */
+    "UnirecIPAddr(ip)\n"
+    "    Class for UniRec IP Address storage and base data access.\n\n"
+    "    Args:\n"
+    "        ip (str): text represented IPv4 or IPv6 address\n", /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     (richcmpfunc) UnirecIPAddr_compare,                         /* tp_richcompare */
@@ -735,8 +738,13 @@ PyTypeObject pytrap_UnirecIPAddrRange = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Unirec IPAddr Range object",   /* tp_doc */
-    0,                         /* tp_traverse */
+    "UnirecIPAddrRange(start, [end])\n"
+    "    Class for UniRec IP Address Range storage and base data access.\n\n"
+    "    Args:\n"
+    "        start (str): text represented IPv4 address or prefix using /mask notation\n"
+    "        end (Optional[str]): text represented IPv4 address of end of the range\n"
+    "        (start must not contain /mask)\n", /* tp_doc */
+    0, /* tp_traverse */
     0,                         /* tp_clear */
     (richcmpfunc) UnirecIPAddrRange_compare, /* tp_richcompare */
     0,                         /* tp_weaklistoffset */
