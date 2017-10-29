@@ -49,6 +49,7 @@
 #include <arpa/inet.h>
 #include <wordexp.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
@@ -109,6 +110,28 @@ void file_terminate(void *priv)
 }
 
 /**
+ * \brief Create path, recursive.
+ * \param[in] path where file will be created
+*/
+static void _mkdir(const char *dir) {
+        mode_t perm = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
+        char tmp[256];
+        char *p = NULL;
+        size_t len;
+
+        snprintf(tmp, sizeof(tmp),"%s",dir);
+        len = strlen(tmp);
+        if(tmp[len - 1] == '/')
+                tmp[len - 1] = 0;
+        for(p = tmp + 1; *p; p++)
+                if(*p == '/') {
+                        *p = 0;
+                        mkdir(tmp, perm);
+                        *p = '/';
+                }
+}
+
+/**
  * \brief Create file dump with current configuration (for debugging)
  * \param[in] priv   pointer to module private data
  * \param[in] idx    number of interface
@@ -141,6 +164,10 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
 
 char *create_filename_from_time(void *priv)
 {
+   time_t timer;
+   struct tm* tm_info;
+   time(&timer);
+   tm_info = localtime(&timer);
    file_private_t *config = (file_private_t*) priv;
    config->starting_time = time(NULL);
    config->starting_time -= (config->starting_time % (config->file_change_time * 60));
@@ -150,9 +177,8 @@ char *create_filename_from_time(void *priv)
       return NULL;
    }
 
-   strncpy(new_filename, config->filename, config->filename_base_length);
-   
-   strftime(new_filename + config->filename_base_length, 14, ".%Y%m%d%H%M", localtime(&config->starting_time));
+   strftime(new_filename, config->filename_base_length + 6, config->filename, tm_info);
+   strftime(new_filename + (strlen(new_filename)), 14, ".%Y%m%d%H%M", localtime(&config->starting_time));
 
    return new_filename;
 }
@@ -585,6 +611,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    const char *params_next = NULL;
    wordexp_t exp_result;
    size_t length;
+   time_t timer;
+   struct tm* tm_info;
 
    if (params == NULL) {
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "parameter is null pointer");
@@ -637,14 +665,19 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    free(dest);
    priv->filename_base_length = strlen(exp_result.we_wordv[0]);
 
-   priv->filename = (char *) calloc(priv->filename_base_length + 1, sizeof(char));
+   priv->filename = (char *) calloc(priv->filename_base_length + 7, sizeof(char));
    if (!priv->filename) {
       free(priv);
       wordfree(&exp_result);
       return trap_error(ctx, TRAP_E_MEMORY);
    }
 
-   strncpy(priv->filename, exp_result.we_wordv[0], priv->filename_base_length + 1);
+   time(&timer);
+   tm_info = localtime(&timer);
+   strftime(priv->filename, priv->filename_base_length + 7, exp_result.we_wordv[0], tm_info);
+   priv->filename_base_length = strlen(priv->filename);
+   _mkdir(priv->filename);
+
    wordfree(&exp_result);
 
    /* Parse mode */
