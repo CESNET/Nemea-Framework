@@ -1,6 +1,7 @@
 from pynspect.rules import *
-from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
-from pynspect.gparser import MentatFilterParser
+from pynspect.filters import DataObjectFilter
+from pynspect.compilers import IDEAFilterCompiler
+from pynspect.gparser import PynspectFilterParser
 from idea import lite
 import re
 
@@ -12,7 +13,7 @@ class Rule():
     def __init__(self, rule, actions, addrGroups, parser=None, compiler=None):
         # Check is we got parser instance
         if parser is None:
-            self.parser = MentatFilterParser()
+            self.parser = PynspectFilterParser()
             self.parser.build()
         else:
             self.parser = parser
