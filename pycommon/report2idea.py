@@ -6,6 +6,7 @@ from time import time, gmtime
 from uuid import uuid4
 from datetime import datetime
 import logging
+import signal
 
 from reporter_config import Config
 from reporter_config.actions.Drop import DropMsg
@@ -71,6 +72,12 @@ Description:
 
 DEFAULT_NODE_NAME = "undefined"
 
+trap = pytrap.TrapCtx()
+
+def signal_h(signal, f):
+    global trap
+    trap.terminate()
+
 def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = None):
     """Run the main loop of the reporter module called `module_name` with `module_desc` (used in help).
 
@@ -78,6 +85,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     `conv_func(rec, args)` is a callback function that must translate given incoming alert `rec` (typically in UniRec according to `req_type`) into IDEA message. `args` contains CLI arguments parsed by ArgumentParser. `conv_func` must return dict().
     """
+    global trap
 
     # *** Parse command-line arguments ***
     if arg_parser is None:
@@ -128,11 +136,10 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         logger.warning("Node name is not specified.")
 
     # *** Initialize TRAP ***
-    trap = pytrap.TrapCtx()
     logger.info("Trap arguments: %s", args.i)
     trap.init(["-i", args.i], 1, 1 if args.trap else 0)
     #trap.setVerboseLevel(3)
-    #trap.registerDefaultSignalHandler()
+    signal.signal(signal.SIGINT, signal_h)
 
     # Set required input format
     trap.setRequiredFmt(0, req_type, req_format)
