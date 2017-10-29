@@ -199,7 +199,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             if req_type == pytrap.FMT_UNIREC:
                 rec.setData(data)
             elif req_type == pytrap.FMT_JSON:
-                rec = json.loads(data)
+                rec = json.loads(str(data))
             else: # TRAP_FMT_RAW
                 rec = data
 
