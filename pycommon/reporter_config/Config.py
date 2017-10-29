@@ -1,8 +1,9 @@
 import copy
 from idea import lite
 from pynspect.rules import *
-from pynspect.filters import IDEAFilterCompiler, DataObjectFilter
-from pynspect.gparser import MentatFilterParser
+from pynspect.filters import DataObjectFilter
+from pynspect.compilers import IDEAFilterCompiler
+from pynspect.gparser import PynspectFilterParser
 
 from .actions.Drop import DropAction, DropMsg
 from .actions.Action import Action
@@ -38,7 +39,7 @@ class Config():
             raise Exception("Loading YAML file ({0}) failed. Isn't it empty?".format(path))
 
         # Build parser
-        self.parser = MentatFilterParser()
+        self.parser = PynspectFilterParser()
         self.parser.build()
 
         self.compiler = IDEAFilterCompiler()
