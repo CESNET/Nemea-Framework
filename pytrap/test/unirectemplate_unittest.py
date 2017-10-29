@@ -133,6 +133,11 @@ class DataTypesTime(unittest.TestCase):
         res3 = pytrap.UnirecTime(466701316, 123)
         self.assertEqual(t + (-1000000000), res3)
 
+        t = pytrap.UnirecTime(1466701316.5)
+        print(t)
+        self.assertEqual(t.getSeconds(), 1466701316)
+        self.assertEqual(t.getMiliSeconds(), 500)
+
         for i in range(10):
             self.assertEqual(res1.format(), "2016-06-23T17:02:06Z")
         for i in range(10):

@@ -236,11 +236,20 @@ static PyMethodDef pytrap_unirectime_methods[] = {
 int
 UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
 {
+    PyObject *arg1;
     uint32_t secs, msecs = 0;
+    double fl_time;
 
     if (s != NULL) {
-        if (!PyArg_ParseTuple(args, "I|I", &secs, &msecs)) {
+        if (!PyArg_ParseTuple(args, "O|I", &arg1, &msecs)) {
             return -1;
+        }
+        if (PyFloat_Check(arg1)) {
+            fl_time = PyFloat_AsDouble(arg1);
+            secs = (uint32_t) fl_time;
+            msecs = (uint32_t) (1000 * (fl_time - secs));
+        } else if (PyInt_Check(arg1)) {
+            secs = (uint32_t) PyInt_AsLong(arg1);
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
     } else {
