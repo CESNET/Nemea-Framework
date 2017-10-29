@@ -1,11 +1,10 @@
 /**
  * \file nemea-common.h
  * \brief Header file containing common headers.
- * \data 2013
- * \date 2014
+ * \date 2013-2017
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013-2017 CESNET
  *
  * LICENSE TERMS
  *
