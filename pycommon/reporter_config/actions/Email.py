@@ -3,6 +3,7 @@ from .Action import Action
 import smtplib
 from email.mime.text import MIMEText
 import json
+from idea.lite import Timestamp
 
 class EmailAction(Action):
     """Action to send an email with IDEA record to a specified address
@@ -81,11 +82,32 @@ class EmailAction(Action):
         src_ip = src_ips[0] + (' (...)' if len(src_ips) > 1 else '') if src_ips else 'N/A'
         tgt_ips = [ip for tgt in record.get('Target', []) for ip in tgt.get('IP4',[]) + tgt.get('IP6', [])]
         tgt_ip = tgt_ips[0] + (' (...)' if len(tgt_ips) > 1 else '') if tgt_ips else 'N/A'
+        # Get duration of attack (for rate computation below)
+        starttime = record.get('EventTime') or record.get('WinStartTime')
+        endtime = record.get('CeaseTime') or record.get('WinEndTime')
+        if starttime and endtime:
+            try:
+                duration = (Timestamp(endtime) - Timestamp(starttime)).total_seconds()
+            except ValueError:
+                duration = None
+        # byte_rate (in MiB/s)
+        if duration and 'ByteCount' in record:
+            byte_rate = '{0:.2f} Mb/s'.format(record['ByteCount'] * 8.0 / (duration*1024*1024))
+        else:
+            byte_rate = ''
+        # flow_rate (in flow/s)
+        if duration and 'FlowCount' in record:
+            flow_rate = '{0:.2f} flow/s'.format(record['FlowCount'] / duration)
+        else:
+            flow_rate = ''
+
         self.message['Subject'] = self.subject\
             .replace('$category', category)\
             .replace('$node', node)\
             .replace('$src_ip', src_ip)\
-            .replace('$tgt_ip', tgt_ip)
+            .replace('$tgt_ip', tgt_ip)\
+            .replace('$byte_rate', byte_rate)\
+            .replace('$flow_rate', flow_rate)
 
         # Set other headers
         self.message['From'] = self.addrFrom
