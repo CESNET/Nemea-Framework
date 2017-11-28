@@ -248,8 +248,12 @@ UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
             fl_time = PyFloat_AsDouble(arg1);
             secs = (uint32_t) fl_time;
             msecs = (uint32_t) (1000 * (fl_time - secs));
+        } else if (PyLong_Check(arg1)) {
+            secs = (uint32_t) PyLong_AsLong(arg1);
+#if PY_MAJOR_VERSION < 3
         } else if (PyInt_Check(arg1)) {
             secs = (uint32_t) PyInt_AsLong(arg1);
+#endif
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
     } else {
