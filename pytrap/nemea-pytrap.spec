@@ -11,7 +11,7 @@
 %endif
 
 Name:           %{pypi_name}
-Version:        0.9.10
+Version:        0.9.11
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
