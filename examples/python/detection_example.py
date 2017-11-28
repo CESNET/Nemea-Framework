@@ -34,7 +34,7 @@ def do_detection(rec):
         alert.DST_IP = rec.DST_IP
         alert.SRC_PORT = rec.SRC_PORT
         alert.DST_PORT = rec.DST_PORT
-                alert.EVENT_TIME = rec.TIME_FIRST
+        alert.EVENT_TIME = rec.TIME_FIRST
         # send alert
         trap.send(alert.getData(), 0)
 
