@@ -1,3 +1,8 @@
+2017-11-28 (Tomas Cejka): doc: generated doxygen was moved to gh-pages
+2017-10-24 (Jiri Havranek): unirec: added MAC address unirec data type (#71)
+2017-10-20 (Jiri Havranek): unirec: tests: fixed wrong pointers being checked against NULL value
+2017-10-06 (Pavel Krobot): UniRec: NEW FEATURE: function for comparison of UniRec templates. (#70)
+
 2017-09-07 (Tomas Cejka): Remove useless ipaddr_cpp.h from API (#68)
 2017-08-24 (Václav Bartoš): unirec: ur_define_teplate: Removed unnecessary error check
 

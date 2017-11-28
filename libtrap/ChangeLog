@@ -1,3 +1,7 @@
+2017-11-28 (Tomas Cejka): doc: generated doxygen was moved to gh-pages
+2017-10-13 (Tomas Jansky): libtrap: fixed 2 memory leaks
+2017-09-28 (Tomas Cejka): build: fixed repobuild and cleaned pkg-config file for libtrap
+
 2017-09-23 (Tomas Cejka): libtrap: rpm: fixed openssl dependency, fixed local RPM build
 2017-09-23 (Tomas Cejka): libtrap: rpm: add openssl dependency (TLS IFC)
 2017-09-16 (Tomas Cejka): libtrap: BUGFIX: skipping more bytes than needed
