@@ -7,17 +7,21 @@ Source: nemea-framework-@VERSION@.tar.gz
 License:	BSD
 Vendor: CESNET, z.s.p.o.
 Packager: @USERNAME@ <@USERMAIL@>
-BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
+BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 BuildArch: noarch
 Provides: nemea-framework
 Requires: libtrap nemea-common python-nemea-pytrap python-nemea-pycommon
 
 %prep
-%setup -c -T
+%setup
 
 %build
 
 %install
+mkdir -p %{buildroot}/%{_docdir}/nemea/
+cp -r examples %{buildroot}/%{_docdir}/nemea/
+rm %{buildroot}/%{_docdir}/nemea/examples/Makefile.am
+find %{buildroot} -name Makefile.in -exec rm {} +
 
 %description
 Package that simplifies installation of libtrap, nemea-common and examples.
@@ -30,10 +34,12 @@ Provides: nemea-framework-devel
 
 %description devel
 This package contains header files for libtrap library. Install this package
-if you want to develop your own TRAP module.
+if you want to develop your own NEMEA module.
+This package also installs example modules.
 
 
 %files
 
 %files devel
+%{_docdir}/nemea/examples
 
