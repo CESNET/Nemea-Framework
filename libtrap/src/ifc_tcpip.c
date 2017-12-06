@@ -1918,3 +1918,7 @@ static int server_socket_open(void *priv)
  * @}
  *//* ifc modules */
 
+
+// Local variables:
+// c-basic-offset: 3
+// End:
