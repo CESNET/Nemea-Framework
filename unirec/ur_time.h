@@ -95,6 +95,19 @@ typedef uint64_t ur_time_t;
 #define ur_time_get_msec(time) \
    (uint32_t)((((uint64_t)(time) & 0xffffffff) * UR_TIME_FRAC_TO_MSEC) >> 32)
 
+/**
+ * Return a time difference between A and B in miliseconds.
+ *
+ * \param [in] a  Timestamp A
+ * \param [in] b  Timestamp B
+ * \returns abs(A - B), the result is in miliseconds.
+ */
+inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
+{
+   ur_time_t c = (a > b) ? a - b : b - a;
+   return ur_time_get_sec(c) * 1000 + ur_time_get_msec(c);
+}
+
 /** \todo Conversion from/to micro- and nano seconds */
 
 /**
