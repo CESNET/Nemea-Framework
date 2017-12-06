@@ -102,7 +102,7 @@ typedef uint64_t ur_time_t;
  * \param [in] b  Timestamp B
  * \returns abs(A - B), the result is in miliseconds.
  */
-inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
+static inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
 {
    ur_time_t c = (a > b) ? a - b : b - a;
    return ur_time_get_sec(c) * 1000 + ur_time_get_msec(c);
