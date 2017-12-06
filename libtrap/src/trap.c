@@ -3899,3 +3899,7 @@ in_neg_exit:
 
    return neg_result;
 }
+
+// Local variables:
+// c-basic-offset: 3
+// End:
