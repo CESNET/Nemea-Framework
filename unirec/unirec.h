@@ -1,5 +1,5 @@
 /**
- * \file unirec.c
+ * \file unirec.h
  * \brief Definition of UniRec structures and functions
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
  * \author Zdenek Rosa <rosazden@fit.cvut.cz>
