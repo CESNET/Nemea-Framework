@@ -110,25 +110,40 @@ void file_terminate(void *priv)
 }
 
 /**
+ * Author Jonathon Reinhart
+ * Adapted from https://gist.github.com/JonathonReinhart/8c0d90191c38af2dcadb102c4e202950
  * \brief Create path, recursive.
  * \param[in] path where file will be created
 */
-static void _mkdir(const char *dir) {
-        mode_t perm = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
-        char tmp[256];
-        char *p = NULL;
-        size_t len;
+int _mkdir(const char *path)
+{
+    mode_t perm = S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH;
+    const size_t len = strlen(path);
+    char _path[PATH_MAX];
+    char *p; 
+    errno = 0;
 
-        snprintf(tmp, sizeof(tmp),"%s",dir);
-        len = strlen(tmp);
-        if(tmp[len - 1] == '/')
-                tmp[len - 1] = 0;
-        for(p = tmp + 1; *p; p++)
-                if(*p == '/') {
-                        *p = 0;
-                        mkdir(tmp, perm);
-                        *p = '/';
-                }
+    if (len > sizeof(_path)-1) {
+        errno = ENAMETOOLONG;
+        return -1; 
+    }   
+    strcpy(_path, path);
+
+    for (p = _path + 1; *p; p++) {
+        if (*p == '/') {
+            /* Temporarily truncate */
+            *p = '\0';
+
+            if (mkdir(_path, perm) != 0) {
+                if (errno != EEXIST)
+                    return -1; 
+            }
+
+            *p = '/';
+        }
+    }   
+
+    return 0;
 }
 
 /**
@@ -177,8 +192,13 @@ char *create_filename_from_time(void *priv)
       return NULL;
    }
 
-   strftime(new_filename, config->filename_base_length + 6, config->filename, tm_info);
-   strftime(new_filename + (strlen(new_filename)), 14, ".%Y%m%d%H%M", localtime(&config->starting_time));
+   if(strftime(new_filename, config->filename_base_length + 6, config->filename, tm_info) == 0){
+       return NULL;
+   }
+   
+   if(strftime(new_filename + (strlen(new_filename)), 14, ".%Y%m%d%H%M", localtime(&config->starting_time)) == 0){
+       return NULL;
+   };
 
    return new_filename;
 }
@@ -674,9 +694,17 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
    time(&timer);
    tm_info = localtime(&timer);
-   strftime(priv->filename, priv->filename_base_length + 7, exp_result.we_wordv[0], tm_info);
-   priv->filename_base_length = strlen(priv->filename);
-   _mkdir(priv->filename);
+   priv->filename_base_length = strftime(priv->filename, priv->filename_base_length + 7, exp_result.we_wordv[0], tm_info);
+   if (priv->filename_base_length == 0){
+       free(priv);
+       wordfree(&exp_result);
+       return trap_error(ctx, TRAP_E_BADPARAMS, "CREATE OUTPUT FILE IFC: exceeding maxsize characters");
+   }
+   if (_mkdir(priv->filename) != 0){
+       free(priv);
+       wordfree(&exp_result);
+       return trap_error(ctx, TRAP_E_BADPARAMS, "CREATE OUTPUT FILE IFC: directory is not created, bad permission.");
+   }
 
    wordfree(&exp_result);
 
