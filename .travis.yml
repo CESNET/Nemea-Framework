@@ -4,10 +4,9 @@ compiler:
   - gcc
 os:
   - linux
-
 python:
-  2.7
-  3.5
+  - "2.7"
+  - "3.6"
 
 env:
   global:
@@ -62,7 +61,8 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - pyenv global 2.7 3.5
+  - pyenv versions
+  - pyenv global 2.7 3.6
   - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && make coverage; $(pyenv which python) setup.py install; $(pyenv which python3) setup.py install;)
