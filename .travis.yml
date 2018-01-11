@@ -58,7 +58,7 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - pyenv global 2.7.13 3.5.3
+  - pyenv global 2.7 3.5
   - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && make coverage; $(pyenv which python) setup.py install; $(pyenv which python3) setup.py install;)
