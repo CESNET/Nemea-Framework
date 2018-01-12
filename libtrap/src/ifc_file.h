@@ -43,18 +43,19 @@
 #ifndef _TRAP_IFC_FILE_H_
 #define _TRAP_IFC_FILE_H_
 
+#include <limits.h>
 #include "trap_ifc.h"
 
 typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
    FILE *fd;
    char **files;
-   char *filename;
+   char filename_tmplt[PATH_MAX];
+   char filename[PATH_MAX];
    char mode[3];
    char is_terminated;
    uint8_t neg_initialized;
-   time_t starting_time;
-   size_t filename_base_length;
+   time_t create_time;
    size_t file_index;
    uint32_t file_cnt;
    uint32_t ifc_idx;
