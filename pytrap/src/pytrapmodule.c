@@ -482,13 +482,14 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
     {"setVerboseLevel", (PyCFunction) pytrap_setVerboseLevel, METH_VARARGS,
         "Set the verbose level of TRAP.\n\n"
         "Args:\n"
-        "    level (int): Level of verbosity the higher value the more verbose (default: -1).\n"
+        "    level (int): Level of verbosity the higher value the more verbose.\n"
+        "                 Possible values: VERB_ERRORS (-3), VERB_WARNINGS (-2), VERB_NOTICES (-1) = default, VERB_VERBOSE (0), VERB_VERBOSE2 (1), VERB_VERBOSE3 (2).\n"
         },
 
     {"getVerboseLevel", (PyCFunction) pytrap_getVerboseLevel, METH_VARARGS,
         "Get current verbose level.\n\n"
         "Returns:\n"
-        "    int: Level of verbosity.\n"
+        "    int: Level of verbosity. See setVerboseLevel() for possible values.\n"
         },
 
     {"getInIFCState",   (PyCFunction) pytrap_getInIFCState, METH_VARARGS,
@@ -706,6 +707,14 @@ initpytrap(void)
     PyModule_AddIntConstant(m, "TIMEOUT_NOWAIT", TRAP_NO_WAIT);
     PyModule_AddIntConstant(m, "TIMEOUT_HALFWAIT", TRAP_HALFWAIT);
     PyModule_AddIntConstant(m, "TIMEOUT_NOAUTOFLUSH", TRAP_NO_AUTO_FLUSH);
+
+    PyModule_AddIntConstant(m, "VERB_ERRORS", -3);
+    PyModule_AddIntConstant(m, "VERB_WARNINGS", -2);
+    PyModule_AddIntConstant(m, "VERB_NOTICES", -1);
+    PyModule_AddIntConstant(m, "VERB_VERBOSE",  0);
+    PyModule_AddIntConstant(m, "VERB_VERBOSE2",  1);
+    PyModule_AddIntConstant(m, "VERB_VERBOSE3",  2);
+
 
 #if PY_MAJOR_VERSION >= 3
     return m;
