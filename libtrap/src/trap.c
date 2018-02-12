@@ -3579,25 +3579,33 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    char *req_data_fmt_spec = NULL;
    char *current_data_fmt_spec = NULL;
    char *recv_data_fmt_spec = NULL;
+   trap_ctx_priv_t *ctx = NULL;
+   uint32_t ifc_idx = 0;
 
    // Decide which structure can be used for interfaces private data
    if (ifc_type == TRAP_IFC_TYPE_FILE) {
       file_ifc_priv = (file_private_t *) ifc_priv_data;
-      req_data_type = file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].req_data_type;
-      req_data_fmt_spec = file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].req_data_fmt_spec;
-      current_data_fmt_spec = file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec;
+      ctx = file_ifc_priv->ctx;
+      ifc_idx = file_ifc_priv->ifc_idx;
+      req_data_type = ctx->in_ifc_list[ifc_idx].req_data_type;
+      req_data_fmt_spec = ctx->in_ifc_list[ifc_idx].req_data_fmt_spec;
+      current_data_fmt_spec = ctx->in_ifc_list[ifc_idx].data_fmt_spec;
 #if HAVE_OPENSSL
    } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
       tls_ifc_priv = (tls_receiver_private_t *) ifc_priv_data;
-      req_data_type = tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].req_data_type;
-      req_data_fmt_spec = tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].req_data_fmt_spec;
-      current_data_fmt_spec = tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].data_fmt_spec;
+      ctx = tls_ifc_priv->ctx;
+      ifc_idx = tls_ifc_priv->ifc_idx;
+      req_data_type = ctx->in_ifc_list[ifc_idx].req_data_type;
+      req_data_fmt_spec = ctx->in_ifc_list[ifc_idx].req_data_fmt_spec;
+      current_data_fmt_spec = ctx->in_ifc_list[ifc_idx].data_fmt_spec;
 #endif
    } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
       tcp_ifc_priv = (tcpip_receiver_private_t *) ifc_priv_data;
-      req_data_type = tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].req_data_type;
-      req_data_fmt_spec = tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].req_data_fmt_spec;
-      current_data_fmt_spec = tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec;
+      ctx = tcp_ifc_priv->ctx;
+      ifc_idx = tcp_ifc_priv->ifc_idx;
+      req_data_type = ctx->in_ifc_list[ifc_idx].req_data_type;
+      req_data_fmt_spec = ctx->in_ifc_list[ifc_idx].req_data_fmt_spec;
+      current_data_fmt_spec = ctx->in_ifc_list[ifc_idx].data_fmt_spec;
    } else {
       neg_result = NEG_RES_FAILED;
       goto in_neg_exit;
@@ -3635,15 +3643,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    if (ret_val != compare) {
       // Could not receive hello message header
       VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-      if (ifc_type == TRAP_IFC_TYPE_FILE) {
-         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-#if HAVE_OPENSSL
-      } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-         tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-#endif
-      }
+      ctx->in_ifc_list[ifc_idx].client_state = FMT_WAITING;
       neg_result = NEG_RES_FAILED;
       goto in_neg_exit;
    } else {
@@ -3662,57 +3662,25 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    if (hello_msg_header->data_type == TRAP_FMT_UNKNOWN) {
       // Received unknown data type in hello message header from senders interface
       VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - sender's output interface has unknown data format");
-      if (ifc_type == TRAP_IFC_TYPE_FILE) {
-         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-#if HAVE_OPENSSL
-      } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-         tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-#endif
-      }
+      ctx->in_ifc_list[ifc_idx].client_state = FMT_WAITING;
       neg_result = NEG_RES_FMT_UNKNOWN;
       goto in_neg_exit;
    } else if (hello_msg_header->data_type != req_data_type) {
       // Senders and receivers interface data types are not the same
       VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - mismatch of sender's output and receiver's input interface data types");
-      if (ifc_type == TRAP_IFC_TYPE_FILE) {
-         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-#if HAVE_OPENSSL
-      } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-         tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-#endif
-      }
+      ctx->in_ifc_list[ifc_idx].client_state = FMT_MISMATCH;
       neg_result = NEG_RES_FMT_MISMATCH;
       goto in_neg_exit;
    } else if (req_data_type == TRAP_FMT_RAW) {
       // Both interfaces (senders output and receivers input) have RAW data format -> receive message with the data right after negotiation
-      if (ifc_type == TRAP_IFC_TYPE_FILE) {
-         file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_OK;
-      } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-         tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_OK;
-#if HAVE_OPENSSL
-      } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-         tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_OK;
-#endif
-      }
+      ctx->in_ifc_list[ifc_idx].client_state = FMT_OK;
       neg_result = NEG_RES_CONT;
    } else {
       // Both interfaces (senders output and receivers input) have UNIREC or JSON data format, that's OK
       // If type is UNIREC, check data format specifier size (JSON can have empty specifier, but UNIREC don't)
       if (hello_msg_header->data_type == TRAP_FMT_UNIREC && hello_msg_header->data_fmt_spec_size <= 0) {
          VERBOSE(CL_VERBOSE_LIBRARY, "ERROR - received zero size of UNIREC data format specifier.");
-         if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-#if HAVE_OPENSSL
-         } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-            tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-#endif
-         }
+         ctx->in_ifc_list[ifc_idx].client_state = FMT_MISMATCH;
          neg_result = NEG_RES_FMT_MISMATCH;
          goto in_neg_exit;
       }
@@ -3749,15 +3717,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
          if (ret_val != compare) {
             // Could not receive data formate specifier
             VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-            if (ifc_type == TRAP_IFC_TYPE_FILE) {
-               file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-            } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-               tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-#if HAVE_OPENSSL
-            } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-               tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_WAITING;
-#endif
-            }
+            ctx->in_ifc_list[ifc_idx].client_state = FMT_WAITING;
             neg_result = NEG_RES_FAILED;
             free(recv_data_fmt_spec);
             recv_data_fmt_spec = NULL;
@@ -3787,42 +3747,18 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       if (ret_val == TRAP_E_FIELDS_MISMATCH) {
          // senders and receivers ifc data_fmt_specs are not same
          VERBOSE(CL_VERBOSE_LIBRARY, "ERROR");
-         if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-#if HAVE_OPENSSL
-         } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-            tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_MISMATCH;
-#endif
-         }
+         ctx->in_ifc_list[ifc_idx].client_state = FMT_MISMATCH;
          neg_result = NEG_RES_FMT_MISMATCH;
          free(recv_data_fmt_spec);
          recv_data_fmt_spec = NULL;
          goto in_neg_exit;
       } else if (ret_val == TRAP_E_FIELDS_SUBSET) {
          VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-         if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
-         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
-#if HAVE_OPENSSL
-         } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-            tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
-#endif
-         }
+         ctx->in_ifc_list[ifc_idx].client_state = FMT_CHANGED;
          neg_result = NEG_RES_RECEIVER_FMT_SUBSET;
       } else {
          VERBOSE(CL_VERBOSE_LIBRARY, "OK");
-         if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_OK;
-         } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-            tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_OK;
-#if HAVE_OPENSSL
-         } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-            tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_OK;
-#endif
-         }
+         ctx->in_ifc_list[ifc_idx].client_state = FMT_OK;
          neg_result = NEG_RES_CONT;
          if (current_data_fmt_spec != NULL) {
             VERBOSE(CL_VERBOSE_LIBRARY, "Step 5: comparing old and new sender's data_fmt_spec (not first negotiation)...   ");
@@ -3835,15 +3771,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
             }
             if (ret_val != TRAP_E_OK) {
                VERBOSE(CL_VERBOSE_LIBRARY, "CHANGE");
-               if (ifc_type == TRAP_IFC_TYPE_FILE) {
-                  file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
-               } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-                  tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
-#if HAVE_OPENSSL
-               } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-                  tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state = FMT_CHANGED;
-#endif
-               }
+               ctx->in_ifc_list[ifc_idx].client_state = FMT_CHANGED;
                if (hello_msg_header->data_type == TRAP_FMT_UNIREC) {
                   neg_result = NEG_RES_SENDER_FMT_SUBSET;
                } else {
@@ -3857,38 +3785,13 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    }
 
    /** Save senders data_type and data_fmt_spec */
-   if (ifc_type == TRAP_IFC_TYPE_FILE) {
-      file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
-      if (file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec != NULL) {
-         free(file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec);
-      }
-      file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].data_fmt_spec = recv_data_fmt_spec;
-   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-      tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
-      if (tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec != NULL) {
-         free(tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec);
-      }
-      tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec = recv_data_fmt_spec;
-#if HAVE_OPENSSL
-   } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-      tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].data_type = hello_msg_header->data_type;
-      if (tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].data_fmt_spec != NULL) {
-         free(tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].data_fmt_spec);
-      }
-      tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].data_fmt_spec = recv_data_fmt_spec;
-#endif
+   ctx->in_ifc_list[ifc_idx].data_type = hello_msg_header->data_type;
+   if (ctx->in_ifc_list[ifc_idx].data_fmt_spec != NULL) {
+      free(ctx->in_ifc_list[ifc_idx].data_fmt_spec);
    }
 
 in_neg_exit:
-   if (ifc_type == TRAP_IFC_TYPE_FILE) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", file_ifc_priv->ctx->in_ifc_list[file_ifc_priv->ifc_idx].client_state);
-   } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", tcp_ifc_priv->ctx->in_ifc_list[tcp_ifc_priv->ifc_idx].client_state);
-#if HAVE_OPENSSL
-   } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", tls_ifc_priv->ctx->in_ifc_list[tls_ifc_priv->ifc_idx].client_state);
-#endif
-   }
+   VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", ctx->in_ifc_list[ifc_idx].client_state);
 
    if (hello_msg_header != NULL) {
       free(hello_msg_header);
