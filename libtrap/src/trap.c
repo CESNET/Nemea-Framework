@@ -3791,6 +3791,11 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    }
 
 in_neg_exit:
+   if (ctx->clb_in_negotiation != NULL) {
+      ctx->clb_in_negotiation(neg_result, hello_msg_header->data_type,
+                              recv_data_fmt_spec, req_data_type, req_data_fmt_spec);
+   }
+
    VERBOSE(CL_VERBOSE_LIBRARY, "input ifc state after connecting: %d", ctx->in_ifc_list[ifc_idx].client_state);
 
    if (hello_msg_header != NULL) {

@@ -58,6 +58,9 @@ extern "C" {
 
 #define trap_ctx_t void
 
+/* callbacks.h needs trap_ctx_t */
+#include "callbacks.h"
+
 /**
  * \defgroup commonapi Common libtrap API
  *

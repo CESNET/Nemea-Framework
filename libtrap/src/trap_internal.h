@@ -373,6 +373,11 @@ struct trap_ctx_priv_s {
     * Lock context (this structure)
     */
    pthread_rwlock_t context_lock;
+
+   /**
+    * Callback End of negotiation for input IFC
+    */
+   clb_in_negotiation_t clb_in_negotiation;
 };
 
 /**
