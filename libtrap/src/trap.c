@@ -3789,6 +3789,7 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    if (ctx->in_ifc_list[ifc_idx].data_fmt_spec != NULL) {
       free(ctx->in_ifc_list[ifc_idx].data_fmt_spec);
    }
+   ctx->in_ifc_list[ifc_idx].data_fmt_spec = recv_data_fmt_spec;
 
 in_neg_exit:
    if (ctx->clb_in_negotiation != NULL) {
