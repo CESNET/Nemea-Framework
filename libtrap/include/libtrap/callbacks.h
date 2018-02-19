@@ -46,10 +46,38 @@
 
 #include "trap.h"
 
+/**
+ * Callback function that is called at the end of every negotiation of an input IFC.
+ *
+ * \param[in] negotiation_result Result of receiving and evaluation of a
+ *      `hello` message. It might be set to any of the following values:
+ *      #NEG_RES_CONT, #NEG_RES_FAILED, #NEG_RES_FMT_CHANGED, #NEG_RES_FMT_MISMATCH,
+ *      #NEG_RES_FMT_UNKNOWN, #NEG_RES_RECEIVER_FMT_SUBSET, #NEG_RES_SENDER_FMT_SUBSET
+ * \param[in] req_data_type      Required data type that was set for the IFC, see #trap_ctx_vset_required_fmt()
+ * \param[in] req_data_fmt       Required data specifier that was set for the IFC.
+ * \param[in] recv_data_type     Data type that was sent by output IFC where this IFC is connected.
+ * \param[in] recv_data_fmt      Data specifier that was sent by output IFC where this IFC is connected.
+ * \param[in] caller_data        Optional user data that was set by callback setter (#trap_ctx_clb_in_negotiation() or #trap_clb_in_negotiation()).
+ *
+ * \return Return value has currently no effect, it is reserved for possible future purposes.
+ */
 typedef int (*clb_in_negotiation_t)(int negotiation_result, uint8_t req_data_type, const char *req_data_fmt, uint8_t recv_data_type, const char *recv_data_fmt, void *caller_data);
 
+/**
+ * Set callback function for negotiation of the input IFC.
+ *
+ * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] clb    Pointer to callback function.
+ * \param[in] caller_data    Optional pointer to user data that is passed into callback function. It can be NULL.
+ */
 void trap_ctx_clb_in_negotiation(trap_ctx_t *ctx, clb_in_negotiation_t clb, void *caller_data);
 
+/**
+ * Set callback function for negotiation of the input IFC.
+ *
+ * \param[in] clb    Pointer to callback function.
+ * \param[in] caller_data    Optional pointer to user data that is passed into callback function. It can be NULL.
+ */
 void trap_clb_in_negotiation(clb_in_negotiation_t clb, void *caller_data);
 
 #endif
