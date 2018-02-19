@@ -46,11 +46,11 @@
 
 #include "trap.h"
 
-typedef int (*clb_in_negotiation_t)(int negotiation_result, uint8_t req_data_type, const char *req_data_fmt, uint8_t recv_data_type, const char *recv_data_fmt);
+typedef int (*clb_in_negotiation_t)(int negotiation_result, uint8_t req_data_type, const char *req_data_fmt, uint8_t recv_data_type, const char *recv_data_fmt, void *caller_data);
 
-void trap_ctx_clb_in_negotiation(trap_ctx_t *ctx, clb_in_negotiation_t clb);
+void trap_ctx_clb_in_negotiation(trap_ctx_t *ctx, clb_in_negotiation_t clb, void *caller_data);
 
-void trap_clb_in_negotiation(clb_in_negotiation_t clb);
+void trap_clb_in_negotiation(clb_in_negotiation_t clb, void *caller_data);
 
 #endif
 

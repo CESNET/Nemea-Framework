@@ -45,17 +45,23 @@
 #include "trap_internal.h"
 
 
-void trap_ctx_clb_in_negotiation(trap_ctx_t *ctx, clb_in_negotiation_t clb)
+void trap_ctx_clb_in_negotiation(trap_ctx_t *ctx, clb_in_negotiation_t clb, void *caller_data)
 {
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
+   /* Set pointer to callback function if it was passed. */
    if (c != NULL) {
       c->clb_in_negotiation = clb;
    }
+   /* Set pointer to user data (caller_data) if it was passed. */
+   if (caller_data != NULL) {
+      c->clb_in_negotiation_arg = caller_data;
+   }
 }
 
-void trap_clb_in_negotiation(clb_in_negotiation_t clb)
+void trap_clb_in_negotiation(clb_in_negotiation_t clb, void *caller_data)
 {
-    trap_ctx_clb_in_negotiation(trap_glob_ctx, clb);
+   /* call ctx version, this is only a wrapper */
+   trap_ctx_clb_in_negotiation(trap_glob_ctx, clb, caller_data);
 }
 
 

@@ -378,6 +378,10 @@ struct trap_ctx_priv_s {
     * Callback End of negotiation for input IFC
     */
    clb_in_negotiation_t clb_in_negotiation;
+   /**
+    * User data that is passed to callback function, it can be set by a callback setter.
+    */
+   void *clb_in_negotiation_arg;
 };
 
 /**
