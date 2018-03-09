@@ -1,0 +1,11 @@
+FROM centos:7
+
+RUN yum install -y autoconf automake gcc gcc-g++ libtool libxml2-devel m4 make \
+   openssl libssl-devel pkg-config libxslt-devel \
+   libcurl4-openssl-dev xsltproc git curl-devel \
+   libxml2-python libxslt-python doxygen munin munin-node \
+   libpcap-devel httpd bison flex python python-devel python-pip \
+   python-setuptools python3 python3-devel python3-pip python3-setuptools
+
+CMD ["/usr/bin/cat"]
+

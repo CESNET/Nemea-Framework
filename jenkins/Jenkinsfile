@@ -1,0 +1,15 @@
+pipeline {
+    agent {
+      dockerfile {
+         filename 'Centos-Dockerfile'
+         dir 'jenkins'
+      }
+    }
+    stages {
+        stage('Build') { 
+            steps {
+                sh './bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install && (cd pytrap && make coverage; python setup.py install; python3 setup.py install;)'
+            }
+        }
+    }
+}
