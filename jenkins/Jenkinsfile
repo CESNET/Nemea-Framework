@@ -1,15 +1,32 @@
 pipeline {
-    agent {
-      dockerfile {
-         filename 'Centos-Dockerfile'
-         dir 'jenkins'
-      }
-    }
+    agent none
     stages {
-        stage('Build') { 
+        stage('Build Centos') {
+            agent {
+                dockerfile {
+                    filename 'Centos-Dockerfile'
+                    dir 'jenkins'
+                }
+            }
             steps {
-                sh './bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && make install && (cd pytrap && make coverage; python setup.py install;)'
+                sh './bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov && make check && (cd pytrap && make coverage; python setup.py install;)'
+            }
+        }
+        stage('Build Debian packages') {
+            agent {
+                dockerfile {
+                    filename 'Debian-Dockerfile'
+                    dir 'jenkins'
+                }
+            }
+            steps {
+               sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./libtrap*.deb;)'
+               sh '( cd unirec; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./unirec*.deb;)'
+               sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./nemea-common*.deb;)'
             }
         }
     }
+
+
+
 }
