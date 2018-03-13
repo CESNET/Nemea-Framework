@@ -9,7 +9,7 @@ pipeline {
                 }
             }
             steps {
-                sh './bootstrap.sh && ./configure --prefix=/usr --libdir=/usr/lib64 -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov && make install && (cd pytrap && make coverage; python setup.py install;)'
+                sh './bootstrap.sh && ./configure --prefix=$PWD/install --libdir=$PWD/install/lib -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov && make install && export LD_LIBRARY_PATH=$PWD/install/lib && export CPPFLAGS=-I$PWD/install/include && (cd pytrap && make coverage; python setup.py install;)'
             }
         }
         stage('Build Debian packages') {
