@@ -9,7 +9,12 @@ pipeline {
                 }
             }
             steps {
-                sh './bootstrap.sh && ./configure --prefix=$PWD/install --libdir=$PWD/install/lib -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov && make install && export LD_LIBRARY_PATH=$PWD/install/lib && export CPPFLAGS=-I$PWD/install/include && (cd pytrap && make coverage; python setup.py install;)'
+                //sh './bootstrap.sh && ./configure --prefix=$PWD/install --libdir=$PWD/install/lib -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov && make rpm make install && export LD_LIBRARY_PATH=$PWD/install/lib && export CPPFLAGS=-I$PWD/install/include && (cd pytrap && make coverage; python setup.py install;)'
+
+               sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make rpm && yum install -y ./RPMBUILD/RPMS/*/libtrap*.rpm;)'
+               sh '( cd unirec; ./bootstrap.sh && ./configure -q && make rpm && yum install -y ./RPMBUILD/RPMS/*/unirec*.rpm;)'
+               sh '( cd common; ./bootstrap.sh && ./configure -q && make rpm && yum install -y ./RPMBUILD/RPMS/*/nemea-common*.rpm;)'
+               sh 'mkdir rpms; find libtrap unirec common -name "*.rpm" -exec mv {} rpms \;'
             }
         }
         stage('Build Debian packages') {
@@ -23,6 +28,7 @@ pipeline {
                sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./libtrap*.deb;)'
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./unirec*.deb;)'
                sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./nemea-common*.deb;)'
+               sh 'mkdir debs; find libtrap unirec common -name "*.deb" -exec mv {} debs \;'
             }
         }
     }
