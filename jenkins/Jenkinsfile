@@ -11,8 +11,7 @@ pipeline {
             steps {
                 //sh './bootstrap.sh && ./configure --prefix=$PWD/install --libdir=$PWD/install/lib -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov && make rpm make install && export LD_LIBRARY_PATH=$PWD/install/lib && export CPPFLAGS=-I$PWD/install/include && (cd pytrap && make coverage; python setup.py install;)'
 
-               sh '/usr/sbin/useradd jenkins -u `id -u`'
-               sh 'whoami'
+               sh '/usr/sbin/groupadd -f -g `id -g` jenkins; /usr/sbin/useradd jenkins -u `id -u` -g `id -g`; true'
 
                sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/libtrap*.rpm;)'
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/unirec*.rpm;)'

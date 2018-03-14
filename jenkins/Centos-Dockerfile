@@ -7,7 +7,7 @@ RUN yum install -y autoconf automake gcc gcc-c++ libtool libxml2-devel m4 make \
    python-setuptools python3 python3-devel python3-pip python3-setuptools \
    rpm-build
 
-RUN chmod  u+s,o+rx /usr/sbin/useradd; yum install -y sudo; sed -i "\$aALL ALL=(ALL) NOPASSWD:ALL" /etc/sudoers
+RUN chmod  u+s,o+rx /usr/sbin/useradd /usr/sbin/groupadd; yum install -y sudo; sed -i "\$aALL ALL=(ALL) NOPASSWD:ALL" /etc/sudoers
 
 CMD ["/usr/bin/cat"]
 
