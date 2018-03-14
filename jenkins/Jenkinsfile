@@ -17,8 +17,8 @@ pipeline {
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/unirec*.rpm;)'
                sh '( cd common; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/nemea-common*.rpm;)'
                sh 'mkdir rpms; find libtrap unirec common -name "*.rpm" -exec mv {} rpms ";"'
+               archiveArtifacts artifacts: 'rpms/*', onlyIfSuccessful: true
             }
-            archiveArtifacts artifacts: 'rpms/*', onlyIfSuccessful: true
         }
         stage('Build Debian packages') {
             agent {
@@ -34,8 +34,8 @@ pipeline {
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./unirec*.deb;)'
                sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./nemea-common*.deb;)'
                sh 'mkdir debs; find libtrap unirec common -name "*.deb" -exec mv {} debs ";"'
+               archiveArtifacts artifacts: 'debs/*', onlyIfSuccessful: true
             }
-            archiveArtifacts artifacts: 'debs/*', onlyIfSuccessful: true
         }
     }
 
