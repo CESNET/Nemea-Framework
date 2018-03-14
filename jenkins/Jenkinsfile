@@ -27,9 +27,11 @@ pipeline {
                 }
             }
             steps {
-               sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./libtrap*.deb;)'
-               sh '( cd unirec; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./unirec*.deb;)'
-               sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && dpkg -i ./nemea-common*.deb;)'
+               sh '/usr/sbin/groupadd -f -g `id -g` jenkins; /usr/sbin/useradd jenkins -u `id -u` -g `id -g`; true'
+
+               sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./libtrap*.deb;)'
+               sh '( cd unirec; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./unirec*.deb;)'
+               sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./nemea-common*.deb;)'
                sh 'mkdir debs; find libtrap unirec common -name "*.deb" -exec mv {} debs ";"'
             }
         }
