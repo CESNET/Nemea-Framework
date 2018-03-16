@@ -5,7 +5,9 @@ RUN apt-get update; apt-get install -y gawk autoconf automake gcc g++ libtool ma
        libssl-dev pkg-config libxslt-dev xsltproc doxygen \
        bc git \
        python python-dev python-pip python-setuptools python3 python3-dev python3-pip python3-setuptools \
-       debmake devscripts debhelper
+       debmake devscripts debhelper python3-all-dev
+
+RUN pip install stdeb; pip3 install stdeb
 
 RUN chmod  u+s,o+rx /usr/sbin/useradd /usr/sbin/groupadd; apt-get install -y sudo; sed -i "\$aALL ALL=(ALL) NOPASSWD:ALL" /etc/sudoers
 

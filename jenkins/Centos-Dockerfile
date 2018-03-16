@@ -5,7 +5,9 @@ RUN yum install -y autoconf automake gcc gcc-c++ libtool libxml2-devel m4 make \
    xsltproc git bc libxml2-python libxslt-python doxygen \
    libpcap-devel bison flex python python-devel python-pip \
    python-setuptools python3 python3-devel python3-pip python3-setuptools \
-   rpm-build
+   rpm-build; \
+   curl -s 'https://copr.fedorainfracloud.org/coprs/g/CESNET/NEMEA/repo/epel-7/group_CESNET-NEMEA-epel-7.repo' > /etc/yum.repos.d/group_CESNET-NEMEA-epel-7.repo; \
+   yum install -y python-pynspect
 
 RUN chmod  u+s,o+rx /usr/sbin/useradd /usr/sbin/groupadd; yum install -y sudo; sed -i "\$aALL ALL=(ALL) NOPASSWD:ALL" /etc/sudoers
 
