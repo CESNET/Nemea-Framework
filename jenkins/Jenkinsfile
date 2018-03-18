@@ -17,9 +17,9 @@ pipeline {
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/unirec*.rpm;)'
                sh '( cd common; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/nemea-common*.rpm;)'
                sh '( ./bootstrap.sh && ./configure -q;)'
-               sh '( cd pytrap; make rpm;)'
+               sh '( cd pytrap; make rpm; yum install -y ./RPMBUILD/RPMS/*/*.rpm;)'
                sh '( cd pycommon; make rpm;)'
-               sh 'mkdir rpms; find libtrap unirec common -name "*.rpm" -exec mv {} rpms ";"'
+               sh 'mkdir -p rpms; find libtrap unirec common pytrap pycommon -name "*.rpm" -exec mv {} rpms ";"'
                archiveArtifacts artifacts: 'rpms/*', onlyIfSuccessful: true
             }
         }
@@ -38,7 +38,7 @@ pipeline {
                sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./nemea-common*.deb;)'
                sh '( cd pytrap; python setup.py --command-packages=stdeb.command bdist_deb; python3 setup.py --command-packages=stdeb.command bdist_deb;)'
                sh '( cd pycommon; python setup.py --command-packages=stdeb.command bdist_deb; python3 setup.py --command-packages=stdeb.command bdist_deb;)'
-               sh 'mkdir debs; find libtrap unirec common pytrap pycommon -name "*.deb" -exec mv {} debs ";"'
+               sh 'mkdir -p debs; find libtrap unirec common pytrap pycommon -name "*.deb" -exec mv {} debs ";"'
                archiveArtifacts artifacts: 'debs/*', onlyIfSuccessful: true
             }
         }
