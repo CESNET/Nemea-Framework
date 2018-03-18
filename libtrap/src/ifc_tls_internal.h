@@ -60,7 +60,7 @@
  */
 
  /**
- * \defgroup tls_sender TLS output IFC
+ * \defgroup tls_sender TLS Output IFC
  * @{
  */
 
@@ -144,7 +144,7 @@ typedef struct tls_sender_private_s {
  */
 
 /**
- * \defgroup tls_receiver TLS input IFC
+ * \defgroup tls_receiver TLS Input IFC
  * @{
  */
 typedef struct tls_receiver_private_s {

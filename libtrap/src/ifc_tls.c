@@ -208,7 +208,7 @@ static int tls_server_configure_ctx(const char *cert, SSL_CTX *ctx)
  * \brief Configure ssl context of new connection.
  * \param[in] ctx  ssl context to be configured
  * \param[in] key  path to keyfile
- * \param[in] cert  path to certfile
+ * \param[in] crt  path to certfile
  * \param[in] ca  path to CA file
  * \return 1 on failure, 0 on success
  * Loading certificate and key to SSL_CTX. Setting location of CA that is used for verification of
@@ -743,7 +743,6 @@ uint8_t tls_recv_ifc_is_conn(void *priv)
  * dest_port is the port where sender is listening.
  * \param[in,out] ifc   IFC interface used for calling TCP/IP module.
  * \param[in] idx       Index of IFC that is created.
- * \param [in] type     Select the type of socket (see #tls_ifc_sockettype for options).
  * \return 0 on success (TRAP_E_OK)
  */
 int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc, uint32_t idx)
@@ -944,7 +943,7 @@ static int wait_for_connection(int sock, struct timeval *tv)
 
 /**
  * \brief client_socket is used as a receiver
- * \param[in] config  pointer to module private data
+ * \param[in] c  pointer to module private data
  * \param[in] tv  timeout
  * \return TRAP_E_OK on success
  */
@@ -1702,7 +1701,6 @@ char *tls_send_ifc_get_id(void *priv)
  * dest_port is the port where sender is listening.
  * \param[in,out] ifc  IFC interface used for calling TCP/IP module.
  * \param[in] idx      Index of IFC that is created.
- * \param [in] type select the type of socket (see #tls_ifc_sockettype for options)
  * \return 0 on success (TRAP_E_OK)
  */
 int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx)
