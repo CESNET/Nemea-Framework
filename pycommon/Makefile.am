@@ -4,10 +4,11 @@ if MAKE_RPMS
 RPMFILENAME=nemea-pycommon
 .PHONY: rpm
 rpm:
-	mkdir -p RPMBUILD/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-	spectool -C "`pwd`/RPMBUILD/SOURCES" -g $(RPMFILENAME).spec
-	cp $(RPMFILENAME).spec RPMBUILD/SPECS/
-	rpmbuild -ba $(RPMFILENAME).spec --define "_topdir `pwd`/RPMBUILD/";
+	mkdir -p RPMBUILD/SOURCES
+	python setup.py sdist
+	cp dist/*.tar.gz RPMBUILD/SOURCES
+	rpmbuild  -ba nemea-pycommon.spec --define "_topdir `pwd`/RPMBUILD"
+	mv RPMBUILD/RPMS/*/*.rpm RPMBUILD/SRPMS/*.rpm dist/
 else
 endif
 
