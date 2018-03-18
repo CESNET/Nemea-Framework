@@ -1,4 +1,4 @@
-libtrap (2.2.9-1) stable; urgency=low
+unirec (2.2.9-1) stable; urgency=low
 
   * improved UniRec specifier parsing - can contain spaces
   * improved ur_clone_record() #48
@@ -8,7 +8,7 @@ libtrap (2.2.9-1) stable; urgency=low
   * added MAC address data type
   * added ur_timediff()
 
- -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 18 Mar 2018 15:56:35 +0100
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 18 Mar 2018 20:23:32 +0100
 
 unirec (2.2.4-1) stable; urgency=high
 
