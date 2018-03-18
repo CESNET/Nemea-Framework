@@ -36,7 +36,7 @@ pipeline {
                sh '( cd libtrap; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./libtrap*.deb;)'
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./unirec*.deb;)'
                sh '( cd common; ./bootstrap.sh && ./configure -q && make deb && sudo dpkg -i ./nemea-common*.deb;)'
-               sh '( cd pytrap; python setup.py --command-packages=stdeb.command bdist_deb; python3 setup.py --command-packages=stdeb.command bdist_deb; sudo dpkg -i ./dist/*.deb;)'
+               sh '( cd pytrap; python setup.py --command-packages=stdeb.command bdist_deb; python3 setup.py --command-packages=stdeb.command bdist_deb; sudo dpkg -i ./deb_dist/*.deb;)'
                sh '( cd pycommon; python setup.py --command-packages=stdeb.command bdist_deb; python3 setup.py --command-packages=stdeb.command bdist_deb;)'
                sh 'mkdir -p debs; find libtrap unirec common pytrap pycommon -name "*.deb" -exec mv {} debs ";"'
                archiveArtifacts artifacts: 'debs/*', onlyIfSuccessful: true
