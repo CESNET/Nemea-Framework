@@ -17,7 +17,7 @@ pipeline {
                sh '( cd unirec; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/unirec*.rpm;)'
                sh '( cd common; ./bootstrap.sh && ./configure -q && make rpm && sudo yum install -y ./RPMBUILD/RPMS/*/nemea-common*.rpm;)'
                sh '( ./bootstrap.sh && ./configure -q;)'
-               sh '( cd pytrap; make rpm; sudo yum install -y ./RPMBUILD/RPMS/*/*.rpm;)'
+               sh '( cd pytrap; make rpm; sudo yum install -y ./dist/*.rpm;)'
                sh '( cd pycommon; make rpm;)'
                sh 'mkdir -p rpms; find libtrap unirec common pytrap pycommon -name "*.rpm" -exec mv {} rpms ";"'
                archiveArtifacts artifacts: 'rpms/*', onlyIfSuccessful: true
