@@ -1,4 +1,7 @@
-2017-11-28 (Tomas Cejka): doc: generated doxygen was moved to gh-pages
+2018-03-18 (Tomas Cejka): debian: updated version of debian packages
+2018-01-11 (Tomas Jansky): libtrap: file interface: changed design of output interface
+2018-01-10 (Tomas Jansky): libtrap: file interface: pushed changes done by @gresake
+
 2017-10-13 (Tomas Jansky): libtrap: fixed 2 memory leaks
 2017-09-28 (Tomas Cejka): build: fixed repobuild and cleaned pkg-config file for libtrap
 
