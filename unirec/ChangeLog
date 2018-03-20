@@ -1,3 +1,7 @@
+2018-03-18 (Tomas Cejka): unirec: debian: fixed changelog
+2018-03-18 (Tomas Cejka): debian: updated version of debian packages
+2017-12-06 (Tomas Jansky): unirec: BUGFIX: changed function definition from inline to static inline
+
 2017-11-28 (Tomas Cejka): doc: generated doxygen was moved to gh-pages
 2017-10-24 (Jiri Havranek): unirec: added MAC address unirec data type (#71)
 2017-10-20 (Jiri Havranek): unirec: tests: fixed wrong pointers being checked against NULL value
