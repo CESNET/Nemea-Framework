@@ -40,6 +40,8 @@ EXTRA_DIST= README \
 	    cuckoo_hash/README \
 	    debian/source/local-options \
 	    debian/source/format \
+	    debian/nemea-common.install \
+	    debian/nemea-common-dev.install \
 	    debian/patches \
 	    debian/patches/series \
 	    debian/watch \
