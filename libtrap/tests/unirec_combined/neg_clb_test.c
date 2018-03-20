@@ -47,69 +47,76 @@
 #include <stdio.h>
 #include <signal.h>
 #include <getopt.h>
-#include "../../include/libtrap/callbacks.h"
-#include "../../include/libtrap/trap.h"
-#include <unirec/unirec.h>
+#include "libtrap/trap.h"
+#include "unirec.h"
 #include "fields.h"
 
-UR_FIELDS(
-   ipaddr SRC_IP,
-   ipaddr DST_IP,
-   uint16 SRC_PORT,
-   uint16 DST_PORT,
-   uint8 PROTOCOL,
-   uint32 PACKETS,
-   uint64 BYTES,
-)
-
-//const char *input_format = "ipaddr SRC_IP,ipaddr DST_IP,uint16 SRC_PORT,uint16 DST_PORT,uint8 PROTOCOL,uint32 PACKETS,uint64 BYTES";
-const char *input_format = "SRC_IP,DST_IP,SRC_PORT,DST_PORT,PROTOCOL,PACKETS,BYTES";
+/// TODO remove after solving in configure.ac
+#define TRAP_GETOPT(argc, argv, optstr, longopts) getopt_long(argc, argv, optstr, longopts, NULL)
 
 trap_module_info_t *module_info = NULL;
 
 
 #define MODULE_BASIC_INFO(BASIC) \
-  BASIC("Test negotiation callbacks", "", 1, 0)
+  BASIC("Test negotiation callbacks", \
+  "This module test negotiation callback. If called with no arguments, no callback with no data is set \
+  (i.e. NULL values for both). If argument \"-c <field_name>\" is used, field of <field_name> name is\
+  searched in a received template.",\
+  1, 0)
 
 
 #define MODULE_PARAMS(PARAM) \
-  PARAM('c', "check", "Check field.", required_argument, "string")\
-
+  PARAM('c', "check-field", "Check field.", required_argument, "string")
 
 
 static int stop = 0;
 
-char *check_field = "NIC";
-int cbk_ret = 0;
-
-int clbk_called_test = 0;
-
 
 TRAP_DEFAULT_SIGNAL_HANDLER(stop = 1)
 
+enum clbt_mode {
+   CLBT_MODE_NO_CLB = 0,
+   CLBT_MODE_FLD_SEARCH
+};
 
+
+typedef enum clbt_search_result {
+   CLBT_SEARCH_FOUND = 0,
+   CLBT_SEARCH_FOUND_PARTIAL,
+   CLBT_SEARCH_NOT_FOUND,
+   CLBT_SEARCH_NO_SEARCH
+}clbt_search_result_t;
+
+
+struct clb_test_data {
+   char *check_field;
+   clbt_search_result_t found;
+   int neg_triggered;
+};
+
+
+/* Check if field name is present in the received template (type of field is not checked) */
 int check_fld_presence(int negotiation_result, uint8_t req_data_type, const char *req_data_fmt,
-   uint8_t recv_data_type, const char *recv_data_fmt)
+   uint8_t recv_data_type, const char *recv_data_fmt, void *my_data)
 {
-   clbk_called_test = 666;
-   printf("Result: %i\n", negotiation_result);
-   printf("Req data type: %c\n", req_data_type);
-   printf("Req data fmt: %s\n", req_data_fmt);
-   printf("Recv data type: %c\n", recv_data_type);
-   printf("Recv data fmt: %s\n", recv_data_fmt);
-   if (req_data_type == TRAP_FMT_UNIREC) {
-      printf("Req is OK!\n");
-   } else {
-      printf("Req is BAD!\n");
+   struct clb_test_data *test_data = (struct clb_test_data *)my_data;
+   test_data->neg_triggered = 1;
+
+   if (recv_data_type != TRAP_FMT_UNIREC) {
+      test_data->found = CLBT_SEARCH_NO_SEARCH;
+      return TRAP_E_FORMAT_MISMATCH;
    }
 
-   if (recv_data_type == TRAP_FMT_UNIREC) {
-      printf("Recv is OK!\n");
+   char *match = strstr(recv_data_fmt, test_data->check_field);
+   char *match_tail = match + strlen(test_data->check_field);
+   if (match == NULL) {
+      test_data->found = CLBT_SEARCH_NOT_FOUND;
+   } else if ((match == recv_data_fmt || match[-1] == ' ') && (match_tail[0] == 0 || match_tail[0] == ' ' || match_tail[0] == ',')) {
+      test_data->found = CLBT_SEARCH_FOUND;
    } else {
-      printf("Recv is BAD!\n");
+      test_data->found = CLBT_SEARCH_FOUND_PARTIAL;
    }
 
-   /// TODO: return value unused? - convert to void or check return value
    return TRAP_E_OK;
 }
 
@@ -117,10 +124,16 @@ int check_fld_presence(int negotiation_result, uint8_t req_data_type, const char
 int main(int argc, char **argv)
 {
    int ret;
+   int test_ret;
 
    ur_template_t *in_tmplt = NULL;
 
+   struct clb_test_data test_data;
+   uint16_t test_mode = CLBT_MODE_NO_CLB;
    unsigned rcvd_rec_cnt = 0;
+
+   test_data.check_field = NULL;
+   test_data.neg_triggered = 0;
 
    /* **** TRAP initialization **** */
    INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
@@ -133,10 +146,11 @@ int main(int argc, char **argv)
    while ((opt = TRAP_GETOPT(argc, argv, module_getopt_string, long_options)) != -1) {
       switch (opt) {
       case 'c':
-         check_field = optarg;
+         test_data.check_field = optarg;
+         test_mode = CLBT_MODE_FLD_SEARCH;
          break;
       default:
-         fprintf(stderr, "Invalid arguments.\n");
+         fprintf(stderr, "Error: Invalid argument %c.\n", opt);
          FREE_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS);
          TRAP_DEFAULT_FINALIZATION();
          return -1;
@@ -144,63 +158,81 @@ int main(int argc, char **argv)
    }
 
    char* err;
-   in_tmplt = ur_create_input_template(0, input_format, &err);
+   in_tmplt = ur_create_input_template(0, NULL, &err);
    if (in_tmplt == NULL) {
-      fprintf(stderr, "Input UniRec template was not created (%s).\n", err);
+      fprintf(stderr, "Error: Input UniRec template was not created (%s).\n", err);
       ret = 1;
       goto exit;
    }
-   trap_clb_in_negotiation(check_fld_presence);
-   trap_set_required_fmt(0, TRAP_FMT_UNIREC, "ipaddr SRC_IP");
+
+
+   if (test_mode == CLBT_MODE_FLD_SEARCH) {
+      if (!test_data.check_field) {
+         fprintf(stderr, "Error: requested field search mode but no field is set.\n");
+         ret = 2;
+         goto exit;
+      }
+      trap_clb_in_negotiation(check_fld_presence, (void *)&test_data);
+   } else {
+      trap_clb_in_negotiation(NULL, NULL);
+   }
+
+   test_ret = 200;
+   int trap_ret = TRAP_E_OK;
+
    /* **** Main processing loop **** */
    while (!stop) {
       /* Receive record from input interface (block until data are available) */
       const void *rec;
       uint16_t rec_size;
 
-//      ret = TRAP_RECEIVE(0, rec, rec_size, in_tmplt);
-      const char *spec = NULL;
-      uint8_t data_fmt;
-      ret = trap_recv(0, &rec, &rec_size);
-      if (ret == TRAP_E_FORMAT_CHANGED) {
-         if (trap_get_data_fmt(TRAPIFC_INPUT, 0, &data_fmt, &spec) != TRAP_E_OK) {
-            fprintf(stderr, "Data format was not loaded.n");
-         } else {
-            in_tmplt = ur_define_fields_and_update_template(spec, in_tmplt);
-            if (in_tmplt == NULL) {
-               fprintf(stderr, "Template could not be edited.n");
+      trap_ret = TRAP_RECEIVE(0, rec, rec_size, in_tmplt);
+      TRAP_DEFAULT_RECV_ERROR_HANDLING(trap_ret, continue, break);
+
+      if (test_mode == CLBT_MODE_FLD_SEARCH) {
+         if (test_data.neg_triggered != 0) {
+            if (test_data.found == CLBT_SEARCH_FOUND) {
+               test_ret = 0;
+            } else if (test_data.found == CLBT_SEARCH_FOUND_PARTIAL) {
+               test_ret = 101;
+            } else if (test_data.found == CLBT_SEARCH_NOT_FOUND) {
+               test_ret = 102;
             } else {
-               if (in_tmplt->direction == UR_TMPLT_DIRECTION_BI) {
-                  char * spec_cpy = ur_cpy_string(spec);
-                  if (spec_cpy == NULL) {
-                     fprintf(stderr, "Memory allocation problem.n");
-                  } else {
-                     trap_set_data_fmt(in_tmplt->ifc_out, TRAP_FMT_UNIREC, spec_cpy);
-                  }
-               }
+               test_ret = 211;
             }
+         } else {
+            test_ret = 221;
          }
+      } else if (test_mode == CLBT_MODE_NO_CLB) {
+         if (test_data.neg_triggered == 0) {
+            test_ret = 0;
+         } else {
+            test_ret = 222;
+         }
+      } else {
+         test_ret = 231;
       }
-      TRAP_DEFAULT_RECV_ERROR_HANDLING(ret, continue, break);
 
       // Check size of received data
       if (rec_size < ur_rec_fixlen_size(in_tmplt)) {
          if (rec_size <= 1) {
-            printf("Received ending record, terminating.\n");
+//            printf("Received ending record, terminating.\n");
             break; // End of data (used for testing purposes)
          } else {
             fprintf(stderr, "Error: data with wrong size received.");
             break;
          }
       }
-
       ++rcvd_rec_cnt;
    }
 
-   printf("Received %i records.\n", rcvd_rec_cnt);
-   printf("clbk_called_test is: %i.\n", clbk_called_test);
+   if (trap_ret != 0) {
+      ret = trap_ret;
+   } else {
+      ret = test_ret;
+   }
 
-   ret = 0;
+//   printf("Received %i records.\n", rcvd_rec_cnt);
 
    /* **** Cleanup **** */
 exit:
@@ -216,3 +248,4 @@ exit:
 
    return ret;
 }
+

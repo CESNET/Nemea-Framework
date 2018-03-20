@@ -153,6 +153,11 @@ case "$ac_cv_header_locale_h$ac_cv_func_localeconv" in
 esac
 AC_SUBST([json_have_localeconv])
 
+#TODO unirec-combined tests?
+AC_PATH_PROG(UNIRECPROC, ur_processor.sh, [], [/usr/bin/nemea/$PATH_SEPARATOR$PATH])
+AC_SUBST(UNIRECPROC)
+#TODO TRAP_GETOPT ...
+
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_MALLOC
 AC_FUNC_MMAP
@@ -164,6 +169,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  include/Makefile
                  tests/Makefile
+                 tests/unirec_combined/Makefile
                  tools/Makefile
                  libtrap.pc
                  libtrap.spec
@@ -202,6 +208,11 @@ AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing mo
 AC_ARG_ENABLE([long-tests], AC_HELP_STRING([--enable-long-tests], [Run long performance tests (--enable-tests must be used for any effect)]),
         [AM_CONDITIONAL([ENABLE_LONG_TESTS], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_LONG_TESTS], [false])])
+      
+# TODO unirec_combined (+ long?) enable + check presence of unirec vs. include unirec_combined automaticaly if "tests" enabled and unirec is present
+AC_ARG_ENABLE([ur_c_tests], AC_HELP_STRING([--disable-ur-c-tests],[Compile with unirec-combined testing modules]),
+        [AM_CONDITIONAL([ENABLE_UR_C_LONG_TESTS], [test "x$enableval" = xyes])],
+        [AM_CONDITIONAL([ENABLE_UR_C_LONG_TESTS], [true])])
 
 AC_ARG_ENABLE([debugifc], AC_HELP_STRING([--enable-debugifc],
       [Compile IFC with debug messages]),
@@ -284,5 +295,6 @@ echo "  prefix...............: $prefix"
 echo
 echo "Tests..................: `if [[ -z "$ENABLE_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
 echo "Long performance tests.: `if [[ -z "$ENABLE_LONG_TESTS_TRUE" ]]; then echo enabled; else echo disabled; fi`"
+# TODO unirec_combined (+ long?)
 echo
 

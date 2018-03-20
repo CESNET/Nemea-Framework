@@ -48,16 +48,25 @@
 #include <stdio.h>
 #include <signal.h>
 #include <getopt.h>
-#include <libtrap/trap.h>
-#include <unirec/unirec.h>
+#include "libtrap/trap.h"
+#include "unirec.h"
 #include "fields.h"
+
+/// TODO remove after solving in configure.ac
+#define TRAP_GETOPT(argc, argv, optstr, longopts) getopt_long(argc, argv, optstr, longopts, NULL)
 
 
 #define DEFAULT_OUTPUT_FORMAT "ipaddr SRC_IP,ipaddr DST_IP,uint16 SRC_PORT,uint16 DST_PORT,uint8 PROTOCOL,\
    uint32 PACKETS,uint64 BYTES,time TIME_FIRST,time TIME_LAST,string SOME_OTHER_MIRACLE_OF_VARIABLE_SIZE"
 
-/// IMPORTANT: reaching of maximal UniRec size is not check, thus, don't use size too big or many variable size fields.
+/// IMPORTANT: reaching of maximal UniRec size is not checked, thus, don't use size too big or many variable size fields.
 #define VARIABLE_SIZE_FIELD_SIZE 19
+
+#define FILL_RECORD_IP "6.6.6.6"
+#define FILL_RECORD_OTHER_STATIC 6
+#define FILL_RECORD_STRING_HEADER "I am "
+#define FILL_RECORD_STRING_TAIL "..."
+#define FILL_RECORD_OTHER_DYNAMIC FILL_RECORD_OTHER_STATIC
 
 const unsigned DEFAULT_RECORD_COUNT = 10;
 
@@ -68,10 +77,19 @@ trap_module_info_t *module_info = NULL;
 /**
  * Definition of basic module information - module name, module description, number of input and output interfaces
  */
+/// TODO formatovani hruza ...
 #define MODULE_BASIC_INFO(BASIC) \
-  BASIC("Test sender", \
-        "This module serves as a test sender module. It sends (unbuffered) user specified number of UniRec messages in \
-        an user specified format. All fields are filled by a memset with \"6\".", 0, 1)
+   BASIC("Test sender", \
+     "This module serves as a testing sender module. It sends (unbuffered) user specified number of UniRec messages in \
+     an user specified format. All fields are filled as follows:\n \
+         - If a field is the field of a static size\n \
+             a) and if it is UR_TYPE_IP: fill an IP adress "FILL_RECORD_IP"\n \
+             b) otherwise, set value to the field to ""FILL_RECORD_OTHER_STATIC"".\n \
+         - If a field is the field of a dynamic size\n \
+             a) and if it is UR_TYPE_STRING: fill a message: \""FILL_RECORD_STRING_HEADER"\"<FIELD_NAME>. \
+                if the <FIELD_NAME> would overflow a size of the field, it is truncated properly and tailed with "FILL_RECORD_STRING_TAIL".\n \
+             b) otherwise, fill field by memset using ""FILL_RECORD_OTHER_DYNAMIC"" value.\n ", \
+      0, 1)
 
 
 /**
@@ -81,9 +99,10 @@ trap_module_info_t *module_info = NULL;
  * Module parameter argument types: int8, int16, int32, int64, uint8, uint16, uint32, uint64, float, string
  */
 #define MODULE_PARAMS(PARAM) \
-  PARAM('c', "count", "Count of records to send.", required_argument, "uint32")\
+  PARAM('c', "count", "Count of records to send.", required_argument, "uint32") \
   PARAM('u', "unirec-format", "Output format of the messages.", required_argument, "string") \
-  PARAM('N', "no-eof-message", "Do not send ending empty (eof) message.", no_argument, NULL)
+  PARAM('N', "no-eof-message", "Do not send ending empty (eof) message.", no_argument, "NULL")
+  /// TODO NULL nefunguje!!
 
 
 static int stop = 0;
@@ -104,19 +123,19 @@ void fill_record (void *rec, ur_template_t *tmplt)
       if (ur_is_static(fld_id)) {
          if (ur_get_type(fld_id) == UR_TYPE_IP) {
             ip_addr_t data;
-            char *ip = "6.6.6.6";
+            char *ip = FILL_RECORD_IP;
             ip_from_str(ip, &data);
             memcpy(ur_get_ptr_by_id(tmplt, rec, fld_id), &data, ur_get_size(fld_id));
          } else {
-            uint64_t data = 6;
+            uint64_t data = FILL_RECORD_OTHER_STATIC;
             memcpy(ur_get_ptr_by_id(tmplt, rec, fld_id), &data, ur_get_size(fld_id));
          }
       } else {
          char data[VARIABLE_SIZE_FIELD_SIZE];
          uint16_t data_size;
          if (ur_get_type(fld_id) == UR_TYPE_STRING) {
-            char *header = "I am ";
-            char *tail = "...";
+            char *header = FILL_RECORD_STRING_HEADER;
+            char *tail = FILL_RECORD_STRING_TAIL;
             size_t usable_fld_name_length = (VARIABLE_SIZE_FIELD_SIZE - strlen(header) - 1);
             strncpy(data, header, strlen(header));
             if (strlen(ur_get_name(fld_id)) <= usable_fld_name_length) {
@@ -163,6 +182,7 @@ int main(int argc, char **argv)
     * function called "module_getopt_string" and long_options field for getopt_long function in variable "long_options"
     */
    INIT_MODULE_INFO_STRUCT(MODULE_BASIC_INFO, MODULE_PARAMS)
+
 
    /*
     * Let TRAP library parse program arguments, extract its parameters and initialize module interfaces
@@ -245,13 +265,13 @@ int main(int argc, char **argv)
 
       fill_record(out_rec, out_tmplt);
 
-      printf("Send %u ...", ur_rec_size(out_tmplt, out_rec));
+//      printf("Send %u ...", ur_rec_size(out_tmplt, out_rec));
       // Send record to interface 0. Block if ifc is not ready (unless a timeout is set using trap_ifcctl).
       ret = trap_send(0, out_rec, ur_rec_size(out_tmplt, out_rec));
 
       // Handle possible errors
       TRAP_DEFAULT_SEND_ERROR_HANDLING(ret, continue, break);
-      printf("done.\n");
+//      printf("done.\n");
       ++send_rec_cnt;
    }
 
@@ -279,4 +299,3 @@ exit:
 
    return ret;
 }
-

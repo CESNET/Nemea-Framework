@@ -1,0 +1,75 @@
+#!/bin/bash
+
+sock="clbTestData"
+error=0
+
+## -- Empty callback test ------------------------------------------------------
+# start testing sender
+./testing_sender -i "u:$sock" &
+p1=$!
+
+# run testing receiver
+./neg_clb_test -i "u:$sock" 
+test_result=$?
+p2=$!
+
+wait
+
+ps $p1 > /dev/null && { ((error++)); ps $p1; }
+ps $p2 > /dev/null && { ((error++)); ps $p2; }
+if (( test_result != 0 )); then ((error++)); fi
+
+if [ $error -ne 0 ]; then
+   echo "Test failed - no callback" >&2
+   exit 1
+fi
+
+
+
+## -- "Search field" callback test - return "FOUND (i.e. 0)" -------------------
+test_field_name="ADDRESS"
+# start testing sender
+./testing_sender -i "u:$sock" -u "string ${test_field_name},int8 SOME_OTHER_FIELD,bytes ONE_MORE"&
+p1=$!
+
+# run testing receiver
+./neg_clb_test -i "u:$sock" -c "${test_field_name}"
+test_result=$?
+p2=$!
+
+wait
+
+ps $p1 > /dev/null && { ((error++)); ps $p1; }
+ps $p2 > /dev/null && { ((error++)); ps $p2; }
+if (( test_result != 0 )); then ((error++)); fi
+
+if [ $error -ne 0 ]; then
+   echo "Test failed - check positive" >&2
+   exit 1
+fi
+
+
+
+## -- "Search field" callback test - return "NOT FOUND (i.e. 102)" -------------
+# start testing sender
+./testing_sender -i "u:$sock" -u "string SOME_FIELD"&
+p1=$!
+
+# run testing receiver
+./neg_clb_test -i "u:$sock" -c "SOME_FIELD_WHICH_IS_NOT_THE_FIELD"
+test_result=$?
+p2=$!
+
+wait
+
+ps $p1 > /dev/null && { ((error++)); ps $p1; }
+ps $p2 > /dev/null && { ((error++)); ps $p2; }
+if (( test_result != 102 )); then ((error++)); fi
+
+if [ $error -ne 0 ]; then
+   echo "Test failed - check negative" >&2
+   exit 1
+fi
+
+echo "Negotiation callback test finished successfully."
+exit 0
