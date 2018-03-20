@@ -1,0 +1,7 @@
+/usr/lib/*/pkgconfig/nemea-common.pc
+/usr/lib/*/libnemea-common.so
+/usr/lib/*/libnemea-common.a
+/usr/lib/*/libnemea-common.la
+/usr/include/nemea-common/*
+/usr/share/doc/nemea-common/*
+
