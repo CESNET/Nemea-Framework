@@ -1004,6 +1004,12 @@ again:
             goto again;
          }
          break;
+      default:
+         VERBOSE(CL_VERBOSE_OFF,
+                 "Unhandled errno from send in send_all_data (%i)",
+                 errno);
+         res = TRAP_E_IO_ERROR;
+         goto failure;
       }
       if (c->is_terminated == 1) {
          res = TRAP_E_TERMINATED;
