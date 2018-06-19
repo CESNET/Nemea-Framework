@@ -32,7 +32,6 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = nemea-common.pc
 
 EXTRA_DIST= README \
-	    couting_sort/README.md \
 	    prefix_tree/README \
 	    fast_hash_table/README \
 	    fast_hash_filter/README \
