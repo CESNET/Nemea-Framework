@@ -15,6 +15,7 @@ libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
 			   cuckoo_hash_v2/cuckoo_hash_v2.c \
 			   cuckoo_hash_v2/hashes_v2.c \
 			   cuckoo_hash_v2/hashes_v2.h \
+			   counting_sort/counting_sort.c \
 			   fast_hash_table/fast_hash_table.c \
 			   fast_hash_table/hashes.h \
 			   fast_hash_filter/fast_hash_filter.c \
