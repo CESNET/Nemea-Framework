@@ -77,8 +77,8 @@ typedef enum {
  * \param[out]    output    Pointer to the array where should this function copy sorted items (must be at least same length as the input array!).
  * \param[in]     count     Number of items to sort.
  * \param[in]     size      Size of each sorted item.
- * \param[in]     key_min   Minimal expected value of a sorted item.
- * \param[in]     key_max   Maximal expected value of a sorted item.
+ * \param[in]     key_min   Minimal possible value of an item key.
+ * \param[in]     key_max   Maximal possible value of an item key.
  * \param[in]     order     Specified order in which the items should be sorted (CS_ORDER_ASC | CS_ORDER_DSC).
  * \param[in]     get_key   Pointer to a user-defined function which dereferences an item and returns its key.
  * \return        CS_SUCCESS on success,
