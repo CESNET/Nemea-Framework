@@ -56,20 +56,23 @@ typedef struct test_record {
    uint8_t data;
 } test_record_t;
 
-
-uint32_t get_key(const void * arg) {
+uint32_t get_key(const void * arg)
+{
    return ((test_record_t *)arg)->data;
 }
 
-int asc_cmp(const void* p1, const void* p2) {
+int asc_cmp(const void* p1, const void* p2)
+{
    return ((test_record_t *)p1)->data - ((test_record_t *)p2)->data;
 }
 
-int dsc_cmp(const void* p1, const void* p2) {
+int dsc_cmp(const void* p1, const void* p2)
+{
    return ((test_record_t *)p2)->data - ((test_record_t *)p1)->data;
 }
 
-int main(void) {
+int main(void)
+{
    int result = 0;
    cs_ret_code ret;
    test_record_t input[ITEM_CNT];

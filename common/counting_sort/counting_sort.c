@@ -66,7 +66,8 @@
                   error code otherwise (see details of cs_ret_code enum) and content of the output array is undefined
  */
 cs_ret_code counting_sort(const void *input, void *output, uint32_t count, uint32_t size, uint32_t key_min,
-                          uint32_t key_max, cs_order order, uint32_t (*get_key) (const void *)) {
+                          uint32_t key_max, cs_order order, uint32_t (*get_key) (const void *))
+{
    uint32_t *keys;
    uint32_t keys_size = key_max - key_min + 1;
 
