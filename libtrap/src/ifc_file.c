@@ -223,7 +223,7 @@ int create_next_filename(void *priv)
 
    /* If the user specified file splitting based on size */
    if (config->file_change_size != 0) {
-      size_t new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
+      int new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
       if (new_len < 0) {
          VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
          return TRAP_E_IO_ERROR;
@@ -239,7 +239,7 @@ int create_next_filename(void *priv)
    /* If the user specified append mode, get the lowest possible numeric suffix for which there does not exist a file */
    if (config->mode[0] == 'a') {
       while (access(buf, F_OK) != -1) {
-         size_t new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
+         int new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
          if (new_len < 0) {
             VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
             return TRAP_E_IO_ERROR;
@@ -417,15 +417,7 @@ neg_start:
 
 char *file_recv_ifc_get_id(void *priv)
 {
-   if (priv == NULL) {
-      return NULL;
-   }
-
-   file_private_t *config = (file_private_t *) priv;
-   if (config->filename == NULL) {
-      return NULL;
-   }
-   return config->filename;
+   return ((priv) ? ((file_private_t *) priv)->filename : NULL);
 }
 
 uint8_t file_recv_ifc_is_conn(void *priv)
@@ -659,15 +651,7 @@ int32_t file_get_client_count(void *priv)
 
 char *file_send_ifc_get_id(void *priv)
 {
-   if (priv == NULL) {
-      return NULL;
-   }
-
-   file_private_t *config = (file_private_t *) priv;
-   if (config->filename == NULL) {
-      return NULL;
-   }
-   return config->filename;
+   return ((priv) ? ((file_private_t *) priv)->filename : NULL);
 }
 
 /**
@@ -764,6 +748,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
          if (length > 5 && strncmp(params_next, "time=", 5) == 0) {
             priv->file_change_time = atoi(params_next + 5);
             if (strlen(priv->filename_tmplt) + 11 > PATH_MAX - 1) {
+               free(priv);
                return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", idx, PATH_MAX - 1);
             }
 
