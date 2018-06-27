@@ -1227,10 +1227,7 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
    ip_addr_t *addr_p = NULL, addr;
    mac_addr_t *macaddr_p = NULL, macaddr;
    int rv = 0;
-   struct tm t;
-   char *res = NULL;
-   time_t sec = -1;
-   uint64_t msec = 0;
+   ur_time_t urtime = 0;
    void *ptr = ur_get_ptr_by_id(tmpl, data, f_id);
 
    if (ur_is_present(tmpl, f_id) == 0) {
@@ -1312,21 +1309,10 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
       break;
    case UR_TYPE_TIME:
       // Timestamp - convert from human-readable format
-      res = strptime(v, "%FT%T", &t);
-      /* parsed to sec - msec delimiter */
-      if ((res != NULL) && (*res == '.')) {
-         sec = timegm(&t);
-         if (sec != -1) {
-            msec = atoi(res + 1);
-            (*(ur_time_t *) ptr) = ur_time_from_sec_msec((uint64_t) sec, msec);
-         } else {
-            goto failed_time_parsing;
-         }
-      } else {
-failed_time_parsing:
-         (*(ur_time_t *) ptr) = (ur_time_t) 0;
+      if (ur_time_from_string(&urtime, v) != 0) {
          fprintf(stderr, "Failed to parse time.\n");
       }
+      (*(ur_time_t *) ptr) = urtime;
       break;
    case UR_TYPE_STRING:
       // Printable string
@@ -1348,6 +1334,35 @@ failed_time_parsing:
       break;
    }
    return rv;
+}
+
+uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
+{
+   struct tm t;
+   time_t sec = -1;
+   uint64_t msec = 0;
+   char *res = NULL;
+
+   res = strptime(str, "%FT%T", &t);
+   /* parsed to sec - msec delimiter */
+   if ((res != NULL) && ((*res == '.') || (*res == 0))) {
+      sec = timegm(&t);
+      if (sec != -1) {
+         if (*res != 0) {
+            msec = atoi(res + 1);
+         }
+         *ur = ur_time_from_sec_msec((uint64_t) sec, msec);
+      } else {
+         goto failed_time_parsing;
+      }
+      /* success */
+      return 0;
+   } else {
+failed_time_parsing:
+      *ur = (ur_time_t) 0;
+      /* parsing error */
+      return 1;
+   }
 }
 
 char *ur_cpy_string(const char *str)
