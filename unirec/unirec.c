@@ -1343,6 +1343,10 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
    uint64_t msec = 0;
    char *res = NULL;
 
+   if (ur == NULL || str == NULL) {
+      return 2;
+   }
+
    res = strptime(str, "%FT%T", &t);
    /* parsed to sec - msec delimiter */
    if ((res != NULL) && ((*res == '.') || (*res == 0))) {

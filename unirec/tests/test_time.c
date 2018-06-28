@@ -52,6 +52,18 @@ int main()
    const char *strmsec = "2018-06-27T16:52:54.123";
    const char *str = "2018-06-27T16:52:54";
 
+   res = ur_time_from_string(&ut, NULL);
+   if (res != 2) {
+      fprintf(stderr, "Passing NULL didn't cause error.\n");
+      return 1;
+   }
+
+   res = ur_time_from_string(NULL, str);
+   if (res != 2) {
+      fprintf(stderr, "Passing NULL didn't cause error.\n");
+      return 1;
+   }
+
    res = ur_time_from_string(&ut, badstr);
    if (res != 1) {
       fprintf(stderr, "Parsing succeeded while it should fail.\n");
