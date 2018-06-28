@@ -113,7 +113,7 @@ static inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
  *
  * \param [out] ur   Target pointer to store result.
  * \param [in] str   String in the following format: 2018-06-27T16:52:54 or 2018-06-27T16:52:54.500
- * \return 0 on success, 1 on error.
+ * \return 0 on success, 1 is returned on parsing error (malformed format of str) and ur is set to 0, 2 on bad parameter (NULL was passed).
  */
 uint8_t ur_time_from_string(ur_time_t *ur, const char *str);
 
