@@ -884,9 +884,9 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
 failsafe_cleanup:
    CHECK_AND_FREE(dest_addr, free);
    CHECK_AND_FREE(dest_port, free);
-   CHECK_AND_FREE(config->keyfile, free);
-   CHECK_AND_FREE(config->certfile, free);
-   CHECK_AND_FREE(config->cafile, free);
+   CHECK_AND_FREE(keyfile, free);
+   CHECK_AND_FREE(certfile, free);
+   CHECK_AND_FREE(cafile, free);
    if (config != NULL && config->sslctx != NULL) {
       CHECK_AND_FREE(config->sslctx, SSL_CTX_free);
    }
@@ -1868,6 +1868,9 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
 failsafe_cleanup:
    CHECK_AND_FREE(server_port, free);
    CHECK_AND_FREE(max_clients, free);
+   CHECK_AND_FREE(certfile, free);
+   CHECK_AND_FREE(cafile, free);
+   CHECK_AND_FREE(keyfile, free);
    if (priv != NULL) {
       CHECK_AND_FREE(priv->backup_buffer, free);
       if (priv->clients != NULL) {
