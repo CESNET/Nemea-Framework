@@ -2,12 +2,10 @@
  * \file ifc_tcpip.c
  * \brief TRAP TCP/IP interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2013
- * \date 2014
- * \date 2015
+ * \date 2018
  */
 /*
- * Copyright (C) 2013-2015 CESNET
+ * Copyright (C) 2013-2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -844,8 +842,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
          if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             continue;
          }
-         options = fcntl(sockfd, F_GETFL);
-         if (options != -1) {
+         if ((options = fcntl(sockfd, F_GETFL)) != -1) {
             if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
                VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
             }
@@ -877,8 +874,9 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
       }
 
       if (p != NULL) {
-         inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
-         VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+         if (inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s) != NULL) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+         }
       }
       freeaddrinfo(servinfo); // all done with this structure
    } else if (config->socket_type == TRAP_IFC_TCPIP_UNIX) {
