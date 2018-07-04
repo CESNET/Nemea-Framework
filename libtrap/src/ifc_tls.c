@@ -1022,17 +1022,23 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       }
       break;
    }
+   /* there was no successfull connection for whole servinfo struct */
+   if (p == NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
+      rv = TRAP_E_TIMEOUT;
+   }
+
+   /* catching all possible errors from setting up socket before atempting tls handshake */
+   if (rv != TRAP_E_OK) {
+      CHECK_AND_FREE(servinfo, freeaddrinfo);
+      return rv;
+   }
 
    if (p != NULL) {
       inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
       VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
    }
    CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
-
-   if (p == NULL) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
-      return TRAP_E_TIMEOUT;
-   }
 
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);

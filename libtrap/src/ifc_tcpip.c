@@ -804,7 +804,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    int sockfd = -1, options;
    union tcpip_socket_addr addr;
    struct addrinfo *servinfo, *p = NULL;
-   int rv, addr_count = 0;
+   int rv = 0, addr_count = 0;
    char s[INET6_ADDRSTRLEN];
 
    if ((config == NULL) || (dest_addr == NULL) || (dest_port == NULL) || (socket_descriptor == NULL)) {
@@ -894,13 +894,17 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
             p = (struct addrinfo *) &addr.unix_addr;
          }
       } else {
-         return TRAP_E_IO_ERROR;
+         rv = TRAP_E_IO_ERROR;
       }
    }
 
    if (p == NULL) {
       VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
-      return TRAP_E_TIMEOUT;
+      rv = TRAP_E_TIMEOUT;
+   }
+
+   if (rv != TRAP_E_OK) { /*something went wrong while setting up connection */
+      return rv;
    }
 
    *socket_descriptor = sockfd;
@@ -945,7 +949,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 #endif
 
 
-   return TRAP_E_OK;
+   return rv;
 }
 
 /**
