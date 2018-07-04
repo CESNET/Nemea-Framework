@@ -87,6 +87,7 @@ if test x$have_openssl = xyes; then
   CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
 else
   AC_DEFINE([HAVE_OPENSSL], [0], [Define to 1 if the openssl is available])
+  AC_MSG_WARN([OpenSSL not found. You will not be able to use secure TLS interface.])
 fi
 
 # Checks for header files.
