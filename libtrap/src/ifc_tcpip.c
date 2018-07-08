@@ -802,7 +802,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    int sockfd = -1, options;
    union tcpip_socket_addr addr;
    struct addrinfo *servinfo, *p = NULL;
-   int rv = 0, addr_count = 0;
+   int rv, addr_count = 0;
    char s[INET6_ADDRSTRLEN];
 
    if ((config == NULL) || (dest_addr == NULL) || (dest_port == NULL) || (socket_descriptor == NULL)) {
@@ -891,6 +891,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
          } else {
             p = (struct addrinfo *) &addr.unix_addr;
          }
+        rv = TRAP_E_OK;
       } else {
          rv = TRAP_E_IO_ERROR;
       }

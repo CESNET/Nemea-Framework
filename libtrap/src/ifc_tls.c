@@ -1028,8 +1028,9 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    }
 
    if (p != NULL) {
-      inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+      if (inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s) != NULL) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+      }
    }
    CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
 
