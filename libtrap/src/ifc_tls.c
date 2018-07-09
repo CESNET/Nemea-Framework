@@ -3,13 +3,10 @@
  * \brief TRAP TCP with TLS interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \author Jaroslav Hlavac <hlavaj20@fit.cvut.cz>
- * \date 2013
- * \date 2014
- * \date 2015
- * \date 2017
+ * \date 2018
  */
 /*
- * Copyright (C) 2013-2017 CESNET
+ * Copyright (C) 2013-2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -955,10 +952,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    int rv, addr_count = 0;
    char s[INET6_ADDRSTRLEN];
 
-   if (c == NULL) {
-      return TRAP_E_BAD_FPARAMS;
-   }
-   if ((c->dest_addr == NULL) || (c->dest_port == NULL)) {
+   if ((c == NULL) || (c->dest_addr == NULL) || (c->dest_port == NULL)) {
       return TRAP_E_BAD_FPARAMS;
    }
 
@@ -991,8 +985,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
          continue;
       }
-      options = fcntl(sockfd, F_GETFL);
-      if (options != -1) {
+      if ((options = fcntl(sockfd, F_GETFL)) != -1) {
          if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
             VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
          }
@@ -1022,17 +1015,24 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       }
       break;
    }
-
-   if (p != NULL) {
-      inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
-   }
-   CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
-
+   /* there was no successfull connection for whole servinfo struct */
    if (p == NULL) {
       VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
-      return TRAP_E_TIMEOUT;
+      rv = TRAP_E_TIMEOUT;
    }
+
+   /* catching all possible errors from setting up socket before atempting tls handshake */
+   if (rv != TRAP_E_OK) {
+      CHECK_AND_FREE(servinfo, freeaddrinfo);
+      return rv;
+   }
+
+   if (p != NULL) {
+      if (inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s) != NULL) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+      }
+   }
+   CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
 
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);
