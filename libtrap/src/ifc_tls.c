@@ -1036,7 +1036,17 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
 
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);
-   SSL_set_fd(c->ssl, c->sd);
+   if (c->ssl == NULL) {
+      VERBOSE(CL_ERROR, "Creating SSL structure failed: %s", ERR_reason_error_string(ERR_get_error()));
+      return TRAP_E_MEMORY;
+   }
+
+   /* setting tcp socket to be used for ssl connection */
+   if (SSL_set_fd(c->ssl, c->sd) != 1) {
+      VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
+            ERR_reason_error_string(ERR_get_error()));
+      return TRAP_E_IO_ERROR;
+   }
    SSL_set_connect_state(c->ssl);
 
    do {
@@ -1793,8 +1803,9 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
                            sizeof(trap_buffer_header_t));
 
-   if (priv->clients == NULL) {
+   if (priv->backup_buffer == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
+      result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
    }
    for (i = 0; i < max_num_client; i++) {
@@ -1803,6 +1814,10 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       /* all clients are disconnected */
       priv->clients[i].sd = -1;
       priv->clients[i].buffer = calloc(TRAP_IFC_MESSAGEQ_SIZE + 4, 1);
+      if (priv->clients[i].buffer == NULL) {
+         result = TRAP_E_MEMORY;
+         goto failsafe_cleanup;
+      }
    }
 
    priv->connected_clients = 0;
@@ -1950,7 +1965,16 @@ static void *accept_clients_thread(void *arg)
                   goto refuse_client;
                }
                cl->ssl = SSL_new(c->sslctx);
-               SSL_set_fd(cl->ssl, newclient);
+               if (cl->ssl == NULL) {
+                  VERBOSE(CL_ERROR, "Creating SSL structure failed: %s", ERR_reason_error_string(ERR_get_error()));
+                  goto refuse_client;
+               }
+               if (SSL_set_fd(cl->ssl, newclient) != 1) {
+                  VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
+                        ERR_reason_error_string(ERR_get_error()));
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  goto refuse_client;
+               }
 
                if (SSL_accept(cl->ssl) <= 0) {
                   ERR_print_errors_fp(stderr);
