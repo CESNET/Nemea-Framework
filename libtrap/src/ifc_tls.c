@@ -1793,7 +1793,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
 
    priv->clients_arr_size = max_num_client;
 
-   priv->clients = calloc(max_num_client, sizeof(struct tlsclient_s));
+   priv->clients = (struct tlsclient_s *) calloc(max_num_client, sizeof(struct tlsclient_s));
    if (priv->clients == NULL) {
       result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
@@ -1813,7 +1813,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       priv->clients[i].client_state = TLSCURRENT_IDLE;
       /* all clients are disconnected */
       priv->clients[i].sd = -1;
-      priv->clients[i].buffer = calloc(TRAP_IFC_MESSAGEQ_SIZE + 4, 1);
+      priv->clients[i].buffer = (void *) calloc(TRAP_IFC_MESSAGEQ_SIZE + 4, 1);
       if (priv->clients[i].buffer == NULL) {
          result = TRAP_E_MEMORY;
          goto failsafe_cleanup;
