@@ -72,7 +72,7 @@ class Config():
                     self.actions[i["id"]] =  MongoAction(i)
 
                 elif "email" in i:
-                    from.actions.Email import EmailAction
+                    from .actions.Email import EmailAction
                     self.actions[i["id"]] = EmailAction(i, self.smtp_conns[i['email']['smtp_connection']])
 
                 elif "file" in i:

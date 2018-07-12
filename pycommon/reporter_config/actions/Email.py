@@ -12,16 +12,11 @@ from idea.lite import Timestamp
 class EmailAction(Action):
     """Action to send an email with IDEA record to a specified address
 
-    Mail is send by localhost SMTP server. In the future this
-    should be configurable in the config.
+    Parameters for SMTP server are configurable in the config.
 
-    Parameter "subject" may contain variables that are substituted by
-    corresponding field from IDEA:
-      $category - Category (joined by ',' in case of multiple categories)
-      $node - Name of the last item in Node array (i.e. the original detector)
-      $src_ip - First IP address in Source, followed by "(...)" in case there
-                are more than one.
-      $tgt_ip - The same as $src_ip, but with Target.
+    Data are filled to body of messsage by template file. Path to template is
+    configurable in config and is possible to use
+    different templates for different messages.
     """
     DEFAULT_TEMPLATE_PATH = "/etc/nemea/email-templates/default.html"
 
@@ -45,9 +40,9 @@ class EmailAction(Action):
         self.smtpPort   = smtp_conn.get("port", 25)
         self.smtpUser   = smtp_conn.get("user", None)
         self.smtpPass   = smtp_conn.get("pass", None)
+        self.smtpTLS    = smtp_conn.get("start_tls", False)
+        self.smtpSSL    = smtp_conn.get("force_ssl", False)
         self.addrFrom   = a.get("from", "nemea@localhost")
-        self.smtpTLS    = a.get("startTLS", False)
-        self.smtpSSL    = a.get("forceSSL", False)
         self.smtpKey    = None
         self.smtpChain  = None
 
@@ -86,8 +81,8 @@ class EmailAction(Action):
         try:
             env = Environment(loader=FileSystemLoader(os.path.dirname(self.template_path)))
             body_template = env.get_template(os.path.basename(self.template_path))
-        except jinja2.exceptions.TemplateNotFound as e:
-            self.logger.error(e)
+        except jinja2.exceptions.TemplateNotFound:
+            print('Path to template not found')
             raise
 
         # Set message body

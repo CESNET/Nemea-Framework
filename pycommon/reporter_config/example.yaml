@@ -6,6 +6,8 @@ smtp_connections:
     pass: ''
     key: ''
     chain: ''
+    force_ssl: False
+    start_tls: False
 
 
 custom_actions:
@@ -28,8 +30,9 @@ custom_actions:
 - id: sendmail1
   email:
     to: "root@localhost"
-    subject: "Example report, src: {{ src_ip }}"
+    subject: "Example report, src: {{ src_ip }} {{ idea.Description }}"
     from: "sender@localhost"
+    template: '/etc/nemea/email-templates/template2.html'
     smtp_connection: 'localserver'
 - id: sendmail2
   email:
@@ -41,6 +44,8 @@ custom_actions:
 
 
 addressgroups:
+- id: main_whitelist
+  file: "/etc/nemea/reporters/whitelists/whitelist1"
 - id: whitelist2
   list:
   - 1.1.0.0/24
@@ -75,5 +80,5 @@ rules:
 - id: 5
   condition: 10.0.0.1 in Source.IP4 and "Recon.Scanning" in Category
   actions:
-  - sendmail1
+- sendmail1
 
