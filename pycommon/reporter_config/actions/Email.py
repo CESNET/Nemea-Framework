@@ -1,3 +1,5 @@
+import os
+
 from .Action import Action
 
 from jinja2 import Environment, FileSystemLoader
@@ -21,6 +23,8 @@ class EmailAction(Action):
                 are more than one.
       $tgt_ip - The same as $src_ip, but with Target.
     """
+    DEFAULT_TEMPLATE_PATH = "/etc/nemea/email-templates/default.html"
+
     def __init__(self, action, smtp_conn):
         super(type(self), self).__init__(actionId = action["id"], actionType = "email")
 
@@ -47,8 +51,8 @@ class EmailAction(Action):
         self.smtpKey    = None
         self.smtpChain  = None
 
-        key    = a.get("key", None)
-        chain  = a.get("chain", None)
+        key    = smtp_conn.get("key", None)
+        chain  = smtp_conn.get("chain", None)
 
         if key:
             try:
@@ -65,7 +69,10 @@ class EmailAction(Action):
                 self.smtpChain = None
                 self.logger.error(e)
 
-        self.template_path = a.get("template", "default.html")
+        self.template_path = a.get("template", None)
+        if self.template_path is None:
+            print('Path to template is not specified, default template is used')
+            self.template_path = EmailAction.DEFAULT_TEMPLATE_PATH
 
 
     def run(self, record):
@@ -77,10 +84,11 @@ class EmailAction(Action):
 
         # Use Jinja2 to fill template with data from record
         try:
-            env = Environment(loader=FileSystemLoader("/etc/nemea/email-templates"))
-            body_template = env.get_template(self.template_path)
-        except jinja2.exceptions.TemplateNotFound:
-            body_template = env.get_template('default.html')
+            env = Environment(loader=FileSystemLoader(os.path.dirname(self.template_path)))
+            body_template = env.get_template(os.path.basename(self.template_path))
+        except jinja2.exceptions.TemplateNotFound as e:
+            self.logger.error(e)
+            raise
 
         # Set message body
         self.message = MIMEText(body_template.render(idea=record))
@@ -122,8 +130,8 @@ class EmailAction(Action):
             'src_ip': src_ip,
             'tgt_ip': tgt_ip,
             'byte_rate': byte_rate,
-            'flow_rate': flow_rate
-        })
+            'flow_rate': flow_rate,
+        }, idea = record)
 
         # Set other headers
         self.message['From'] = self.addrFrom
