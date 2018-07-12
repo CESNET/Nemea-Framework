@@ -51,6 +51,13 @@ class Config():
             for i in self.conf["addressgroups"]:
                 self.addrGroups[i["id"]] = AddressGroup(i)
 
+        self.smtp_conns = dict()
+
+        # Parse parameters for all smtp connections
+        if "smtp_connections" in self.conf:
+            for i in self.conf["smtp_connections"]:
+                self.smtp_conns[i["id"]] = i
+
         self.actions = dict()
 
         # Parse and instantiate all custom actions
@@ -65,8 +72,8 @@ class Config():
                     self.actions[i["id"]] =  MongoAction(i)
 
                 elif "email" in i:
-                    from .actions.Email import EmailAction
-                    self.actions[i["id"]] = EmailAction(i)
+                    from.actions.Email import EmailAction
+                    self.actions[i["id"]] = EmailAction(i, self.smtp_conns[i['email']['smtp_connection']])
 
                 elif "file" in i:
                     from .actions.File import FileAction
@@ -96,7 +103,6 @@ class Config():
         self.actions["drop"] = DropAction()
 
         self.rules = list()
-
         # Parse all rules and match them with actions and address groups
         # There must be at least one rule (mandatory field)
         if "rules" in self.conf:
