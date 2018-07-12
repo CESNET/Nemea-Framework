@@ -1024,6 +1024,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    /* catching all possible errors from setting up socket before atempting tls handshake */
    if (rv != TRAP_E_OK) {
       CHECK_AND_FREE(servinfo, freeaddrinfo);
+      close(sockfd);
       return rv;
    }
 
