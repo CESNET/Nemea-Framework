@@ -30,7 +30,7 @@ custom_actions:
 - id: sendmail1
   email:
     to: "root@localhost"
-    subject: "Example report, src: {{ src_ip }}, {{ idea.Description }}"
+    subject: "Example report, src: {{ src_ip }}, {{ idea.Description | join(', ') }}"
     from: "sender@localhost"
     template: '/etc/nemea/email-templates/template2.html'
     smtp_connection: 'localserver'

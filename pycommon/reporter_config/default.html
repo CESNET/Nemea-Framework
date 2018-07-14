@@ -1,0 +1,15 @@
+Nemea system has detected a picture of cat being sent over the internet.
+
+ Description:  {{ idea.Description | join(", ") }}
+ Category: {{ idea.Category | join(", ") }}
+ Source(s) of Trouble: {% for src in idea.Source %}{% if src.IP4 %}{{ src.IP4 | join(", ") }}{% endif %} {% if src.IP6 %}{{ src.IP6 | join(", ") }}{% endif %}{% endfor %}
+ Victim(s):  {% for tgt in idea.Target %}{% if tgt.IP4 %}{{ tgt.IP4 | join(", ") }}{% endif %} {% if tgt.IP6 %}{{ tgt.IP6 | join(", ") }}{% endif %}{% endfor %}
+ Note:      {{ idea.Note }}
+ Event Time: {{ idea.EventTime }}
+ Cease Time: {{ idea.CeaseTime }}
+ Detect Time: {{ idea.DetectTime }}
+
+Raw message:
+
+{{ idea }}
+
