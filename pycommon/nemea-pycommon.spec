@@ -39,6 +39,7 @@ Requires:	python-idea-format
 Requires:	python-typedcols
 Requires:	python-ipranges
 Requires:	python-pynspect
+Requires:	python-jinja2
 BuildRequires:	python-setuptools
 BuildRequires:	python2-devel
 BuildRequires:	python-nemea-pytrap
@@ -61,6 +62,7 @@ Requires:	python%{python3_pkgversion}-idea-format
 Requires:	python%{python3_pkgversion}-typedcols
 Requires:	python%{python3_pkgversion}-ipranges
 Requires:	python%{python3_pkgversion}-pynspect
+Requires:	python%{python3_pkgversion}-jinja2
 BuildRequires:	python%{python3_pkgversion}-setuptools
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
