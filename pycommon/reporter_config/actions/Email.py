@@ -1,5 +1,9 @@
+import os
+
 from .Action import Action
 
+from jinja2 import Environment, FileSystemLoader
+import jinja2
 import smtplib
 from email.mime.text import MIMEText
 import json
@@ -8,18 +12,15 @@ from idea.lite import Timestamp
 class EmailAction(Action):
     """Action to send an email with IDEA record to a specified address
 
-    Mail is send by localhost SMTP server. In the future this
-    should be configurable in the config.
+    Parameters for SMTP server are configurable in the config.
 
-    Parameter "subject" may contain variables that are substituted by 
-    corresponding field from IDEA:
-      $category - Category (joined by ',' in case of multiple categories)
-      $node - Name of the last item in Node array (i.e. the original detector)
-      $src_ip - First IP address in Source, followed by "(...)" in case there 
-                are more than one.
-      $tgt_ip - The same as $src_ip, but with Target.
+    Data are filled to body of messsage by template file. Path to template is
+    configurable in config and is possible to use
+    different templates for different messages.
     """
-    def __init__(self, action):
+    DEFAULT_TEMPLATE_PATH = "/etc/nemea/email-templates/default.html"
+
+    def __init__(self, action, smtp_conn):
         super(type(self), self).__init__(actionId = action["id"], actionType = "email")
 
         a = action["email"]
@@ -35,17 +36,18 @@ class EmailAction(Action):
         else:
             raise Exception("Email action needs `subject` parameter, check your YAML config.")
 
+        self.smtpServer = smtp_conn.get("server", "localhost")
+        self.smtpPort   = smtp_conn.get("port", 25)
+        self.smtpUser   = smtp_conn.get("user", None)
+        self.smtpPass   = smtp_conn.get("pass", None)
+        self.smtpTLS    = smtp_conn.get("start_tls", False)
+        self.smtpSSL    = smtp_conn.get("force_ssl", False)
         self.addrFrom   = a.get("from", "nemea@localhost")
-        self.smtpServer = a.get("server", "localhost")
-        self.smtpPort   = a.get("port", 25)
-        self.smtpTLS    = a.get("startTLS", False)
-        self.smtpSSL    = a.get("forceSSL", False)
-        self.smtpUser   = a.get("authuser", None)
-        self.smtpPass   = a.get("authpass", None)
         self.smtpKey    = None
         self.smtpChain  = None
-        key    = a.get("key", None)
-        chain  = a.get("chain", None)
+
+        key    = smtp_conn.get("key", None)
+        chain  = smtp_conn.get("chain", None)
 
         if key:
             try:
@@ -62,6 +64,12 @@ class EmailAction(Action):
                 self.smtpChain = None
                 self.logger.error(e)
 
+        self.template_path = a.get("template", None)
+        if self.template_path is None:
+            print('Path to template is not specified, default template is used')
+            self.template_path = EmailAction.DEFAULT_TEMPLATE_PATH
+
+
     def run(self, record):
         """Send the record via email
 
@@ -69,8 +77,16 @@ class EmailAction(Action):
         """
         super(type(self), self).run(record)
 
+        # Use Jinja2 to fill template with data from record
+        try:
+            env = Environment(loader=FileSystemLoader(os.path.dirname(self.template_path)))
+            body_template = env.get_template(os.path.basename(self.template_path))
+        except jinja2.exceptions.TemplateNotFound:
+            print('Path to template not found')
+            raise
+
         # Set message body
-        self.message = MIMEText(json.dumps(record, indent=4))
+        self.message = MIMEText(body_template.render(idea=record))
 
         # Set "Subject" header
         category = ','.join(record.get('Category', [])) or 'N/A'
@@ -101,13 +117,16 @@ class EmailAction(Action):
         else:
             flow_rate = ''
 
-        self.message['Subject'] = self.subject\
-            .replace('$category', category)\
-            .replace('$node', node)\
-            .replace('$src_ip', src_ip)\
-            .replace('$tgt_ip', tgt_ip)\
-            .replace('$byte_rate', byte_rate)\
-            .replace('$flow_rate', flow_rate)
+        subject_template = jinja2.Template(self.subject)
+
+        self.message['Subject'] = subject_template.render({
+            'category': category,
+            'node': node,
+            'src_ip': src_ip,
+            'tgt_ip': tgt_ip,
+            'byte_rate': byte_rate,
+            'flow_rate': flow_rate,
+        }, idea = record)
 
         # Set other headers
         self.message['From'] = self.addrFrom

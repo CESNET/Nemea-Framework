@@ -1,3 +1,15 @@
+smtp_connections:
+  - id: 'localserver'
+    host: 127.0.0.1
+    port: 25
+    user: ''
+    pass: ''
+    key: ''
+    chain: ''
+    force_ssl: False
+    start_tls: False
+
+
 custom_actions:
 - id: mongo1
   mongo:
@@ -15,11 +27,21 @@ custom_actions:
 - id: savefile
   file:
     path: "/var/log/nemea/events.idea"
-- id: sendmail
+- id: sendmail1
   email:
-    to: root@localhost
-    subject: "Example report"
-    from: "nemead@localhost"
+    to: "root@localhost"
+    subject: "Example report, src: {{ src_ip }}, {{ idea.Description }}"
+    from: "sender@localhost"
+    template: '/etc/nemea/email-templates/template2.html'
+    smtp_connection: 'localserver'
+- id: sendmail2
+  email:
+    to: "root@localhost"
+    subject: 'Example report, categories: {% for item in category %}{{ item }}{% endfor %}'
+    from: "sender@localhost"
+    template: '/etc/nemea/email-templates/template2.html'
+    smtp_connection: 'localserver'
+
 
 addressgroups:
 - id: main_whitelist
@@ -58,5 +80,5 @@ rules:
 - id: 5
   condition: 10.0.0.1 in Source.IP4 and "Recon.Scanning" in Category
   actions:
-  - sendmail
+  - sendmail1
 
