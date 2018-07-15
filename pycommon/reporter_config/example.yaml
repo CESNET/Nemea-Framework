@@ -30,14 +30,14 @@ custom_actions:
 - id: sendmail1
   email:
     to: "root@localhost"
-    subject: "Example report, src: {{ src_ip }}, {{ idea.Description | join(', ') }}"
+    subject: "Example report, src: {% for s in idea.Source %}{% if s.IP4 %}{{ s.IP4 | join(", ") }}{% endif %} {% if s.IP6 %}{{ s.IP6 | join(", ") }}{% endif %}{% endfor %}, {{ idea.Description }}"
     from: "sender@localhost"
     template: '/etc/nemea/email-templates/template2.html'
     smtp_connection: 'localserver'
 - id: sendmail2
   email:
     to: "root@localhost"
-    subject: 'Example report, categories: {% for item in category %}{{ item }}{% endfor %}'
+    subject: 'Example report, categories: {{ idea.Category | join(", ") }}'
     from: "sender@localhost"
     template: '/etc/nemea/email-templates/template2.html'
     smtp_connection: 'localserver'
