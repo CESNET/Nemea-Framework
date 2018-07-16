@@ -1,3 +1,5 @@
+2018-06-30 (Tomas Cejka): unirec: time: separate code for conversion from string to ur_time_t
+
 2018-03-18 (Tomas Cejka): unirec: debian: fixed changelog
 2018-03-18 (Tomas Cejka): debian: updated version of debian packages
 2017-12-06 (Tomas Jansky): unirec: BUGFIX: changed function definition from inline to static inline
