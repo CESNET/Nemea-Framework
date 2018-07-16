@@ -10,7 +10,7 @@ Vendor: CESNET, z.s.p.o.
 Packager: @USERNAME@ <@USERMAIL@>
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 
-BuildRequires: gcc make doxygen pkgconfig libxml2-devel
+BuildRequires: gcc gcc-c++ make doxygen pkgconfig libxml2-devel
 Provides: nemea-common
 Requires: libxml2
 
