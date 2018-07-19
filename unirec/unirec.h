@@ -339,6 +339,14 @@ char *ur_template_string_delimiter(const ur_template_t *tmplt, int delimiter);
 #define ur_get_type(field_id) \
    ur_field_specs.ur_field_types[field_id]
 
+/**
+ * Lookup a field type for its textual representation.
+ *
+ * \param[in] type   UniRec type in string format, e.g. "ipaddr" or "uint8"
+ * \returns Index into ur_field_type_str and ur_field_type_size arrays or UR_E_INVALID_TYPE if the type is not found.
+ */
+int ur_get_field_type_from_str(const char *type);
+
 /** \brief Get size of UniRec field
  * Get size of a fixed-length UniRec field. When variable-length field is passed,
  * return -1. To get real length of a variable-length field use ur_get_var_len.
