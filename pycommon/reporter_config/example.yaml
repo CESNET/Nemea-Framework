@@ -1,6 +1,7 @@
+---
 smtp_connections:
   - id: 'localserver'
-    host: 127.0.0.1
+    server: 127.0.0.1
     port: 25
     user: ''
     pass: ''
@@ -11,74 +12,77 @@ smtp_connections:
 
 
 custom_actions:
-- id: mongo1
-  mongo:
-    host: localhost
-    db: nemeadb
-    collection: alerts
-- id: marktest
-  mark:
-    path: Test
-    value: 'FooBar'
-- id: markwhitelisted
-  mark:
-    path: _CESNET.Whitelisted
-    value: 'True'
-- id: savefile
-  file:
-    path: "/var/log/nemea/events.idea"
-- id: sendmail1
-  email:
-    to: "root@localhost"
-    subject: "Example report, src: {{ src_ip }}, {{ idea.Description }}"
-    from: "sender@localhost"
-    template: '/etc/nemea/email-templates/template2.html'
-    smtp_connection: 'localserver'
-- id: sendmail2
-  email:
-    to: "root@localhost"
-    subject: 'Example report, categories: {% for item in category %}{{ item }}{% endfor %}'
-    from: "sender@localhost"
-    template: '/etc/nemea/email-templates/template2.html'
-    smtp_connection: 'localserver'
+  - id: mongo1
+    mongo:
+      host: localhost
+      db: nemeadb
+      collection: alerts
+  - id: marktest
+    mark:
+      path: Test
+      value: 'FooBar'
+  - id: markwhitelisted
+    mark:
+      path: _CESNET.Whitelisted
+      value: 'True'
+  - id: savefile
+    file:
+      path: "/var/log/nemea/events.idea"
+  - id: sendmail1
+    email:
+      to: root@localhost
+      subject: >
+        Example report, src: {% for s in idea.Source %}{% if s.IP4 %}{{ s.IP4 |
+        join(", ") }}{% endif %} {% if s.IP6 %}{{ s.IP6 | join(", ") }} {%
+        endif %}{% endfor %}, {{ idea.Description }}"
+      from: "sender@localhost"
+      template: '/etc/nemea/email-templates/template2.html'
+      smtp_connection: 'localserver'
+  - id: sendmail2
+    email:
+      to: "root@localhost"
+      subject: 'Example report, categories: {{ idea.Category | join(", ") }}'
+      from: "sender@localhost"
+      template: '/etc/nemea/email-templates/template2.html'
+      smtp_connection: 'localserver'
 
 
 addressgroups:
-- id: main_whitelist
-  file: "/etc/nemea/reporters/whitelists/whitelist1"
-- id: whitelist2
-  list:
-  - 1.1.0.0/24
-  - 1.2.3.4
-rules:
-- id: 1
-  condition: Source.IP4 in main_whitelist or Target.IP4 in main_whitelist
-  actions:
-  - markwhitelisted
-  - mongo1
-  - drop
-  elseactions:
-  - marktest
-  - savefile
-  - mongo1
-- id: 2
-  condition: >
-    Node.SW == 'detector1' and
-    Category == 'Recon.Scanning' and
-    Target.IP4 in whitelist2
-  actions:
-  - marktest
-- id: 3
-  condition: Source.IP4 == whitelist2
-  actions:
-  - drop
-- id: 4
-  condition: Node.SW in ['detector1', 'detector2']
-  actions:
-  - savefile
-  - drop
-- id: 5
-  condition: 10.0.0.1 in Source.IP4 and "Recon.Scanning" in Category
-  actions:
-  - sendmail1
+  - id: main_whitelist
+    file: "/etc/nemea/reporters/whitelists/whitelist1"
+  - id: whitelist2
+    list:
+      - 1.1.0.0/24
+      - 1.2.3.4
 
+rules:
+  - id: 1
+    condition: Source.IP4 in main_whitelist or Target.IP4 in main_whitelist
+    actions:
+      - markwhitelisted
+      - mongo1
+      - drop
+    elseactions:
+      - marktest
+      - savefile
+      - mongo1
+  - id: 2
+    condition: >
+      Node.SW == 'detector1' and
+      Category == 'Recon.Scanning' and
+      Target.IP4 in whitelist2
+    actions:
+      - marktest
+  - id: 3
+    condition: Source.IP4 == whitelist2
+    actions:
+      - drop
+  - id: 4
+    condition: Node.SW in ['detector1', 'detector2']
+    actions:
+      - savefile
+      - drop
+  - id: 5
+    condition: 10.0.0.1 in Source.IP4 and "Recon.Scanning" in Category
+    actions:
+      - sendmail1

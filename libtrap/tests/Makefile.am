@@ -1,5 +1,5 @@
-normal_tests_scripts=basic_test_arg.test basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test test_tls.sh
-long_tests_scripts=libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test libtrap_tls.test
+normal_tests_scripts=basic_test_arg.test basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test
+long_tests_scripts=libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
 
 normal_tests_progs=test_badparams test_finalize test_blackhole test_fileifc
 
@@ -16,6 +16,9 @@ TESTS = $(normal_tests)
 
 if ENABLE_LONG_TESTS
 TESTS += $(long_tests)
+if HAVE_OPENSSL
+TESTS += libtrap_tls.test
+endif
 endif
 
 
@@ -26,6 +29,10 @@ check_PROGRAMS = basic_test $(normal_tests_progs)
 if HAVE_CMOCKA
 TESTS += $(cmockadep_tests_progs)
 check_PROGRAMS += $(cmockadep_tests_progs)
+endif
+
+if HAVE_OPENSSL
+TESTS += test_tls.sh
 endif
 
 noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx test_multi_recv

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.11.4], [nemea@cesnet.cz])
+AC_INIT([libtrap], [0.11.5], [nemea@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
 AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
@@ -87,6 +87,7 @@ if test x$have_openssl = xyes; then
   CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
 else
   AC_DEFINE([HAVE_OPENSSL], [0], [Define to 1 if the openssl is available])
+  AC_MSG_WARN([OpenSSL not found. You will not be able to use secure TLS interface.])
 fi
 
 # Checks for header files.

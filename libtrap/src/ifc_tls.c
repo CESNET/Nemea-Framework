@@ -3,13 +3,10 @@
  * \brief TRAP TCP with TLS interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \author Jaroslav Hlavac <hlavaj20@fit.cvut.cz>
- * \date 2013
- * \date 2014
- * \date 2015
- * \date 2017
+ * \date 2018
  */
 /*
- * Copyright (C) 2013-2017 CESNET
+ * Copyright (C) 2013-2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -955,10 +952,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    int rv, addr_count = 0;
    char s[INET6_ADDRSTRLEN];
 
-   if (c == NULL) {
-      return TRAP_E_BAD_FPARAMS;
-   }
-   if ((c->dest_addr == NULL) || (c->dest_port == NULL)) {
+   if ((c == NULL) || (c->dest_addr == NULL) || (c->dest_port == NULL)) {
       return TRAP_E_BAD_FPARAMS;
    }
 
@@ -991,8 +985,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
          continue;
       }
-      options = fcntl(sockfd, F_GETFL);
-      if (options != -1) {
+      if ((options = fcntl(sockfd, F_GETFL)) != -1) {
          if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
             VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
          }
@@ -1022,21 +1015,39 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       }
       break;
    }
+   /* there was no successfull connection for whole servinfo struct */
+   if (p == NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
+      rv = TRAP_E_TIMEOUT;
+   }
+
+   /* catching all possible errors from setting up socket before atempting tls handshake */
+   if (rv != TRAP_E_OK) {
+      CHECK_AND_FREE(servinfo, freeaddrinfo);
+      close(sockfd);
+      return rv;
+   }
 
    if (p != NULL) {
-      inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s);
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+      if (inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s) != NULL) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
+      }
    }
    CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
 
-   if (p == NULL) {
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv client: Connection failed.");
-      return TRAP_E_TIMEOUT;
-   }
-
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);
-   SSL_set_fd(c->ssl, c->sd);
+   if (c->ssl == NULL) {
+      VERBOSE(CL_ERROR, "Creating SSL structure failed: %s", ERR_reason_error_string(ERR_get_error()));
+      return TRAP_E_MEMORY;
+   }
+
+   /* setting tcp socket to be used for ssl connection */
+   if (SSL_set_fd(c->ssl, c->sd) != 1) {
+      VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
+            ERR_reason_error_string(ERR_get_error()));
+      return TRAP_E_IO_ERROR;
+   }
    SSL_set_connect_state(c->ssl);
 
    do {
@@ -1783,7 +1794,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
 
    priv->clients_arr_size = max_num_client;
 
-   priv->clients = calloc(max_num_client, sizeof(struct tlsclient_s));
+   priv->clients = (struct tlsclient_s *) calloc(max_num_client, sizeof(struct tlsclient_s));
    if (priv->clients == NULL) {
       result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
@@ -1793,8 +1804,9 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
                            sizeof(trap_buffer_header_t));
 
-   if (priv->clients == NULL) {
+   if (priv->backup_buffer == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
+      result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
    }
    for (i = 0; i < max_num_client; i++) {
@@ -1802,7 +1814,11 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       priv->clients[i].client_state = TLSCURRENT_IDLE;
       /* all clients are disconnected */
       priv->clients[i].sd = -1;
-      priv->clients[i].buffer = calloc(TRAP_IFC_MESSAGEQ_SIZE + 4, 1);
+      priv->clients[i].buffer = (void *) calloc(TRAP_IFC_MESSAGEQ_SIZE + 4, 1);
+      if (priv->clients[i].buffer == NULL) {
+         result = TRAP_E_MEMORY;
+         goto failsafe_cleanup;
+      }
    }
 
    priv->connected_clients = 0;
@@ -1950,7 +1966,16 @@ static void *accept_clients_thread(void *arg)
                   goto refuse_client;
                }
                cl->ssl = SSL_new(c->sslctx);
-               SSL_set_fd(cl->ssl, newclient);
+               if (cl->ssl == NULL) {
+                  VERBOSE(CL_ERROR, "Creating SSL structure failed: %s", ERR_reason_error_string(ERR_get_error()));
+                  goto refuse_client;
+               }
+               if (SSL_set_fd(cl->ssl, newclient) != 1) {
+                  VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
+                        ERR_reason_error_string(ERR_get_error()));
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  goto refuse_client;
+               }
 
                if (SSL_accept(cl->ssl) <= 0) {
                   ERR_print_errors_fp(stderr);

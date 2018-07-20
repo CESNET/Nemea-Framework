@@ -1,3 +1,6 @@
+2018-07-16 nemea-common-1.6.0
+	* Added Counting Sort implementation
+
 2017-08-21 nemea-common-1.5.3
 	* fixed rpm target - bad file name
 	* BUGFIX inline functions

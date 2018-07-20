@@ -1,4 +1,4 @@
-EXTRA_DIST=report2idea.py ip_prefix_search.py nemea-pycommon.spec setup.py README-RPM-release.md README
+EXTRA_DIST=report2idea.py ip_prefix_search.py nemea-pycommon.spec setup.py README-RPM-release.md README reporter_config
 
 if MAKE_RPMS
 RPMFILENAME=nemea-pycommon

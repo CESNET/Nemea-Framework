@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.4.1
+%global pypi_version 1.4.2
 
 
 %if 0%{?el6}
@@ -39,6 +39,7 @@ Requires:	python-idea-format
 Requires:	python-typedcols
 Requires:	python-ipranges
 Requires:	python-pynspect
+Requires:	python-jinja2
 BuildRequires:	python-setuptools
 BuildRequires:	python2-devel
 BuildRequires:	python-nemea-pytrap
@@ -61,6 +62,7 @@ Requires:	python%{python3_pkgversion}-idea-format
 Requires:	python%{python3_pkgversion}-typedcols
 Requires:	python%{python3_pkgversion}-ipranges
 Requires:	python%{python3_pkgversion}-pynspect
+Requires:	python%{python3_pkgversion}-jinja2
 BuildRequires:	python%{python3_pkgversion}-setuptools
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
@@ -87,6 +89,7 @@ rm -rf %{pypi_name}.egg-info
 # overwritten with every setup.py install.
 %{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
 %{__python2} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
+mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp email-template.html %{buildroot}/%{_sysconfdir}/nemea/email-templates/default.html
 
 
 %check
@@ -96,10 +99,12 @@ rm -rf %{pypi_name}.egg-info
 %files -n python2-%{pypi_name}
 %doc README
 %{python_sitelib}
+%config(noreplace) %{_sysconfdir}/nemea/email-templates/default.html
 
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README
 %{python3_sitelib}
+%config(noreplace) %{_sysconfdir}/nemea/email-templates/default.html
 
 %changelog
 

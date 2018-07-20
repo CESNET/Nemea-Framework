@@ -1,3 +1,7 @@
+2018-07-16 libtrap-0.11.5
+	* bugfixes in file and TLS interfaces
+	
+
 2018-03-18 (Tomas Cejka): debian: updated version of debian packages
 2018-01-11 (Tomas Jansky): libtrap: file interface: changed design of output interface
 2018-01-10 (Tomas Jansky): libtrap: file interface: pushed changes done by @gresake
