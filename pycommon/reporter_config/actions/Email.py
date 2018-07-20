@@ -68,6 +68,8 @@ class EmailAction(Action):
         if self.template_path is None:
             print('Path to template is not specified, default template is used')
             self.template_path = EmailAction.DEFAULT_TEMPLATE_PATH
+            if not os.path.exists(self.template_path):
+                raise Exception("Loading default template file ({0}) failed. Check if path is valid.".format(self.template_path))
 
 
     def run(self, record):
