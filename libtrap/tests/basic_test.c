@@ -81,7 +81,7 @@ int main(int argc, char **argv)
   fprintf(stderr, "Test 01:\n");
   trap_parse_params(&argc, argv, &ifc_spec);
   trap_ctx_t *ctx = trap_ctx_init(&module_info, ifc_spec);
-  if (ctx == NULL) {
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
      fprintf(stderr, "Failed trap_ctx_init.\n");
      return 1;
   }
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "Test 02:\n");
   ctx = trap_ctx_init2(&module_info, ifc_spec, "abcdef");
-  if (ctx == NULL) {
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
      fprintf(stderr, "Failed trap_ctx_init.\n");
      return 1;
   }
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "Test 03:\n");
   ctx = trap_ctx_init3("testmodule", "test description", 1, 1, "u:test-input-ifc,u:test-output-ifc", "test-service-ifc");
-  if (ctx == NULL) {
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
      fprintf(stderr, "Failed trap_ctx_init.\n");
      return 1;
   }
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "Test 04: (illegal character in service IFC name))\n");
   ctx = trap_ctx_init2(&module_info, ifc_spec, "a/b");
-  if (ctx == NULL) {
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
      fprintf(stderr, "Failed trap_ctx_init.\n");
      return 1;
   }
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 
   fprintf(stderr, "Test 05: (disabled service IFC))\n");
   ctx = trap_ctx_init2(&module_info, ifc_spec, NULL);
-  if (ctx == NULL) {
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
      fprintf(stderr, "Failed trap_ctx_init.\n");
      return 1;
   }
