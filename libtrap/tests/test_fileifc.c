@@ -80,7 +80,7 @@ int main(int argc, char **argv)
    int ret = 0;
 
    trap_ctx_t *ctx = trap_ctx_init3("testmodule", "test description", 0, 1, "f:" DATAFILE ":w", NULL);
-   if (ctx == NULL) {
+   if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
       fprintf(stderr, "Failed trap_ctx_init.\n");
       return 1;
    }
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
    trap_ctx_finalize(&ctx);
 
    ctx = trap_ctx_init3("testmodule", "test description", 1, 0, "f:" DATAFILE, NULL);
-   if (ctx == NULL) {
+   if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
       fprintf(stderr, "Failed trap_ctx_init.\n");
       return 1;
    }
