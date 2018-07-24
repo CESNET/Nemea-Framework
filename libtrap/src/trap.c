@@ -186,6 +186,7 @@ void trap_free_global_vars(void)
 
 #if HAVE_OPENSSL
    EVP_cleanup();
+   ERR_free_strings();
 #endif
 }
 
