@@ -54,9 +54,12 @@ class Config():
         self.smtp_conns = dict()
 
         # Parse parameters for all smtp connections
+        if "smtp_connections" not in self.conf:
+            raise Exception("smtp_connections block is missing in YAML config. Check your YAML config.")
+
         if self.conf["smtp_connections"] is None:
             raise Exception("Instance of smtp_connections is required when there is at least one email action. "\
-                            "Check for missing id in smtp_connections block.".format(path))
+                            "Check for missing id in smtp_connections block.")
 
         if "smtp_connections" in self.conf:
             for i in self.conf["smtp_connections"]:
