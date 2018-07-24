@@ -2067,49 +2067,52 @@ static inline void handle_inifc_setters(trap_input_ifc_t *ifc, char *params)
  */
 static inline int trapifc_in_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *ifc_spec, int idx)
 {
+   int ret = TRAP_E_OK;
    /* Common setters - this should be done before the constructor */
    handle_inifc_setters(&ctx->in_ifc_list[idx], ifc_spec->params[idx]);
 
    switch (ifc_spec->types[idx]) {
    case TRAP_IFC_TYPE_GENERATOR:
       /* if (create_generator_ifc("\x10||==::test::==||", &ctx->in_ifc_list[idx]) != TRAP_E_OK)  */
-      if (create_generator_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx]) != TRAP_E_OK) {
+      if ((ret = create_generator_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx])) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of GENERATOR input interface no. %i failed.", idx);
          goto error;
       }
       break;
    case TRAP_IFC_TYPE_TCPIP:
-      if (create_tcpip_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx, TRAP_IFC_TCPIP) != TRAP_E_OK) {
+      if ((ret = create_tcpip_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx, TRAP_IFC_TCPIP)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of TCPIP input interface no. %i failed.", idx);
          goto error;
       }
       break;
 #if HAVE_OPENSSL
    case TRAP_IFC_TYPE_TLS:
-      if (create_tls_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx) != TRAP_E_OK) {
+      if ((ret = create_tls_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of TLS input interface no. %i failed.", idx);
          goto error;
       }
       break;
 #endif
    case TRAP_IFC_TYPE_UNIX:
-      if (create_tcpip_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx, TRAP_IFC_TCPIP_UNIX) != TRAP_E_OK) {
+      if ((ret = create_tcpip_receiver_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx, TRAP_IFC_TCPIP_UNIX)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of UNIX input interface no. %i failed.", idx);
          goto error;
       }
       break;
    case TRAP_IFC_TYPE_FILE:
-      if (create_file_recv_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx) != TRAP_E_OK) {
+      if ((ret = create_file_recv_ifc(ctx, ifc_spec->params[idx], &ctx->in_ifc_list[idx], idx)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of FILE input interface no. %i failed.", idx);
          goto error;
       }
       break;
    default:
       VERBOSE(CL_ERROR, "Unknown input interface type '%c'.", ifc_spec->types[idx]);
+      ret = TRAP_E_BADPARAMS;
       goto error;
    }
    return EXIT_SUCCESS;
 error:
+   trap_error(ctx, ret);
    return EXIT_FAILURE;
 }
 
@@ -2197,6 +2200,7 @@ static inline void handle_outifc_setters(trap_output_ifc_t *ifc, char *params)
  */
 static inline int trapifc_out_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *ifc_spec, int idx)
 {
+   int ret = TRAP_E_OK;
    /* Common setters - this should be done before the constructor */
    handle_outifc_setters(&ctx->out_ifc_list[idx],
                          ifc_spec->params[ctx->num_ifc_in + idx]);
@@ -2204,46 +2208,49 @@ static inline int trapifc_out_construct(trap_ctx_priv_t *ctx, trap_ifc_spec_t *i
    /* call correct constructor of interface */
    switch (ifc_spec->types[ctx->num_ifc_in + idx]) {
    case TRAP_IFC_TYPE_BLACKHOLE:
-      if (create_blackhole_ifc(ctx, NULL, &ctx->out_ifc_list[idx]) != TRAP_E_OK) {
+      if ((ret = create_blackhole_ifc(ctx, NULL, &ctx->out_ifc_list[idx])) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of BLACKHOLE output interface no. %i failed.", idx);
          goto error;
       }
       break;
    case TRAP_IFC_TYPE_TCPIP:
-      if (create_tcpip_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx],
-                                  &ctx->out_ifc_list[idx], idx, TRAP_IFC_TCPIP) != TRAP_E_OK) {
+      if ((ret = create_tcpip_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx],
+                                  &ctx->out_ifc_list[idx], idx, TRAP_IFC_TCPIP)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of TCPIP output interface no. %i failed.", idx);
          goto error;
       }
       break;
 #if HAVE_OPENSSL
    case TRAP_IFC_TYPE_TLS:
-      if (create_tls_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx], &ctx->out_ifc_list[idx], idx) != TRAP_E_OK) {
+      if ((ret = create_tls_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx], &ctx->out_ifc_list[idx], idx)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of TLS output interface no. %i failed.", idx);
+         trap_error(ctx, TRAP_E_BADPARAMS);
          goto error;
       }
       break;
 #endif
    case TRAP_IFC_TYPE_UNIX:
-      if (create_tcpip_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx],
-                                  &ctx->out_ifc_list[idx], idx, TRAP_IFC_TCPIP_UNIX) != TRAP_E_OK) {
+      if ((ret = create_tcpip_sender_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx],
+                                  &ctx->out_ifc_list[idx], idx, TRAP_IFC_TCPIP_UNIX)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of UNIX output interface no. %i failed.", idx);
          goto error;
       }
       break;
    case TRAP_IFC_TYPE_FILE:
-      if (create_file_send_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx], &ctx->out_ifc_list[idx], idx) != TRAP_E_OK) {
+      if ((ret = create_file_send_ifc(ctx, ifc_spec->params[ctx->num_ifc_in + idx], &ctx->out_ifc_list[idx], idx)) != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "Initialization of FILE output interface no. %i failed.", idx);
          goto error;
       }
       break;
    default:
       VERBOSE(CL_ERROR, "Unknown output interface type '%c'.", ifc_spec->types[ctx->num_ifc_in + idx]);
+      ret = TRAP_E_BADPARAMS;
       goto error;
    }
 
    return EXIT_SUCCESS;
 error:
+   trap_error(ctx, ret);
    return EXIT_FAILURE;
 }
 
@@ -2609,7 +2616,6 @@ alloc_counter_failed:
       free(ctx->counter_dropped_message);
       ctx->counter_dropped_message = NULL;
    }
-   trap_free_ctx_t(&ctx);
 
    trap_free_global_vars();
 

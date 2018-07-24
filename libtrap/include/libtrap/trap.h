@@ -657,7 +657,7 @@ void trap_send_flush(uint32_t ifc);
  * \param[in] module_info     Pointer to struct containing info about the module.
  * \param[in] ifc_spec        Structure with specification of interface types and
  *                      their parameters.
- * \return Pointer to the allocated private libtrap context data.
+ * \return Pointer to context (context needs to be checked for error value by trap_ctx_get_last_error() function), NULL on memory error.
  */
 trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
@@ -668,7 +668,7 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
  * \param[in] ifc_spec         Structure with specification of interface types and their parameters.
  * \param[in] service_ifcname  Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
  *
- * \return Pointer to context, NULL on error.
+ * \return Pointer to context (context needs to be checked for error value by trap_ctx_get_last_error() function), NULL on memory error.
  */
 trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec, const char *service_ifcname);
 
@@ -682,7 +682,7 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
  * \param[in] ifc_spec  IFC_SPEC stringdescribed in README.ifcspec.md
  * \param[in] service_ifcname Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
  *
- * \return Pointer to context, NULL on error.
+ * \return Pointer to context (context needs to be checked for error value by trap_ctx_get_last_error() function), NULL on memory error.
  */
 trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifcs, const char *ifc_spec, const char *service_ifcname);
 

@@ -989,16 +989,18 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
             DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
                      strerror(errno)));
             close(sockfd);
+            sockfd = -1;
             continue;
          } else {
             rv = wait_for_connection(sockfd, tv);
             if (rv == TRAP_E_TIMEOUT) {
-               close(sockfd);
                if (c->is_terminated) {
                   rv = TRAP_E_TERMINATED;
                   break;
                }
                /* try another address */
+               close(sockfd);
+               sockfd = -1;
                continue;
             } else {
                /* success */

@@ -124,7 +124,7 @@ pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
                                 ifc_spec,
                                 service_ifcname);
 
-    if (self->trap == NULL) {
+    if (self->trap == NULL || trap_ctx_get_last_error(self->trap) != TRAP_E_OK) {
         PyErr_SetString(TrapError, "Initialization failed");
         return NULL;
     }

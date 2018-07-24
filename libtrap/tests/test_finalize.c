@@ -105,7 +105,7 @@ int main(int argc, char **argv)
    // Since we do not need this structure anymore ...
    trap_free_ifc_spec(in_ifc_spec);
 
-   if (in_ctx == NULL) {
+   if (in_ctx == NULL || trap_ctx_get_last_error(in_ctx) != TRAP_E_OK) {
       fprintf(stderr, "Error: Error in TRAP initialization (input context): %s\n", trap_last_error_msg);
       return EXIT_FAILURE;
    }
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
       // Since we do not need this structure anymore ...
       trap_free_ifc_spec(out_ifc_spec);
 
-      if (out_ctx == NULL) {
+      if (out_ctx == NULL || trap_ctx_get_last_error(out_ctx) != TRAP_E_OK) {
          fprintf(stderr, "Error: Error in TRAP initialization (output context): %s\n", trap_last_error_msg);
          return EXIT_FAILURE;
       }

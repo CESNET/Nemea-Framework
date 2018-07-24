@@ -272,7 +272,7 @@ int main(int argc, char **argv)
    trap_ifc_spec_t ifc_spec = {"u", params_a};
    trap_ctx_t *ctx = trap_ctx_init(&module_info, ifc_spec);
    trap_ctx_priv_t *cp = ctx;
-   if (ctx == NULL) {
+   if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
       errx(trap_last_error, trap_last_error_msg);
    }
 
