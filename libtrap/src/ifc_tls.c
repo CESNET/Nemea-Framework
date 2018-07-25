@@ -109,6 +109,7 @@ static SSL_CTX *tlsserver_create_context()
    if (!ctx) {
       perror("Unable to create SSL context");
       ERR_print_errors_fp(stderr);
+      return NULL;
    }
 
 #if defined(SSL_CTX_set_ecdh_auto)
@@ -123,7 +124,7 @@ static SSL_CTX *tlsserver_create_context()
 static SSL_CTX *tlsclient_create_context()
 {
    const SSL_METHOD *method;
-   SSL_CTX *ctx;
+   SSL_CTX *ctx = NULL;
 
    method = SSLv23_client_method();
 
