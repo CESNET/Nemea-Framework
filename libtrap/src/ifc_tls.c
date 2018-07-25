@@ -897,6 +897,7 @@ static void client_socket_disconnect(void *priv)
    if (config->connected == 1) {
       VERBOSE(CL_VERBOSE_BASIC, "TCPIP ifc client disconnecting");
       SSL_free(config->ssl);
+      config->ssl = NULL;
       close(config->sd);
       config->connected = 0;
    }
@@ -1030,6 +1031,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       }
    }
    freeaddrinfo(servinfo);
+   servinfo = NULL;
 
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);
@@ -1061,6 +1063,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
             VERBOSE(CL_ERROR, "SSL connection failed, could be wrong certificate. %s",
                   ERR_reason_error_string(ERR_get_error()));
             SSL_free(c->ssl);
+            c->ssl = NULL;
             close(c->sd);
             return TRAP_E_IO_ERROR;
          }
@@ -1072,6 +1075,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    if (ret_ver != 0){
       VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
       SSL_free(c->ssl);
+      c->ssl = NULL;
       return TRAP_E_BAD_CERT;
    }
 
@@ -1131,6 +1135,7 @@ static void server_disconnected_client(tls_sender_private_t *c, int cl_id)
    struct tlsclient_s *cl = &c->clients[cl_id];
    pthread_mutex_lock(&c->lock);
    SSL_free(cl->ssl);
+   cl->ssl = NULL;
    close(cl->sd);
    cl->sd = -1;
    cl->client_state = TLSCURRENT_IDLE;
@@ -1675,6 +1680,7 @@ void tlsserver_disconnect_all_clients(void *priv)
          if (cl->sd > 0) {
             if (cl->ssl) {
                SSL_free(cl->ssl);
+               cl->ssl = NULL;
             }
             close(cl->sd);
             cl->sd = -1;
@@ -1970,12 +1976,14 @@ static void *accept_clients_thread(void *arg)
                   VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
                         ERR_reason_error_string(ERR_get_error()));
                   SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                }
 
                if (SSL_accept(cl->ssl) <= 0) {
                   ERR_print_errors_fp(stderr);
                   SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                }
 
@@ -1993,10 +2001,12 @@ static void *accept_clients_thread(void *arg)
                } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
                   SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                } else { /* ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client */
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
                   SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                }
 
