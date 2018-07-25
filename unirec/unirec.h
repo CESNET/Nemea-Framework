@@ -288,6 +288,31 @@ typedef struct {
  *
  * @{
  */
+
+/**
+ * \brief Sizes of UniRec data types.
+ *
+ * Data types are defined in the #ur_field_type_str array.
+ */
+extern const int ur_field_type_size[];
+
+/**
+ * \brief UniRec data types.
+ *
+ * Sizes of data types are defined in the #ur_field_type_size array.
+ */
+extern const char *ur_field_type_str[];
+
+/**
+ * \brief Structure that lists UniRec field specifications such as names, types, id.
+ */
+extern ur_field_specs_t ur_field_specs;
+
+/**
+ * \brief Structure that lists staticaly defined UniRec field specifications such as names, types, id (using UR_FIELDS()).
+ */
+extern ur_static_field_specs_t UR_FIELD_SPECS_STATIC;
+
 /** \brief Get UniRec specifier of the `tmplt` template with `delimiter` between fields.
  *
  * Get names and sizes of fields separated by given delimiter.
@@ -338,6 +363,14 @@ char *ur_template_string_delimiter(const ur_template_t *tmplt, int delimiter);
  */
 #define ur_get_type(field_id) \
    ur_field_specs.ur_field_types[field_id]
+
+/**
+ * Lookup a field type for its textual representation.
+ *
+ * \param[in] type   UniRec type in string format, e.g. "ipaddr" or "uint8"
+ * \returns Index into ur_field_type_str and ur_field_type_size arrays or UR_E_INVALID_TYPE if the type is not found.
+ */
+int ur_get_field_type_from_str(const char *type);
 
 /** \brief Get size of UniRec field
  * Get size of a fixed-length UniRec field. When variable-length field is passed,
