@@ -288,6 +288,31 @@ typedef struct {
  *
  * @{
  */
+
+/**
+ * \brief Sizes of UniRec data types.
+ *
+ * Data types are defined in the #ur_field_type_str array.
+ */
+extern const int ur_field_type_size[];
+
+/**
+ * \brief UniRec data types.
+ *
+ * Sizes of data types are defined in the #ur_field_type_size array.
+ */
+extern const char *ur_field_type_str[];
+
+/**
+ * \brief Structure that lists UniRec field specifications such as names, types, id.
+ */
+extern ur_field_specs_t ur_field_specs;
+
+/**
+ * \brief Structure that lists staticaly defined UniRec field specifications such as names, types, id (using UR_FIELDS()).
+ */
+extern ur_static_field_specs_t UR_FIELD_SPECS_STATIC;
+
 /** \brief Get UniRec specifier of the `tmplt` template with `delimiter` between fields.
  *
  * Get names and sizes of fields separated by given delimiter.
