@@ -97,12 +97,6 @@
 #ifndef MIN
 #define MIN(a,b) ((a)>(b)?(b):(a))
 #endif
-#define CHECK_AND_FREE(ptr, free_func) { \
-   if (ptr) { \
-      free_func(ptr); \
-      (ptr) = NULL; \
-   } \
-}
 
 static SSL_CTX *tlsserver_create_context()
 {
@@ -115,6 +109,7 @@ static SSL_CTX *tlsserver_create_context()
    if (!ctx) {
       perror("Unable to create SSL context");
       ERR_print_errors_fp(stderr);
+      return NULL;
    }
 
 #if defined(SSL_CTX_set_ecdh_auto)
@@ -129,7 +124,7 @@ static SSL_CTX *tlsserver_create_context()
 static SSL_CTX *tlsclient_create_context()
 {
    const SSL_METHOD *method;
-   SSL_CTX *ctx;
+   SSL_CTX *ctx = NULL;
 
    method = SSLv23_client_method();
 
@@ -165,7 +160,7 @@ static int verify_certificate(SSL *arg)
       ret = EXIT_FAILURE;
    }
    
-   CHECK_AND_FREE(cert, X509_free);
+   X509_free(cert);
    return ret;
 }
 
@@ -196,8 +191,8 @@ static int tls_server_configure_ctx(const char *cert, SSL_CTX *ctx)
    SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
    SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_1);
 
-   CHECK_AND_FREE(certificate, X509_free);
-   CHECK_AND_FREE(bio_cert, BIO_free_all);
+   X509_free(certificate);
+   BIO_free_all(bio_cert);
    return EXIT_SUCCESS;
 }
 
@@ -633,14 +628,14 @@ void tls_receiver_destroy(void *priv)
       if (config->connected == 1) {
          close(config->sd);
       }
-      CHECK_AND_FREE(config->ssl, SSL_free);
-      CHECK_AND_FREE(config->sslctx, SSL_CTX_free);
-      CHECK_AND_FREE(config->dest_addr, free);
-      CHECK_AND_FREE(config->dest_port, free);
-      CHECK_AND_FREE(config->keyfile, free);
-      CHECK_AND_FREE(config->certfile, free);
-      CHECK_AND_FREE(config->cafile, free);
-      CHECK_AND_FREE(config, free);
+      free(config->ssl);
+      free(config->sslctx);
+      free(config->dest_addr);
+      free(config->dest_port);
+      free(config->keyfile);
+      free(config->certfile);
+      free(config->cafile);
+      free(config);
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
    }
@@ -700,8 +695,8 @@ exit:
    if (f != NULL) {
       fclose(f);
    }
-   CHECK_AND_FREE(conf_file, free);
-   CHECK_AND_FREE(buf_file, free);
+   free(conf_file);
+   free(buf_file);
    return;
 }
 
@@ -879,15 +874,15 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
 #endif
    return TRAP_E_OK;
 failsafe_cleanup:
-   CHECK_AND_FREE(dest_addr, free);
-   CHECK_AND_FREE(dest_port, free);
-   CHECK_AND_FREE(keyfile, free);
-   CHECK_AND_FREE(certfile, free);
-   CHECK_AND_FREE(cafile, free);
+   free(dest_addr);
+   free(dest_port);
+   free(keyfile);
+   free(certfile);
+   free(cafile);
    if (config != NULL && config->sslctx != NULL) {
-      CHECK_AND_FREE(config->sslctx, SSL_CTX_free);
+      SSL_CTX_free(config->sslctx);
    }
-   CHECK_AND_FREE(config, free);
+   free(config);
    return result;
 }
 
@@ -902,7 +897,8 @@ static void client_socket_disconnect(void *priv)
    DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv Disconnected."));
    if (config->connected == 1) {
       VERBOSE(CL_VERBOSE_BASIC, "TCPIP ifc client disconnecting");
-      CHECK_AND_FREE(config->ssl, SSL_free);
+      SSL_free(config->ssl);
+      config->ssl = NULL;
       close(config->sd);
       config->connected = 0;
    }
@@ -1025,11 +1021,8 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
 
    /* catching all possible errors from setting up socket before atempting tls handshake */
    if (rv != TRAP_E_OK) {
-      CHECK_AND_FREE(servinfo, freeaddrinfo);
-      if (sockfd != -1) {
-         close(sockfd);
-      }
-
+      freeaddrinfo(servinfo);
+      close(sockfd);
       return rv;
    }
 
@@ -1038,7 +1031,8 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
          VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
       }
    }
-   CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
+   freeaddrinfo(servinfo);
+   servinfo = NULL;
 
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);
@@ -1069,7 +1063,8 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
          default:
             VERBOSE(CL_ERROR, "SSL connection failed, could be wrong certificate. %s",
                   ERR_reason_error_string(ERR_get_error()));
-            CHECK_AND_FREE(c->ssl, SSL_free);
+            SSL_free(c->ssl);
+            c->ssl = NULL;
             close(c->sd);
             return TRAP_E_IO_ERROR;
          }
@@ -1080,7 +1075,8 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    int ret_ver = verify_certificate(c->ssl); /* server certificate verification */
    if (ret_ver != 0){
       VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
-      CHECK_AND_FREE(c->ssl, SSL_free);
+      SSL_free(c->ssl);
+      c->ssl = NULL;
       return TRAP_E_BAD_CERT;
    }
 
@@ -1139,7 +1135,8 @@ static void server_disconnected_client(tls_sender_private_t *c, int cl_id)
 {
    struct tlsclient_s *cl = &c->clients[cl_id];
    pthread_mutex_lock(&c->lock);
-   CHECK_AND_FREE(cl->ssl, SSL_free);
+   SSL_free(cl->ssl);
+   cl->ssl = NULL;
    close(cl->sd);
    cl->sd = -1;
    cl->client_state = TLSCURRENT_IDLE;
@@ -1537,11 +1534,11 @@ void tls_sender_destroy(void *priv)
 
    /* free private data */
    if (c != NULL) {
-      CHECK_AND_FREE(c->sslctx, SSL_CTX_free);
-      CHECK_AND_FREE(c->server_port, free);
-      CHECK_AND_FREE(c->keyfile, free);
-      CHECK_AND_FREE(c->certfile, free);
-      CHECK_AND_FREE(c->cafile, free);
+      SSL_CTX_free(c->sslctx);
+      free(c->server_port);
+      free(c->keyfile);
+      free(c->certfile);
+      free(c->cafile);
 
       if (c->initialized) {
          /* cancel accepting new clients */
@@ -1559,23 +1556,23 @@ void tls_sender_destroy(void *priv)
             cl = &c->clients[i];
             if (cl->sd > 0) {
                if (cl->ssl) {
-                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  SSL_free(cl->ssl);
                }
                close(cl->sd);
                cl->sd = -1;
                c->connected_clients--;
             }
-            CHECK_AND_FREE(cl->buffer, free);
+            free(cl->buffer);
          }
-         CHECK_AND_FREE(c->clients, free);
+         free(c->clients);
       }
       pthread_mutex_unlock(&c->lock);
       pthread_mutex_destroy(&c->lock);
       pthread_mutex_destroy(&c->sending_lock);
       sem_destroy(&c->have_clients);
 
-      CHECK_AND_FREE(c->backup_buffer, free)
-      CHECK_AND_FREE(c, free)
+      free(c->backup_buffer);
+      free(c);
    }
 }
 
@@ -1658,8 +1655,8 @@ exit:
    if (f != NULL) {
       fclose(f);
    }
-   CHECK_AND_FREE(conf_file, free);
-   CHECK_AND_FREE(buf_file, free);
+   free(conf_file);
+   free(buf_file);
    return;
    VERBOSE(CL_ERROR, "Unimplemented. (%s:%d)", __FILE__, __LINE__);
    return;
@@ -1683,7 +1680,8 @@ void tlsserver_disconnect_all_clients(void *priv)
          cl = &c->clients[i];
          if (cl->sd > 0) {
             if (cl->ssl) {
-               CHECK_AND_FREE(cl->ssl, SSL_free);
+               SSL_free(cl->ssl);
+               cl->ssl = NULL;
             }
             close(cl->sd);
             cl->sd = -1;
@@ -1840,7 +1838,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       priv->server_port, max_clients,
       priv->int_mess_header.data_length, priv->keyfile, priv->certfile,
       priv->cafile, priv->clients_arr_size);
-   CHECK_AND_FREE(max_clients, free);
+   free(max_clients);
 
    if (sem_init(&priv->have_clients, 0, 0) == -1) {
       VERBOSE(CL_ERROR, "Initialization of semaphore failed.");
@@ -1887,22 +1885,22 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    return result;
 
 failsafe_cleanup:
-   CHECK_AND_FREE(server_port, free);
-   CHECK_AND_FREE(max_clients, free);
-   CHECK_AND_FREE(certfile, free);
-   CHECK_AND_FREE(cafile, free);
-   CHECK_AND_FREE(keyfile, free);
+   free(server_port);
+   free(max_clients);
+   free(certfile);
+   free(cafile);
+   free(keyfile);
    if (priv != NULL) {
-      CHECK_AND_FREE(priv->backup_buffer, free);
+      free(priv->backup_buffer);
       if (priv->clients != NULL) {
          for (i = 0; i < max_num_client; i++) {
-            CHECK_AND_FREE(priv->clients[i].buffer, free);
+            free(priv->clients[i].buffer);
          }
       }
-      CHECK_AND_FREE(priv->clients, free);
+      free(priv->clients);
       pthread_mutex_destroy(&priv->lock);
       pthread_mutex_destroy(&priv->sending_lock);
-      CHECK_AND_FREE(priv, free);
+      free(priv);
    }
 
    return result;
@@ -1978,13 +1976,15 @@ static void *accept_clients_thread(void *arg)
                if (SSL_set_fd(cl->ssl, newclient) != 1) {
                   VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
                         ERR_reason_error_string(ERR_get_error()));
-                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                }
 
                if (SSL_accept(cl->ssl) <= 0) {
                   ERR_print_errors_fp(stderr);
-                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                }
 
@@ -2001,11 +2001,13 @@ static void *accept_clients_thread(void *arg)
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
                } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                } else { /* ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client */
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-                  CHECK_AND_FREE(cl->ssl, SSL_free);
+                  SSL_free(cl->ssl);
+                  cl->ssl = NULL;
                   goto refuse_client;
                }
 
@@ -2076,7 +2078,7 @@ static int server_socket_open(void *priv)
       }
       break; /* found socket to bind */
    }
-   CHECK_AND_FREE(ai, freeaddrinfo); /* all done with this structure */
+   freeaddrinfo(ai);
 
    if (p == NULL) {
       /* if we got here, it means we didn't get bound */
