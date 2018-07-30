@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.4.2
+%global pypi_version 1.4.3
 
 
 %if 0%{?el6}
@@ -89,7 +89,7 @@ rm -rf %{pypi_name}.egg-info
 # overwritten with every setup.py install.
 %{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
 %{__python2} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
-mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp email-template.html %{buildroot}/%{_sysconfdir}/nemea/email-templates/default.html
+mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp reporter_config/default.html %{buildroot}/%{_sysconfdir}/nemea/email-templates/default.html
 
 
 %check
