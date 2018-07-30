@@ -89,6 +89,7 @@ rm -rf %{pypi_name}.egg-info
 # overwritten with every setup.py install.
 %{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
 %{__python2} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
+mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp email-template.html %{buildroot}/%{_sysconfdir}/nemea/email-templates/default.html
 
 
 %check
@@ -98,10 +99,12 @@ rm -rf %{pypi_name}.egg-info
 %files -n python2-%{pypi_name}
 %doc README
 %{python_sitelib}
+%config(noreplace) %{_sysconfdir}/nemea/email-templates/default.html
 
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README
 %{python3_sitelib}
+%config(noreplace) %{_sysconfdir}/nemea/email-templates/default.html
 
 %changelog
 

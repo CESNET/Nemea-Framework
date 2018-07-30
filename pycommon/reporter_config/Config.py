@@ -53,6 +53,12 @@ class Config():
 
         self.smtp_conns = dict()
 
+        # Check if "smtp_connections" exists when there is some "email" action in "custom_actions"
+        if ("custom_actions" in self.conf
+                and any([i.__contains__("email") for i in self.conf["custom_actions"]])
+                and "smtp_connections" not in self.conf):
+            raise LookupError("'smtp_connections' is required when there is at least one 'email' action but it is missing in YAML config. Check your YAML config.")
+
         # Parse parameters for all smtp connections
         if "smtp_connections" in self.conf:
             for i in self.conf["smtp_connections"]:
@@ -172,11 +178,18 @@ class Config():
             return (self.conf["reporter"]["loglevel"]) * 10
         except:
             return 30
+
     def __str__(self):
+        smtp = dict()
+        for smtp_id, conns in self.smtp_conns.items():
+            smtp[smtp_id] = "\n".join(["\t{}: {}".format(param, val) for param, val in conns.items()])
+
+        s = "\n".join("{}:\n{}\n".format(smtp_id, params) for smtp_id, params in smtp.items())
         ag = "\n".join([str(self.addrGroups[key]) for key in self.addrGroups])
         a = "\n".join([key + ":\n\t" + str(self.actions[key]) for key in self.actions])
         r = "\n".join([str(val) for val in self.rules])
-        string = "Address Groups:\n{0}\n----------------\nCustom Actions:\n{1}\n----------------\nRules:\n{2}\n".format(ag, a, r)
+        string = "Smtp connections:\n{0}\n----------------\nAddress Groups:\n{1}\n----------------\n"\
+                 "Custom Actions:\n{2}\n----------------\nRules:\n{3}\n".format(s, ag, a, r)
         return string
 
 if __name__ == "__main__":

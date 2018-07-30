@@ -36,6 +36,7 @@ class EmailAction(Action):
         else:
             raise Exception("Email action needs `subject` parameter, check your YAML config.")
 
+        self.smtp_id    = smtp_conn.get("id", "localserver")
         self.smtpServer = smtp_conn.get("server", "localhost")
         self.smtpPort   = smtp_conn.get("port", 25)
         self.smtpUser   = smtp_conn.get("user", None)
@@ -43,6 +44,7 @@ class EmailAction(Action):
         self.smtpTLS    = smtp_conn.get("start_tls", False)
         self.smtpSSL    = smtp_conn.get("force_ssl", False)
         self.addrFrom   = a.get("from", "nemea@localhost")
+
         self.smtpKey    = None
         self.smtpChain  = None
 
@@ -68,6 +70,8 @@ class EmailAction(Action):
         if self.template_path is None:
             print('Path to template is not specified, default template is used')
             self.template_path = EmailAction.DEFAULT_TEMPLATE_PATH
+            if not os.path.exists(self.template_path):
+                raise Exception("Loading default template file ({0}) failed. Check if path is valid.".format(self.template_path))
 
 
     def run(self, record):
@@ -169,6 +173,8 @@ class EmailAction(Action):
         f.append("From: " + self.addrFrom)
         f.append("To: " + ",".join(self.addrsTo))
         f.append("Subject: " + self.subject)
+        f.append("Used template: {}".format(self.template_path))
+        f.append("Smtp connection id: {}".format(self.smtp_id))
         return ", ".join(f) + "\n"
 
 
