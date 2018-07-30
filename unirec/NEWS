@@ -1,10 +1,56 @@
-version 2.2.6
-   * doc updates
-   * minor improvements and bugfixes
-version 2.2.3
-   * update spec file dependencies and debug package
-   * replaced python processor with bash&awk for ur_values
-   * bugfixes:
-      - ur_processor used bad type of timestamps
-      - fixed multiple execution of ur_processor.sh in tests
+2018-07-25 (Tomas Cejka): unirec: add lists of types and defined fields into public API
+2018-07-25 (Tomas Cejka): unirec: add ur_get_field_type_from_str() to public API
+
+2018-06-30 (Tomas Cejka): unirec: time: separate code for conversion from string to ur_time_t
+
+2018-03-18 (Tomas Cejka): unirec: debian: fixed changelog
+2018-03-18 (Tomas Cejka): debian: updated version of debian packages
+2017-12-06 (Tomas Jansky): unirec: BUGFIX: changed function definition from inline to static inline
+
+2017-11-28 (Tomas Cejka): doc: generated doxygen was moved to gh-pages
+2017-10-24 (Jiri Havranek): unirec: added MAC address unirec data type (#71)
+2017-10-20 (Jiri Havranek): unirec: tests: fixed wrong pointers being checked against NULL value
+2017-10-06 (Pavel Krobot): UniRec: NEW FEATURE: function for comparison of UniRec templates. (#70)
+
+2017-09-07 (Tomas Cejka): Remove useless ipaddr_cpp.h from API (#68)
+2017-08-24 (Václav Bartoš): unirec: ur_define_teplate: Removed unnecessary error check
+
+2017-08-15 (Tomas Cejka): travis: update source0 in specs and .travis.yml to contain sources
+2017-08-14 (Václav Bartoš): unirec: ur_clone_record no longer computes record size twice
+
+2017-08-07 (Tomas Cejka): unirec: updated, fixed and improved doc for the next version
+2017-08-04 (Ulrik Haugen): link README.md to README in unirec.
+2017-07-28 (Ladislav Macoun): unirec: update ur_processor
+2017-07-28 (Ladislav Macoun): unirec: fixed issues with readme
+2017-07-28 (Ladislav Macoun): unirec: ur_processor now detects empty lines
+2017-07-27 (Ladislav Macoun): unirec: Update README
+2017-07-11 (Tomas Jansky): unirec: increased version, updated ChangeLog, released RPM package
+2017-03-01 (Pavel Krobot): BUGFIX: Improved ur_clone_record() function: (#48)
+
+2017-02-21 (Tomas Cejka): unirec: improved ur spec - can contain spaces, coding style fix (#46)
+
+2016-12-08 (Tomas Cejka): unirec: generate new doxygen doc
+2016-12-08 (Tomas Cejka): unirec: add doxygen for ipaddr_cpp.h
+2016-12-03 (Tomas Cejka): unirec: add doxygen for ipaddr.h
+2016-11-30 (Vaclav Bartos): UniRec links: Removed unnecessary line from ur_free_links
+2016-11-28 (Tomas Cejka): unirec: fix parsing one-line UR_DEFINE(...)
+
+2016-07-26 (Tomas Cejka): unirec: fixed multiple execution of ur_processor.sh and ur_values.sh
+2016-07-20 (Tomas Cejka): unirec: RPM: disable debug and fixed dependency
+2016-07-20 (Tomas Cejka): unirec: configure: update checks
+2016-07-20 (Tomas Cejka): unirec: ur_values.sh: update generated headers
+2016-07-20 (Tomas Cejka): unirec: RPM: update spec file
+2016-07-20 (Tomas Cejka): unirec: replace python script with bash&awk
+2016-07-19 (Tomas Cejka): unirec: publish generated doxygen
+2016-07-19 (Tomas Cejka): unirec: BUGFIX: processor used bad type for UniRec timestamps
+2016-04-22 (Tomas Cejka): unirec: add doc into RPM (installation)
+
+2016-04-02 (Zdenek Rosa): unirec: README bugfix in iteration functions
+2016-04-02 (Zdenek Rosa): unirec: test for iteration function added
+
+2016-03-18 (Tomas Cejka): unirec: allow stdc constants for c++
+2016-03-18 (Tomas Jansky): unirec: changed type ur_field_id_t to int16_t, so it can be compared with UR_E_INVALID_NAME
+
+2016-01-21 (Tomas Cejka): unirec: created bash script ur_processor.sh for generating fields files
+2016-01-01 (Zdenek Rosa): unirec: created unirec2
 
