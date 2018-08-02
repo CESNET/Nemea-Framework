@@ -2,10 +2,12 @@
  * \file get_stats_serv_ifc.c
  * \brief Simple program which connects to service interface of a nemea module and receives module statistics (interface counters - send, received messages of every interface etc.).
  * \author Marek Svepes <svepemar@fit.cvut.cz>
+ * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2015
+ * \date 2018
  */
 /*
- * Copyright (C) 2015 CESNET
+ * Copyright (C) 2015-2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -41,12 +43,15 @@
  *
  */
 
+#define _GNU_SOURCE
+
 #include <unistd.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/un.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <getopt.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -72,7 +77,7 @@ union tcpip_socket_addr {
 
 uint8_t prog_terminated = 0;
 int sd = -1;
-char * dest_sock = NULL;
+char *dest_sock = NULL;
 
 int connect_to_module_service_ifc()
 {
@@ -427,10 +432,36 @@ int main (int argc, char **argv)
       }
    }
 
-   if (original_argc != optind || original_argc < 3) {
-      print_help(argv[0]);
-      return 1;
-   } else if (!quit_after_read) {
+   if (dest_sock == NULL && optind < original_argc) {
+      char *sn;
+      if (asprintf(&sn, "service_%s", argv[optind]) == -1) {
+         fprintf(stderr, "Could not allocate memory.\n");
+         return 1;
+      }
+      if (asprintf(&dest_sock, trap_default_socket_path_format, sn) == -1) {
+         free(sn);
+         fprintf(stderr, "Could not allocate memory.\n");
+         return 1;
+      }
+      free(sn);
+      struct stat fs;
+      if (stat(dest_sock, &fs) == -1) {
+         fprintf(stderr, "Socket does not exist (%s) %s.\n", dest_sock, strerror(errno));
+         free(dest_sock);
+         dest_sock = strdup(argv[optind]);
+         if (dest_sock == NULL) {
+            fprintf(stderr, "Could not allocate memory.\n");
+            return 1;
+         }
+         if (stat(dest_sock, &fs) == -1) {
+            fprintf(stderr, "Socket does not exist (%s) %s.\n", dest_sock, strerror(errno));
+            free(dest_sock);
+            return 1;
+         }
+      }
+   }
+
+   if (!quit_after_read) {
       printf("\x1b[31;1m""Use Control+C to stop me...\n""\x1b[0m");
       printf("Legend:\n"
              "\tIS_CONN (is connected)\n"
