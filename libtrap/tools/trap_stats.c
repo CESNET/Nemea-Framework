@@ -385,9 +385,13 @@ void signal_handler(int catched_signal)
 
 void print_help(char *prog)
 {
-   printf("Usage:  %s  -s service_socket_path\n", prog);
+   printf("Usage:  %s  [-s service_socket_path] [socket_identifier]\n", prog);
+   printf("Pass the path to a service socket as an argument of -s. The option -s can be ommitted. When only PID of is given instead of full path, the default path is probed.\n");
    printf("\nOptional parameters:\n");
    printf("\t-1\t- quit after first read\n");
+   printf("\nExamples:\n\t%s -s /var/run/libtrap/trap-service_31270.sock\n", prog);
+   printf("\t%s 31270\n", prog);
+   printf("\t%s /var/run/libtrap/trap-service_31270.sock\n", prog);
 }
 
 int main (int argc, char **argv)
@@ -433,32 +437,38 @@ int main (int argc, char **argv)
    }
 
    if (dest_sock == NULL && optind < original_argc) {
-      char *sn;
-      if (asprintf(&sn, "service_%s", argv[optind]) == -1) {
-         fprintf(stderr, "Could not allocate memory.\n");
-         return 1;
-      }
-      if (asprintf(&dest_sock, trap_default_socket_path_format, sn) == -1) {
+      uint16_t pid;
+      char c;
+      if (sscanf(argv[optind], "%"SCNu16"%c", &pid, &c) == 1) {
+         /* parameter is PID */
+         char *sn;
+         if (asprintf(&sn, "service_%s", argv[optind]) == -1) {
+            fprintf(stderr, "Could not allocate memory.\n");
+            return 1;
+         }
+         if (asprintf(&dest_sock, trap_default_socket_path_format, sn) == -1) {
+            free(sn);
+            fprintf(stderr, "Could not allocate memory.\n");
+            return 1;
+         }
          free(sn);
-         fprintf(stderr, "Could not allocate memory.\n");
-         return 1;
-      }
-      free(sn);
-      struct stat fs;
-      if (stat(dest_sock, &fs) == -1) {
-         fprintf(stderr, "Socket does not exist (%s) %s.\n", dest_sock, strerror(errno));
-         free(dest_sock);
+      } else {
+         /* parameter is path */
          dest_sock = strdup(argv[optind]);
          if (dest_sock == NULL) {
             fprintf(stderr, "Could not allocate memory.\n");
             return 1;
          }
-         if (stat(dest_sock, &fs) == -1) {
-            fprintf(stderr, "Socket does not exist (%s) %s.\n", dest_sock, strerror(errno));
-            free(dest_sock);
-            return 1;
-         }
       }
+      struct stat fs;
+      if (stat(dest_sock, &fs) == -1) {
+         fprintf(stderr, "Socket does not exist (%s) %s.\n", dest_sock, strerror(errno));
+         free(dest_sock);
+         return 1;
+      }
+   } else if (optind < original_argc) {
+      print_help(argv[0]);
+      return 0;
    }
 
    if (!quit_after_read) {
@@ -478,7 +488,7 @@ int main (int argc, char **argv)
 
    // Connect to modules service interface
    if (connect_to_module_service_ifc() == -1) {
-      printf("Could not connect to service ifc.\n");
+      printf("Could not connect to service ifc (path: %s).\n", dest_sock);
       return 0;
    }
 
