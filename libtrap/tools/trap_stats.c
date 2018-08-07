@@ -386,7 +386,7 @@ void signal_handler(int catched_signal)
 void print_help(char *prog)
 {
    printf("Usage:  %s  [-s service_socket_path] [socket_identifier]\n", prog);
-   printf("Pass the path to a service socket as an argument of -s. The option -s can be ommitted. When only PID of is given instead of full path, the default path is probed.\n");
+   printf("Pass the path to a service socket as an argument of -s. The option -s can be ommitted. When only PID is given instead of full path, the default path is probed.\n");
    printf("\nOptional parameters:\n");
    printf("\t-1\t- quit after first read\n");
    printf("\nExamples:\n\t%s -s /var/run/libtrap/trap-service_31270.sock\n", prog);
