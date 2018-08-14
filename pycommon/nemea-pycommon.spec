@@ -14,7 +14,7 @@
 
 Name:	%{pypi_name}
 Version: %{pypi_version}
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
 BuildArch: noarch
@@ -104,7 +104,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp reporter_config/
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README
 %{python3_sitelib}
-%config(noreplace) %{_sysconfdir}/nemea/email-templates/default.html
 
 %changelog
 
