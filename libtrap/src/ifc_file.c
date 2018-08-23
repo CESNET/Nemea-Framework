@@ -83,7 +83,7 @@ void file_destroy(void *priv)
 
    if (config) {
       if (config->file_cnt != 0) {
-         for (i = config->file_index + 1; i < config->file_cnt; i++) {
+         for (i = 0; i < config->file_cnt; i++) {
             free(config->files[i]);
          }
 
