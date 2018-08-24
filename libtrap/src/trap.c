@@ -503,9 +503,10 @@ void *reader_threads_fn(void *arg)
    thread_id = argdata->thread_index;
    do {
       sem_wait(&ctx->reader_threads[thread_id].sem);
-      if (ctx->terminated == 1) {
+      if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
          break;
       }
+
       /* call recv of my IFC and let it store results into multi-result array */
 #ifndef DISABLE_BUFFERING
       /* handle buffering */
@@ -535,7 +536,7 @@ void *reader_threads_fn(void *arg)
       pthread_mutex_unlock(&ctx->mut_sem_collector);
       /* inform collector about finished job */
 
-      if (ctx->terminated == 1) {
+      if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
          break;
       }
    } while (1);
@@ -590,14 +591,15 @@ static void *trap_automatic_flush_thr(void *arg)
    n = trap_init_ifcs_timeouts(ctx);
 
    while (1) {
+      if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
+         break;
+      }
+
       if (pthread_rwlock_rdlock(&ctx->context_lock) != 0) {
          VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
          break;
       }
-      if (ctx->terminated == 1) {
-         pthread_rwlock_unlock(&ctx->context_lock);
-         break;
-      }
+
       // Checking if automatic flushing or buffering was changed or disabled
       if (ctx->ifc_change == 1) {
          pthread_rwlock_unlock(&ctx->context_lock);
@@ -614,26 +616,14 @@ static void *trap_automatic_flush_thr(void *arg)
          usec = ctx->ifc_autoflush_timeout[0].tm;
          VERBOSE(CL_VERBOSE_LIBRARY, "Autoflush thread is going to sleep for %ld microseconds.", usec);
          if (sleep(usec/1000000) != 0) {
-            if (pthread_rwlock_rdlock(&ctx->context_lock) != 0) {
-               VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
+            if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
                break;
             }
-            if (ctx->terminated == 1) {
-               pthread_rwlock_unlock(&ctx->context_lock);
-               break;
-            }
-            pthread_rwlock_unlock(&ctx->context_lock);
          }
          if (usleep(usec%1000000) == -1) {
-            if (pthread_rwlock_rdlock(&ctx->context_lock) != 0) {
-               VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
+            if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
                break;
             }
-            if (ctx->terminated == 1) {
-               pthread_rwlock_unlock(&ctx->context_lock);
-               break;
-            }
-            pthread_rwlock_unlock(&ctx->context_lock);
          }
 
          // Check all interfaces if timeout has elapsed, otherwise break
@@ -1752,7 +1742,6 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
       c->service_ifc_name = NULL;
    }
 
-   c->terminated = 1;
    pthread_rwlock_destroy(&c->context_lock);
 
    free(c);
@@ -1766,7 +1755,8 @@ int trap_ctx_terminate(trap_ctx_t *ctx)
    if ((c == NULL) || (c->terminated != 0)) {
       return TRAP_E_OK;
    }
-   c->terminated = 1;
+
+   __sync_add_and_fetch(&c->terminated, 1);
 
    for (i = 0; i < c->num_ifc_in; i++) {
       if (c->in_ifc_list[i].terminate != NULL) {
@@ -1792,17 +1782,11 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
    if ((c == NULL) || (c->initialized == 0)) {
       return TRAP_E_NOT_INITIALIZED;
    }
-   if (pthread_rwlock_rdlock(&c->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-      if (c->terminated == 1) {
-         return trap_error(c, TRAP_E_TERMINATED);
-      }
-   }
-   if (c->terminated) {
-      pthread_rwlock_unlock(&c->context_lock);
+
+   if (__sync_add_and_fetch(&c->terminated, 0) != 0) {
       return trap_error(c, TRAP_E_TERMINATED);
    }
-   pthread_rwlock_unlock(&c->context_lock);
+
    if (ifcidx >= c->num_ifc_in) {
       return trap_errorf(c, TRAP_E_NOT_SELECTED, "No input ifc to get data from...");
    }
@@ -1845,17 +1829,11 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
    if (!c->initialized) {
       return trap_error(c, TRAP_E_NOT_INITIALIZED);
    }
-   if (pthread_rwlock_rdlock(&c->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-      if (c->terminated == 1) {
-         return trap_error(c, TRAP_E_TERMINATED);
-      }
-   }
-   if (c->terminated) {
-      pthread_rwlock_unlock(&c->context_lock);
+
+   if (__sync_add_and_fetch(&c->terminated, 0) != 0) {
       return trap_error(c, TRAP_E_TERMINATED);
    }
-   pthread_rwlock_unlock(&c->context_lock);
+
    if (ifc_mask == 0) {
       /* no interface selected by mask... */
       return trap_errorf(c, TRAP_E_OK, "No interface selected by mask that is probably wrong.");
@@ -1929,14 +1907,8 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
    }
 
    /* check if libtrap is terminated and terminate if not */
-   if (pthread_rwlock_rdlock(&c->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-   }
-   if (c->terminated == 0) {
-      pthread_rwlock_unlock(&c->context_lock);
+   if (__sync_add_and_fetch(&c->terminated, 0) == 0) {
       trap_ctx_terminate(c);
-   } else {
-      pthread_rwlock_unlock(&c->context_lock);
    }
 
    if (c->num_ifc_out > 0) {
@@ -1968,17 +1940,11 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
    if (c == NULL || c->initialized == 0) {
       return TRAP_E_NOT_INITIALIZED;
    }
-   if (pthread_rwlock_rdlock(&c->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-      if (c->terminated == 1) {
-         return trap_error(c, TRAP_E_TERMINATED);
-      }
-   }
-   if (c->terminated) {
-      pthread_rwlock_unlock(&c->context_lock);
+
+   if (__sync_add_and_fetch(&c->terminated, 0) != 0) {
       return trap_error(c, TRAP_E_TERMINATED);
    }
-   pthread_rwlock_unlock(&c->context_lock);
+
    if (ifc >= c->num_ifc_out) {
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
@@ -2536,8 +2502,9 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
       VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
    }
    ctx->initialized = 1;
-   ctx->terminated = 0;
    pthread_rwlock_unlock(&ctx->context_lock);
+   __sync_and_and_fetch(&ctx->terminated, 0);
+
    return ctx;
 
 freeall_on_failed:
@@ -2567,11 +2534,7 @@ freein_on_failed:
       }
    }
 freein_readers:
-   if (pthread_rwlock_wrlock(&ctx->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
-   }
-   ctx->terminated = 1;
-   pthread_rwlock_unlock(&ctx->context_lock);
+   __sync_add_and_fetch(&ctx->terminated, 1);
 
    if (ctx->reader_threads != NULL) {
       for (i = 0; i < ctx->num_ifc_in; i++) {
@@ -2649,14 +2612,15 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       return TRAP_E_BADPARAMS;
    }
 
+   if (__sync_add_and_fetch(&c->terminated, 0) != 0) {
+      return TRAP_E_TERMINATED;
+   }
+
    if (pthread_rwlock_wrlock(&c->context_lock) != 0) {
       VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
       return TRAP_E_IO_ERROR;
    }
-   if (c->terminated == 1) {
-      pthread_rwlock_unlock(&c->context_lock);
-      return TRAP_E_TERMINATED;
-   }
+
    switch (request) {
    case TRAPCTL_AUTOFLUSH_TIMEOUT:
       timeout = va_arg(ap, uint64_t);
@@ -2920,15 +2884,10 @@ void *service_thread_routine(void *arg)
 
    priv = (tcpip_sender_private_t *) service_ifc->priv;
    while (1) {
-      if (pthread_rwlock_rdlock(&g_ctx->context_lock) != 0) {
-         VERBOSE(CL_ERROR, "Locking of context failed. %s", __func__);
+      if (__sync_add_and_fetch(&g_ctx->terminated, 0) != 0) {
          break;
       }
-      if (g_ctx->terminated != 0) {
-         pthread_rwlock_unlock(&g_ctx->context_lock);
-         break;
-      }
-      pthread_rwlock_unlock(&g_ctx->context_lock);
+
       /* prepare file descriptor set */
       maxfd = priv->server_sd + 1;
       FD_ZERO(&fds);
