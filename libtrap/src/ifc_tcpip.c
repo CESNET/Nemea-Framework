@@ -1809,6 +1809,7 @@ refuse_client:
                      c->connected_clients, c->clients_arr_size);
                shutdown(newclient, SHUT_RDWR);
                close(newclient);
+               cl->sd = -1;
             }
             pthread_mutex_unlock(&c->lock);
          }
