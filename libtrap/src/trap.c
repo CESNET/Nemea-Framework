@@ -3340,6 +3340,10 @@ int trap_ctx_cmp_data_fmt(const char *sender_ifc_data_fmt, const char *receiver_
                memcmp(field_type_sender, field_type_receiver, field_type_receiver_length) == 0);
       }
       if (!compare_str) {
+         VERBOSE(CL_ERROR, "TRAP Negotiation failed: required field `%.*s %.*s` not offered by sender.\nReceived specifier: %s",
+                 field_type_receiver_length, field_type_receiver,
+                 field_name_receiver_length, field_name_receiver,
+                 sender_ifc_data_fmt);
          return TRAP_E_FIELDS_MISMATCH; // one of receiver fields not found
       }
       // reset pointer to beginning of sender's set of fields
