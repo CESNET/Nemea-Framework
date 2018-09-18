@@ -1,3 +1,8 @@
+2018-08-26 (Tomas Jansky): libtrap: substituted locking termination flag with atomic operation
+2018-08-26 (Tomas Jansky): libtrap: bugfix in TCPIP interface
+2018-08-23 (Tomas Jansky): libtrap: file ifc: fixed memory leak
+2018-08-07 (Tomas Cejka): trap_stats: improved input - path to socket (#96)
+
 2018-07-28 (Ladislav Macoun): libtrap: Changed old inoperative links to documentation with gh-pages doc.
 2018-07-25 (Jaroslav Hlavac): tls_ifc.c: bugfix where the ifc could crash
 2018-07-25 (Jaroslav Hlavac): tls_ifc.c:freed structs set to NULL where needed

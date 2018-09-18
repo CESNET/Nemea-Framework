@@ -1,3 +1,8 @@
+2018-09-18 libtrap-0.11.7
+	* libtrap:
+		Bugfixes and performance improvement (locks rework)
+	* trap_stats:
+		Improved trap_stats argument to allow passing just PID
 2018-07-30 libtrap-0.11.6
 	* libtrap:
 		bugfixes of TLS IFC
