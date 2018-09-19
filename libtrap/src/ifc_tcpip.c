@@ -1791,9 +1791,11 @@ static void *accept_clients_thread(void *arg)
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
                } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
+                  cl->sd = -1;
                   goto refuse_client;
                } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
+                  cl->sd = -1;
                   goto refuse_client;
                }
 #endif
@@ -1809,7 +1811,6 @@ refuse_client:
                      c->connected_clients, c->clients_arr_size);
                shutdown(newclient, SHUT_RDWR);
                close(newclient);
-               cl->sd = -1;
             }
             pthread_mutex_unlock(&c->lock);
          }
