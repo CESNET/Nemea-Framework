@@ -849,10 +849,10 @@ void ur_clear_varlen(const ur_template_t * tmplt, void *rec);
 uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec);
 
 /** Create UniRec record.
- * Allocate memory for a record with given template. It allocates N+M
- * bytes, where N is the size of static part of the record (inferred
- * from template), and M is the size of variable part (variable-length
- * fields), which must be provided by caller.
+ * Allocate and zero memory for a record with given template. It
+ * allocates N+M bytes, where N is the size of static part of the
+ * record (inferred from template), and M is the size of variable part
+ * (variable-length fields), which must be provided by caller.
  * No more than 65535 bytes is allocated (even if N+M is greater),
  * since this is the maximal possible size of UniRec record.
  * \param[in] tmplt Pointer to UniRec template.
