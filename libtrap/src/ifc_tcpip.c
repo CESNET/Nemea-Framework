@@ -453,7 +453,12 @@ head_wait:
          if (retval == TRAP_E_IO_ERROR) {
             /* disconnected -> drop data */
             goto discard;
+         } else if (retval == TRAP_E_TIMEOUT) {
+            client_socket_disconnect(priv);
+            DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv EAGAIN during HEAD recv"));
+            goto discard;
          }
+
          goto reset;
       } else {
          /* we expect to receive data */
