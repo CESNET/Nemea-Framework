@@ -131,7 +131,7 @@ typedef enum trap_verbose_level {
 #define TRAP_IFC_TIMEOUT 500000 ///< size of default timeout on output interfaces in microseconds
 /**@}*/
 
-#ifdef DEBUG
+#ifndef NDEBUG
    /*! \brief Debug message macro if DEBUG macro is defined
     *
     * now 3 known DEBUG LEVELS
@@ -168,7 +168,7 @@ static inline int __attribute__ ((format (printf, 2, 3))) MSG(int l, const char 
 
 void trap_verbose_msg(int level, char *string);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 /*! Macro for verbose message */
 #define VERBOSE(level,format,args...) if (trap_verbose>=level) { \
    snprintf(trap_err_msg,4095,"%s:%d "format,__FILE__, __LINE__, ##args); \
