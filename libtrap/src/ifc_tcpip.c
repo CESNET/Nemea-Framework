@@ -197,44 +197,38 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
        */
       retval = select(config->sd + 1, &set, NULL, NULL, tm);
       if (retval > 0) {
-         if (FD_ISSET(config->sd, &set)) {
-            do {
-               if (tm != NULL) {
-                  recvb = recv(config->sd, data_p, numbytes, MSG_NOSIGNAL | MSG_DONTWAIT);
-               } else {
-                  recvb = recv(config->sd, data_p, numbytes, MSG_NOSIGNAL);
+         do {
+            recvb = recv(config->sd, data_p, numbytes, 0);
+            if (recvb < 1) {
+               if (recvb == 0) {
+                  errno = EPIPE;
                }
-               if (recvb < 1) {
-                  if (recvb == 0) {
-                     errno = EPIPE;
-                  }
-                  switch (errno) {
-                  case EINTR:
-                     if (config->is_terminated == 1) {
-                        client_socket_disconnect(priv);
-                        return TRAP_E_TERMINATED;
-                     }
-                     break;
-                  case EBADF:
-                  case EPIPE:
+               switch (errno) {
+               case EINTR:
+                  if (config->is_terminated == 1) {
                      client_socket_disconnect(priv);
-                     return TRAP_E_IO_ERROR;
-                  case EAGAIN:
-                     (*size) = numbytes;
-                     (*data) = data_p;
-                     return TRAP_E_TIMEOUT;
+                     return TRAP_E_TERMINATED;
                   }
+                  break;
+               case ECONNRESET:
+               case EBADF:
+               case EPIPE:
+                  client_socket_disconnect(priv);
+                  return TRAP_E_IO_ERROR;
+               case EAGAIN:
+                  /* This should never happen with blocking socket. */
+                  (*size) = numbytes;
+                  (*data) = data_p;
+                  return TRAP_E_TIMEOUT;
                }
-               numbytes -= recvb;
-               data_p += recvb;
-               DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "receive_part got %" PRId32 "B", recvb));
-            } while (numbytes > 0);
-            (*size) = numbytes;
-            (*data) = data_p;
-            return TRAP_E_OK;
-         } else {
-            continue;
-         }
+            }
+            numbytes -= recvb;
+            data_p += recvb;
+            DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "receive_part got %" PRId32 "B", recvb));
+         } while (numbytes > 0);
+         (*size) = numbytes;
+         (*data) = data_p;
+         return TRAP_E_OK;
       } else if ((retval == 0) || (retval < 0 && errno == EINTR)) {
          /* Timeout expired or signal received.  Caller of this function
           * has to decide to call this function again or not according
@@ -333,7 +327,7 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
 
    /* convert libtrap timeout into timespec and timeval */
    trap_set_timeouts(timeout, &tm, NULL);
-   temptm = (timeout==TRAP_WAIT?NULL:&tm);
+   temptm = (timeout == TRAP_WAIT) ? NULL : &tm;
 
    while (config->is_terminated == 0) {
 init:
@@ -454,6 +448,7 @@ head_wait:
             /* disconnected -> drop data */
             goto discard;
          }
+
          goto reset;
       } else {
          /* we expect to receive data */
@@ -842,11 +837,16 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
          if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             continue;
          }
-         if ((options = fcntl(sockfd, F_GETFL)) != -1) {
-            if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
-               VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
+
+         /* Change the socket to be non-blocking if required by user. */
+         if (tv != NULL) {
+            if ((options = fcntl(sockfd, F_GETFL)) != -1) {
+               if (fcntl(sockfd, F_SETFL, O_NONBLOCK | options) == -1) {
+                  VERBOSE(CL_ERROR, "Could not set socket to non-blocking.");
+               }
             }
          }
+
          if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
             if (errno != EINPROGRESS && errno != EAGAIN) {
                DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
@@ -1265,7 +1265,7 @@ blocking_repeat:
       }
       if (FD_ISSET(cl->sd, &disset)) {
          /* client disconnects */
-         readbytes = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, MSG_NOSIGNAL | MSG_DONTWAIT);
+         readbytes = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
          if (readbytes < 1) {
             VERBOSE(CL_VERBOSE_LIBRARY, "Disconnected client.");
             result = TRAP_E_IO_ERROR;
