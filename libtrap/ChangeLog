@@ -1,3 +1,9 @@
+2018-10-09 libtrap-0.11.8
+	* libtrap:
+		Fix non-blocking recv in libtrap.
+		Fix possible write to uninitialized address.
+		Improved VERBOSE CPP macro to print file&line in debug.
+
 2018-09-18 libtrap-0.11.7
 	* libtrap:
 		Bugfixes and performance improvement (locks rework)

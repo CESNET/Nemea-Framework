@@ -1,3 +1,7 @@
+2018-09-28 (Tomáš Jánský): libtrap: temporary fix of segfaults - nonblocking receive (#103)
+2018-09-27 (Tomas Jansky): libtrap: VERBOSE now prints file and line if configured with --enable-debug
+2018-09-19 (Tomas Jansky): libtrap: tcpip: fixed possible write to uninitialized address
+
 2018-08-26 (Tomas Jansky): libtrap: substituted locking termination flag with atomic operation
 2018-08-26 (Tomas Jansky): libtrap: bugfix in TCPIP interface
 2018-08-23 (Tomas Jansky): libtrap: file ifc: fixed memory leak
