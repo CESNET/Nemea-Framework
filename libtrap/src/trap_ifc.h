@@ -5,12 +5,11 @@
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \author Jan Neuzil <neuzija1@fit.cvut.cz>
  * \author Marek Svepes <svepemar@fit.cvut.cz>
- * \date 2013
- * \date 2014
- * \date 2015
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2013 -2018
  */
 /*
- * Copyright (C) 2013-2015 CESNET
+ * Copyright (C) 2013-2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -248,7 +247,7 @@ typedef struct trap_output_ifc_s {
     */
    char bufferswitch_fixed;
 
-   char bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
+   volatile int bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
    int32_t datatimeout;            ///< Timeout for *_send() calls
 
    /**
