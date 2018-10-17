@@ -538,6 +538,7 @@ static void *trap_automatic_flush_thr(void *arg)
 {
    int i, n;
    int64_t usec;
+   uint32_t j;
    trap_ctx_priv_t *ctx = (trap_ctx_priv_t *) arg;
 
    n = trap_init_ifcs_timeouts(ctx);
@@ -549,12 +550,12 @@ static void *trap_automatic_flush_thr(void *arg)
 
       VERBOSE(CL_VERBOSE_BASIC, "--------------- STATS --------------- ");
       VERBOSE(CL_VERBOSE_BASIC, "------------- INPUT IFC ------------- ");
-      for (uint32_t i = 0; i < ctx->num_ifc_in; i++) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "IFC[%" PRIu32 "]: recv buf: %" PRIu64 ", msg: %" PRIu64 ".", i, __sync_fetch_and_add(&ctx->counter_recv_buffer[i], 0), __sync_fetch_and_add(&ctx->counter_recv_message[i], 0));
+      for (j = 0; j < ctx->num_ifc_in; j++) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "IFC[%" PRIu32 "]: recv buf: %" PRIu64 ", msg: %" PRIu64 ".", j, __sync_fetch_and_add(&ctx->counter_recv_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_recv_message[j], 0));
       }
       VERBOSE(CL_VERBOSE_BASIC, "------------- OUTPUT IFC ------------ ");
-      for (uint32_t i = 0; i < ctx->num_ifc_out; i++) {
-         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: sent buf: %" PRIu64 ", msg: %" PRIu64 ", drop msg: %" PRIu64 ", flush: %" PRIu64 ".", i, __sync_fetch_and_add(&ctx->counter_send_buffer[i], 0), __sync_fetch_and_add(&ctx->counter_send_message[i], 0), __sync_fetch_and_add(&ctx->counter_dropped_message[i], 0), __sync_fetch_and_add(&ctx->counter_autoflush[i], 0));
+      for (j = 0; j < ctx->num_ifc_out; j++) {
+         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: sent buf: %" PRIu64 ", msg: %" PRIu64 ", drop msg: %" PRIu64 ", flush: %" PRIu64 ".", j, __sync_fetch_and_add(&ctx->counter_send_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_send_message[j], 0), __sync_fetch_and_add(&ctx->counter_dropped_message[j], 0), __sync_fetch_and_add(&ctx->counter_autoflush[j], 0));
       }
       VERBOSE(CL_VERBOSE_BASIC, "------------------------------------- ");
 
