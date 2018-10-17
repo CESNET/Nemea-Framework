@@ -325,11 +325,17 @@ static inline void insert_into_buffer(trap_output_ifc_t *priv, const void *data,
    priv->buffer_index += size + sizeof size;
 }
 
-static inline void buffer_finish(trap_output_ifc_t *priv)
+static inline void reset_buffer(trap_output_ifc_t *oifc)
 {
-   trap_buffer_header_t *h = (trap_buffer_header_t *) priv->buffer_header;
-   h->data_length = htonl(priv->buffer_index);
-   priv->buffer_occupied = 1;
+   oifc->buffer_occupied = 0;
+   oifc->buffer_index = 0;
+}
+
+static inline void buffer_finish(trap_output_ifc_t *oifc)
+{
+   trap_buffer_header_t *h = (trap_buffer_header_t *) oifc->buffer_header;
+   h->data_length = htonl(oifc->buffer_index);
+   oifc->buffer_occupied = 1;
 }
 
 /**
@@ -405,9 +411,8 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
       result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), timeout);
       if (result == TRAP_E_OK) {
          /* Reset buffer and insert the message if it was not inserted. */
+         reset_buffer(oifc);
          __sync_fetch_and_add(&oifc->bufferflush, 1);
-         oifc->buffer_occupied = 0;
-         oifc->buffer_index = 0;
          __sync_fetch_and_add(&ctx->counter_send_buffer[ifc], 1);
          if (reinsert) {
             insert_into_buffer(oifc, data, size);
@@ -421,7 +426,7 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
 
          /* Drop buffer if no client is connected. */
          if (oifc->get_client_count(oifc) == 0) {
-            oifc->buffer_occupied = 0;
+            reset_buffer(oifc);
          }
       }
    }
@@ -1829,12 +1834,10 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
    }
 
    /* force flush of buffer for every output ifc */
-   if (c->num_ifc_out > 0) {
-      for (i = 0; i < c->num_ifc_out; i++) {
+   for (i = 0; i < c->num_ifc_out; i++) {
          trap_ctx_ifcctl((trap_ctx_t *) c, TRAPIFC_OUTPUT, i, TRAPCTL_AUTOFLUSH_TIMEOUT, TRAP_NO_AUTO_FLUSH);
          trap_ctx_ifcctl((trap_ctx_t *) c, TRAPIFC_OUTPUT, i, TRAPCTL_SETTIMEOUT, 100000);
          trap_ctx_send_flush((trap_ctx_t *) c, i);
-      }
    }
 
    /* check if libtrap is terminated and terminate if not */
@@ -2610,13 +2613,12 @@ void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
          buffer_finish(oifc);
          result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), oifc->datatimeout);
          if (result == TRAP_E_OK) {
-            oifc->buffer_index = 0;
-            oifc->buffer_occupied = 0;
+            reset_buffer(oifc);
             __sync_fetch_and_add(&c->counter_send_buffer[ifc], 1);
          } else {
             oifc->buffer_occupied = 1;
             if (oifc->get_client_count(oifc) == 0) {
-               oifc->buffer_occupied = 0;
+               reset_buffer(oifc);
             }
          }
       }
