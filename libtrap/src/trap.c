@@ -414,7 +414,6 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
          }
       } else {
          __sync_fetch_and_add(&ctx->counter_dropped_message[ifc], 1);
-         VERBOSE(CL_VERBOSE_LIBRARY, "OK: %" PRIu64 ", timeout: %" PRIu64 ".", ctx->counter_send_message[ifc], ctx->counter_dropped_message[ifc]);
          /* Do not propagate TRAP_E_IO_ERROR. */
          if (result == TRAP_E_IO_ERROR) {
             result = TRAP_E_TIMEOUT;
@@ -543,6 +542,17 @@ static void *trap_automatic_flush_thr(void *arg)
          break;
       }
 
+      VERBOSE(CL_VERBOSE_BASIC, "--------------- STATS --------------- ");
+      VERBOSE(CL_VERBOSE_BASIC, "------------- INPUT IFC ------------- ");
+      for (uint32_t i = 0; i < ctx->num_ifc_in; i++) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "IFC[%" PRIu32 "]: recv buf: %" PRIu64 ", msg: %" PRIu64 ".", i, __sync_fetch_and_add(&ctx->counter_recv_buffer[i], 0), __sync_fetch_and_add(&ctx->counter_recv_message[i], 0));
+      }
+      VERBOSE(CL_VERBOSE_BASIC, "------------- OUTPUT IFC ------------ ");
+      for (uint32_t i = 0; i < ctx->num_ifc_out; i++) {
+         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: sent buf: %" PRIu64 ", msg: %" PRIu64 ", drop msg: %" PRIu64 ", flush: %" PRIu64 ".", i, __sync_fetch_and_add(&ctx->counter_send_buffer[i], 0), __sync_fetch_and_add(&ctx->counter_send_message[i], 0), __sync_fetch_and_add(&ctx->counter_dropped_message[i], 0), __sync_fetch_and_add(&ctx->counter_autoflush[i], 0));
+      }
+      VERBOSE(CL_VERBOSE_BASIC, "------------------------------------- ");
+
       // Checking if automatic flushing or buffering was changed or disabled
       if (__sync_fetch_and_add(&ctx->ifc_change, 0) > 0) {
          n = trap_init_ifcs_timeouts(ctx);
@@ -553,8 +563,8 @@ static void *trap_automatic_flush_thr(void *arg)
          if (n > 1) {
             qsort(ctx->ifc_autoflush_timeout, n, sizeof(struct out_ifc_timeout_s), compare_timeouts);
          }
+
          usec = ctx->ifc_autoflush_timeout[0].tm;
-         VERBOSE(CL_VERBOSE_LIBRARY, "Autoflush thread is going to sleep for %ld microseconds.", usec);
          if (sleep(usec / 1000000) != 0) {
             if (ctx->terminated) {
                break;
