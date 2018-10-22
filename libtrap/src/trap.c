@@ -7,10 +7,7 @@
  * \author Marek Svepes <svepemar@fit.cvut.cz>
  * \author Tomas Jansky <janskto1@fit.cvut.cz>
  * \author Jaroslav Hlavac <hlavaj20@fit.cvut.cz>
- * \date 2013
- * \date 2014
- * \date 2015
- * \date 2017
+ * \date 2013 - 2017
  */
 /*
  * Copyright (C) 2013-2017 CESNET
@@ -265,18 +262,19 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
    trap_input_ifc_t *ifc = &ctx->in_ifc_list[ifc_idx];
 
    pthread_mutex_lock(&ifc->ifc_mtx);
-   if (ifc->buffer_full == 0) {
-      uint32_t tempbufheader = 0;
+   /* Receive new buffer from the input interface if the buffer is empty. */
+   if (ifc->buffer_unread_bytes == 0) {
+      uint32_t buffer_size_tmp = 0;
 
       ifc->buffer_pointer = ifc->buffer;
-      result = ifc->recv(ifc->priv, ifc->buffer, &tempbufheader, timeout);
-      DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Received new buffer with size: %" PRIu32 ".", tempbufheader));
+      result = ifc->recv(ifc->priv, ifc->buffer, &buffer_size_tmp, timeout);
+      DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Received new buffer with size: %" PRIu32 ".", buffer_size_tmp));
       if (result == TRAP_E_OK) {
-         ifc->buffer_full = tempbufheader;
+         ifc->buffer_unread_bytes = buffer_size_tmp;
          __sync_fetch_and_add(&ctx->counter_recv_buffer[ifc_idx], 1);
 
 #ifdef BUFFERING_CHECK_HEADERS
-         if (trap_check_buffer_content(ifc->buffer, tempbufheader) != 0) {
+         if (trap_check_buffer_content(ifc->buffer, buffer_size_tmp) != 0) {
             VERBOSE(CL_ERROR, "Buffer is not valid.");
          }
 #endif
@@ -285,19 +283,23 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
       }
    }
 
-   if (ifc->buffer_full > 0) {
-      /* get message from buffer */
+   if (ifc->buffer_unread_bytes > 0) {
+      /* Get message from buffer. */
       (*size) = ntohs(*((uint16_t *) ifc->buffer_pointer));
       (*data) = (ifc->buffer_pointer + sizeof(*size));
-      /* decrease buffer_full size by returned payload and its header */
-      DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Read: %" PRIu64 " header bytes, %" PRIu16 " data bytes. Remaining bytes: %" PRIu64 "", sizeof(*size), *size, ifc->buffer_full - (*size + sizeof(*size))));
-      if (ifc->buffer_full < (*size + sizeof(*size))) {
-         ifc->buffer_full = 0;
+
+      uint32_t msg_size = (*size) + sizeof(*size);
+      DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Read: %" PRIu64 " header bytes, %" PRIu16 " data bytes. Remaining bytes: %" PRIu32 "", sizeof(*size), *size, ifc->buffer_unread_bytes - msg_size));
+
+      /* Check whether the buffer data were not malformed. */
+      if (ifc->buffer_unread_bytes < msg_size) {
+         ifc->buffer_unread_bytes = 0;
          ifc->buffer_pointer = ifc->buffer;
-         VERBOSE(CL_WARNING, "Attempt to read: %" PRIu64 " header bytes, %" PRIu16 " data bytes. However, only %" PRIu32 " bytes remain.", sizeof(*size), *size, ifc->buffer_full);
+         VERBOSE(CL_WARNING, "Attempt to read: %" PRIu64 " header bytes, %" PRIu16 " data bytes. However, only %" PRIu32 " bytes remain.", sizeof(*size), *size, ifc->buffer_unread_bytes);
       } else {
-         ifc->buffer_full -= (*size + sizeof(*size));
-         ifc->buffer_pointer += (*size) + sizeof(*size);
+         /* Move to the next message. */
+         ifc->buffer_unread_bytes -= msg_size;
+         ifc->buffer_pointer += msg_size;
       }
 
       result = TRAP_E_OK;
@@ -322,7 +324,7 @@ static inline void insert_into_buffer(trap_output_ifc_t *priv, const void *data,
    uint16_t *msize = (uint16_t *) &priv->buffer[priv->buffer_index];
    (*msize) = htons(size);
    memcpy((void *) (msize + 1), data, size);
-   priv->buffer_index += size + sizeof size;
+   priv->buffer_index += size + sizeof(size);
 }
 
 static inline void reset_buffer(trap_output_ifc_t *oifc)
@@ -500,25 +502,25 @@ void *reader_threads_fn(void *arg)
 }
 
 /**
- * Function to initialize or change the array of structures with information about timeouts
- * on output interfaces.
+ * Initialize or update a list of autoflush timeouts of output interfaces.
  *
- * @param[in,out] ctx         pointer to the private libtrap context data (trap_ctx_init())
- * @return Number of output interfaces, where the timeout is set.
+ * \param[in,out] ctx pointer to the private libtrap context data (trap_ctx_init())
+ *
+ * \return Number of output interfaces, where the autoflush timeout is set.
  */
-static inline int trap_init_ifcs_timeouts(trap_ctx_priv_t *ctx)
+static inline int trap_copy_autoflush(trap_ctx_priv_t *ctx)
 {
    int i, idx;
-   struct out_ifc_timeout_s *out_ifc_timeout = ctx->ifc_autoflush_timeout;
+   ifc_autoflush_t *timeouts = ctx->ifc_autoflush_timeout;
    idx = 0;
    for (i = 0; i < ctx->num_ifc_out; i++) {
       trap_output_ifc_t *oifc = &ctx->out_ifc_list[i];
 
       pthread_mutex_lock(&oifc->ifc_mtx);
       if ((oifc->timeout != TRAP_NO_AUTO_FLUSH) && (oifc->bufferswitch != 0)) {
-         out_ifc_timeout[idx].idx = i;
-         out_ifc_timeout[idx].tm = oifc->timeout;
-         out_ifc_timeout[idx].tm_backup = oifc->timeout;
+         timeouts[idx].idx = i;
+         timeouts[idx].tm = oifc->timeout;
+         timeouts[idx].tm_backup = oifc->timeout;
          idx++;
       }
       pthread_mutex_unlock(&oifc->ifc_mtx);
@@ -541,7 +543,7 @@ static void *trap_automatic_flush_thr(void *arg)
    uint32_t j;
    trap_ctx_priv_t *ctx = (trap_ctx_priv_t *) arg;
 
-   n = trap_init_ifcs_timeouts(ctx);
+   n = trap_copy_autoflush(ctx);
 
    while (1) {
       if (ctx->terminated) {
@@ -551,7 +553,7 @@ static void *trap_automatic_flush_thr(void *arg)
       VERBOSE(CL_VERBOSE_BASIC, "--------------- STATS --------------- ");
       VERBOSE(CL_VERBOSE_BASIC, "------------- INPUT IFC ------------- ");
       for (j = 0; j < ctx->num_ifc_in; j++) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "IFC[%" PRIu32 "]: recv buf: %" PRIu64 ", msg: %" PRIu64 ".", j, __sync_fetch_and_add(&ctx->counter_recv_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_recv_message[j], 0));
+         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: recv buf: %" PRIu64 ", msg: %" PRIu64 ".", j, __sync_fetch_and_add(&ctx->counter_recv_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_recv_message[j], 0));
       }
       VERBOSE(CL_VERBOSE_BASIC, "------------- OUTPUT IFC ------------ ");
       for (j = 0; j < ctx->num_ifc_out; j++) {
@@ -561,13 +563,13 @@ static void *trap_automatic_flush_thr(void *arg)
 
       // Checking if automatic flushing or buffering was changed or disabled
       if (__sync_fetch_and_add(&ctx->ifc_change, 0) > 0) {
-         n = trap_init_ifcs_timeouts(ctx);
+         n = trap_copy_autoflush(ctx);
       }
 
       // Sort array by timeout if we have more than one output interface
       if (n != 0) {
          if (n > 1) {
-            qsort(ctx->ifc_autoflush_timeout, n, sizeof(struct out_ifc_timeout_s), compare_timeouts);
+            qsort(ctx->ifc_autoflush_timeout, n, sizeof(ifc_autoflush_t), compare_timeouts);
          }
 
          usec = ctx->ifc_autoflush_timeout[0].tm;
@@ -896,11 +898,11 @@ int trap_finalize()
 void trap_get_internal_buffer(trap_ctx_priv_t *ctx, uint16_t ifc_idx, const void **data, uint32_t *size)
 {
    (*data) = ctx->in_ifc_list[ifc_idx].buffer;
-   (*size) = ctx->in_ifc_list[ifc_idx].buffer_full;
+   (*size) = ctx->in_ifc_list[ifc_idx].buffer_unread_bytes;
 
    /* mark internal buffer as free for next reading */
    ctx->in_ifc_list[ifc_idx].buffer_pointer = ctx->in_ifc_list[ifc_idx].buffer;
-   ctx->in_ifc_list[ifc_idx].buffer_full = 0;
+   ctx->in_ifc_list[ifc_idx].buffer_unread_bytes = 0;
 }
 
 /** Read data from input interface.
@@ -1585,7 +1587,7 @@ void trap_send_flush(uint32_t ifc)
 
 static int compare_timeouts (const void *a, const void *b)
 {
-   return ((*(struct out_ifc_timeout_s *)a).tm - (*(struct out_ifc_timeout_s *)b).tm);
+   return ((*(ifc_autoflush_t *)a).tm - (*(ifc_autoflush_t *)b).tm);
 }
 
 /**
@@ -1726,6 +1728,8 @@ int trap_ctx_terminate(trap_ctx_t *ctx)
       }
    }
 
+   /* Cancel autoflush thread... it might be stuck in select() or send()
+      on an output interface and thus holding the interface lock. */
    if (c->timeout_thread_initialized == 1) {
       pthread_cancel(c->timeout_thread);
    }
@@ -2072,7 +2076,7 @@ static inline void handle_outifc_setters(trap_output_ifc_t *ifc, char *params)
          ifc->timeout_fixed = 1;
       } else {
          if (sscanf(strval, "%"SCNi64, &ifc->timeout) == 1) {
-            ifc->datatimeout_fixed = 1;
+            ifc->timeout_fixed = 1;
          }
       }
       /* clean the parameter because it was processed */
@@ -2263,6 +2267,8 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
    ctx->counter_recv_buffer = (uint64_t *) calloc(ctx->num_ifc_in, sizeof(uint64_t));
    ctx->counter_dropped_message = (uint64_t *) calloc(ctx->num_ifc_out, sizeof(uint64_t));
 
+   ctx->terminated = 0;
+
    // Create input interfaces
    if (ctx->num_ifc_in > 0) {
       ctx->in_ifc_list = (trap_input_ifc_t *) calloc(ctx->num_ifc_in, sizeof(trap_input_ifc_t));
@@ -2334,7 +2340,7 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
          trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for input ifc buffer.");
          goto freein_on_failed;
       }
-      ctx->in_ifc_list[i].buffer_full = 0;
+      ctx->in_ifc_list[i].buffer_unread_bytes = 0;
       ctx->in_ifc_list[i].buffer_pointer = ctx->in_ifc_list[i].buffer;
       ctx->in_ifc_list[i].ifc_type = ifc_spec.types[i];
 
@@ -2384,7 +2390,7 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
    }
 
    if (ctx->num_ifc_out > 0) {
-      ctx->ifc_autoflush_timeout = calloc(ctx->num_ifc_out, sizeof(struct out_ifc_timeout_s));
+      ctx->ifc_autoflush_timeout = calloc(ctx->num_ifc_out, sizeof(ifc_autoflush_t));
       // Create thread for handling timeouts outputs interfaces
       if (pthread_create(&ctx->timeout_thread, NULL, trap_automatic_flush_thr, (void *) ctx) != 0) {
          VERBOSE(CL_ERROR, "Creation of timeout handler thread failed.");
@@ -2608,24 +2614,23 @@ void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
    }
 
    trap_output_ifc_t *oifc = &c->out_ifc_list[ifc];
-   if (pthread_mutex_trylock(&oifc->ifc_mtx) == 0) {
-      if (oifc->buffer_index != 0) {
-         int result;
-         buffer_finish(oifc);
-         result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), oifc->datatimeout);
-         if (result == TRAP_E_OK) {
+   pthread_mutex_lock(&oifc->ifc_mtx);
+   if (oifc->buffer_index != 0) {
+      int result;
+      buffer_finish(oifc);
+      result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), oifc->datatimeout);
+      if (result == TRAP_E_OK) {
+         reset_buffer(oifc);
+         __sync_fetch_and_add(&c->counter_send_buffer[ifc], 1);
+      } else {
+         oifc->buffer_occupied = 1;
+         if (oifc->get_client_count(oifc) == 0) {
             reset_buffer(oifc);
-            __sync_fetch_and_add(&c->counter_send_buffer[ifc], 1);
-         } else {
-            oifc->buffer_occupied = 1;
-            if (oifc->get_client_count(oifc) == 0) {
-               reset_buffer(oifc);
-            }
          }
       }
-
-      pthread_mutex_unlock(&oifc->ifc_mtx);
    }
+
+   pthread_mutex_unlock(&oifc->ifc_mtx);
 }
 
 /**
@@ -3109,9 +3114,9 @@ int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, ui
       inifc = &c->in_ifc_list[ifc_idx];
 
       pthread_mutex_lock(&inifc->ifc_mtx);
-      if (inifc->data_type == TRAP_FMT_RAW) {
+      if (inifc->data_type == TRAP_FMT_UNKNOWN) {
          pthread_mutex_unlock(&inifc->ifc_mtx);
-         return trap_error(ctx, TRAP_E_BADPARAMS);
+         return trap_error(ctx, TRAP_E_NOT_INITIALIZED);
       }
 
       if (inifc->client_state == FMT_OK || inifc->client_state == FMT_CHANGED) {
@@ -3136,9 +3141,9 @@ int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, ui
       outifc = &c->out_ifc_list[ifc_idx];
 
       pthread_mutex_lock(&outifc->ifc_mtx);
-      if (outifc->data_type == TRAP_FMT_RAW) {
+      if (outifc->data_type == TRAP_FMT_UNKNOWN) {
          pthread_mutex_unlock(&outifc->ifc_mtx);
-         return trap_error(ctx, TRAP_E_BADPARAMS);
+         return trap_error(ctx, TRAP_E_NOT_INITIALIZED);
       }
 
       (*data_type) = outifc->data_type;

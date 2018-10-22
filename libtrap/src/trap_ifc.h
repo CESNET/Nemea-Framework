@@ -171,7 +171,7 @@ typedef struct trap_input_ifc_s {
    void *priv;                     ///< Pointer to instance's private data
    char *buffer;                   ///< Internal pointer to buffer for messages
    char *buffer_pointer;           ///< Internal pointer to current message in buffer
-   uint32_t buffer_full;           ///< Internal used space in message buffer (0 for empty buffer)
+   uint32_t buffer_unread_bytes;   ///< Number of unread bytes in buffer.
    int32_t datatimeout;            ///< Timeout for *_recv() calls
 
    /**

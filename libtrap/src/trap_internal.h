@@ -203,16 +203,13 @@ struct reader_threads_s {
 };
 
 /**
- * List of all output interfaces and their timeouts.
- *
- * It is used by automatic flush buffer thread to send buffer after
- * a timeout on one of the output interfaces has elapsed.
+ * \brief List of autoflush timeouts of output interfaces.
  */
-struct out_ifc_timeout_s {
-   int idx;            /**< index of output interface */
-   int64_t tm;         /**< timeout to be elapsed */
-   int64_t tm_backup;  /**< backup value of the timeout */
-};
+typedef struct autoflush_timeouts {
+   int idx;            /**< Index of output interface. */
+   int64_t tm;         /**< Autoflush timeout to be elapsed. */
+   int64_t tm_backup;  /**< Backup value of the autoflush timeout. */
+} ifc_autoflush_t;
 
 /**
  * Libtrap context structure.
@@ -231,7 +228,7 @@ struct trap_ctx_priv_s {
    volatile int terminated;
 
    /**
-    * Is output interface parameter changed? (0 ~ false, should run)
+    * Number of interface changes waiting to be applied.
     */
    volatile int ifc_change;
 
@@ -320,9 +317,9 @@ struct trap_ctx_priv_s {
    int timeout_thread_initialized;
 
    /**
-    * Timeouts for autoflush
+    * Timeouts for autoflush thread.
     */
-   struct out_ifc_timeout_s *ifc_autoflush_timeout;
+   ifc_autoflush_t *ifc_autoflush_timeout;
 
    /**
     * Service thread that enables communication with module
