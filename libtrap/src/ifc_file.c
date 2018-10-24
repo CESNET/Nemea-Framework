@@ -83,7 +83,7 @@ void file_destroy(void *priv)
 
    if (config) {
       if (config->file_cnt != 0) {
-         for (i = 0; i < config->file_cnt; i++) {
+         for (i = config->file_index + 1; i < config->file_cnt; i++) {
             free(config->files[i]);
          }
 
@@ -341,7 +341,7 @@ int file_recv(void *priv, void *data, uint32_t *size, int timeout)
    }
 
 #ifdef ENABLE_NEGOTIATION
-neg_start:
+   neg_start:
    if (config->neg_initialized == 0) {
       switch(input_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE)) {
       case NEG_RES_FMT_UNKNOWN:
@@ -409,7 +409,7 @@ neg_start:
    /* Reads (*size) bytes from the file */
    loaded = fread(data, 1, (*size), config->fd);
    if (loaded != (*size)) {
-         VERBOSE(CL_ERROR, "INPUT FILE IFC[%"PRIu32"]: Read incorrect number of bytes from file: %s. Attempted to read %d bytes, but the actual count of bytes read was %zu.", config->ifc_idx, config->filename, (*size), loaded);
+      VERBOSE(CL_ERROR, "INPUT FILE IFC[%"PRIu32"]: Read incorrect number of bytes from file: %s. Attempted to read %d bytes, but the actual count of bytes read was %zu.", config->ifc_idx, config->filename, (*size), loaded);
    }
 
    return TRAP_E_OK;
@@ -649,6 +649,12 @@ int32_t file_get_client_count(void *priv)
    return 1;
 }
 
+int8_t file_get_client_timers_json(void *priv, json_t *client_timers_arr)
+{
+   /* do not collect client statistics for this interface */
+   return 1;
+}
+
 char *file_send_ifc_get_id(void *priv)
 {
    return ((priv) ? ((file_private_t *) priv)->filename : NULL);
@@ -786,6 +792,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    ifc->terminate = file_terminate;
    ifc->destroy = file_destroy;
    ifc->get_client_count = file_get_client_count;
+   ifc->get_client_timers_json = file_get_client_timers_json;
    ifc->create_dump = file_create_dump;
    ifc->priv = priv;
    ifc->get_id = file_send_ifc_get_id;
@@ -804,4 +811,3 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 /**
  * @}
  *//* ifc modules */
-

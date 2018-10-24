@@ -2,12 +2,10 @@
  * \file get_stats_serv_ifc.c
  * \brief Simple program which connects to service interface of a nemea module and receives module statistics (interface counters - send, received messages of every interface etc.).
  * \author Marek Svepes <svepemar@fit.cvut.cz>
- * \author Tomas Cejka <cejkat@cesnet.cz>
  * \date 2015
- * \date 2018
  */
 /*
- * Copyright (C) 2015-2018 CESNET
+ * Copyright (C) 2015 CESNET
  *
  * LICENSE TERMS
  *
@@ -43,15 +41,12 @@
  *
  */
 
-#define _GNU_SOURCE
-
 #include <unistd.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/un.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <getopt.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -64,20 +59,20 @@
 #define SERVICE_OK_REPLY 12
 
 typedef struct service_msg_header_s {
-   uint8_t com;
-   uint32_t data_size;
+    uint8_t com;
+    uint32_t data_size;
 } service_msg_header_t;
 
 union tcpip_socket_addr {
-   struct addrinfo tcpip_addr; ///< used for TCPIP socket
-   struct sockaddr_un unix_addr; ///< used for path of UNIX socket
+    struct addrinfo tcpip_addr; ///< used for TCPIP socket
+    struct sockaddr_un unix_addr; ///< used for path of UNIX socket
 };
 
 /**************************/
 
 uint8_t prog_terminated = 0;
 int sd = -1;
-char *dest_sock = NULL;
+char * dest_sock = NULL;
 
 int connect_to_module_service_ifc()
 {
@@ -89,13 +84,13 @@ int connect_to_module_service_ifc()
    snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, "%s", dest_sock);
    sd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (sd == -1) {
-         return -1;
+      return -1;
    }
 
    if (connect(sd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) == -1) {
-         close(sd);
-         sd = -1;
-         return -1;
+      close(sd);
+      sd = -1;
+      return -1;
    } else {
       return 0;
    }
@@ -104,6 +99,7 @@ int connect_to_module_service_ifc()
 int decode_cnts_from_json(char **data)
 {
    size_t arr_idx = 0;
+   size_t c_arr_idx = 0;
 
    uint64_t ifc_cnts[4];
    memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
@@ -123,21 +119,28 @@ int decode_cnts_from_json(char **data)
    uint8_t ifc_state = 0;
    int32_t num_clients = 0;
 
+   json_t *val = NULL;
+   json_t *client_timers_arr = NULL;
+   json_t *client = NULL;
+   uint32_t client_timer_last;
+   uint64_t client_timer_total;
+   uint32_t client_id;
+
    /***********************************/
 
    // Parse received modules counters in json format
    json_struct = json_loads(*data , 0, &error);
-    if (json_struct == NULL) {
-        printf("[ERROR] Could not convert modules stats to json structure on line %d: %s\n", error.line, error.text);
-        return -1;
-    }
+   if (json_struct == NULL) {
+      printf("[ERROR] Could not convert modules stats to json structure on line %d: %s\n", error.line, error.text);
+      return -1;
+   }
 
-    // Check whether the root elem is a json object
-    if (json_is_object(json_struct) == 0) {
+   // Check whether the root elem is a json object
+   if (json_is_object(json_struct) == 0) {
       printf("[ERROR] Root elem is not a json object.\n");
       json_decref(json_struct);
       return -1;
-    }
+   }
 
 
    cnt = json_object_get(json_struct, "in_cnt");
@@ -313,6 +316,52 @@ int decode_cnts_from_json(char **data)
       num_clients = (int32_t)(json_integer_value(cnt));
 
       printf("\tID: %s, TYPE: %c, NUM_CLI: %d, SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", ifc_id, ifc_type, num_clients, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
+
+      client_timers_arr = json_object_get(out_ifc_cnts, "client_timers_arr");
+      if (json_is_array(client_timers_arr) == 0) {
+         printf("[ERROR] Value of key \"client_timers_arr\" is not a json array.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+
+      if(json_array_size(client_timers_arr) > 0)
+      {
+         printf("\tClient statistics:\n");
+         json_array_foreach(client_timers_arr, c_arr_idx, client) {
+            if (json_is_object(client) == 0) {
+               printf("[ERROR] Client timer is not a json object in received json structure.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+
+            val = json_object_get(client, "id");
+            if(val == NULL) {
+               printf("[ERROR] Could not get string value of key \"id\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_id = (uint32_t)(json_integer_value(val));
+
+            val = json_object_get(client, "timer_last");
+            if(val == NULL) {
+               printf("[ERROR] Could not get string value of key \"timer_last\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_timer_last = (uint32_t)(json_integer_value(val));
+
+            val = json_object_get(client, "timer_total");
+            if(val == NULL) {
+               printf("[ERROR] Could not get string value of key \"timer_total\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_timer_total = (uint64_t)(json_integer_value(val));
+
+            printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu\n", client_id, client_timer_last, client_timer_total);
+         }
+      }
+
       memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
    }
 
@@ -385,13 +434,9 @@ void signal_handler(int catched_signal)
 
 void print_help(char *prog)
 {
-   printf("Usage:  %s  [-s service_socket_path] [socket_identifier]\n", prog);
-   printf("Pass the path to a service socket as an argument of -s. The option -s can be ommitted. When only PID is given instead of full path, the default path is probed.\n");
+   printf("Usage:  %s  -s service_socket_path\n", prog);
    printf("\nOptional parameters:\n");
    printf("\t-1\t- quit after first read\n");
-   printf("\nExamples:\n\t%s -s /var/run/libtrap/trap-service_31270.sock\n", prog);
-   printf("\t%s 31270\n", prog);
-   printf("\t%s /var/run/libtrap/trap-service_31270.sock\n", prog);
 }
 
 int main (int argc, char **argv)
@@ -421,57 +466,25 @@ int main (int argc, char **argv)
       }
 
       switch (c) {
-      case 'h':
-         print_help(argv[0]);
-         return 0;
-      case 's':
-         dest_sock = strdup(optarg);
-         break;
-      case '1':
-         quit_after_read = 1;
-         break;
-      default:
-         print_help(argv[0]);
-         return 1;
+         case 'h':
+            print_help(argv[0]);
+              return 0;
+         case 's':
+            dest_sock = strdup(optarg);
+              break;
+         case '1':
+            quit_after_read = 1;
+              break;
+         default:
+            print_help(argv[0]);
+              return 1;
       }
    }
 
-   if (dest_sock == NULL && optind < original_argc) {
-      uint16_t pid;
-      char c;
-      if (sscanf(argv[optind], "%"SCNu16"%c", &pid, &c) == 1) {
-         /* parameter is PID */
-         char *sn;
-         if (asprintf(&sn, "service_%s", argv[optind]) == -1) {
-            fprintf(stderr, "Could not allocate memory.\n");
-            return 1;
-         }
-         if (asprintf(&dest_sock, trap_default_socket_path_format, sn) == -1) {
-            free(sn);
-            fprintf(stderr, "Could not allocate memory.\n");
-            return 1;
-         }
-         free(sn);
-      } else {
-         /* parameter is path */
-         dest_sock = strdup(argv[optind]);
-         if (dest_sock == NULL) {
-            fprintf(stderr, "Could not allocate memory.\n");
-            return 1;
-         }
-      }
-      struct stat fs;
-      if (stat(dest_sock, &fs) == -1) {
-         fprintf(stderr, "Socket does not exist (%s) %s.\n", dest_sock, strerror(errno));
-         free(dest_sock);
-         return 1;
-      }
-   } else if (optind < original_argc) {
+   if (original_argc != optind || original_argc < 3) {
       print_help(argv[0]);
-      return 0;
-   }
-
-   if (!quit_after_read) {
+      return 1;
+   } else if (!quit_after_read) {
       printf("\x1b[31;1m""Use Control+C to stop me...\n""\x1b[0m");
       printf("Legend:\n"
              "\tIS_CONN (is connected)\n"
@@ -488,7 +501,7 @@ int main (int argc, char **argv)
 
    // Connect to modules service interface
    if (connect_to_module_service_ifc() == -1) {
-      printf("Could not connect to service ifc (path: %s).\n", dest_sock);
+      printf("Could not connect to service ifc %s\n", dest_sock);
       return 0;
    }
 

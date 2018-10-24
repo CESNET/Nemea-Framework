@@ -97,6 +97,12 @@
 #ifndef MIN
 #define MIN(a,b) ((a)>(b)?(b):(a))
 #endif
+#define CHECK_AND_FREE(ptr, free_func) { \
+   if (ptr) { \
+      free_func(ptr); \
+      (ptr) = NULL; \
+   } \
+}
 
 static SSL_CTX *tlsserver_create_context()
 {
@@ -109,7 +115,6 @@ static SSL_CTX *tlsserver_create_context()
    if (!ctx) {
       perror("Unable to create SSL context");
       ERR_print_errors_fp(stderr);
-      return NULL;
    }
 
 #if defined(SSL_CTX_set_ecdh_auto)
@@ -124,7 +129,7 @@ static SSL_CTX *tlsserver_create_context()
 static SSL_CTX *tlsclient_create_context()
 {
    const SSL_METHOD *method;
-   SSL_CTX *ctx = NULL;
+   SSL_CTX *ctx;
 
    method = SSLv23_client_method();
 
@@ -153,14 +158,14 @@ static int verify_certificate(SSL *arg)
       VERBOSE(CL_ERROR, "Could not retrieve peer certificate file.");
       return EXIT_FAILURE;
    }
-   
+
    if (SSL_get_verify_result(arg) == X509_V_OK) {
       ret = EXIT_SUCCESS;
    } else {
       ret = EXIT_FAILURE;
    }
-   
-   X509_free(cert);
+
+   CHECK_AND_FREE(cert, X509_free);
    return ret;
 }
 
@@ -191,8 +196,8 @@ static int tls_server_configure_ctx(const char *cert, SSL_CTX *ctx)
    SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
    SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_1);
 
-   X509_free(certificate);
-   BIO_free_all(bio_cert);
+   CHECK_AND_FREE(certificate, X509_free);
+   CHECK_AND_FREE(bio_cert, BIO_free_all);
    return EXIT_SUCCESS;
 }
 
@@ -214,14 +219,14 @@ static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt, con
    ret = SSL_CTX_use_certificate_chain_file(ctx, crt);
    if (ret != 1) {
       VERBOSE(CL_ERROR, "Loading certificate (%s) failed. %s",
-            crt, ERR_reason_error_string(ERR_get_error()));
+              crt, ERR_reason_error_string(ERR_get_error()));
       return EXIT_FAILURE;
    }
 
    ret = SSL_CTX_use_PrivateKey_file(ctx, key, SSL_FILETYPE_PEM);
    if (ret != 1) {
       VERBOSE(CL_ERROR, "Loading private key (%s) failed: %s",
-            key, ERR_reason_error_string(ERR_get_error()));
+              key, ERR_reason_error_string(ERR_get_error()));
       return EXIT_FAILURE;
    }
 
@@ -229,7 +234,7 @@ static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt, con
       VERBOSE(CL_ERROR, "Private key does not match the certificate public key.");
       return EXIT_FAILURE;
    }
-      
+
 
    if (SSL_CTX_load_verify_locations(ctx, ca, NULL) != 1) {
       VERBOSE(CL_ERROR, "Could not load CA location used for verification.");
@@ -246,8 +251,8 @@ static int tls_configure_ctx(SSL_CTX *ctx, const char *key, const char *crt, con
  * Internal union for host address storage, common for tcpip & unix
  */
 union tls_socket_addr {
-   struct addrinfo tls_addr; ///< used for TCPIP socket
-   struct sockaddr_un unix_addr; ///< used for path of UNIX socket
+    struct addrinfo tls_addr; ///< used for TCPIP socket
+    struct sockaddr_un unix_addr; ///< used for path of UNIX socket
 };
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024)
@@ -297,7 +302,7 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
 
    while (config->is_terminated == 0) {
       DEBUG_IFC(if (tm) {VERBOSE(CL_VERBOSE_LIBRARY, "Try to receive data in timeout %" PRIu64
-                        "s%"PRIu64"us", tm->tv_sec, tm->tv_usec)});
+         "s%"PRIu64"us", tm->tv_sec, tm->tv_usec)});
 
       FD_ZERO(&set);
       FD_SET(config->sd, &set);
@@ -315,21 +320,21 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
                      errno = EPIPE;
                   }
                   switch (errno) {
-                  case EINTR:
-                     VERBOSE(CL_ERROR, "EINTR occured");
-                     if (config->is_terminated == 1) {
+                     case EINTR:
+                        VERBOSE(CL_ERROR, "EINTR occured");
+                          if (config->is_terminated == 1) {
+                             client_socket_disconnect(priv);
+                             return TRAP_E_TERMINATED;
+                          }
+                          break;
+                     case EBADF:
+                     case EPIPE:
                         client_socket_disconnect(priv);
-                        return TRAP_E_TERMINATED;
-                     }
-                     break;
-                  case EBADF:
-                  case EPIPE:
-                     client_socket_disconnect(priv);
-                     return TRAP_E_IO_ERROR;
-                  case EAGAIN:
-                     (*size) = numbytes;
-                     (*data) = data_p;
-                     return TRAP_E_TIMEOUT;
+                          return TRAP_E_IO_ERROR;
+                     case EAGAIN:
+                        (*size) = numbytes;
+                          (*data) = data_p;
+                          return TRAP_E_TIMEOUT;
                   }
                }
                numbytes -= recvb;
@@ -437,7 +442,7 @@ int tls_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
    temptm = (timeout==TRAP_WAIT?NULL:&tm);
 
    while (config->is_terminated == 0) {
-init:
+       init:
       p = &messageframe;
       DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv INIT"));
       if (config->connected == 0) {
@@ -451,11 +456,11 @@ init:
             goto mess_wait;
          }
       }
-discard:
+       discard:
       DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv DISCARD"));
       config->data_pointer = NULL;
       goto reset;
-reset:
+       reset:
       if (config->is_terminated != 0) {
          /* TRAP_E_TERMINATED is returned outside the loop */
          break;
@@ -490,8 +495,8 @@ reset:
                   sleeptimespec.tv_sec = sleeptime / 1000000;
                   sleeptimespec.tv_nsec = (sleeptime % 1000000) * 1000;
                   DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "sleep time set %" PRIu64
-                            " us: %"PRIu64"s%"PRIu64"ns", sleeptime,
-                            sleeptimespec.tv_sec, sleeptimespec.tv_nsec));
+                                    " us: %"PRIu64"s%"PRIu64"ns", sleeptime,
+                                            sleeptimespec.tv_sec, sleeptimespec.tv_nsec));
                } else {
                   sleeptimespec.tv_sec = 1;
                   sleeptimespec.tv_nsec = 0;
@@ -521,7 +526,7 @@ reset:
             goto init;
          }
       }
-conn_wait:
+       conn_wait:
       /* check if connected -> try to connect -> check if connected; next state is RESET or HEAD_WAIT */
       /* expected next state is waiting for header */
       DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv CONN_WAIT"));
@@ -548,7 +553,7 @@ conn_wait:
          }
       }
       goto head_wait;
-head_wait:
+       head_wait:
       /* get and check header of message, next state can be MESS_WAIT or RESET */
       DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv HEAD_WAIT (%p)", p));
       config->data_wait_size = sizeof(trap_buffer_header_t);
@@ -577,7 +582,7 @@ head_wait:
          config->ext_buffer = data;
          goto mess_wait;
       }
-mess_wait:
+       mess_wait:
       /* get and check payload of message, next state can be RESET or success exit */
       /* receive payload */
       DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv waiting MESS (%p) %d B", p, config->data_wait_size));
@@ -628,14 +633,14 @@ void tls_receiver_destroy(void *priv)
       if (config->connected == 1) {
          close(config->sd);
       }
-      free(config->ssl);
-      free(config->sslctx);
-      free(config->dest_addr);
-      free(config->dest_port);
-      free(config->keyfile);
-      free(config->certfile);
-      free(config->cafile);
-      free(config);
+      CHECK_AND_FREE(config->ssl, SSL_free);
+      CHECK_AND_FREE(config->sslctx, SSL_CTX_free);
+      CHECK_AND_FREE(config->dest_addr, free);
+      CHECK_AND_FREE(config->dest_port, free);
+      CHECK_AND_FREE(config->keyfile, free);
+      CHECK_AND_FREE(config->certfile, free);
+      CHECK_AND_FREE(config->cafile, free);
+      CHECK_AND_FREE(config, free);
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
    }
@@ -663,10 +668,10 @@ static void tls_receiver_create_dump(void *priv, uint32_t idx, const char *path)
    }
    f = fopen(conf_file, "w");
    fprintf(f, "Dest addr: %s\nDest port: %s\nConnected: %d\n"
-           "Terminated: %d\nSocket descriptor: %d\n"
-           "Data pointer: %p\nData wait size: %"PRIu32"\nMessage header: %"PRIu32"\n"
-           "Extern buffer pointer: %p\nExtern buffer data size: %"PRIu32"\n"
-           "Timeout: %"PRId32"us (%s)\nPrivate key: %s\nCertificate: %s\n",
+              "Terminated: %d\nSocket descriptor: %d\n"
+              "Data pointer: %p\nData wait size: %"PRIu32"\nMessage header: %"PRIu32"\n"
+                                                                                    "Extern buffer pointer: %p\nExtern buffer data size: %"PRIu32"\n"
+                                                                                                                                                 "Timeout: %"PRId32"us (%s)\nPrivate key: %s\nCertificate: %s\n",
            c->dest_addr, c->dest_port, c->connected, c->is_terminated, c->sd,
            c->data_pointer, c->data_wait_size, c->int_mess_header.data_length,
            c->ext_buffer, c->ext_buffer_size,
@@ -691,12 +696,12 @@ static void tls_receiver_create_dump(void *priv, uint32_t idx, const char *path)
       VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
       goto exit;
    }
-exit:
+    exit:
    if (f != NULL) {
       fclose(f);
    }
-   free(conf_file);
-   free(buf_file);
+   CHECK_AND_FREE(conf_file, free);
+   CHECK_AND_FREE(buf_file, free);
    return;
 }
 
@@ -821,7 +826,7 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
    }
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\ndest_addr=\"%s\"\ndest_port=\"%s\"\n"
-           "TDU size: %u\n", config->dest_addr, config->dest_port,
+                                "TDU size: %u\n", config->dest_addr, config->dest_port,
            config->int_mess_header.data_length);
 
    config->sslctx = tlsclient_create_context();
@@ -867,22 +872,22 @@ int create_tls_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t
    if (config->connected == 0) {
       VERBOSE(CL_VERBOSE_BASIC, "Could not connect to sender.");
       if ((retval == TRAP_E_BAD_FPARAMS) || (retval == TRAP_E_IO_ERROR)) {
-        result = retval;
-        goto failsafe_cleanup;
+         result = retval;
+         goto failsafe_cleanup;
       }
    }
 #endif
    return TRAP_E_OK;
-failsafe_cleanup:
-   free(dest_addr);
-   free(dest_port);
-   free(keyfile);
-   free(certfile);
-   free(cafile);
+    failsafe_cleanup:
+   CHECK_AND_FREE(dest_addr, free);
+   CHECK_AND_FREE(dest_port, free);
+   CHECK_AND_FREE(keyfile, free);
+   CHECK_AND_FREE(certfile, free);
+   CHECK_AND_FREE(cafile, free);
    if (config != NULL && config->sslctx != NULL) {
-      SSL_CTX_free(config->sslctx);
+      CHECK_AND_FREE(config->sslctx, SSL_CTX_free);
    }
-   free(config);
+   CHECK_AND_FREE(config, free);
    return result;
 }
 
@@ -897,8 +902,7 @@ static void client_socket_disconnect(void *priv)
    DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv Disconnected."));
    if (config->connected == 1) {
       VERBOSE(CL_VERBOSE_BASIC, "TCPIP ifc client disconnecting");
-      SSL_free(config->ssl);
-      config->ssl = NULL;
+      CHECK_AND_FREE(config->ssl, SSL_free);
       close(config->sd);
       config->connected = 0;
    }
@@ -973,7 +977,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       tv->tv_usec = tv->tv_sec % 1000000;
       tv->tv_sec /= 1000000;
       VERBOSE(CL_VERBOSE_LIBRARY, "Every address will be tried for timeout: %"PRId64"s%"PRId64"us",
-            tv->tv_sec, tv->tv_usec);
+              tv->tv_sec, tv->tv_usec);
    }
 
    /* loop through all the results and connect to the first we can */
@@ -989,20 +993,18 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
          if (errno != EINPROGRESS && errno != EAGAIN) {
             DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
-                     strerror(errno)));
+                              strerror(errno)));
             close(sockfd);
-            sockfd = -1;
             continue;
          } else {
             rv = wait_for_connection(sockfd, tv);
             if (rv == TRAP_E_TIMEOUT) {
+               close(sockfd);
                if (c->is_terminated) {
                   rv = TRAP_E_TERMINATED;
                   break;
                }
                /* try another address */
-               close(sockfd);
-               sockfd = -1;
                continue;
             } else {
                /* success */
@@ -1021,7 +1023,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
 
    /* catching all possible errors from setting up socket before atempting tls handshake */
    if (rv != TRAP_E_OK) {
-      freeaddrinfo(servinfo);
+      CHECK_AND_FREE(servinfo, freeaddrinfo);
       close(sockfd);
       return rv;
    }
@@ -1031,8 +1033,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
          VERBOSE(CL_VERBOSE_LIBRARY, "recv client: connected to %s", s);
       }
    }
-   freeaddrinfo(servinfo);
-   servinfo = NULL;
+   CHECK_AND_FREE(servinfo, freeaddrinfo); /* all done with this structure */
 
    c->sd = sockfd;
    c->ssl = SSL_new(c->sslctx);
@@ -1044,7 +1045,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    /* setting tcp socket to be used for ssl connection */
    if (SSL_set_fd(c->ssl, c->sd) != 1) {
       VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
-            ERR_reason_error_string(ERR_get_error()));
+              ERR_reason_error_string(ERR_get_error()));
       return TRAP_E_IO_ERROR;
    }
    SSL_set_connect_state(c->ssl);
@@ -1054,19 +1055,18 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
       if (rv < 1) {
          rv = ERR_get_error();
          switch (rv) {
-         case SSL_ERROR_NONE:
-         case SSL_ERROR_WANT_CONNECT:
-         case SSL_ERROR_WANT_X509_LOOKUP:
-         case SSL_ERROR_WANT_READ:
-         case SSL_ERROR_WANT_WRITE:
-            break;
-         default:
-            VERBOSE(CL_ERROR, "SSL connection failed, could be wrong certificate. %s",
-                  ERR_reason_error_string(ERR_get_error()));
-            SSL_free(c->ssl);
-            c->ssl = NULL;
-            close(c->sd);
-            return TRAP_E_IO_ERROR;
+            case SSL_ERROR_NONE:
+            case SSL_ERROR_WANT_CONNECT:
+            case SSL_ERROR_WANT_X509_LOOKUP:
+            case SSL_ERROR_WANT_READ:
+            case SSL_ERROR_WANT_WRITE:
+               break;
+            default:
+               VERBOSE(CL_ERROR, "SSL connection failed, could be wrong certificate. %s",
+                       ERR_reason_error_string(ERR_get_error()));
+                 CHECK_AND_FREE(c->ssl, SSL_free);
+                 close(c->sd);
+                 return TRAP_E_IO_ERROR;
          }
       }
    } while (rv < 1);
@@ -1075,14 +1075,13 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    int ret_ver = verify_certificate(c->ssl); /* server certificate verification */
    if (ret_ver != 0){
       VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify server's certificate");
-      SSL_free(c->ssl);
-      c->ssl = NULL;
+      CHECK_AND_FREE(c->ssl, SSL_free);
       return TRAP_E_BAD_CERT;
    }
 
-      /** Input interface negotiation */
+   /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
-      switch(input_ifc_negotiation(c, TRAP_IFC_TYPE_TLS)) {
+   switch(input_ifc_negotiation(c, TRAP_IFC_TYPE_TLS)) {
       case NEG_RES_FMT_UNKNOWN:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
          close(sockfd);
@@ -1135,8 +1134,7 @@ static void server_disconnected_client(tls_sender_private_t *c, int cl_id)
 {
    struct tlsclient_s *cl = &c->clients[cl_id];
    pthread_mutex_lock(&c->lock);
-   SSL_free(cl->ssl);
-   cl->ssl = NULL;
+   CHECK_AND_FREE(cl->ssl, SSL_free);
    close(cl->sd);
    cl->sd = -1;
    cl->client_state = TLSCURRENT_IDLE;
@@ -1160,23 +1158,23 @@ static int send_all_data(tls_sender_private_t *c, struct tlsclient_s *cl, void *
    ssize_t numbytes = (*size), sent_b;
    int res = TRAP_E_TERMINATED;
 
-again:
+    again:
    sent_b = SSL_write(cl->ssl, p, numbytes);
    if (sent_b <= 0) {
       switch (SSL_get_error(cl->ssl, sent_b)) {
-      case SSL_ERROR_ZERO_RETURN:
-      case SSL_ERROR_SYSCALL:
-         VERBOSE(CL_VERBOSE_OFF, "Disconnected client (%i)", errno);
-         res = TRAP_E_IO_ERROR;
-         goto failure;
+         case SSL_ERROR_ZERO_RETURN:
+         case SSL_ERROR_SYSCALL:
+            VERBOSE(CL_VERBOSE_OFF, "Disconnected client (%i)", errno);
+              res = TRAP_E_IO_ERROR;
+              goto failure;
 
-      case SSL_ERROR_WANT_READ:
-      case SSL_ERROR_WANT_WRITE:
-         if (block == 1) {
-            usleep(NONBLOCKING_MINWAIT);
-            goto again;
-         }
-         break;
+         case SSL_ERROR_WANT_READ:
+         case SSL_ERROR_WANT_WRITE:
+            if (block == 1) {
+               usleep(NONBLOCKING_MINWAIT);
+               goto again;
+            }
+              break;
       }
       if (c->is_terminated == 1) {
          res = TRAP_E_TERMINATED;
@@ -1186,8 +1184,8 @@ again:
       numbytes -= sent_b;
       p += sent_b;
       DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "send sent: %"PRId64" B remaining: "
-                "%"PRIu64" B from %p (errno %"PRId32")",
-                sent_b, numbytes, p, errno));
+                                                                "%"PRIu64" B from %p (errno %"PRId32")",
+                        sent_b, numbytes, p, errno));
    }
    assert(numbytes>=0);
    (*size) = numbytes;
@@ -1201,7 +1199,7 @@ again:
       (*data) = NULL;
       return TRAP_E_OK;
    }
-failure:
+    failure:
    (*data) = NULL;
    (*size) = 0;
    return res;
@@ -1223,9 +1221,9 @@ static inline char check_connected_clients(tls_sender_private_t *config)
 }
 
 typedef enum tls_sender_result {
-   EVERYBODY_PASSED,
-   EVERYBODY_TIMEDOUT,
-   SOMEBODY_TIMEDOUT
+    EVERYBODY_PASSED,
+    EVERYBODY_TIMEDOUT,
+    SOMEBODY_TIMEDOUT
 } tls_sender_result_t;
 
 /**
@@ -1314,30 +1312,30 @@ int tls_sender_send(void *priv, const void *data, uint32_t size, int timeout)
 
    /* I. Init phase: set timeout and double-send switch */
 
-blocking_repeat:
+    blocking_repeat:
 
    if (c->is_terminated) {
       return TRAP_E_TERMINATED;
    }
 
    switch (timeout) {
-   case TRAP_WAIT:
-      trap_set_timeouts(1000000, &tv, &ts);
-      break;
-   case TRAP_HALFWAIT:
-      /*
-       * wait 1s in a loop for select(),
-       * do not change timeout for sem_timedwait in connphase
-       */
-      trap_set_timeouts(1000000, &tv, NULL);
-      break;
-   default:
-      /*
-       * set timeout (can be 0 - nowait or any positive number) for select(),
-       * do not change timeout for sem_timedwait in connphase
-       */
-      trap_set_timeouts(timeout, &tv, NULL);
-      break;
+      case TRAP_WAIT:
+         trap_set_timeouts(1000000, &tv, &ts);
+           break;
+      case TRAP_HALFWAIT:
+         /*
+          * wait 1s in a loop for select(),
+          * do not change timeout for sem_timedwait in connphase
+          */
+         trap_set_timeouts(1000000, &tv, NULL);
+           break;
+      default:
+         /*
+          * set timeout (can be 0 - nowait or any positive number) for select(),
+          * do not change timeout for sem_timedwait in connphase
+          */
+         trap_set_timeouts(timeout, &tv, NULL);
+           break;
    }
 
    /* Check connected clients and wait for them when blocking */
@@ -1432,17 +1430,17 @@ blocking_repeat:
          }
          result = send_all_data(c, cl, &cl->sending_pointer, &cl->pending_bytes, block);
          switch (result) {
-         case TRAP_E_IO_ERROR:
-            server_disconnected_client(c, i);
-            failed++;
-            break;
-         case TRAP_E_OK:
-            passed++;
-            cl->client_state = TLSCURRENT_COMPLETE;
-            break;
-         case TRAP_E_TIMEOUT:
-            failed++;
-            break;
+            case TRAP_E_IO_ERROR:
+               server_disconnected_client(c, i);
+                 failed++;
+                 break;
+            case TRAP_E_OK:
+               passed++;
+                 cl->client_state = TLSCURRENT_COMPLETE;
+                 break;
+            case TRAP_E_TIMEOUT:
+               failed++;
+                 break;
          }
          j++;
       }
@@ -1491,7 +1489,7 @@ blocking_repeat:
       }
    }
 
-exit:
+    exit:
    /*
     * Return to blocking_repeat ONLY when the timeout is TRAP_WAIT.
     * TRAP_HALFWAIT is handled before.
@@ -1534,11 +1532,11 @@ void tls_sender_destroy(void *priv)
 
    /* free private data */
    if (c != NULL) {
-      SSL_CTX_free(c->sslctx);
-      free(c->server_port);
-      free(c->keyfile);
-      free(c->certfile);
-      free(c->cafile);
+      CHECK_AND_FREE(c->sslctx, SSL_CTX_free);
+      CHECK_AND_FREE(c->server_port, free);
+      CHECK_AND_FREE(c->keyfile, free);
+      CHECK_AND_FREE(c->certfile, free);
+      CHECK_AND_FREE(c->cafile, free);
 
       if (c->initialized) {
          /* cancel accepting new clients */
@@ -1556,23 +1554,23 @@ void tls_sender_destroy(void *priv)
             cl = &c->clients[i];
             if (cl->sd > 0) {
                if (cl->ssl) {
-                  SSL_free(cl->ssl);
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
                }
                close(cl->sd);
                cl->sd = -1;
                c->connected_clients--;
             }
-            free(cl->buffer);
+            CHECK_AND_FREE(cl->buffer, free);
          }
-         free(c->clients);
+         CHECK_AND_FREE(c->clients, free);
       }
       pthread_mutex_unlock(&c->lock);
       pthread_mutex_destroy(&c->lock);
       pthread_mutex_destroy(&c->sending_lock);
       sem_destroy(&c->have_clients);
 
-      free(c->backup_buffer);
-      free(c);
+      CHECK_AND_FREE(c->backup_buffer, free)
+      CHECK_AND_FREE(c, free)
    }
 }
 
@@ -1587,6 +1585,12 @@ int32_t tls_sender_get_client_count(void *priv)
    client_count = c->connected_clients;
    pthread_mutex_unlock(&c->lock);
    return client_count;
+}
+
+int8_t tls_sender_get_client_timers_json(void* priv, json_t *client_timers_arr)
+{
+   // todo
+   return 1;
 }
 
 static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
@@ -1612,11 +1616,11 @@ static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
    }
    f = fopen(conf_file, "w");
    fprintf(f, "Server port: %s\nServer socket descriptor: %d\n"
-           "Connected clients: %d\nMax clients: %d\nBuffering layer buffer: %p\n"
-           "Buffering layer buffer size: %"PRIu32"\n"
-           "Backup buffer: %p\nTerminated: %d\nInitialized: %d\n"
-           "Message size: %"PRIu32"\nTimeout: %"PRId32"us (%s)\n"
-           "Clients:\n",
+              "Connected clients: %d\nMax clients: %d\nBuffering layer buffer: %p\n"
+              "Buffering layer buffer size: %"PRIu32"\n"
+                                                    "Backup buffer: %p\nTerminated: %d\nInitialized: %d\n"
+                                                    "Message size: %"PRIu32"\nTimeout: %"PRId32"us (%s)\n"
+                                                                                               "Clients:\n",
            c->server_port, c->server_sd, c->connected_clients, c->clients_arr_size,
            c->ctx->out_ifc_list[idx].buffer,
            c->ctx->out_ifc_list[idx].buffer_index,
@@ -1651,12 +1655,12 @@ static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
       VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
       goto exit;
    }
-exit:
+    exit:
    if (f != NULL) {
       fclose(f);
    }
-   free(conf_file);
-   free(buf_file);
+   CHECK_AND_FREE(conf_file, free);
+   CHECK_AND_FREE(buf_file, free);
    return;
    VERBOSE(CL_ERROR, "Unimplemented. (%s:%d)", __FILE__, __LINE__);
    return;
@@ -1680,8 +1684,7 @@ void tlsserver_disconnect_all_clients(void *priv)
          cl = &c->clients[i];
          if (cl->sd > 0) {
             if (cl->ssl) {
-               SSL_free(cl->ssl);
-               cl->ssl = NULL;
+               CHECK_AND_FREE(cl->ssl, SSL_free);
             }
             close(cl->sd);
             cl->sd = -1;
@@ -1805,7 +1808,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
 
    /* allocate buffer according to TRAP_IFC_MESSAGEQ_SIZE with additional space for message header */
    priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
-                           sizeof(trap_buffer_header_t));
+                                            sizeof(trap_buffer_header_t));
 
    if (priv->backup_buffer == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
@@ -1834,11 +1837,11 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    pthread_mutex_init(&priv->sending_lock, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port=\"%s\"\nmax_clients=\"%s\"\n"
-      "TDU size: %u\nKey file: %s\nCert file: %s\nCA file: %s\n(max_clients_num=\"%u\")",
-      priv->server_port, max_clients,
-      priv->int_mess_header.data_length, priv->keyfile, priv->certfile,
-      priv->cafile, priv->clients_arr_size);
-   free(max_clients);
+                                "TDU size: %u\nKey file: %s\nCert file: %s\nCA file: %s\n(max_clients_num=\"%u\")",
+           priv->server_port, max_clients,
+           priv->int_mess_header.data_length, priv->keyfile, priv->certfile,
+           priv->cafile, priv->clients_arr_size);
+   CHECK_AND_FREE(max_clients, free);
 
    if (sem_init(&priv->have_clients, 0, 0) == -1) {
       VERBOSE(CL_ERROR, "Initialization of semaphore failed.");
@@ -1878,29 +1881,30 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    ifc->terminate = tls_sender_terminate;
    ifc->destroy = tls_sender_destroy;
    ifc->get_client_count = tls_sender_get_client_count;
+   ifc->get_client_timers_json = tls_sender_get_client_timers_json;
    ifc->create_dump = tls_sender_create_dump;
    ifc->priv = priv;
    ifc->get_id = tls_send_ifc_get_id;
 
    return result;
 
-failsafe_cleanup:
-   free(server_port);
-   free(max_clients);
-   free(certfile);
-   free(cafile);
-   free(keyfile);
+    failsafe_cleanup:
+   CHECK_AND_FREE(server_port, free);
+   CHECK_AND_FREE(max_clients, free);
+   CHECK_AND_FREE(certfile, free);
+   CHECK_AND_FREE(cafile, free);
+   CHECK_AND_FREE(keyfile, free);
    if (priv != NULL) {
-      free(priv->backup_buffer);
+      CHECK_AND_FREE(priv->backup_buffer, free);
       if (priv->clients != NULL) {
          for (i = 0; i < max_num_client; i++) {
-            free(priv->clients[i].buffer);
+            CHECK_AND_FREE(priv->clients[i].buffer, free);
          }
       }
-      free(priv->clients);
+      CHECK_AND_FREE(priv->clients, free);
       pthread_mutex_destroy(&priv->lock);
       pthread_mutex_destroy(&priv->sending_lock);
-      free(priv);
+      CHECK_AND_FREE(priv, free);
    }
 
    return result;
@@ -1952,8 +1956,8 @@ static void *accept_clients_thread(void *arg)
             VERBOSE(CL_ERROR, "Accepting new client failed.");
          } else {
             VERBOSE(CL_VERBOSE_ADVANCED, "New connection from %s on socket %d",
-               inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
-                  newclient);
+                    inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
+                    newclient);
 
             pthread_mutex_lock(&c->lock);
 
@@ -1975,16 +1979,14 @@ static void *accept_clients_thread(void *arg)
                }
                if (SSL_set_fd(cl->ssl, newclient) != 1) {
                   VERBOSE(CL_ERROR, "Setting SSL file descriptor to tcp socket failed: %s",
-                        ERR_reason_error_string(ERR_get_error()));
-                  SSL_free(cl->ssl);
-                  cl->ssl = NULL;
+                          ERR_reason_error_string(ERR_get_error()));
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
                   goto refuse_client;
                }
 
                if (SSL_accept(cl->ssl) <= 0) {
                   ERR_print_errors_fp(stderr);
-                  SSL_free(cl->ssl);
-                  cl->ssl = NULL;
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
                   goto refuse_client;
                }
 
@@ -2001,13 +2003,11 @@ static void *accept_clients_thread(void *arg)
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
                } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-                  SSL_free(cl->ssl);
-                  cl->ssl = NULL;
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
                   goto refuse_client;
                } else { /* ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client */
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-                  SSL_free(cl->ssl);
-                  cl->ssl = NULL;
+                  CHECK_AND_FREE(cl->ssl, SSL_free);
                   goto refuse_client;
                }
 
@@ -2021,9 +2021,9 @@ static void *accept_clients_thread(void *arg)
                   VERBOSE(CL_ERROR, "Semaphore post failed.");
                }
             } else {
-refuse_client:
+                refuse_client:
                VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)",
-                     c->connected_clients, c->clients_arr_size);
+                       c->connected_clients, c->clients_arr_size);
                shutdown(newclient, SHUT_RDWR);
                close(newclient);
             }
@@ -2078,7 +2078,7 @@ static int server_socket_open(void *priv)
       }
       break; /* found socket to bind */
    }
-   freeaddrinfo(ai);
+   CHECK_AND_FREE(ai, freeaddrinfo); /* all done with this structure */
 
    if (p == NULL) {
       /* if we got here, it means we didn't get bound */
@@ -2112,4 +2112,3 @@ static int server_socket_open(void *priv)
 /**
  * @}
  *//* ifc modules */
-

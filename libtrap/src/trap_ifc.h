@@ -139,6 +139,15 @@ typedef void (*ifc_create_dump_func_t)(void *p, uint32_t i, const char *d);
 typedef int32_t (*ifc_get_client_count_func_t)(void *p);
 
 /**
+ * Get json object of client timers.
+ *
+ * \param[in] p   pointer to IFC's private memory allocated by constructor
+ * \param[out] p   pointer to JSON array to be filled with client timers
+ * \returns 1 (TRUE) on success, otherwise 0 (FALSE)
+ */
+typedef int8_t (*ifc_get_client_timers_json_func_t)(void *p, json_t *arr);
+
+/**
  * Get identifier of the interface
  *
  * \param[in] priv   pointer to IFC's private memory allocated by constructor
@@ -163,114 +172,115 @@ typedef uint8_t (*ifc_is_conn_func_t)(void *priv);
 
 /** Struct to hold an instance of some input interface. */
 typedef struct trap_input_ifc_s {
-   ifc_is_conn_func_t is_conn; ///< Pointer to is_connected function
-   ifc_get_id_func_t get_id;       ///< Pointer to get_id function
-   ifc_recv_func_t recv;           ///< Pointer to receive function
-   ifc_terminate_func_t terminate; ///< Pointer to terminate function
-   ifc_destroy_func_t destroy;     ///< Pointer to destructor function
-   ifc_create_dump_func_t create_dump; ///< Pointer to function for generating of dump
-   void *priv;                     ///< Pointer to instance's private data
-   char *buffer;                   ///< Internal pointer to buffer for messages
-   char *buffer_pointer;           ///< Internal pointer to current message in buffer
-   uint32_t buffer_full;           ///< Internal used space in message buffer (0 for empty buffer)
-   int32_t datatimeout;            ///< Timeout for *_recv() calls
+    ifc_is_conn_func_t is_conn; ///< Pointer to is_connected function
+    ifc_get_id_func_t get_id;       ///< Pointer to get_id function
+    ifc_recv_func_t recv;           ///< Pointer to receive function
+    ifc_terminate_func_t terminate; ///< Pointer to terminate function
+    ifc_destroy_func_t destroy;     ///< Pointer to destructor function
+    ifc_create_dump_func_t create_dump; ///< Pointer to function for generating of dump
+    void *priv;                     ///< Pointer to instance's private data
+    char *buffer;                   ///< Internal pointer to buffer for messages
+    char *buffer_pointer;           ///< Internal pointer to current message in buffer
+    uint32_t buffer_full;           ///< Internal used space in message buffer (0 for empty buffer)
+    int32_t datatimeout;            ///< Timeout for *_recv() calls
 
-   /**
-    * If 1 do not allow to change timeout by module, it is used to force
-    * timeout of IFC by module's parameter.  If 0 - timeout can be changed
-    * by standard way using trap_ctx_ifcctl().
-    */
-   char datatimeout_fixed;
-   char ifc_type;                  ///< Type of interface
+    /**
+     * If 1 do not allow to change timeout by module, it is used to force
+     * timeout of IFC by module's parameter.  If 0 - timeout can be changed
+     * by standard way using trap_ctx_ifcctl().
+     */
+    char datatimeout_fixed;
+    char ifc_type;                  ///< Type of interface
 
-   pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
+    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
 
-   /**
-    * Negotiation state defined as #trap_in_ifc_state_t.
-    */
-   trap_in_ifc_state_t client_state;
+    /**
+     * Negotiation state defined as #trap_in_ifc_state_t.
+     */
+    trap_in_ifc_state_t client_state;
 
-   /**
-    * Message format defined by trap_data_format_t.
-    */
-   uint8_t data_type;
+    /**
+     * Message format defined by trap_data_format_t.
+     */
+    uint8_t data_type;
 
-   /**
-    * Message format specifier.
-    *
-    * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
-    * data_fmt_spec contains e.g. UniRec template specifier (string representation)
-    */
-   char *data_fmt_spec;
+    /**
+     * Message format specifier.
+     *
+     * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
+     * data_fmt_spec contains e.g. UniRec template specifier (string representation)
+     */
+    char *data_fmt_spec;
 
-   /**
-    * Required message format defined by trap_data_format_t
-    */
-   uint8_t req_data_type;
+    /**
+     * Required message format defined by trap_data_format_t
+     */
+    uint8_t req_data_type;
 
-   /**
-    * Required message format specifier.
-    *
-    * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
-    * data_fmt_spec contains e.g. UniRec template specifier (string representation)
-    */
-   char *req_data_fmt_spec;
+    /**
+     * Required message format specifier.
+     *
+     * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
+     * data_fmt_spec contains e.g. UniRec template specifier (string representation)
+     */
+    char *req_data_fmt_spec;
 } trap_input_ifc_t;
 
 /** Struct to hold an instance of some output interface. */
 typedef struct trap_output_ifc_s {
-   ifc_get_id_func_t get_id;       ///< Pointer to get_id function
-   ifc_disconn_clients_func_t disconn_clients; ///< Pointer to disconnect_clients function
-   ifc_send_func_t send;           ///< Pointer to send function
-   ifc_terminate_func_t terminate; ///< Pointer to terminate function
-   ifc_destroy_func_t destroy;     ///< Pointer to destructor function
-   ifc_create_dump_func_t create_dump; ///< Pointer to function for generating of dump
-   ifc_get_client_count_func_t get_client_count;  ///< Pointer to get_client_count function
-   void *priv;                     ///< Pointer to instance's private data
-   unsigned char *buffer;          ///< Internal pointer to buffer for messages
-   unsigned char *buffer_header;   ///< Internal pointer to header of buffer followed by payload
-   uint32_t buffer_index;          ///< Internal index in buffer for new message
-   uint8_t buffer_occupied;        ///< If 0, buffer can be modified, otherwise drop message and don't move with buffer.
-   pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
-   int64_t timeout;                ///< Internal structure to send partial data after timeout (autoflush).
+    ifc_get_id_func_t get_id;       ///< Pointer to get_id function
+    ifc_disconn_clients_func_t disconn_clients; ///< Pointer to disconnect_clients function
+    ifc_send_func_t send;           ///< Pointer to send function
+    ifc_terminate_func_t terminate; ///< Pointer to terminate function
+    ifc_destroy_func_t destroy;     ///< Pointer to destructor function
+    ifc_create_dump_func_t create_dump; ///< Pointer to function for generating of dump
+    ifc_get_client_count_func_t get_client_count;  ///< Pointer to get_client_count function
+    ifc_get_client_timers_json_func_t get_client_timers_json; ///< Pointer to get_client_timers_json function
+    void *priv;                     ///< Pointer to instance's private data
+    unsigned char *buffer;          ///< Internal pointer to buffer for messages
+    unsigned char *buffer_header;   ///< Internal pointer to header of buffer followed by payload
+    uint32_t buffer_index;          ///< Internal index in buffer for new message
+    uint8_t buffer_occupied;        ///< If 0, buffer can be modified, otherwise drop message and don't move with buffer.
+    pthread_mutex_t ifc_mtx;        ///< Locking mutex for interface.
+    int64_t timeout;                ///< Internal structure to send partial data after timeout (autoflush).
 
-   /**
-    * If 1 do not allow to change autoflush timeout by module.  If 0 - autoflush can
-    * be changed by standard way using trap_ctx_ifcctl().
-    */
-   char timeout_fixed;
+    /**
+     * If 1 do not allow to change autoflush timeout by module.  If 0 - autoflush can
+     * be changed by standard way using trap_ctx_ifcctl().
+     */
+    char timeout_fixed;
 
-   char bufferswitch;              ///< Enable (1) or Disable (0) buffering, default is Enabled (1).
+    char bufferswitch;              ///< Enable (1) or Disable (0) buffering, default is Enabled (1).
 
-   /**
-    * If 1 do not allow to change bufferswitch by module.  If 0 - bufferswitch can
-    * be changed by standard way using trap_ctx_ifcctl().
-    */
-   char bufferswitch_fixed;
+    /**
+     * If 1 do not allow to change bufferswitch by module.  If 0 - bufferswitch can
+     * be changed by standard way using trap_ctx_ifcctl().
+     */
+    char bufferswitch_fixed;
 
-   char bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
-   int32_t datatimeout;            ///< Timeout for *_send() calls
+    char bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
+    int32_t datatimeout;            ///< Timeout for *_send() calls
 
-   /**
-    * If 1 do not allow to change timeout by module, it is used to force
-    * timeout of IFC by module's parameter.  If 0 - timeout can be changed
-    * by standard way using trap_ctx_ifcctl().
-    */
-   char datatimeout_fixed;
-   char ifc_type;                  ///< Type of interface
+    /**
+     * If 1 do not allow to change timeout by module, it is used to force
+     * timeout of IFC by module's parameter.  If 0 - timeout can be changed
+     * by standard way using trap_ctx_ifcctl().
+     */
+    char datatimeout_fixed;
+    char ifc_type;                  ///< Type of interface
 
-   /**
-    * Message format defined by trap_data_format_t
-    */
-   uint8_t data_type;
+    /**
+     * Message format defined by trap_data_format_t
+     */
+    uint8_t data_type;
 
-   /**
-    * Message format specifier.
-    *
-    * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
-    * data_fmt_spec contains e.g. UniRec template specifier (string representation)
-    */
-   char *data_fmt_spec;
+    /**
+     * Message format specifier.
+     *
+     * if data_type is TRAP_FMT_RAW, no data_fmt_spec is expected.  Otherwise,
+     * data_fmt_spec contains e.g. UniRec template specifier (string representation)
+     */
+    char *data_fmt_spec;
 } trap_output_ifc_t;
 
 /**

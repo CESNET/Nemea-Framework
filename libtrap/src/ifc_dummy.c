@@ -54,10 +54,10 @@
 /***** Generator *****/
 
 typedef struct generator_private_s {
-   trap_ctx_priv_t *ctx;
-   char *data_to_send;
-   int data_size;
-   char is_terminated;
+    trap_ctx_priv_t *ctx;
+    char *data_to_send;
+    int data_size;
+    char is_terminated;
 } generator_private_t;
 
 static void create_dump(void *priv, uint32_t idx, const char *path)
@@ -172,7 +172,7 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    ifc->is_conn = generator_ifc_is_conn;
 
    return TRAP_E_OK;
-failure:
+    failure:
    if (priv != NULL) {
       free(priv->data_to_send);
    }
@@ -207,6 +207,12 @@ int32_t blackhole_get_client_count(void *priv)
    return 1;
 }
 
+int8_t blackhole_get_client_timers_json(void *priv, json_t *client_timers_arr)
+{
+   /* do not collect client statistics for this interface */
+   return 1;
+}
+
 char *blackhole_ifc_get_id(void *priv)
 {
    return NULL;
@@ -218,9 +224,9 @@ int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *
    ifc->terminate = blackhole_terminate;
    ifc->destroy = blackhole_destroy;
    ifc->get_client_count = blackhole_get_client_count;
+   ifc->get_client_timers_json = blackhole_get_client_timers_json;
    ifc->create_dump = create_dump;
    ifc->priv = NULL;
    ifc->get_id = blackhole_ifc_get_id;
    return TRAP_E_OK;
 }
-
