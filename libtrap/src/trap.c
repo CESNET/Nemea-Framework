@@ -2538,7 +2538,7 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
               ifcdir2str(type), (int)ifcidx, timeout);
       if (type == TRAPIFC_OUTPUT) {
          if (c->out_ifc_list[ifcidx].timeout_fixed == 0) {
-            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].timeout = timeout;, 0, timeout);
+            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].timeout, 0, timeout);
             __sync_fetch_and_add(&c->ifc_change, 1);
          }
       }
