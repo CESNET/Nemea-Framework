@@ -2538,7 +2538,7 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
               ifcdir2str(type), (int)ifcidx, timeout);
       if (type == TRAPIFC_OUTPUT) {
          if (c->out_ifc_list[ifcidx].timeout_fixed == 0) {
-            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].timeout, 0, timeout);
+            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].timeout, c->out_ifc_list[ifcidx].timeout, timeout);
             __sync_fetch_and_add(&c->ifc_change, 1);
          }
       }
@@ -2549,7 +2549,7 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
               ifcdir2str(type), (int)ifcidx, ((int) en_dis_switch ? "ON" : "OFF"));
       if (type == TRAPIFC_OUTPUT) {
          if (c->out_ifc_list[ifcidx].bufferswitch_fixed == 0) {
-            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].bufferswitch, 0, en_dis_switch);
+            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].bufferswitch, c->out_ifc_list[ifcidx].bufferswitch, en_dis_switch);
             __sync_fetch_and_add(&c->ifc_change, 1);
          }
       }
@@ -2561,7 +2561,7 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       if (type == TRAPIFC_OUTPUT) {
          if (ifcidx < c->num_ifc_out) {
             if (c->out_ifc_list[ifcidx].datatimeout_fixed == 0) {
-               __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].datatimeout, 0, datatimeout);
+               __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].datatimeout, c->out_ifc_list[ifcidx].datatimeout, datatimeout);
             }
          } else {
             VERBOSE(CL_ERROR, "There is no output IFC with this index. Bad index passed.");
@@ -2569,7 +2569,7 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       } else if (type == TRAPIFC_INPUT) {
          if (ifcidx < c->num_ifc_in) {
             if (c->in_ifc_list[ifcidx].datatimeout_fixed == 0) {
-               __sync_bool_compare_and_swap(&c->in_ifc_list[ifcidx].datatimeout, 0, datatimeout);
+               __sync_bool_compare_and_swap(&c->in_ifc_list[ifcidx].datatimeout, c->in_ifc_list[ifcidx].datatimeout, datatimeout);
             }
          } else {
             VERBOSE(CL_ERROR, "There is no input IFC with this index. Bad index passed.");
