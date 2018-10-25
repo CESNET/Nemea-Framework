@@ -1753,7 +1753,7 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
       return trap_errorf(c, TRAP_E_NOT_SELECTED, "No input ifc to get data from...");
    }
 
-   ret_val = trap_read_from_buffer(c, ifcidx, data, size, __sync_fetch_and_add(&c->in_ifc_list[ifcidx].datatimeout, 0));
+   ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout);
    return trap_error(ctx, ret_val);
 }
 
@@ -1884,7 +1884,7 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
    }
 
    /* handle buffering */
-   ret_val = trap_store_into_buffer(c, ifc, data, size, __sync_fetch_and_add(&c->out_ifc_list[ifc].datatimeout, 0));
+   ret_val = trap_store_into_buffer(c, ifc, data, size, c->out_ifc_list[ifc].datatimeout);
    if (ret_val == TRAP_E_OK) {
       __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
    }
