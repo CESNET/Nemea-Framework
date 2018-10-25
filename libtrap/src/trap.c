@@ -2537,12 +2537,10 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       VERBOSE(CL_VERBOSE_BASIC, "%s ifc %d: Setting autoflush timeout to %lu.",
               ifcdir2str(type), (int)ifcidx, timeout);
       if (type == TRAPIFC_OUTPUT) {
-         pthread_mutex_lock(&c->out_ifc_list[ifcidx].ifc_mtx);
          if (c->out_ifc_list[ifcidx].timeout_fixed == 0) {
-            c->out_ifc_list[ifcidx].timeout = timeout;
+            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].timeout = timeout;, 0, timeout);
             __sync_fetch_and_add(&c->ifc_change, 1);
          }
-         pthread_mutex_unlock(&c->out_ifc_list[ifcidx].ifc_mtx);
       }
       break;
    case TRAPCTL_BUFFERSWITCH:
@@ -2550,12 +2548,10 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
       VERBOSE(CL_VERBOSE_BASIC, "%s ifc %d: Set buffer switch to %s.",
               ifcdir2str(type), (int)ifcidx, ((int) en_dis_switch ? "ON" : "OFF"));
       if (type == TRAPIFC_OUTPUT) {
-         pthread_mutex_lock(&c->out_ifc_list[ifcidx].ifc_mtx);
          if (c->out_ifc_list[ifcidx].bufferswitch_fixed == 0) {
-            c->out_ifc_list[ifcidx].bufferswitch = en_dis_switch;
+            __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].bufferswitch, 0, en_dis_switch);
             __sync_fetch_and_add(&c->ifc_change, 1);
          }
-         pthread_mutex_unlock(&c->out_ifc_list[ifcidx].ifc_mtx);
       }
       break;
    case TRAPCTL_SETTIMEOUT:
@@ -2564,21 +2560,17 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
               ifcdir2str(type), (int)ifcidx, datatimeout);
       if (type == TRAPIFC_OUTPUT) {
          if (ifcidx < c->num_ifc_out) {
-            pthread_mutex_lock(&c->out_ifc_list[ifcidx].ifc_mtx);
             if (c->out_ifc_list[ifcidx].datatimeout_fixed == 0) {
-               c->out_ifc_list[ifcidx].datatimeout = datatimeout;
+               __sync_bool_compare_and_swap(&c->out_ifc_list[ifcidx].datatimeout, 0, datatimeout);
             }
-            pthread_mutex_unlock(&c->out_ifc_list[ifcidx].ifc_mtx);
          } else {
             VERBOSE(CL_ERROR, "There is no output IFC with this index. Bad index passed.");
          }
       } else if (type == TRAPIFC_INPUT) {
          if (ifcidx < c->num_ifc_in) {
-            pthread_mutex_lock(&c->in_ifc_list[ifcidx].ifc_mtx);
             if (c->in_ifc_list[ifcidx].datatimeout_fixed == 0) {
-               c->in_ifc_list[ifcidx].datatimeout = datatimeout;
+               __sync_bool_compare_and_swap(&c->in_ifc_list[ifcidx].datatimeout, 0, datatimeout);
             }
-            pthread_mutex_unlock(&c->in_ifc_list[ifcidx].ifc_mtx);
          } else {
             VERBOSE(CL_ERROR, "There is no input IFC with this index. Bad index passed.");
          }
