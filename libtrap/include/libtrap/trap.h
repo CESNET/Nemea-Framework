@@ -3,11 +3,11 @@
  * \brief Interface of TRAP library.
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
  * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2013
- * \date 2014
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2013 - 2018
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013 - 2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -304,6 +304,8 @@ int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, con
 /**
  * Set format of messages on output IFC.
  *
+ * This function is thread safe.
+ *
  * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] out_ifc_idx   Index of output IFC.
  * \param[in] data_type     Format of messages defined by #trap_data_format_t.
@@ -314,6 +316,8 @@ void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_t
 
 /**
  * Set format of messages on output IFC.
+ *
+ * This function is thread safe.
  *
  * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] out_ifc_idx   Index of output IFC.
@@ -326,6 +330,8 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
 /**
  * Returns current state of an input interface on specified index.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_idx   Index of the input interface
  * \return Value of #trap_in_ifc_state_t on success, otherwise TRAP_E_NOT_INITIALIZED when libtrap context is not initialized or
@@ -335,6 +341,8 @@ int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
 
 /**
  * Set format of messages expected on input IFC.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] in_ifc_idx   Index of input IFC.
@@ -347,6 +355,8 @@ int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data
 
 /**
  * Set format of messages expected on input IFC.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] in_ifc_idx   Index of input IFC.
@@ -362,6 +372,7 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
  *
  * On output IFC it should return the values that were set.  On input IFC
  * it should return format and template that was received.
+ * This function is thread safe.
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
@@ -654,6 +665,8 @@ void trap_send_flush(uint32_t ifc);
 /**
  * \brief Initialize and return the context of libtrap.
  *
+ * This function is thread safe.
+ *
  * \param[in] module_info     Pointer to struct containing info about the module.
  * \param[in] ifc_spec        Structure with specification of interface types and
  *                      their parameters.
@@ -663,6 +676,8 @@ trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_s
 
 /**
  * \brief Initialize and return the context of libtrap.
+ *
+ * This function is thread safe.
  *
  * \param[in] module_info      Pointer to struct containing info about the module.
  * \param[in] ifc_spec         Structure with specification of interface types and their parameters.
@@ -674,6 +689,8 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
 
 /**
  * \brief Initialize and return the context of libtrap.
+ *
+ * This function is thread safe.
  *
  * \param[in] name   Name of the NEMEA module (libtrap context).
  * \param[in] description - Detailed description of the module, can be NULL ("" will be used in such case)
@@ -689,6 +706,8 @@ trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_i
 /**
  * \brief Terminate libtrap context and free resources.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (trap_ctx_init()).
  * \return TRAP_E_OK on success.
  */
@@ -697,12 +716,17 @@ int trap_ctx_finalize(trap_ctx_t **ctx);
 /**
  * \brief Terminate libtrap context.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \return TRAP_E_OK on success.
  */
 int trap_ctx_terminate(trap_ctx_t *ctx);
 
-/** Read data from input interface.
+/**
+ * \brief Read data from input interface.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc    Index of input interface (counted from 0).
@@ -743,6 +767,7 @@ int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, u
  * If data cannot be written immediately (e.g. because of full buffer or
  * lost connection), wait until write is possible or `timeout` microseconds
  * elapses. If `timeout` < 0, wait indefinitely.
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc    Index of interface to write into.
@@ -782,6 +807,8 @@ int trap_ctx_get_verbose_level(trap_ctx_t *ctx);
 /**
  * \brief Control TRAP interface.
  *
+ * This function is thread safe.
+ *
  * \note Type and request types were changed from enum because of python wrapper.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
@@ -807,6 +834,8 @@ int trap_ctx_ifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t reque
 /**
  * \brief Control TRAP interface.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param [in] type     #trap_ifc_type direction of interface
  * \param [in] ifcidx   index of TRAP interface
@@ -821,6 +850,8 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
 /**
  * \brief Get last result code from libtrap context.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \return \ref errorcodes
  */
@@ -829,6 +860,8 @@ int trap_ctx_get_last_error(trap_ctx_t *ctx);
 /**
  * \brief Get last (error) message from libtrap context.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \return Text string with last (error) message from libtrap context.
  */
@@ -836,6 +869,8 @@ const char *trap_ctx_get_last_error_msg(trap_ctx_t *ctx);
 
 /**
  * \brief Force flush of buffer.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc    IFC Index of interface to write into.

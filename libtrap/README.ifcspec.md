@@ -168,7 +168,7 @@ The following parameters can be used with any type of IFC. There are parameters 
    * default: on
 * autoflush - normally data are not sent until the buffer is full. When autoflush is enabled, even non-full buffers are sent every X microseconds.
    * possible values: off, number of microseconds
-   * default: 500000 (0.5s)
+   * default: 2000000 (2s)
 
 Example: `-i u:inputsocket:timeout=WAIT,u:outputsocket:timeout=500000:buffer=off:autoflush=off`
 

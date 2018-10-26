@@ -7,12 +7,10 @@
  * \author Vojtech Krmicek <xkrmicek@fi.muni.cz>
  * \author Juraj Blaho <xblaho00@stud.fit.vutbr.cz>
  * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2006-2011
- * \date 2013
- * \date 2014
- * \date 2015
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2006-2018
  *
- * Copyright (C) 2006-2015 CESNET
+ * Copyright (C) 2006-2018 CESNET
  *
  *
  * LICENSE TERMS
@@ -127,8 +125,8 @@ typedef enum trap_verbose_level {
 /**
  * \name Timeouts handling
  * @{*/
-#define TRAP_NO_IFC_SLEEP 2 ///< seconds to sleep, when autoflushing is not active
-#define TRAP_IFC_TIMEOUT 500000 ///< size of default timeout on output interfaces in microseconds
+#define TRAP_NO_IFC_SLEEP 4 ///< seconds to sleep, when autoflushing is not active
+#define TRAP_IFC_TIMEOUT 2000000 ///< size of default timeout on output interfaces in microseconds
 /**@}*/
 
 #ifndef NDEBUG
@@ -205,15 +203,13 @@ struct reader_threads_s {
 };
 
 /**
- * List of all output interfaces and their timeouts.
- *
- * It is used by automatic flush buffer thread to send buffer after
- * a timeout on one of the output interfaces has elapsed.
+ * \brief List of autoflush timeouts of output interfaces.
  */
-struct out_ifc_timeout_s {
-   int idx;            /**< index of output interface */
-   int64_t tm;        /**< timeout to be elapsed */
-};
+typedef struct autoflush_timeouts {
+   int idx;            /**< Index of output interface. */
+   int64_t tm;         /**< Autoflush timeout to be elapsed. */
+   int64_t tm_backup;  /**< Backup value of the autoflush timeout. */
+} ifc_autoflush_t;
 
 /**
  * Libtrap context structure.
@@ -229,12 +225,12 @@ struct trap_ctx_priv_s {
    /**
     * Is libtrap terminated? (0 ~ false, should run)
     */
-   int terminated;
+   volatile int terminated;
 
    /**
-    * Is output interface parameter changed? (0 ~ false, should run)
+    * Number of interface changes waiting to be applied.
     */
-   int ifc_change;
+   volatile int ifc_change;
 
    /**
     * Code of last error (one of the codes above)
@@ -282,6 +278,11 @@ struct trap_ctx_priv_s {
    int get_data_timeout;
 
    /**
+    * Lock setting last error code and last error message.
+    */
+   pthread_mutex_t error_mtx;
+
+   /**
     * Reader threads for multiread feature
     */
    struct reader_threads_s *reader_threads;
@@ -316,9 +317,9 @@ struct trap_ctx_priv_s {
    int timeout_thread_initialized;
 
    /**
-    * Timeouts for autoflush
+    * Timeouts for autoflush thread.
     */
-   struct out_ifc_timeout_s *ifc_autoflush_timeout;
+   ifc_autoflush_t *ifc_autoflush_timeout;
 
    /**
     * Service thread that enables communication with module
@@ -368,11 +369,6 @@ struct trap_ctx_priv_s {
    /**
     * @}
     */
-
-   /**
-    * Lock context (this structure)
-    */
-   pthread_rwlock_t context_lock;
 };
 
 /**

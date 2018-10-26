@@ -5,12 +5,11 @@
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \author Jan Neuzil <neuzija1@fit.cvut.cz>
  * \author Marek Svepes <svepemar@fit.cvut.cz>
- * \date 2013
- * \date 2014
- * \date 2015
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2013 -2018
  */
 /*
- * Copyright (C) 2013-2015 CESNET
+ * Copyright (C) 2013-2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -172,7 +171,7 @@ typedef struct trap_input_ifc_s {
    void *priv;                     ///< Pointer to instance's private data
    char *buffer;                   ///< Internal pointer to buffer for messages
    char *buffer_pointer;           ///< Internal pointer to current message in buffer
-   uint32_t buffer_full;           ///< Internal used space in message buffer (0 for empty buffer)
+   uint32_t buffer_unread_bytes;   ///< Number of unread bytes in buffer.
    int32_t datatimeout;            ///< Timeout for *_recv() calls
 
    /**
@@ -248,7 +247,7 @@ typedef struct trap_output_ifc_s {
     */
    char bufferswitch_fixed;
 
-   char bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
+   volatile int bufferflush;               ///< Flag (1) whether the buffer was sent before timeout has elapsed or not (0)
    int32_t datatimeout;            ///< Timeout for *_send() calls
 
    /**
