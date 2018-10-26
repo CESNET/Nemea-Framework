@@ -1,3 +1,12 @@
+2018-10-26 libtrap-0.12.0
+	* libtrap:
+		Refactoring, improved throughput.
+		Fixed problems with not setting trap last error.
+		Most of the context functions are now thread safe.
+		Autoflush is no longer called in situations when send procedure keeps failing repeatedly.
+		Added periodical interface statistics printings when run in verbose mode.
+		Improved documentation.
+
 2018-10-09 libtrap-0.11.8
 	* libtrap:
 		Fix non-blocking recv in libtrap.
