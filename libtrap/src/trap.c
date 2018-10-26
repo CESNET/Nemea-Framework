@@ -411,20 +411,19 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
 #endif
 
       result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), timeout);
+
+      /* No need to call autoflush. */
+      __sync_fetch_and_add(&oifc->bufferflush, 1);
+
       if (result == TRAP_E_OK) {
          /* Reset buffer and insert the message if it was not inserted. */
          reset_buffer(oifc);
-         __sync_fetch_and_add(&oifc->bufferflush, 1);
          __sync_fetch_and_add(&ctx->counter_send_buffer[ifc], 1);
          if (reinsert) {
             insert_into_buffer(oifc, data, size);
          }
-      } else {
+      } else if (result == TRAP_E_TIMEOUT) {
          __sync_fetch_and_add(&ctx->counter_dropped_message[ifc], 1);
-         /* Do not propagate TRAP_E_IO_ERROR. */
-         if (result == TRAP_E_IO_ERROR) {
-            result = TRAP_E_TIMEOUT;
-         }
 
          /* Drop buffer if no client is connected. */
          if (oifc->get_client_count(oifc) == 0) {
