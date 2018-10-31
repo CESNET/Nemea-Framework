@@ -2083,6 +2083,7 @@ static void *accept_clients_thread(void *arg)
                cl->client_state = TLSCURRENT_IDLE;
                cl->sending_pointer = NULL;
                cl->pending_bytes = 0;
+               cl->timer_total = 0;
                c->connected_clients++;
 
                if (sem_post(&c->have_clients) == -1) {
