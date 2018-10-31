@@ -1976,8 +1976,6 @@ static void *accept_clients_thread(void *arg)
    tls_sender_private_t *c = (tls_sender_private_t *) arg;
    int i;
    struct sockaddr *tmpaddr;
-   struct ucred ucred;
-   uint32_t ucredlen = sizeof(struct ucred);
    uint32_t client_id = 0;
 
    /* handle new connections */
@@ -2083,6 +2081,8 @@ static void *accept_clients_thread(void *arg)
                cl->client_state = TLSCURRENT_IDLE;
                cl->sending_pointer = NULL;
                cl->pending_bytes = 0;
+               cl->timer_total = 0;
+               cl->id = client_id;
                c->connected_clients++;
 
                if (sem_post(&c->have_clients) == -1) {

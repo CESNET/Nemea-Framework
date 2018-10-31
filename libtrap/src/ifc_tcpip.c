@@ -1846,6 +1846,8 @@ static void *accept_clients_thread(void *arg)
                cl->client_state = CURRENT_IDLE;
                cl->sending_pointer = NULL;
                cl->pending_bytes = 0;
+               cl->timer_total = 0;
+               cl->id = client_id;
 
                /** Output interface negotiation */
 #ifdef ENABLE_NEGOTIATION
