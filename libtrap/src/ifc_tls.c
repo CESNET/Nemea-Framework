@@ -1266,6 +1266,22 @@ static inline int tls_sender_conn_phase(tls_sender_private_t *config, struct tim
 }
 
 /**
+ * Return current time in microseconds.
+ *
+ * This is used to get current timestamp in tls_sender_send().
+ *
+ * \return current timestamp
+ */
+static inline uint64_t get_cur_timestamp()
+{
+   struct timespec spec_time;
+
+   clock_gettime(CLOCK_MONOTONIC, &spec_time);
+   /* time in microseconds seconds -> secs * microsends + nanoseconds */
+   return spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
+}
+
+/**
  * \brief Send data to all connected clients.
  *
  * All clients are in 'current' buffer or in 'backup' buffer.
@@ -1301,6 +1317,9 @@ int tls_sender_send(void *priv, const void *data, uint32_t size, int timeout)
    uint32_t i, j, failed, passed;
    int retval;
    ssize_t readbytes;
+
+   uint64_t send_entry_time;
+   uint64_t send_exit_time;
 
    char block = ((timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0);
 
@@ -1430,7 +1449,14 @@ blocking_repeat:
             cl->sending_pointer = (void *) data;
             cl->pending_bytes = size;
          }
+
+         send_entry_time = get_cur_timestamp();
          result = send_all_data(c, cl, &cl->sending_pointer, &cl->pending_bytes, block);
+         send_exit_time = get_cur_timestamp();
+
+         cl->timer_last = (send_exit_time - send_entry_time);
+         cl->timer_total += cl->timer_last;
+
          switch (result) {
          case TRAP_E_IO_ERROR:
             server_disconnected_client(c, i);
@@ -1587,6 +1613,33 @@ int32_t tls_sender_get_client_count(void *priv)
    client_count = c->connected_clients;
    pthread_mutex_unlock(&c->lock);
    return client_count;
+}
+
+int8_t tls_sender_get_client_stats_json(void* priv, json_t *client_stats_arr)
+{
+   int i;
+   json_t *client_stats = NULL;
+   tls_sender_private_t *c = (tls_sender_private_t *) priv;
+
+   if(c == NULL) {
+      return 0;
+   }
+
+   for(i = 0; i < c->clients_arr_size; ++i) {
+      if(c->clients[i].sd < 0) {
+         continue;
+      }
+
+      client_stats = json_pack("{sisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last);
+      if(client_stats == NULL) {
+         return 0;
+      }
+
+      if (json_array_append_new(client_stats_arr, client_stats) == -1) {
+         return 0;
+      }
+   }
+   return 1;
 }
 
 static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
@@ -1878,6 +1931,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    ifc->terminate = tls_sender_terminate;
    ifc->destroy = tls_sender_destroy;
    ifc->get_client_count = tls_sender_get_client_count;
+   ifc->get_client_stats_json = tls_sender_get_client_stats_json;
    ifc->create_dump = tls_sender_create_dump;
    ifc->priv = priv;
    ifc->get_id = tls_send_ifc_get_id;
@@ -1921,6 +1975,10 @@ static void *accept_clients_thread(void *arg)
    fd_set scset;
    tls_sender_private_t *c = (tls_sender_private_t *) arg;
    int i;
+   struct sockaddr *tmpaddr;
+   struct ucred ucred;
+   uint32_t ucredlen = sizeof(struct ucred);
+   uint32_t client_id = 0;
 
    /* handle new connections */
    addrlen = sizeof remoteaddr;
@@ -1951,6 +2009,16 @@ static void *accept_clients_thread(void *arg)
          if (newclient == -1) {
             VERBOSE(CL_ERROR, "Accepting new client failed.");
          } else {
+            tmpaddr = (struct sockaddr *) &remoteaddr;
+            switch(((struct sockaddr *)tmpaddr)->sa_family) {
+               case AF_INET:
+                  client_id = ntohs(((struct sockaddr_in *)tmpaddr)->sin_port);
+                  break;
+               case AF_INET6:
+                  client_id = ntohs(((struct sockaddr_in6 *)tmpaddr)->sin6_port);
+                  break;
+            }
+            VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TLS socket, port=%u", client_id);
             VERBOSE(CL_VERBOSE_ADVANCED, "New connection from %s on socket %d",
                inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
                   newclient);

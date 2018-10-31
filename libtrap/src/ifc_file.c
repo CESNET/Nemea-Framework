@@ -649,6 +649,12 @@ int32_t file_get_client_count(void *priv)
    return 1;
 }
 
+int8_t file_get_client_stats_json(void *priv, json_t *client_stats_arr)
+{
+   /* do not collect client statistics for this interface */
+   return 1;
+}
+
 char *file_send_ifc_get_id(void *priv)
 {
    return ((priv) ? ((file_private_t *) priv)->filename : NULL);
@@ -786,6 +792,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    ifc->terminate = file_terminate;
    ifc->destroy = file_destroy;
    ifc->get_client_count = file_get_client_count;
+   ifc->get_client_stats_json = file_get_client_stats_json;
    ifc->create_dump = file_create_dump;
    ifc->priv = priv;
    ifc->get_id = file_send_ifc_get_id;

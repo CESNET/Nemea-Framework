@@ -2698,6 +2698,7 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
 
    json_t *in_ifc_cnts  = NULL;
    json_t *out_ifc_cnts = NULL;
+   json_t *client_stats_arr;
 
    uint32_t in_cnt = (ctx->num_ifc_in > 0) ? ctx->num_ifc_in : 0;
    uint32_t out_cnt = (ctx->num_ifc_out > 0) ? ctx->num_ifc_out : 0;
@@ -2732,7 +2733,19 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       if (ifc_id == NULL) {
          ifc_id = none_ifc_id;
       }
-      out_ifc_cnts = json_pack("{sisssisIsIsIsI}", "num_clients", ctx->out_ifc_list[x].get_client_count(ctx->out_ifc_list[x].priv), "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type), "sent-messages", __sync_fetch_and_add(&ctx->counter_send_message[x], 0), "dropped-messages", __sync_fetch_and_add(&ctx->counter_dropped_message[x], 0), "buffers", __sync_fetch_and_add(&ctx->counter_send_buffer[x], 0), "autoflushes", __sync_fetch_and_add(&ctx->counter_autoflush[x],0));
+
+      client_stats_arr = json_array();
+      if(client_stats_arr == NULL) {
+         VERBOSE(CL_ERROR, "Service thread - could not create json array with client statistics\n");
+         goto clean_up;
+      }
+
+      if(ctx->out_ifc_list[x].get_client_stats_json(ctx->out_ifc_list[x].priv, client_stats_arr) == 0) {
+         VERBOSE(CL_ERROR, "Service thread - could not create json array with client statistics\n");
+         goto clean_up;
+      }
+
+      out_ifc_cnts = json_pack("{sosisssisIsIsIsI}", "client_stats_arr", client_stats_arr, "num_clients", ctx->out_ifc_list[x].get_client_count(ctx->out_ifc_list[x].priv), "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type), "sent-messages", __sync_fetch_and_add(&ctx->counter_send_message[x], 0), "dropped-messages", __sync_fetch_and_add(&ctx->counter_dropped_message[x], 0), "buffers", __sync_fetch_and_add(&ctx->counter_send_buffer[x], 0), "autoflushes", __sync_fetch_and_add(&ctx->counter_autoflush[x],0));
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;

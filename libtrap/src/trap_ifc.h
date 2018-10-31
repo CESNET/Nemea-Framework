@@ -138,6 +138,15 @@ typedef void (*ifc_create_dump_func_t)(void *p, uint32_t i, const char *d);
 typedef int32_t (*ifc_get_client_count_func_t)(void *p);
 
 /**
+ * Get json array with client statistics
+ *
+ * \param[in] p   pointer to IFC's private memory allocated by constructor
+ * \param[out] client_stats_arr   pointer to JSON array to be filled with client statistics
+ * \returns 1 (TRUE) on success, otherwise 0 (FALSE)
+ */
+typedef int8_t (*ifc_get_client_stats_json_func_t)(void *p, json_t *client_stats_arr);
+
+/**
  * Get identifier of the interface
  *
  * \param[in] priv   pointer to IFC's private memory allocated by constructor
@@ -225,6 +234,7 @@ typedef struct trap_output_ifc_s {
    ifc_destroy_func_t destroy;     ///< Pointer to destructor function
    ifc_create_dump_func_t create_dump; ///< Pointer to function for generating of dump
    ifc_get_client_count_func_t get_client_count;  ///< Pointer to get_client_count function
+   ifc_get_client_stats_json_func_t get_client_stats_json; ///< Pointer to get_client_stats_json function
    void *priv;                     ///< Pointer to instance's private data
    unsigned char *buffer;          ///< Internal pointer to buffer for messages
    unsigned char *buffer_header;   ///< Internal pointer to header of buffer followed by payload

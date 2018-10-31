@@ -207,6 +207,13 @@ int32_t blackhole_get_client_count(void *priv)
    return 1;
 }
 
+int8_t blackhole_get_client_stats_json(void *priv, json_t *client_stats_arr)
+{
+   /* do not collect client statistics for this interface */
+   return 1;
+}
+
+
 char *blackhole_ifc_get_id(void *priv)
 {
    return NULL;
@@ -218,6 +225,7 @@ int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *
    ifc->terminate = blackhole_terminate;
    ifc->destroy = blackhole_destroy;
    ifc->get_client_count = blackhole_get_client_count;
+   ifc->get_client_stats_json = blackhole_get_client_stats_json;
    ifc->create_dump = create_dump;
    ifc->priv = NULL;
    ifc->get_id = blackhole_ifc_get_id;
