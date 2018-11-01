@@ -2735,12 +2735,12 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       }
 
       client_stats_arr = json_array();
-      if(client_stats_arr == NULL) {
+      if (client_stats_arr == NULL) {
          VERBOSE(CL_ERROR, "Service thread - could not create json array with client statistics\n");
          goto clean_up;
       }
 
-      if(ctx->out_ifc_list[x].get_client_stats_json(ctx->out_ifc_list[x].priv, client_stats_arr) == 0) {
+      if (ctx->out_ifc_list[x].get_client_stats_json(ctx->out_ifc_list[x].priv, client_stats_arr) == 0) {
          VERBOSE(CL_ERROR, "Service thread - could not create json array with client statistics\n");
          goto clean_up;
       }

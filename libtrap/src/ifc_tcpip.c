@@ -1262,7 +1262,7 @@ blocking_repeat:
          break;
       }
       cl = &c->clients[i];
-      if(cl->sd == -1) {
+      if (cl->sd == -1) {
          continue;
       }
       if (FD_ISSET(cl->sd, &disset)) {
@@ -1464,17 +1464,17 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
    json_t *client_stats = NULL;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
-   if(c == NULL) {
+   if (c == NULL) {
       return 0;
    }
 
-   for(i = 0; i < c->clients_arr_size; ++i) {
-      if(c->clients[i].sd < 0) {
+   for (i = 0; i < c->clients_arr_size; ++i) {
+      if (c->clients[i].sd < 0) {
          continue;
       }
 
       client_stats = json_pack("{sisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last);
-      if(client_stats == NULL) {
+      if (client_stats == NULL) {
          return 0;
       }
 
@@ -1803,15 +1803,15 @@ static void *accept_clients_thread(void *arg)
          if (newclient == -1) {
             VERBOSE(CL_ERROR, "Accepting new client failed.");
          } else {
-            if(c->socket_type == TRAP_IFC_TCPIP) {
+            if (c->socket_type == TRAP_IFC_TCPIP) {
                // tcp socket
                tmpaddr = (struct sockaddr *) &remoteaddr;
-               switch(((struct sockaddr *)tmpaddr)->sa_family) {
+               switch (((struct sockaddr *) tmpaddr)->sa_family) {
                   case AF_INET:
-                     client_id = ntohs(((struct sockaddr_in *)tmpaddr)->sin_port);
+                     client_id = ntohs(((struct sockaddr_in *) tmpaddr)->sin_port);
                      break;
                   case AF_INET6:
-                     client_id = ntohs(((struct sockaddr_in6 *)tmpaddr)->sin6_port);
+                     client_id = ntohs(((struct sockaddr_in6 *) tmpaddr)->sin6_port);
                      break;
                }
                VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TCP socket, port=%u", client_id);
@@ -1820,7 +1820,6 @@ static void *accept_clients_thread(void *arg)
                if (getsockopt(newclient, SOL_SOCKET, SO_PEERCRED, &ucred, &ucredlen) == -1) {
                   goto refuse_client;
                }
-
                client_id = (uint32_t) ucred.pid;
                VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via UNIX socket, pid=%ld", (long) ucred.pid);
             }

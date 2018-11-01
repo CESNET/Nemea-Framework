@@ -330,7 +330,7 @@ int decode_cnts_from_json(char **data)
          return -1;
       }
       
-      if(json_array_size(client_stats_arr) > 0)
+      if (json_array_size(client_stats_arr) > 0)
       {
          printf("\tClient statistics:\n");
          json_array_foreach(client_stats_arr, c_arr_idx, client) { 
@@ -341,7 +341,7 @@ int decode_cnts_from_json(char **data)
             }
             
             val = json_object_get(client, "id");
-            if(val == NULL) {
+            if (val == NULL) {
                printf("[ERROR] Could not get string value of key \"id\" from a client timers array json object.\n");
                json_decref(json_struct);
                return -1;
@@ -349,7 +349,7 @@ int decode_cnts_from_json(char **data)
             client_id = (uint32_t)(json_integer_value(val));
                     
             val = json_object_get(client, "timer_last");
-            if(val == NULL) {
+            if (val == NULL) {
                printf("[ERROR] Could not get string value of key \"timer_last\" from a client timers array json object.\n");
                json_decref(json_struct);
                return -1; 
@@ -357,7 +357,7 @@ int decode_cnts_from_json(char **data)
             client_timer_last = (uint32_t)(json_integer_value(val));
             
             val = json_object_get(client, "timer_total");
-            if(val == NULL) {
+            if (val == NULL) {
                printf("[ERROR] Could not get string value of key \"timer_total\" from a client timers array json object.\n");
                json_decref(json_struct);
                return -1;
