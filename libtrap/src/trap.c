@@ -426,7 +426,7 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
          __sync_fetch_and_add(&ctx->counter_dropped_message[ifc], 1);
 
          /* Drop buffer if no client is connected. */
-         if (oifc->get_client_count(oifc) == 0) {
+         if (oifc->get_client_count(oifc->priv) == 0) {
             reset_buffer(oifc);
          }
       }
@@ -2615,7 +2615,7 @@ void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
          __sync_fetch_and_add(&c->counter_send_buffer[ifc], 1);
       } else {
          oifc->buffer_occupied = 1;
-         if (oifc->get_client_count(oifc) == 0) {
+         if (oifc->get_client_count(oifc->priv) == 0) {
             reset_buffer(oifc);
          }
       }
