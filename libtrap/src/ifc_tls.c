@@ -2009,12 +2009,12 @@ static void *accept_clients_thread(void *arg)
          } else {
             tmpaddr = (struct sockaddr *) &remoteaddr;
             switch(((struct sockaddr *) tmpaddr)->sa_family) {
-               case AF_INET:
-                  client_id = ntohs(((struct sockaddr_in *) tmpaddr)->sin_port);
-                  break;
-               case AF_INET6:
-                  client_id = ntohs(((struct sockaddr_in6 *) tmpaddr)->sin6_port);
-                  break;
+            case AF_INET:
+               client_id = ntohs(((struct sockaddr_in *) tmpaddr)->sin_port);
+               break;
+            case AF_INET6:
+               client_id = ntohs(((struct sockaddr_in6 *) tmpaddr)->sin6_port);
+               break;
             }
             VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TLS socket, port=%u", client_id);
             VERBOSE(CL_VERBOSE_ADVANCED, "New connection from %s on socket %d",
