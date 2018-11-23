@@ -1,3 +1,15 @@
+2018-11-23 libtrap-0.12.1
+	* libtrap:
+		Libtrap buffer now properly empties itself if no client is
+		connected to the ouput interface. (This changes how statistics
+		- number of messages sent and dropped - are treated when
+		no client is connected).
+
+		Added client identification for TCP and UNIX output interfaces
+		and computation of statistics. For UNIX IFC type, ID is set to PID of the connected client.
+		For TCP or TLS IFC types, ID is set to a remote TCP port of the connected
+		client (which can be looked up using `netstat(8)` or `ss(8)`).
+
 2018-10-26 libtrap-0.12.0
 	* libtrap:
 		Refactoring, improved throughput.
