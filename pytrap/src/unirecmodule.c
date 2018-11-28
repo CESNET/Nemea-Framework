@@ -1086,6 +1086,8 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
         break;
     case UR_TYPE_IP:
         return (PyObject *) &pytrap_UnirecIPAddr;
+    case UR_TYPE_MAC:
+        return (PyObject *) &pytrap_UnirecMACAddr;
     case UR_TYPE_TIME:
         return (PyObject *) &pytrap_UnirecTime;
     case UR_TYPE_STRING:
