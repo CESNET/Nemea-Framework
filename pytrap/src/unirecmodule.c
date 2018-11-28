@@ -13,6 +13,7 @@
 
 #include "fields.h"
 #include "unirecipaddr.h"
+#include "unirecmacaddr.h"
 #include "pytrapexceptions.h"
 
 UR_FIELDS()
@@ -536,6 +537,13 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             memcpy(&new_ip->ip, value, sizeof(ip_addr_t));
             return (PyObject *) new_ip;
         }
+    case UR_TYPE_MAC:
+        {
+            pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
+            memcpy(&new_mac->mac, value, sizeof(mac_addr_t));
+            return (PyObject *) new_mac;
+        }
+        break;
     case UR_TYPE_TIME:
         {
             pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
@@ -728,6 +736,13 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
             ip_addr_t *dest = (ip_addr_t *) value;
             dest->ui64[0] = src->ip.ui64[0];
             dest->ui64[1] = src->ip.ui64[1];
+        }
+        break;
+    case UR_TYPE_MAC:
+        if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecMACAddr)) {
+            pytrap_unirecmacaddr *src = ((pytrap_unirecmacaddr *) valueObj);
+            mac_addr_t *dest = (mac_addr_t *) value;
+            memcpy(dest, &src->mac, sizeof(mac_addr_t));
         }
         break;
     case UR_TYPE_TIME:
@@ -1504,6 +1519,21 @@ init_unirectemplate(PyObject *m)
     }
     Py_INCREF(&pytrap_UnirecIPAddrRange);
     PyModule_AddObject(m, "UnirecIPAddrRange", (PyObject *) &pytrap_UnirecIPAddrRange);
+
+    /* Add MACAddr */
+    //pytrap_UnirecTemplate.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&pytrap_UnirecMACAddr) < 0) {
+        return EXIT_FAILURE;
+    }
+    Py_INCREF(&pytrap_UnirecMACAddr);
+    PyModule_AddObject(m, "UnirecMACAddr", (PyObject *) &pytrap_UnirecMACAddr);
+
+    /* Add MACAddrRange */
+    if (PyType_Ready(&pytrap_UnirecMACAddrRange) < 0) {
+        return EXIT_FAILURE;
+    }
+    Py_INCREF(&pytrap_UnirecMACAddrRange);
+    PyModule_AddObject(m, "UnirecMACAddrRange", (PyObject *) &pytrap_UnirecMACAddrRange);
 
     /* Add Template */
     if (PyType_Ready(&pytrap_UnirecTemplate) < 0) {
