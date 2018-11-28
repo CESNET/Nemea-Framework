@@ -537,6 +537,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             memcpy(&new_ip->ip, value, sizeof(ip_addr_t));
             return (PyObject *) new_ip;
         }
+        break;
     case UR_TYPE_MAC:
         {
             pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
@@ -550,6 +551,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             new_time->timestamp = *((ur_time_t *) value);
             return (PyObject *) new_time;
         }
+        break;
     case UR_TYPE_STRING:
         {
             Py_ssize_t value_size = ur_get_var_len(self->urtmplt, data, field_id);
@@ -1032,8 +1034,8 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
         val = UnirecTemplate_get_local(self, self->data, id);
         keyval =  PyObject_CallMethodObjArgs(i, format, val, NULL);
         PyList_Append(l, keyval);
-        Py_DECREF(i);
-        Py_DECREF(val);
+        Py_XDECREF(i);
+        Py_XDECREF(val);
         Py_XDECREF(keyval);
     }
     PyObject *delim = PyUnicode_FromString(", ");
