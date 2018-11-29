@@ -10,6 +10,8 @@
 /*   UnirecMACAddr   */
 /*********************/
 
+#define MAC_MASK 0x0000FFFFFFFFFFFFLL
+
 static PyObject *
 UnirecMACAddr_compare(PyObject *a, PyObject *b, int op)
 {
@@ -65,6 +67,38 @@ mac_is_null(mac_addr_t *mac)
    }
 }
 
+// mac bytes to integer
+uint64_t
+mac_b2i(uint8_t bytes[6])
+{
+   return (uint64_t) ((uint64_t) ntohl(*((uint32_t *) bytes)) << 16 | ntohs(*(((uint16_t *) bytes) + 2)));
+}
+
+// mac integer to bytes
+void
+mac_i2b(uint64_t mac, uint8_t bytes[6])
+{
+   *(uint32_t *) bytes = htonl(mac >> 16);
+   *(uint16_t *) (bytes + 4) = htons(mac & 0xFFFF);
+}
+
+// mac incrementation
+uint64_t
+mac_inc(uint64_t mac)
+{
+   return ++mac & MAC_MASK;
+}
+
+// mac decrementation
+uint64_t
+mac_dec(uint64_t mac)
+{
+   if (mac == 0) {
+      return MAC_MASK;
+   }
+   return --mac;
+}
+
 static PyObject *
 UnirecMACAddr_isNull(pytrap_unirecmacaddr *self)
 {
@@ -89,19 +123,29 @@ UnirecMACAddr_bool(pytrap_unirecmacaddr *self)
 static PyObject *
 UnirecMACAddr_inc(pytrap_unirecmacaddr *self)
 {
-    pytrap_unirecmacaddr *mac_inc;
-    //mac_inc = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
+    pytrap_unirecmacaddr *mac;
+    mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
 
-    return Py_NotImplemented;
+    uint64_t tmp = mac_b2i(self->mac.bytes);
+    tmp = mac_inc(tmp);
+    mac_i2b(tmp, mac->mac.bytes);
+
+    Py_INCREF(mac);
+    return (PyObject *) mac;
 }
 
 static PyObject *
 UnirecMACAddr_dec(pytrap_unirecmacaddr *self)
 {
-    pytrap_unirecmacaddr *mac_dec;
-    //mac_dec = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
+    pytrap_unirecmacaddr *mac;
+    mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
 
-    return Py_NotImplemented;
+    uint64_t tmp = mac_b2i(self->mac.bytes);
+    tmp = mac_dec(tmp);
+    mac_i2b(tmp, mac->mac.bytes);
+
+    Py_INCREF(mac);
+    return (PyObject *) mac;
 }
 
 static int

@@ -97,6 +97,114 @@ class DataTypesIPAddr(unittest.TestCase):
             # expected UnirecIPAddr type
             pass
 
+class DataTypesMACAddr(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        mac1 = pytrap.UnirecMACAddr("11:22:33:44:55:66")
+        self.assertEqual(mac1, mac1)
+        self.assertEqual(type(mac1), pytrap.UnirecMACAddr, "Bad type of MAC address object.")
+        self.assertEqual(str(mac1), "11:22:33:44:55:66", "MAC address is not equal to its str().")
+        self.assertEqual(repr(mac1), "UnirecMACAddr('11:22:33:44:55:66')", "MAC address is not equal to its repr().")
+
+        mac2 = pytrap.UnirecMACAddr("10:20:30:40:50:60")
+        mac3 = pytrap.UnirecMACAddr("11:22:33:44:55:66")
+        self.assertFalse(mac1 == mac2, "Comparison of different MAC addresses failed.")
+        self.assertFalse(mac1 <= mac2, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac2 >= mac1, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac1 != mac3, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac1  < mac3, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac1  > mac3, "Comparison of the same MAC addresses failed.")
+
+        mac4 = mac1
+        for i in range(0, 256):
+            mac4 = mac4.inc();
+
+        self.assertTrue(mac4 == pytrap.UnirecMACAddr("11:22:33:44:56:66"), "Incrementation failed.")
+
+        for i in range(0, 256):
+            mac4 = mac4.dec();
+
+        self.assertTrue(mac4 == mac1, "Decrementation failed.")
+
+        mac5 = pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF").inc()
+        mac6 = pytrap.UnirecMACAddr("00:00:00:00:00:00").dec()
+        self.assertTrue(mac5 == pytrap.UnirecMACAddr("00:00:00:00:00:00"), "Incrementation failed.")
+        self.assertTrue(mac6 == pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF"), "Decrementation failed.")
+
+        # test mac address bytes conversion to integer (bytes consist of uint32_t part and uint16_t part)
+        mac7 = pytrap.UnirecMACAddr("12:34:FF:FF:FF:FF").inc()
+        mac8 = pytrap.UnirecMACAddr("12:34:56:78:FF:FF").inc()
+        self.assertTrue(mac7 == pytrap.UnirecMACAddr("12:35:00:00:00:00"), "uint32_t test failed.")
+        self.assertTrue(mac8 == pytrap.UnirecMACAddr("12:34:56:79:00:00"), "uint16_t test failed.")
+
+        d = dict()
+        m1 = pytrap.UnirecMACAddr("1:2:3:4:5:6")
+        m2 = pytrap.UnirecMACAddr("6:5:4:3:2:1")
+        m3 = pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF")
+        d[m1] = 1
+        d[m2] = 2
+        d[m3] = 3
+        self.assertEqual(d[m3], 3)
+        self.assertEqual(d[m1], 1)
+        self.assertEqual(d[m2], 2)
+        m4 = pytrap.UnirecMACAddr("1:2:3:0:0:0")
+        try:
+            print(d[m4])
+            self.fail("MAC address shouldn't be in dict")
+        except KeyError:
+            pass
+        try:
+            i = pytrap.UnirecMACAddr(0)
+            self.fail("Only string is a valid argument of UnirecMACAddr()")
+        except TypeError:
+            pass
+        try:
+            i = pytrap.UnirecMACAddr(bytes([11, 22, 33, 44, 55, 66]))
+            self.fail("Only string is a valid argument of UnirecMACAddr()")
+        except pytrap.TrapError:
+            pass
+
+        i = pytrap.UnirecMACAddr("00:00:00:00:00:00")
+        self.assertTrue(i.isNull())
+        self.assertFalse(i)
+        i = pytrap.UnirecMACAddr("00:00:00:00:00:01")
+        self.assertFalse(i.isNull())
+        self.assertTrue(i)
+
+        # __contains__
+        self.assertFalse(m3 in m4)
+        self.assertTrue(m4 in m4)
+        self.assertTrue(pytrap.UnirecMACAddr("d:e:a:d:be:ef") in pytrap.UnirecMACAddr("d:e:a:d:be:ef"))
+        mac = pytrap.UnirecMACAddr("d:e:a:d:be:ef")
+        bl1 = pytrap.UnirecMACAddr("d:e:a:d:be:ef")
+        bl2 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("d:0:0:0:0:0"), pytrap.UnirecMACAddr("d:f:f:f:f:f"))
+        bl3 = pytrap.UnirecMACAddr("b:e:a:d:de:ef")
+        bl4 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("0:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("1:2:3:4:5:6"))
+        bl5 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("0:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("1:0:0:0:0:0"))
+        bl6 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("1:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("c:0:0:0:0:0"))
+        # both are True:
+        self.assertTrue(mac in bl1)
+        self.assertTrue(mac in bl2)
+        # both are False
+        self.assertFalse(mac in bl3)
+        self.assertFalse(mac in bl4)
+
+        self.assertTrue(bl2.isIn(mac) == 0)
+        self.assertTrue(bl4.isIn(mac) == 1)
+        self.assertTrue(bl4.isIn(pytrap.UnirecMACAddr("0:0:0:0:0:1")) == -1)
+
+        self.assertTrue(bl4.isOverlap(bl4))
+        self.assertTrue(bl4.isOverlap(bl5))
+        self.assertTrue(bl5.isOverlap(bl4))
+        self.assertTrue(bl4.isOverlap(bl6))
+        self.assertTrue(not bl6.isOverlap(bl2))
+        self.assertTrue(not bl2.isOverlap(bl4))
+
+
 def timedelta_total_seconds(timedelta):
     return (
         timedelta.microseconds + 0.0 +
