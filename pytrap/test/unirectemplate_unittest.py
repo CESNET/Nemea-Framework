@@ -405,9 +405,10 @@ class Template2Test(unittest.TestCase):
 class Template3Test(unittest.TestCase):
     def runTest(self):
         import pytrap
-        a = pytrap.UnirecTemplate("ipaddr IP,time TIME,uint64 U64,uint32 U32,uint16 U16,uint8 U8,int64 I64,int32 I32,int16 I16,int8 I8,float FL,double DB,char CHR,string TEXT,bytes STREAMBYTES")
+        a = pytrap.UnirecTemplate("ipaddr IP, macaddr MAC,time TIME,uint64 U64,uint32 U32,uint16 U16,uint8 U8,int64 I64,int32 I32,int16 I16,int8 I8,float FL,double DB,char CHR,string TEXT,bytes STREAMBYTES")
         a.createMessage(100)
         a.IP = pytrap.UnirecIPAddr("1.2.3.4")
+        a.MAC = pytrap.UnirecMACAddr("1:2:3:4:5:6")
         a.TIME = pytrap.UnirecTime(123456)
         a.U64 = 0x100000000
         a.U32 = 0x10000
@@ -424,6 +425,7 @@ class Template3Test(unittest.TestCase):
         a.STREAMBYTES = b"streambytes"
 
         self.assertTrue(a.IP == pytrap.UnirecIPAddr("1.2.3.4"))
+        self.assertTrue(a.MAC == pytrap.UnirecMACAddr("1:2:3:4:5:6"))
         self.assertTrue(a.TIME == pytrap.UnirecTime(123456))
         self.assertTrue(a.U64 == 0x100000000)
         self.assertTrue(a.U32 == 0x10000)
@@ -441,6 +443,7 @@ class Template3Test(unittest.TestCase):
 
         # Check types
         self.assertEqual(type(a.IP), pytrap.UnirecIPAddr)
+        self.assertEqual(type(a.MAC), pytrap.UnirecMACAddr)
         self.assertEqual(type(a.TIME), pytrap.UnirecTime)
         self.assertEqual(type(a.U64), long)
         self.assertEqual(type(a.U32), int)
@@ -457,6 +460,7 @@ class Template3Test(unittest.TestCase):
         self.assertEqual(type(a.STREAMBYTES), bytearray)
 
         self.assertEqual(a.getFieldType("IP"), pytrap.UnirecIPAddr)
+        self.assertEqual(a.getFieldType("MAC"), pytrap.UnirecMACAddr)
         self.assertEqual(a.getFieldType("TIME"), pytrap.UnirecTime)
         self.assertEqual(a.getFieldType("U64"), long)
         self.assertEqual(a.getFieldType("U32"), long)
