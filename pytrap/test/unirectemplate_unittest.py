@@ -53,12 +53,13 @@ class DataTypesIPAddr(unittest.TestCase):
         try:
             print(d[i4])
             self.fail("IP address shouldn't be in dict")
-        except:
+        except KeyError:
             pass
+
         try:
             i = pytrap.UnirecIPAddr(0)
             self.fail("Only string is a valid argument of UnirecIPAddr()")
-        except:
+        except TypeError:
             pass
         i = pytrap.UnirecIPAddr("::")
         self.assertTrue(i.isNull())
@@ -508,17 +509,17 @@ class DataTypesIPAddrRange(unittest.TestCase):
         try:
             ip1 = pytrap.UnirecIPAddrRange("1.2.3.4")
             self.fail("2 arguments or <ip>/<netmask> are required")
-        except:
+        except TypeError:
             pass
         try:
             ip1 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("1.2.3.4"))
             self.fail("2 arguments or <ip>/<netmask> are required")
-        except:
+        except TypeError:
             pass
         try:
             ip1 = pytrap.UnirecIPAddrRange(1, 2)
             self.fail("Integer arguments are not supported.")
-        except:
+        except TypeError:
             pass
         ip1 = pytrap.UnirecIPAddrRange("192.168.3.1/24")
         self.assertEqual(ip1, ip1)
