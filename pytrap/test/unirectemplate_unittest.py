@@ -176,6 +176,10 @@ class DataTypesMACAddr(unittest.TestCase):
         self.assertFalse(m3 in m4)
         self.assertTrue(m4 in m4)
         self.assertTrue(pytrap.UnirecMACAddr("d:e:a:d:be:ef") in pytrap.UnirecMACAddr("d:e:a:d:be:ef"))
+
+class DataTypesMACAddrRange(unittest.TestCase):
+    def runTest(self):
+        import pytrap
         mac = pytrap.UnirecMACAddr("d:e:a:d:be:ef")
         bl1 = pytrap.UnirecMACAddr("d:e:a:d:be:ef")
         bl2 = pytrap.UnirecMACAddrRange(
@@ -187,6 +191,11 @@ class DataTypesMACAddr(unittest.TestCase):
             pytrap.UnirecMACAddr("0:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("1:0:0:0:0:0"))
         bl6 = pytrap.UnirecMACAddrRange(
             pytrap.UnirecMACAddr("1:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("c:0:0:0:0:0"))
+
+        self.assertEqual(type(bl2), pytrap.UnirecMACAddrRange, "Bad type of MAC address object.")
+        self.assertEqual(str(bl6), "1:0:0:ff:ff:ff - c:0:0:0:0:0", "String representation of UnirecMACAddrRange not equal to expected string.")
+        self.assertEqual(repr(bl6), "UnirecMACAddrRange(UnirecMACAddr('1:0:0:ff:ff:ff'), UnirecMACAddr('c:0:0:0:0:0'))", "String representation of UnirecMACAddrRange not equal to expected string.")
+
         # both are True:
         self.assertTrue(mac in bl1)
         self.assertTrue(mac in bl2)
@@ -205,6 +214,22 @@ class DataTypesMACAddr(unittest.TestCase):
         self.assertTrue(not bl6.isOverlap(bl2))
         self.assertTrue(not bl2.isOverlap(bl4))
 
+        self.assertTrue(not bl2 == bl4)
+        self.assertTrue(bl2 == bl2)
+
+        mac1 = pytrap.UnirecMACAddr("d:e:ad:be:e:f")
+        mac2 = pytrap.UnirecMACAddr("b:a:d:f0:0:d")
+        rangemap = dict()
+        rangemap[mac1] = 1
+        rangemap[mac2] = 2
+        if mac1 not in rangemap:
+            self.fail("mac1 should be already in dict.")
+        if mac2 not in rangemap:
+            self.fail("mac2 should be already in dict.")
+        s = 0
+        for key in rangemap:
+            s += rangemap[key]
+        self.assertEqual(s, 3)
 
 def timedelta_total_seconds(timedelta):
     return (
