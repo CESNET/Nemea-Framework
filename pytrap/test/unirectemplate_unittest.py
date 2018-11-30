@@ -164,6 +164,8 @@ class DataTypesMACAddr(unittest.TestCase):
             self.fail("Only string is a valid argument of UnirecMACAddr()")
         except pytrap.TrapError:
             pass
+        except TypeError:
+            pass
 
         i = pytrap.UnirecMACAddr("00:00:00:00:00:00")
         self.assertTrue(i.isNull())
