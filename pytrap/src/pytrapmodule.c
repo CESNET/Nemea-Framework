@@ -419,7 +419,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "Returns:\n"
         "    bytearray: Received data.\n\n"
         "Raises:\n"
-        "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
+        "    TimeoutError: Receiving data failed due to elapsed timeout.\n"
         "    TrapError: Bad index given.\n"
         "    FormatChanged: Data format was changed, it is necessary to\n"
         "        update template.  The received data is in `data` attribute\n"
@@ -432,7 +432,7 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "    bytes (bytearray or bytes): Data to send.\n\n"
         "    ifcidx (Optional[int]): Index of output IFC (default: 0).\n"
         "Raises:\n"
-        "    TrapTimeout: Receiving data failed due to elapsed timeout.\n"
+        "    TimeoutError: Receiving data failed due to elapsed timeout.\n"
         "    TrapError: Bad size or bad index given.\n"
         "    Terminated: The TRAP IFC was terminated.\n"},
 
