@@ -1882,10 +1882,22 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
-   /* handle buffering */
-   ret_val = trap_store_into_buffer(c, ifc, data, size, c->out_ifc_list[ifc].datatimeout);
-   if (ret_val == TRAP_E_OK) {
-      __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
+   trap_output_ifc_t* ifc_ptr = &c->out_ifc_list[ifc];
+
+   if (ifc_ptr->ifc_type == TRAP_IFC_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TCPIP_UNIX) {
+      /* interface handles buffering */
+      ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
+      if (ret_val == TRAP_E_OK) {
+         __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
+      }
+   } else {
+      /* handle buffering */
+      ret_val = trap_store_into_buffer(c, ifc, data, size, c->out_ifc_list[ifc].datatimeout);
+      if (ret_val == TRAP_E_OK) {
+         __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
+      }
+
+
    }
 
    return trap_error(ctx, ret_val);
@@ -2771,7 +2783,6 @@ clean_up:
    return -1;
 }
 
-
 /**
  * Service IFC thread function.
  *
@@ -2781,7 +2792,7 @@ clean_up:
  * \param[in] arg  Pointer to the private libtrap context data (#trap_ctx_init()).
  */
 void *service_thread_routine(void *arg)
-{
+{return NULL;
    struct timeval tv;
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;

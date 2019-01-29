@@ -46,16 +46,6 @@
  * @{
  */
 
-/**
- * How many times to try on EAGAIN for send()?
- */
-#define NONBLOCKING_ATTEMPTS     3
-
-/**
- * How long to sleep between two non-blocking attempts for send()?
- */
-#define NONBLOCKING_MINWAIT   1000
-
 /** \addtogroup tcpip_ifc
  * @{
  */
@@ -65,47 +55,35 @@
  * @{
  */
 
-enum client_send_state {
-   CURRENT_IDLE, /**< waiting for a message in current buffer */
-   CURRENT_HEAD, /**< timeout in header */
-   CURRENT_PAYLOAD, /**< timeout in payload */
-   CURRENT_COMPLETE, /**< message sent */
-   BACKUP_BUFFER /**< timeout in backup buffer */
-};
+typedef struct buffer_s {
+   uint32_t seq_num;
+   uint32_t wr_index;
+   uint32_t ref_count;
+   uint32_t sent_to;
 
-struct client_s {
+   uint8_t finished;
+   uint8_t *header;
+   uint8_t *data;
+
+   pthread_mutex_t lock;
+} buffer_t;
+
+typedef struct client_s {
    int sd; /**< Socket descriptor */
-   void *sending_pointer; /**< Array of pointers into buffer */
-   void *buffer; /**< separate message buffer */
-   uint32_t pending_bytes; /**< The size of data that must be sent */
-   enum client_send_state client_state; /**< State of sending */
+   void *sending_pointer; /**< Pointer to data in client's assigned buffer */
+
    uint64_t timer_total; /**< Total time spent sending (in microseconds) */
+
    uint32_t timer_last; /**< Time spent on last send call (in microseconds) */
+   uint32_t pending_bytes; /**< The size of data that must be sent */
    uint32_t id; /** Client identification - PID for unix socket, port number for TCP socket */
-};
+   uint32_t received_seq_num;
+
+   buffer_t *assigned_buffer;
+} client_t;
 
 typedef struct tcpip_sender_private_s {
    trap_ctx_priv_t *ctx; /**< Libtrap context */
-   char *server_port;
-   int server_sd;
-
-   struct client_s *clients; /**< Array of clients */
-
-   int32_t connected_clients;
-   int32_t clients_arr_size;
-   sem_t have_clients;
-   enum tcpip_ifc_sockettype socket_type;
-   trap_buffer_header_t int_mess_header; /**< Internal message header */
-
-   void *backup_buffer; /**< Internal backup buffer for message */
-
-   const void *ext_buffer; /**< Pointer to buffer that was passed by higher layer - this is the place we write */
-   uint32_t ext_buffer_size; /** size of content of the extbuffer */
-
-   char is_terminated;
-
-   char initialized;
-
    /**
     * File descriptor pair for select() termination.
     *
@@ -115,18 +93,38 @@ typedef struct tcpip_sender_private_s {
     * select().
     */
    int term_pipe[2];
+   int server_sd;
+   char *server_port;
+   char is_terminated;
+   char initialized;
+   enum tcpip_ifc_sockettype socket_type;
 
-   pthread_mutex_t  lock;
-   pthread_mutex_t  sending_lock;
-   pthread_t        accept_thread;
+   uint64_t dropped_buffers;
+   uint64_t active_buffer_reset_timestamp;
+
    uint32_t ifc_idx;
-} tcpip_sender_private_t;
+   uint32_t connected_clients;
+   uint32_t clients_arr_size;
+   uint32_t next_seq_num;
+   uint32_t buffer_count;
+   uint32_t buffer_size;
+   uint32_t timeout_accept;
+   uint32_t timeout_send;
+   uint32_t timeout_store;
+   uint32_t timeout_autoflush;
 
-#define TCPIP_SENDER_STATE_STR(st) (st == CURRENT_IDLE ? "CURRENT_IDLE": \
-(st == CURRENT_HEAD     ? "CURRENT_HEAD": \
-(st == CURRENT_PAYLOAD  ? "CURRENT_PAYLOAD": \
-(st == CURRENT_COMPLETE ? "CURRENT_COMPLETE": \
-("BACKUP_BUFFER")))))
+   uint8_t flush;
+   uint8_t block;
+
+   buffer_t *buffers;
+   buffer_t *active_buffer;
+
+   client_t *clients;
+
+   pthread_t send_thr;
+   pthread_t accept_thr;
+   pthread_mutex_t lock;
+} tcpip_sender_private_t;
 
 /**
  * @}

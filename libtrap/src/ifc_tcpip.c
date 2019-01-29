@@ -960,161 +960,8 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
  * @{
  */
 
-static void server_disconnected_client(tcpip_sender_private_t *c, int cl_id)
-{
-   struct client_s *cl = &c->clients[cl_id];
-   pthread_mutex_lock(&c->lock);
-   close(cl->sd);
-   cl->sd = -1;
-   cl->client_state = CURRENT_IDLE;
-   c->connected_clients--;
-   pthread_mutex_unlock(&c->lock);
-}
-
-/**
- * \brief Try to send data block at once
- *
- * \param [in] c  private data
- * \param [in] sd    socket descriptor
- * \param [in,out] data pointer to beginning of data
- * \param [in,out] size size of data to send and the rest unsent size of data
- * \param [in] block       1 if blocking, 0 if non-blocking
- * \return TRAP_E_OK, TRAP_E_TIMEOUT, TRAP_E_TERMINATED, TRAP_E_IO_ERROR
- */
-static int send_all_data(tcpip_sender_private_t *c, int sd, void **data, uint32_t *size, char block)
-{
-   void *p = (*data);
-   ssize_t numbytes = (*size), sent_b;
-   int res = TRAP_E_TERMINATED;
-
-again:
-   if (block == 0) {
-      sent_b = send(sd, p, numbytes, MSG_NOSIGNAL | MSG_DONTWAIT);
-   } else {
-      sent_b = send(sd, p, numbytes, MSG_NOSIGNAL);
-   }
-   if (sent_b == -1) {
-      switch (errno) {
-      case EBADF:
-      case EPIPE:
-      case EFAULT:
-         VERBOSE(CL_VERBOSE_OFF, "Disconnected client (%i)", errno);
-         res = TRAP_E_IO_ERROR;
-         goto failure;
-      case EAGAIN:
-         if (block == 1) {
-            usleep(NONBLOCKING_MINWAIT);
-            goto again;
-         }
-         break;
-      default:
-         VERBOSE(CL_VERBOSE_OFF,
-                 "Unhandled errno from send in send_all_data (%i)",
-                 errno);
-         res = TRAP_E_IO_ERROR;
-         goto failure;
-      }
-      if (c->is_terminated == 1) {
-         res = TRAP_E_TERMINATED;
-         goto failure;
-      }
-   } else if (sent_b > 0) {
-      numbytes -= sent_b;
-      p += sent_b;
-      DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "send sent: %"PRId64" B remaining: "
-                "%"PRIu64" B from %p (errno %"PRId32")",
-                sent_b, numbytes, p, errno));
-   }
-   assert(numbytes>=0);
-   (*size) = numbytes;
-   if (numbytes > 0) {
-      if (block == 1) {
-         goto again;
-      }
-      (*data) = p;
-      return TRAP_E_TIMEOUT;
-   } else if (numbytes == 0) {
-      (*data) = NULL;
-      return TRAP_E_OK;
-   }
-failure:
-   (*data) = NULL;
-   (*size) = 0;
-   return res;
-}
-
-/**
- * Check if any client is connected.
- * \return non-zero if there is a connected client
- */
-static inline char check_connected_clients(tcpip_sender_private_t *config)
-{
-   pthread_mutex_lock(&config->lock);
-   if (config->connected_clients == 0) {
-      pthread_mutex_unlock(&config->lock);
-      return 0;
-   }
-   pthread_mutex_unlock(&config->lock);
-   return 1;
-}
-
-typedef enum tcpip_sender_result {
-   EVERYBODY_PASSED,
-   EVERYBODY_TIMEDOUT,
-   SOMEBODY_TIMEDOUT
-} tcpip_sender_result_t;
-
-/**
- * \brief Check if we have connected clients and wait for them.
- *
- * The function is blocking or non-blocking.
- * \param [in] config   private data
- * \param [in] t        pointer to timeout for sem_timedwait(), NULL when blocking
- * \return TRAP_E_OK - we have clients, TRAP_E_TIMEOUT - we don't have clients, TRAP_E_TERMINATED - terminating
- */
-static inline int tcpip_sender_conn_phase(tcpip_sender_private_t *config, struct timespec *t)
-{
-   int res;
-   assert(t != NULL);
-
-   if (check_connected_clients(config) == 0) {
-      /* there is no connected client */
-      res = sem_timedwait(&config->have_clients, t);
-      if (res == -1) {
-         if (errno == EINTR) {
-            DEBUG_IFC(VERBOSE(CL_ERROR, "interrupt."));
-            if (config->is_terminated != 0) {
-               return TRAP_E_TERMINATED;
-            }
-         } else if (errno == ETIMEDOUT) {
-            return TRAP_E_TIMEOUT; /* no client after timeout */
-         } else {
-            VERBOSE(CL_ERROR, "sem_timedwait failed (%d): %s", errno, strerror(errno));
-         }
-      }
-      /* timeout or connected client */
-      if (check_connected_clients(config) == 0) {
-         return TRAP_E_TIMEOUT; /* no client after timeout */
-      }
-   }
-   /* connected client */
-   return TRAP_E_OK;
-}
-
 /**
  * \brief Send data to all connected clients.
- *
- * All clients are in 'current' buffer or in 'backup' buffer.
- * All clients get messages from current buffer at first.
- * * When all buffer is successfully sent to all clients
- * in 'current' buffer, everything is alright.
- *
- * * When everybody fails due to timeout, everything
- * is alright, everybody stays in 'current' buffer.
- *
- * * When somebody fails and somebody is successful, failing clients are moved into 'backup' buffer and they have chance to receive the rest of message later. We disconnect all clients that were in 'backup' buffer before moving new ones from 'current' buffer.
- *
- * * All successful clients from 'backup' buffer are moved back into 'current' buffer.
  *
  * \param[in] priv  pointer to module private data
  * \param[in] data  pointer to data to send
@@ -1124,246 +971,11 @@ static inline int tcpip_sender_conn_phase(tcpip_sender_private_t *config, struct
  */
 int tcpip_sender_send(void *priv, const void *data, uint32_t size, int timeout)
 {
-   uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    int result = TRAP_E_TIMEOUT;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   /* timeout for select */
-   struct timeval tv;
-   /* timeout for sem_timedwait */
-   struct timespec ts = { .tv_sec = 0, .tv_nsec = 0 };
-   fd_set set, disset;
-   int maxsd = -1;
-   struct client_s *cl;
-   uint32_t i, j, failed, passed;
-   int retval;
-   ssize_t readbytes;
-   /* first timestamp for global timeout in this function...
-    * in the RESET state, we should check the timeout given by caller
-    * with elapsed time from entry_time.
-    * Timeout is in microseconds... */
 
-   uint64_t entry_time = get_cur_timestamp();
-   uint64_t curr_time = 0, elapsed_time;
-   uint64_t send_entry_time;
-   uint64_t send_exit_time;
-
-   char block = ((timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0);
-
-   /* pointer to timeout for select() */
-   struct timeval *tv_p = ((block != 0) ? NULL : &tv);
-   /* pointer to timeout for sem_timedwait() */
-   struct timespec *ts_p = &ts;
-
-   /* correct module will pass only possitive timeout or TRAP_WAIT, TRAP_HALFWAIT */
-   assert(timeout >= TRAP_HALFWAIT);
-
-   /* I. Init phase: set timeout and double-send switch */
-
-blocking_repeat:
-
-   if (c->is_terminated) {
-      return TRAP_E_TERMINATED;
-   }
-
-   switch (timeout) {
-   case TRAP_WAIT:
-      trap_set_timeouts(1000000, &tv, &ts);
-      break;
-   case TRAP_HALFWAIT:
-      /*
-       * wait 1s in a loop for select(),
-       * do not change timeout for sem_timedwait in connphase
-       */
-      trap_set_timeouts(1000000, &tv, NULL);
-      break;
-   default:
-      /*
-       * set timeout (can be 0 - nowait or any positive number) for select(),
-       * do not change timeout for sem_timedwait in connphase
-       */
-      trap_set_timeouts(timeout, &tv, NULL);
-      break;
-   }
-
-   /* Check connected clients and wait for them when blocking */
-   result = tcpip_sender_conn_phase(c, ts_p);
-   if (result != TRAP_E_OK) {
-      /* it is useless to send when nobody receives */
-      goto exit;
-   }
-
-   FD_ZERO(&disset);
-   FD_ZERO(&set);
-
-   /*
-    * add term_pipe for reading into the disconnect client set
-    */
-   FD_SET(c->term_pipe[0], &disset);
-   if (maxsd < c->term_pipe[0]) {
-      maxsd = c->term_pipe[0];
-   }
-
-   for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
-      cl = &c->clients[i];
-      if (j == c->connected_clients) {
-         break;
-      }
-      if (cl->sd <= 0) {
-         /* not connected client */
-         continue;
-      }
-      j++;
-      if (maxsd < cl->sd) {
-         maxsd = cl->sd;
-      }
-      /* check if client is still connected */
-      FD_SET(cl->sd, &disset);
-      if (cl->client_state != CURRENT_COMPLETE) {
-         /* check if client is ready for message */
-         FD_SET(cl->sd, &set);
-      }
-   }
-
-   retval = select(maxsd + 1, &disset, &set, NULL, tv_p);
-   if ((retval == 0) || (retval < 0 && errno == EINTR)) {
-      if (block == 0) {
-         /* non-blocking mode */
-         curr_time = get_cur_timestamp();
-         elapsed_time = (curr_time - entry_time);
-         if (elapsed_time >= timeout) {
-            result = TRAP_E_TIMEOUT;
-            goto exit;
-         } else {
-            /* elapsed_time is lower than timeout,
-             * decrease timeout and repeat the call.
-             */
-            timeout -= elapsed_time;
-            goto blocking_repeat;
-         }
-      } else {
-         /* blocking mode */
-         goto blocking_repeat;
-      }
-   } else if (retval < 0) {
-      if (c->is_terminated != 0) {
-         goto exit;
-      } else if (errno == EBADF) {
-         assert(0);
-         result = TRAP_E_IO_ERROR;
-         goto exit;
-      }
-   }
-
-   passed = failed = 0;
-
-   pthread_mutex_lock(&c->sending_lock);
-   for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
-      if (j == c->connected_clients) {
-         break;
-      }
-      cl = &c->clients[i];
-      if (cl->sd == -1) {
-         continue;
-      }
-      if (FD_ISSET(cl->sd, &disset)) {
-         /* client disconnects */
-         readbytes = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
-         if (readbytes < 1) {
-            VERBOSE(CL_VERBOSE_LIBRARY, "Disconnected client.");
-            result = TRAP_E_IO_ERROR;
-            server_disconnected_client(c, i);
-            continue;
-         }
-      }
-
-      if (FD_ISSET(cl->sd, &set)) {
-         if (j == c->connected_clients) {
-            break;
-         }
-         /* we added only clients whose sending is not CURRENT_COMPLETE */
-         if ((cl->sending_pointer == NULL) || (cl->pending_bytes == 0)) {
-            cl->sending_pointer = (void *) data;
-            cl->pending_bytes = size;
-         }
-
-         send_entry_time = get_cur_timestamp();
-         result = send_all_data(c, cl->sd, &cl->sending_pointer, &cl->pending_bytes, block);
-         send_exit_time = get_cur_timestamp();
-
-         cl->timer_last = (send_exit_time - send_entry_time);
-         cl->timer_total += cl->timer_last;
-
-         switch (result) {
-         case TRAP_E_IO_ERROR:
-            server_disconnected_client(c, i);
-            failed++;
-            break;
-         case TRAP_E_OK:
-            passed++;
-            cl->client_state = CURRENT_COMPLETE;
-            break;
-         case TRAP_E_TIMEOUT:
-            failed++;
-            break;
-         }
-         j++;
-      }
-      if (c->connected_clients == 0) {
-         /* there is no client to send to */
-         result = TRAP_E_IO_ERROR;
-         break;
-      }
-   }
-   pthread_mutex_unlock(&c->sending_lock);
-
-   if (FD_ISSET(c->term_pipe[0], &disset)) {
-      /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
-      return TRAP_E_TERMINATED;
-   }
-
-   if (failed != 0) {
-      result = TRAP_E_TIMEOUT;
-   } else {
-      for (i = 0, passed = 0; i < c->clients_arr_size; ++i) {
-         cl = &c->clients[i];
-         if ((cl->sd > 0) && (cl->client_state == CURRENT_COMPLETE) && (cl->sending_pointer == NULL)) {
-            passed++;
-            if (passed == c->connected_clients) {
-               break;
-            }
-         }
-      }
-      if (passed == c->connected_clients) {
-         /* there is no client that failed */
-         for (i = 0, j = 0; i < c->clients_arr_size; ++i) {
-            cl = &c->clients[i];
-            if ((cl->sd > 0) && (cl->client_state == CURRENT_COMPLETE)) {
-               cl->client_state = CURRENT_IDLE;
-               j++;
-               if (j == passed) {
-                  break;
-               }
-            }
-         }
-         result = TRAP_E_OK;
-      } else {
-         if (block != 0) {
-            goto blocking_repeat;
-         }
-      }
-   }
-
-exit:
-   /*
-    * Return to blocking_repeat ONLY when the timeout is TRAP_WAIT.
-    * TRAP_HALFWAIT is handled before.
-    */
-   if ((timeout == TRAP_WAIT) && ((result != TRAP_E_OK) || (c->connected_clients == 0))) {
-      goto blocking_repeat;
-   }
    return result;
 }
-
 
 /**
  * \brief Set interface state as terminated.
@@ -1382,80 +994,20 @@ void tcpip_sender_terminate(void *priv)
    return;
 }
 
-
 /**
  * \brief Destructor of TCP sender (output ifc)
  * \param[in] priv  pointer to module private data
  */
 void tcpip_sender_destroy(void *priv)
 {
-   tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   struct client_s *cl;
-   char *unix_socket_path = NULL;
-   void *res;
-   int32_t i;
-
-#define X(x) free(x); x = NULL;
-   // Free private data
-   if (c != NULL) {
-      if ((c->socket_type == TRAP_IFC_TCPIP_UNIX) || (c->socket_type == TRAP_IFC_TCPIP_SERVICE)) {
-         if (asprintf(&unix_socket_path, trap_default_socket_path_format, c->server_port) != -1) {
-            if (unix_socket_path != NULL) {
-               unlink(unix_socket_path);
-               free(unix_socket_path);
-            }
-         }
-      }
-      if (c->server_port != NULL) {
-         free(c->server_port);
-      }
-      if ((c->initialized) && (c->socket_type != TRAP_IFC_TCPIP_SERVICE)) {
-         /* cancel accepting new clients */
-         pthread_cancel(c->accept_thread);
-         pthread_join(c->accept_thread, &res);
-      }
-
-      /* close server socket */
-      close(c->server_sd);
-
-      /* disconnect all clients */
-      pthread_mutex_lock(&c->lock);
-      if (c->clients != NULL) {
-         for (i = 0; i < c->clients_arr_size; i++) {
-            cl = &c->clients[i];
-            if (cl->sd > 0) {
-               close(cl->sd);
-               cl->sd = -1;
-               c->connected_clients--;
-            }
-            X(cl->buffer);
-         }
-         free(c->clients);
-         c->clients = NULL;
-      }
-      pthread_mutex_unlock(&c->lock);
-      pthread_mutex_destroy(&c->lock);
-      pthread_mutex_destroy(&c->sending_lock);
-      sem_destroy(&c->have_clients);
-
-      X(c->backup_buffer)
-      X(c)
-   }
-#undef X
 
 }
 
 int32_t tcpip_sender_get_client_count(void *priv)
 {
-   int32_t client_count = 0;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   if (c == NULL) {
-      return 0;
-   }
-   pthread_mutex_lock(&c->lock);
-   client_count = c->connected_clients;
-   pthread_mutex_unlock(&c->lock);
-   return client_count;
+
+   return c->connected_clients;
 }
 
 int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
@@ -1487,77 +1039,8 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
 
 static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
 {
-   tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   /* return value */
-   int r;
-   /* config file trap-i<number>-config.txt */
-   char *conf_file = NULL;
-   /* config file trap-i<number>-buffer.dat */
-   char *buf_file = NULL;
-   FILE *f = NULL;
-   trap_buffer_header_t aux = { 0 };
-   int32_t i;
-   struct client_s *cl;
 
-
-   r = asprintf(&conf_file, "%s/trap-o%02"PRIu32"-config.txt", path, idx);
-   if (r == -1) {
-      VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
-      conf_file = NULL;
-      goto exit;
-   }
-   f = fopen(conf_file, "w");
-   fprintf(f, "Server port: %s\nServer socket descriptor: %d\n"
-           "Connected clients: %d\nMax clients: %d\nBuffering layer buffer: %p\n"
-           "Buffering layer buffer size: %"PRIu32"\n"
-           "Backup buffer: %p\nTerminated: %d\nInitialized: %d\nSocket type: %s\n"
-           "Message size: %"PRIu32"\nTimeout: %"PRId32"us (%s)\n"
-           "Clients:\n",
-           c->server_port, c->server_sd, c->connected_clients, c->clients_arr_size,
-           c->ctx->out_ifc_list[idx].buffer,
-           c->ctx->out_ifc_list[idx].buffer_index,
-           c->backup_buffer, c->is_terminated,
-           c->initialized, TCPIP_SOCKETTYPE_STR(c->socket_type),
-           c->int_mess_header.data_length,
-           c->ctx->out_ifc_list[idx].datatimeout,
-           TRAP_TIMEOUT_STR(c->ctx->out_ifc_list[idx].datatimeout));
-   for (i = 0; i < c->clients_arr_size; i++) {
-      cl = &c->clients[i];
-      fprintf(f, "\t{%"PRId32", %s, %p, %"PRIu32"}\n",
-              cl->sd, TCPIP_SENDER_STATE_STR(cl->client_state),
-              cl->sending_pointer, cl->pending_bytes);
-   }
-
-   fclose(f);
-   f = NULL;
-
-   r = asprintf(&buf_file, "%s/trap-o%02"PRIu32"-buffer.dat", path, idx);
-   if (r == -1) {
-      buf_file = NULL;
-      VERBOSE(CL_ERROR, "Not enough memory, dump failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
-   f = fopen(buf_file, "w");
-   aux.data_length = htonl(c->ctx->out_ifc_list[idx].buffer_index);
-   if (fwrite(&aux, sizeof(c->int_mess_header), 1, f) != 1) {
-      VERBOSE(CL_ERROR, "Writing buffer header failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
-   if (fwrite(c->ctx->out_ifc_list[idx].buffer, c->ctx->out_ifc_list[idx].buffer_index, 1, f) != 1) {
-      VERBOSE(CL_ERROR, "Writing buffer content failed. (%s:%d)", __FILE__, __LINE__);
-      goto exit;
-   }
-exit:
-   if (f != NULL) {
-      fclose(f);
-   }
-   free(conf_file);
-   free(buf_file);
-   return;
-   VERBOSE(CL_ERROR, "Unimplemented. (%s:%d)", __FILE__, __LINE__);
-   return;
 }
-
 
 /**
  * \brief Function disconnects all clients of the output interface whose private structure is passed via "priv" parameter.
@@ -1566,22 +1049,7 @@ exit:
  */
 void server_disconnect_all_clients(void *priv)
 {
-   tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   struct client_s *cl;
-   int32_t i;
 
-   pthread_mutex_lock(&c->lock);
-   if (c->clients != NULL) {
-      for (i = 0; i < c->clients_arr_size; i++) {
-         cl = &c->clients[i];
-         if (cl->sd > 0) {
-            close(cl->sd);
-            cl->sd = -1;
-            c->connected_clients--;
-         }
-      }
-   }
-   pthread_mutex_unlock(&c->lock);
 }
 
 char *tcpip_send_ifc_get_id(void *priv)
@@ -1650,8 +1118,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    }
    if (param_iterator != NULL) {
       /* still having something to parse... */
-      param_iterator = trap_get_param_by_delimiter(param_iterator, &max_clients, TRAP_IFC_PARAM_DELIMITER
-);
+      param_iterator = trap_get_param_by_delimiter(param_iterator, &max_clients, TRAP_IFC_PARAM_DELIMITER);
    }
    if (max_clients == NULL) {
       /* 2nd parameter became optional, set default value when missing */
@@ -1662,11 +1129,9 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
          max_num_client = TRAP_IFC_DEFAULT_MAX_CLIENTS;
       }
    }
-
-   /* set global buffer size */
-   priv->int_mess_header.data_length = TRAP_IFC_MESSAGEQ_SIZE;
    /* Parsing params ended */
 
+   priv->buffer_size = TRAP_IFC_MESSAGEQ_SIZE + sizeof(uint32_t);
    priv->clients_arr_size = max_num_client;
 
    priv->clients = calloc(max_num_client, sizeof(struct client_s));
@@ -1675,39 +1140,23 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       goto failsafe_cleanup;
    }
 
-   /* allocate buffer according to TRAP_IFC_MESSAGEQ_SIZE with additional space for message header */
-   //priv->message_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
-   //                        sizeof(trap_buffer_header_t));
-   priv->backup_buffer = (void *) calloc(1, priv->int_mess_header.data_length +
-                           sizeof(trap_buffer_header_t));
-
    if (priv->clients == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
       goto failsafe_cleanup;
    }
    for (i = 0; i < max_num_client; i++) {
-      /* all clients are IDLE after connection */
-      priv->clients[i].client_state = CURRENT_IDLE;
-      /* all clients are disconnected */
-      priv->clients[i].sd = -1;
-      priv->clients[i].buffer = calloc(TRAP_IFC_MESSAGEQ_SIZE + 4, 1);
+
    }
 
    priv->connected_clients = 0;
    priv->server_port = server_port;
    priv->is_terminated = 0;
    pthread_mutex_init(&priv->lock, NULL);
-   pthread_mutex_init(&priv->sending_lock, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port=\"%s\"\nmax_clients=\"%s\"\n"
       "TDU size: %u\n(max_clients_num=\"%u\")", priv->server_port, max_clients,
-      priv->int_mess_header.data_length, priv->clients_arr_size);
+      priv->buffer_size, priv->clients_arr_size);
    X(max_clients);
-
-   if (sem_init(&priv->have_clients, 0, 0) == -1) {
-      VERBOSE(CL_ERROR, "Initialization of semaphore failed.");
-      goto failsafe_cleanup;
-   }
 
    result = server_socket_open(priv);
    if (result != TRAP_E_OK) {
@@ -1731,156 +1180,25 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    ifc->priv = priv;
    ifc->get_id = tcpip_send_ifc_get_id;
 
-   return result;
-
 failsafe_cleanup:
    X(server_port);
    X(max_clients);
    if (priv != NULL) {
-      X(priv->backup_buffer);
-      if (priv->clients != NULL) {
-         for (i = 0; i < max_num_client; i++) {
-            X(priv->clients[i].buffer);
+      if (priv->buffers != NULL) {
+         for (i = 0; i < priv->buffer_count; i++) {
+            X(priv->buffers[i].header);
          }
+         X(priv->buffers)
       }
-      X(priv->clients);
+      if (priv->clients != NULL) {
+         X(priv->clients);
+      }
       pthread_mutex_destroy(&priv->lock);
-      pthread_mutex_destroy(&priv->sending_lock);
       X(priv);
    }
 #undef X
 
    return result;
-}
-
-
-/**
- * \brief Function for server thread - accepts incoming clients and disconnects them.
- * \param[in] arg  tcpip_sender_private_t structure (private data)
- * \return NULL
- */
-static void *accept_clients_thread(void *arg)
-{
-   char remoteIP[INET6_ADDRSTRLEN];
-   struct sockaddr_storage remoteaddr; // client address
-   struct client_s *cl;
-   socklen_t addrlen;
-   int newclient, fdmax;
-   fd_set scset;
-   tcpip_sender_private_t *c = (tcpip_sender_private_t *) arg;
-   int i;
-   struct sockaddr *tmpaddr;
-   struct ucred ucred;
-   uint32_t ucredlen = sizeof(struct ucred);
-   uint32_t client_id = 0;
-
-   // handle new connections
-   addrlen = sizeof remoteaddr;
-   while (1) {
-      pthread_mutex_lock(&c->lock);
-      if (c->is_terminated != 0) {
-         pthread_mutex_unlock(&c->lock);
-         break;
-      }
-      pthread_mutex_unlock(&c->lock);
-      FD_ZERO(&scset);
-      FD_SET(c->server_sd, &scset);
-      fdmax = c->server_sd;
-
-      if (select(fdmax + 1, &scset, NULL, NULL, NULL) == -1) {
-         if (errno == EINTR) {
-            if (c->is_terminated != 0) {
-               break;
-            }
-            continue;
-         } else {
-            VERBOSE(CL_ERROR, "%s:%d unexpected error code %d", __func__, __LINE__, errno);
-         }
-      }
-
-      if (FD_ISSET(c->server_sd, &scset)) {
-         newclient = accept(c->server_sd, (struct sockaddr *) &remoteaddr, &addrlen);
-         if (newclient == -1) {
-            VERBOSE(CL_ERROR, "Accepting new client failed.");
-         } else {
-            if (c->socket_type == TRAP_IFC_TCPIP) {
-               // tcp socket
-               tmpaddr = (struct sockaddr *) &remoteaddr;
-               switch (((struct sockaddr *) tmpaddr)->sa_family) {
-               case AF_INET:
-                  client_id = ntohs(((struct sockaddr_in *) tmpaddr)->sin_port);
-                  break;
-               case AF_INET6:
-                  client_id = ntohs(((struct sockaddr_in6 *) tmpaddr)->sin6_port);
-                  break;
-               }
-               VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TCP socket, port=%u", client_id);
-            } else {
-               // unix socket
-               if (getsockopt(newclient, SOL_SOCKET, SO_PEERCRED, &ucred, &ucredlen) == -1) {
-                  goto refuse_client;
-               }
-               client_id = (uint32_t) ucred.pid;
-               VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via UNIX socket, pid=%ld", (long) ucred.pid);
-            }
-
-            VERBOSE(CL_VERBOSE_ADVANCED, "New connection from %s on socket %d",
-               inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
-                  newclient);
-
-            pthread_mutex_lock(&c->lock);
-
-            if (c->connected_clients < c->clients_arr_size) {
-               cl = NULL;
-               for (i = 0; i < c->clients_arr_size; ++i) {
-                  if (c->clients[i].sd < 1) {
-                     cl = &c->clients[i];
-                     break;
-                  }
-               }
-               if (cl == NULL) {
-                  goto refuse_client;
-               }
-               cl->sd = newclient;
-               cl->client_state = CURRENT_IDLE;
-               cl->sending_pointer = NULL;
-               cl->pending_bytes = 0;
-               cl->timer_total = 0;
-               cl->id = client_id;
-
-               /** Output interface negotiation */
-#ifdef ENABLE_NEGOTIATION
-               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, i);
-               if (ret_val == NEG_RES_OK) {
-                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
-               } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-                  cl->sd = -1;
-                  goto refuse_client;
-               } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
-                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-                  cl->sd = -1;
-                  goto refuse_client;
-               }
-#endif
-               c->connected_clients++;
-
-
-               if (sem_post(&c->have_clients) == -1) {
-                  VERBOSE(CL_ERROR, "Semaphore post failed.");
-               }
-            } else {
-refuse_client:
-               VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)",
-                     c->connected_clients, c->clients_arr_size);
-               shutdown(newclient, SHUT_RDWR);
-               close(newclient);
-            }
-            pthread_mutex_unlock(&c->lock);
-         }
-      }
-   }
-   pthread_exit(NULL);
 }
 
 /**
@@ -1970,12 +1288,6 @@ static int server_socket_open(void *priv)
       return TRAP_E_IO_ERROR;
    }
 
-   if (c->socket_type != TRAP_IFC_TCPIP_SERVICE) {
-      if (pthread_create(&c->accept_thread, NULL, accept_clients_thread, priv) != 0) {
-         VERBOSE(CL_ERROR, "Failed to create accept_thread.");
-         return TRAP_E_IO_ERROR;
-      }
-   }
    c->initialized = 1;
    return 0;
 }
