@@ -55,6 +55,13 @@
  * @{
  */
 
+#define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024)
+#define DEFAULT_TIMEOUT_ACCEPT   0
+#define DEFAULT_TIMEOUT_SEND     0
+#define DEFAULT_BUFFER_COUNT     1
+#define DEFAULT_BUFFER_SIZE      TRAP_IFC_MESSAGEQ_SIZE
+#define DEFAULT_MAX_CLIENTS      10
+
 typedef struct buffer_s {
    uint32_t seq_num;
    uint32_t wr_index;
@@ -94,13 +101,15 @@ typedef struct tcpip_sender_private_s {
     */
    int term_pipe[2];
    int server_sd;
+   int timeout_accept;
+   int timeout_send;
+   int timeout_store;
+
    char *server_port;
    char is_terminated;
    char initialized;
-   enum tcpip_ifc_sockettype socket_type;
 
-   uint64_t dropped_buffers;
-   uint64_t active_buffer_reset_timestamp;
+   enum tcpip_ifc_sockettype socket_type;
 
    uint32_t ifc_idx;
    uint32_t connected_clients;
@@ -108,13 +117,6 @@ typedef struct tcpip_sender_private_s {
    uint32_t next_seq_num;
    uint32_t buffer_count;
    uint32_t buffer_size;
-   uint32_t timeout_accept;
-   uint32_t timeout_send;
-   uint32_t timeout_store;
-   uint32_t timeout_autoflush;
-
-   uint8_t flush;
-   uint8_t block;
 
    buffer_t *buffers;
    buffer_t *active_buffer;
@@ -122,7 +124,6 @@ typedef struct tcpip_sender_private_s {
    client_t *clients;
 
    pthread_t send_thr;
-   pthread_t accept_thr;
    pthread_mutex_t lock;
 } tcpip_sender_private_t;
 

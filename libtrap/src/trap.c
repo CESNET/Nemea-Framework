@@ -537,6 +537,7 @@ static inline int trap_copy_autoflush(trap_ctx_priv_t *ctx)
  */
 static void *trap_automatic_flush_thr(void *arg)
 {
+   pthread_exit(NULL); // todo
    int i, n;
    int64_t usec;
    uint32_t j;
@@ -1869,6 +1870,7 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
 {
    int ret_val = 0;
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
+   trap_output_ifc_t* ifc_ptr = &c->out_ifc_list[ifc];
 
    if (c == NULL || c->initialized == 0) {
       return TRAP_E_NOT_INITIALIZED;
@@ -1882,9 +1884,7 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
-   trap_output_ifc_t* ifc_ptr = &c->out_ifc_list[ifc];
-
-   if (ifc_ptr->ifc_type == TRAP_IFC_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TCPIP_UNIX) {
+   if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TYPE_UNIX) {
       /* interface handles buffering */
       ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
       if (ret_val == TRAP_E_OK) {
@@ -1896,8 +1896,6 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       if (ret_val == TRAP_E_OK) {
          __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
       }
-
-
    }
 
    return trap_error(ctx, ret_val);
@@ -2430,7 +2428,6 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
    }
 
    ctx->initialized = 1;
-
    return ctx;
 
 freeall_on_failed:
@@ -2792,7 +2789,7 @@ clean_up:
  * \param[in] arg  Pointer to the private libtrap context data (#trap_ctx_init()).
  */
 void *service_thread_routine(void *arg)
-{return NULL;
+{
    struct timeval tv;
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
