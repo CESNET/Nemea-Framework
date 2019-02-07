@@ -1,3 +1,6 @@
+2019-02-07 libtrap-1.12.2
+	* Bugfix in init - possible deadlock on uninitialized semaphore
+
 2018-11-23 libtrap-0.12.1
 	* libtrap:
 		Libtrap buffer now properly empties itself if no client is

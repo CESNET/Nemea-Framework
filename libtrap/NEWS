@@ -1,3 +1,5 @@
+2019-02-07 (Tomáš Jánský): libtrap: bugfix: reader threads may on sem_wait in reader_threads_fn (#113)
+
 2018-09-28 (Tomáš Jánský): libtrap: temporary fix of segfaults - nonblocking receive (#103)
 2018-09-27 (Tomas Jansky): libtrap: VERBOSE now prints file and line if configured with --enable-debug
 2018-09-19 (Tomas Jansky): libtrap: tcpip: fixed possible write to uninitialized address
