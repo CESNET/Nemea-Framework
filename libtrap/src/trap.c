@@ -2321,15 +2321,16 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
          }
          dataarg->ctx = ctx;
          dataarg->thread_index = i;
+         if (sem_init(&ctx->reader_threads[i].sem, SEM_PSHARED, 0) != 0) {
+            VERBOSE(CL_ERROR, "Creation of reader semaphore failed.");
+            trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader semaphore failed.");
+            goto freein_readers;
+         }
+
          if (pthread_create(&ctx->reader_threads[i].thr, NULL, reader_threads_fn, (void *) dataarg) != 0) {
             VERBOSE(CL_ERROR, "Creation of reader thread failed.");
             trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader thread failed.");
             free(dataarg);
-            goto freein_readers;
-         }
-         if (sem_init(&ctx->reader_threads[i].sem, SEM_PSHARED, 0) != 0) {
-            VERBOSE(CL_ERROR, "Creation of reader semaphore failed.");
-            trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader semaphore failed.");
             goto freein_readers;
          }
       }
