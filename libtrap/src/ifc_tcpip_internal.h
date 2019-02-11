@@ -63,12 +63,11 @@
 #define DEFAULT_MAX_CLIENTS      10
 
 typedef struct buffer_s {
-   uint32_t seq_num;
    uint32_t wr_index;
-   uint32_t ref_count;
    uint32_t sent_to;
 
    uint8_t finished;
+
    uint8_t *header;
    uint8_t *data;
 
@@ -80,13 +79,12 @@ typedef struct client_s {
    void *sending_pointer; /**< Pointer to data in client's assigned buffer */
 
    uint64_t timer_total; /**< Total time spent sending (in microseconds) */
+   uint64_t received_buffers; /**< Total number of received buffers since connection */
 
    uint32_t timer_last; /**< Time spent on last send call (in microseconds) */
    uint32_t pending_bytes; /**< The size of data that must be sent */
    uint32_t id; /** Client identification - PID for unix socket, port number for TCP socket */
-   uint32_t received_seq_num;
-
-   buffer_t *assigned_buffer;
+   uint32_t assigned_buffer; /**< Index of assigned buffer in array of buffers */
 } client_t;
 
 typedef struct tcpip_sender_private_s {
@@ -111,15 +109,16 @@ typedef struct tcpip_sender_private_s {
 
    enum tcpip_ifc_sockettype socket_type;
 
+   uint64_t finished_buffers;
+
    uint32_t ifc_idx;
    uint32_t connected_clients;
    uint32_t clients_arr_size;
-   uint32_t next_seq_num;
    uint32_t buffer_count;
    uint32_t buffer_size;
+   uint32_t active_buffer;
 
    buffer_t *buffers;
-   buffer_t *active_buffer;
 
    client_t *clients;
 

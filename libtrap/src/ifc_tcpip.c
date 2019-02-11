@@ -963,21 +963,10 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
 
    close(c->sd);
    c->sd = -1;
-   c->timer_total = 0;
-   c->received_seq_num = 0;
    c->pending_bytes = 0;
    c->sending_pointer = NULL;
 
-   if (c->assigned_buffer != NULL) {
-      pthread_mutex_lock(&c->assigned_buffer->lock);
-      c->assigned_buffer->ref_count--;
-      pthread_mutex_unlock(&c->assigned_buffer->lock);
-      c->assigned_buffer = NULL;
-   }
-
-   pthread_mutex_lock(&priv->lock);
    priv->connected_clients--;
-   pthread_mutex_unlock(&priv->lock);
 }
 
 /**
@@ -1062,13 +1051,13 @@ static void accept_new_client(tcpip_sender_private_t *priv, struct timeval *time
             goto refuse_client;
          }
 
-         pthread_mutex_lock(&priv->lock);
          cl->sd = newclient;
          cl->sending_pointer = NULL;
          cl->pending_bytes = 0;
          cl->timer_total = 0;
          cl->id = client_id;
-         cl->assigned_buffer = NULL;
+         cl->assigned_buffer = priv->active_buffer;
+         cl->received_buffers = 0;
 
 #ifdef ENABLE_NEGOTIATION
          int ret_val = output_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP, i);
@@ -1086,40 +1075,23 @@ static void accept_new_client(tcpip_sender_private_t *priv, struct timeval *time
 #endif
 
          priv->connected_clients++;
-         pthread_mutex_unlock(&priv->lock);
          return;
 
 refuse_client:
          VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)\n", priv->connected_clients, priv->clients_arr_size);
          shutdown(newclient, SHUT_RDWR);
          close(newclient);
-         pthread_mutex_unlock(&priv->lock);
       }
    }
 }
 
-static void assign_buffer_to_client(tcpip_sender_private_t *priv, client_t *c)
-{
-   int i;
-   buffer_t *b = priv->active_buffer;
-
-   for (i=0; i<priv->buffer_count; ++i) {
-      if (priv->buffers[i].seq_num > c->received_seq_num && priv->buffers[i].seq_num < b->seq_num) {
-         b = &priv->buffers[i];
-      }
-   }
-
-   c->assigned_buffer = b;
-   pthread_mutex_lock(&c->assigned_buffer->lock);
-   c->assigned_buffer->ref_count++;
-   pthread_mutex_unlock(&c->assigned_buffer->lock);
-}
-
-static inline void finish_buffer(buffer_t *buffer)
+static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
    uint32_t header = htonl(buffer->wr_index);
    memcpy(buffer->header, &header, sizeof(header));
    buffer->finished = 1;
+
+   priv->finished_buffers++;
 }
 
 static int send_data(tcpip_sender_private_t *priv, client_t *c)
@@ -1137,12 +1109,9 @@ static int send_data(tcpip_sender_private_t *priv, client_t *c)
       c->sending_pointer = (uint8_t *) c->sending_pointer + sent;
 
       if (c->pending_bytes <= 0) {
-         c->received_seq_num = c->assigned_buffer->seq_num;
-         pthread_mutex_lock(&c->assigned_buffer->lock);
-         c->assigned_buffer->ref_count--;
-         c->assigned_buffer->sent_to++;
-         pthread_mutex_unlock(&c->assigned_buffer->lock);
-         c->assigned_buffer = NULL;
+         c->received_buffers++;
+         c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
+         priv->buffers[c->assigned_buffer].sent_to++;
       }
    }
 
@@ -1160,6 +1129,7 @@ static void *sending_thread_func(void *priv)
    int maxsd = -1;
    fd_set set, disset;
    client_t *cl;
+   buffer_t *assigned_buffer;
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    uint64_t send_entry_time;
    uint64_t send_exit_time;
@@ -1170,15 +1140,9 @@ static void *sending_thread_func(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
    while (1) {
-      pthread_mutex_lock(&c->lock);
       if (c->is_terminated != 0) {
-         pthread_mutex_unlock(&c->lock);
          pthread_exit(NULL);
       }
-
-      // todo (auto)flush
-
-      pthread_mutex_unlock(&c->lock);
 
       timeout_send.tv_sec = 0;
       timeout_send.tv_usec = c->timeout_send;
@@ -1187,13 +1151,10 @@ static void *sending_thread_func(void *priv)
 
       accept_new_client(c, &timeout_accept);
 
-      pthread_mutex_lock(&c->lock);
       if (c->connected_clients == 0) {
-         pthread_mutex_unlock(&c->lock);
          usleep(100);
          continue;
       }
-      pthread_mutex_unlock(&c->lock);
 
       FD_ZERO(&disset);
       FD_ZERO(&set);
@@ -1208,6 +1169,8 @@ static void *sending_thread_func(void *priv)
 
       for (i=0; i<c->clients_arr_size; ++i) {
          cl = &(c->clients[i]);
+         assigned_buffer = &c->buffers[cl->assigned_buffer];
+
          if (cl->sd <= 0) {
             continue;
          }
@@ -1217,23 +1180,15 @@ static void *sending_thread_func(void *priv)
 
          FD_SET(cl->sd, &disset);
 
-         if (cl->assigned_buffer == NULL) {
-            if (cl->received_seq_num == c->active_buffer->seq_num) {
-               continue;
-            }
-            assign_buffer_to_client(c, cl);
-         }
-
-         pthread_mutex_lock(&cl->assigned_buffer->lock);
-         if (cl->assigned_buffer->finished == 0) {
-            pthread_mutex_unlock(&cl->assigned_buffer->lock);
+         if (assigned_buffer->finished == 0) {
             continue;
          }
-         pthread_mutex_unlock(&cl->assigned_buffer->lock);
-
          if (cl->pending_bytes <= 0) {
-            cl->sending_pointer = cl->assigned_buffer->header;
-            cl->pending_bytes = cl->assigned_buffer->wr_index + sizeof(cl->assigned_buffer->wr_index);
+            if (cl->received_buffers == c->finished_buffers) {
+               continue;
+            }
+            cl->sending_pointer = assigned_buffer->header;
+            cl->pending_bytes = assigned_buffer->wr_index + sizeof(assigned_buffer->wr_index);
          }
          FD_SET(cl->sd, &set);
       }
@@ -1302,16 +1257,13 @@ static inline void insert_into_buffer(buffer_t *buffer, const void *data, uint16
 int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int timeout)
 {
    uint16_t size = data_size; // todo
-
-   uint32_t i;
+   int wait_period = 20; // todo
    uint32_t free_bytes;
 
-   uint8_t loop;
    uint8_t block = (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0;
-
-   int wait_period = 100; // todo how to choose wait period
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   buffer_t *buffer = c->active_buffer;
+   uint32_t buffer_i = c->active_buffer;
+   buffer_t* buffer = &c->buffers[buffer_i];
 
    if ((size + sizeof(size)) > c->buffer_size) {
       return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
@@ -1320,36 +1272,27 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int time
    free_bytes = c->buffer_size - buffer->wr_index;
 
    /* check if we can store the message */
-   pthread_mutex_lock(&buffer->lock);
    if (buffer->finished == 0) {
       if (free_bytes >= (size + sizeof(size))) {
          goto store_msg;
       } else {
-         finish_buffer(buffer);
+         finish_buffer(c, buffer);
       }
    }
-   pthread_mutex_unlock(&buffer->lock);
 
-   /* current active buffer is full, try to find an alternative buffer and store the message */
+   /* active buffer is full, try the next buffer */
+   buffer_i = (c->active_buffer + 1) % c->buffer_count;
+   buffer = &c->buffers[buffer_i];
 repeat:
    if (c->is_terminated != 0) {
       return TRAP_E_TERMINATED;
    }
 
-   for (i = 0; i < c->buffer_count; i++) {
-      buffer = &c->buffers[i];
-
-      pthread_mutex_lock(&c->lock);
-      pthread_mutex_lock(&buffer->lock);
-      if (buffer->ref_count == 0 && (buffer->finished == 0 || (buffer->sent_to == c->connected_clients && c->connected_clients != 0))) {
-         pthread_mutex_unlock(&c->lock);
+   if (block == 0) {
+      if (buffer->sent_to == c->connected_clients || buffer->finished == 0) {
          goto reset_buffer;
       }
-      pthread_mutex_unlock(&c->lock);
-      pthread_mutex_unlock(&buffer->lock);
-   }
 
-   if (block == 0) {
       if (timeout > 0) {
          usleep(wait_period);
          timeout -= wait_period;
@@ -1359,37 +1302,44 @@ repeat:
          return TRAP_E_TIMEOUT;
       }
    } else {
-      usleep(wait_period);
+      if ((buffer->sent_to == c->connected_clients && c->connected_clients != 0) || buffer->finished == 0) {
+         goto reset_buffer;
+      }
+
+      //todo
+      volatile int i = 1000;
+      while(i--) {}
+      //usleep(wait_period);
       goto repeat;
    }
 
 reset_buffer:
    buffer->finished = 0;
    buffer->wr_index = 0;
-   buffer->seq_num = c->next_seq_num++;
    buffer->sent_to = 0;
 
 store_msg:
    insert_into_buffer(buffer, data, size);
-   pthread_mutex_unlock(&buffer->lock);
-   c->active_buffer = buffer;
+   c->active_buffer = buffer_i;
 
    if (size == 1) {
-      finish_buffer(buffer);
+      uint8_t loop;
+
+      finish_buffer(c, buffer);
       do {
          usleep(wait_period);
          switch (timeout) {
             case TRAP_WAIT:
-               loop = (c->connected_clients == 0 || c->active_buffer->sent_to != c->connected_clients);
+               loop = (c->connected_clients == 0 || buffer->sent_to != c->connected_clients);
                break;
             case TRAP_HALFWAIT:
-               loop = (c->active_buffer->sent_to != c->connected_clients);
+               loop = (buffer->sent_to != c->connected_clients);
                break;
             default:
                loop = 0;
          }
       } while (c->is_terminated == 0 && loop != 0);
-      // todo clients disconnecting too fast after receiving eof might cause other clients not to receive the eof message
+      // todo clients disconnecting too fast after receiving eof might cause other clients not to receive it
    }
    return TRAP_E_OK;
 }
@@ -1604,9 +1554,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       b->header = malloc(buffer_size + sizeof(buffer_size));
       b->data = b->header + sizeof(buffer_size);
       b->wr_index = 0;
-      b->ref_count = 0;
       b->finished = 0;
-      b->seq_num = 0;
       b->sent_to = 0;
 
       pthread_mutex_init(&(b->lock), NULL);
@@ -1620,8 +1568,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    for (i=0; i<max_clients; ++i) {
       client_t *client = &(priv->clients[i]);
 
-      client->received_seq_num = 0;
-      client->assigned_buffer = NULL;
+      client->assigned_buffer = 0;
       client->sd = -1;
       client->timer_total = 0;
       client->pending_bytes = 0;
@@ -1637,10 +1584,8 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->clients_arr_size = max_clients;
    priv->connected_clients = 0;
    priv->is_terminated = 0;
-   priv->next_seq_num = 2;
-   priv->connected_clients = 0;
-   priv->active_buffer = priv->buffers;
-   priv->active_buffer->seq_num = 1;
+   priv->active_buffer = 0;
+   priv->finished_buffers = 0;
    priv->timeout_accept = DEFAULT_TIMEOUT_ACCEPT;
    priv->timeout_send = DEFAULT_TIMEOUT_SEND;
    priv->timeout_store = ifc->datatimeout;
