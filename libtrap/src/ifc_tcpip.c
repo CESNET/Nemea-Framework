@@ -1087,6 +1087,7 @@ refuse_client:
 
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
+   pthread_mutex_lock(&buffer->lock);
    uint32_t header = htonl(buffer->wr_index);
    memcpy(buffer->header, &header, sizeof(header));
    buffer->finished = 1;
@@ -1110,8 +1111,11 @@ static int send_data(tcpip_sender_private_t *priv, client_t *c)
 
       if (c->pending_bytes <= 0) {
          c->received_buffers++;
-         c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
          priv->buffers[c->assigned_buffer].sent_to++;
+         if (priv->buffers[c->assigned_buffer].sent_to == priv->connected_clients) {
+            pthread_mutex_unlock(&priv->buffers[c->assigned_buffer].lock);
+         }
+         c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
       }
    }
 
@@ -1152,7 +1156,7 @@ static void *sending_thread_func(void *priv)
       accept_new_client(c, &timeout_accept);
 
       if (c->connected_clients == 0) {
-         usleep(100);
+         //usleep(100);
          continue;
       }
 
@@ -1256,9 +1260,11 @@ static inline void insert_into_buffer(buffer_t *buffer, const void *data, uint16
  */
 int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int timeout)
 {
+   int res;
    uint16_t size = data_size; // todo
    int wait_period = 20; // todo
    uint32_t free_bytes;
+   struct timespec timeout_store;
 
    uint8_t block = (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
@@ -1283,40 +1289,51 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int time
    /* active buffer is full, try the next buffer */
    buffer_i = (c->active_buffer + 1) % c->buffer_count;
    buffer = &c->buffers[buffer_i];
-repeat:
+
    if (c->is_terminated != 0) {
       return TRAP_E_TERMINATED;
    }
 
    if (block == 0) {
-      if (buffer->sent_to == c->connected_clients || buffer->finished == 0) {
-         goto reset_buffer;
-      }
-
-      if (timeout > 0) {
-         usleep(wait_period);
-         timeout -= wait_period;
-         goto repeat;
+      if (timeout == 0) {
+         if (pthread_mutex_trylock(&buffer->lock) != 0) {
+            return TRAP_E_TIMEOUT;
+         }
       } else {
-         // todo disconnect slow clients
-         return TRAP_E_TIMEOUT;
+         clock_gettime(CLOCK_REALTIME, &timeout_store);
+         if ((timeout_store.tv_nsec += timeout * 1000) >= 1000000000) {
+            timeout_store.tv_nsec -= 1000000000;
+            timeout_store.tv_sec += 1;
+         }
+
+         res = pthread_mutex_timedlock(&buffer->lock, &timeout_store);
+         if (res != 0) {
+            if (res == ETIMEDOUT) {
+               // todo disconnect slow clients
+               return TRAP_E_TIMEOUT;
+            } else if (res == EINVAL) {
+               printf("fix me!\n");
+               assert(0);
+            } else {
+               VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
+               return TRAP_E_TIMEOUT;
+            }
+         }
       }
    } else {
-      if ((buffer->sent_to == c->connected_clients && c->connected_clients != 0) || buffer->finished == 0) {
-         goto reset_buffer;
-      }
+      res = pthread_mutex_lock(&buffer->lock);
 
-      //todo
-      volatile int i = 1000;
-      while(i--) {}
-      //usleep(wait_period);
-      goto repeat;
+      if (res != 0) {
+         VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_lock()");
+         return TRAP_E_TIMEOUT;
+      }
    }
 
 reset_buffer:
    buffer->finished = 0;
    buffer->wr_index = 0;
    buffer->sent_to = 0;
+   pthread_mutex_unlock(&buffer->lock);
 
 store_msg:
    insert_into_buffer(buffer, data, size);
