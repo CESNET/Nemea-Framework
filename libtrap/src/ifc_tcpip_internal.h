@@ -56,8 +56,8 @@
  */
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024)
-#define DEFAULT_TIMEOUT_ACCEPT   0
-#define DEFAULT_TIMEOUT_SEND     0
+#define DEFAULT_TIMEOUT_ACCEPT   100
+#define DEFAULT_TIMEOUT_SEND     100
 #define DEFAULT_BUFFER_COUNT     1
 #define DEFAULT_BUFFER_SIZE      TRAP_IFC_MESSAGEQ_SIZE
 #define DEFAULT_MAX_CLIENTS      10
@@ -101,7 +101,6 @@ typedef struct tcpip_sender_private_s {
    int server_sd;
    int timeout_accept;
    int timeout_send;
-   int timeout_store;
 
    char *server_port;
    char is_terminated;

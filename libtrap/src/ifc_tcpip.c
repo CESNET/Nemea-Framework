@@ -1057,7 +1057,7 @@ static void accept_new_client(tcpip_sender_private_t *priv, struct timeval *time
          cl->timer_total = 0;
          cl->id = client_id;
          cl->assigned_buffer = priv->active_buffer;
-         cl->received_buffers = 0;
+         cl->received_buffers = priv->finished_buffers;
 
 #ifdef ENABLE_NEGOTIATION
          int ret_val = output_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP, i);
@@ -1075,6 +1075,16 @@ static void accept_new_client(tcpip_sender_private_t *priv, struct timeval *time
 #endif
 
          priv->connected_clients++;
+         for (i = 0; i < priv->buffer_count; ++i) {
+            if (priv->buffers[i].finished == 1) {
+               if (++priv->buffers[i].sent_to == priv->connected_clients) {
+                  priv->buffers[i].finished = 0;
+                  priv->buffers[i].wr_index = 0;
+                  priv->buffers[i].sent_to = 0;
+                  pthread_mutex_unlock(&priv->buffers[i].lock);
+               }
+            }
+         }
          return;
 
 refuse_client:
@@ -1087,17 +1097,18 @@ refuse_client:
 
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
-   pthread_mutex_lock(&buffer->lock);
    uint32_t header = htonl(buffer->wr_index);
    memcpy(buffer->header, &header, sizeof(header));
-   buffer->finished = 1;
 
+   pthread_mutex_lock(&buffer->lock);
+   buffer->finished = 1;
    priv->finished_buffers++;
 }
 
 static int send_data(tcpip_sender_private_t *priv, client_t *c)
 {
    int sent;
+   buffer_t* buffer = &priv->buffers[c->assigned_buffer];
 
    sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
 
@@ -1109,11 +1120,18 @@ static int send_data(tcpip_sender_private_t *priv, client_t *c)
       c->pending_bytes -= sent;
       c->sending_pointer = (uint8_t *) c->sending_pointer + sent;
 
+      // client received whole buffer
       if (c->pending_bytes <= 0) {
          c->received_buffers++;
-         priv->buffers[c->assigned_buffer].sent_to++;
-         if (priv->buffers[c->assigned_buffer].sent_to == priv->connected_clients) {
-            pthread_mutex_unlock(&priv->buffers[c->assigned_buffer].lock);
+         buffer->sent_to++;
+
+         if (buffer->sent_to == priv->connected_clients) {
+            priv->ctx->counter_send_buffer[priv->ifc_idx]++;
+            // reset buffer
+            buffer->finished = 0;
+            buffer->wr_index = 0;
+            buffer->sent_to = 0;
+            pthread_mutex_unlock(&buffer->lock);
          }
          c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
       }
@@ -1137,6 +1155,7 @@ static void *sending_thread_func(void *priv)
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    uint64_t send_entry_time;
    uint64_t send_exit_time;
+   uint8_t client_ready;
 
    struct timeval timeout_send;
    struct timeval timeout_accept;
@@ -1154,14 +1173,13 @@ static void *sending_thread_func(void *priv)
       timeout_accept.tv_usec = c->timeout_accept;
 
       accept_new_client(c, &timeout_accept);
-
       if (c->connected_clients == 0) {
-         //usleep(100);
          continue;
       }
 
       FD_ZERO(&disset);
       FD_ZERO(&set);
+      client_ready = 0;
 
       /*
        * add term_pipe for reading into the disconnect client set
@@ -1175,7 +1193,7 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         if (cl->sd <= 0) {
+         if (cl->sd <= 0 || assigned_buffer->finished == 0) {
             continue;
          }
          if (maxsd < cl->sd) {
@@ -1184,9 +1202,6 @@ static void *sending_thread_func(void *priv)
 
          FD_SET(cl->sd, &disset);
 
-         if (assigned_buffer->finished == 0) {
-            continue;
-         }
          if (cl->pending_bytes <= 0) {
             if (cl->received_buffers == c->finished_buffers) {
                continue;
@@ -1195,6 +1210,11 @@ static void *sending_thread_func(void *priv)
             cl->pending_bytes = assigned_buffer->wr_index + sizeof(assigned_buffer->wr_index);
          }
          FD_SET(cl->sd, &set);
+         ++client_ready;
+      }
+
+      if (client_ready == 0) {
+         continue;
       }
 
       if (select(maxsd + 1, &disset, &set, NULL, &timeout_send) < 0 && errno != EINTR) {
@@ -1261,11 +1281,10 @@ static inline void insert_into_buffer(buffer_t *buffer, const void *data, uint16
 int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int timeout)
 {
    int res;
-   uint16_t size = data_size; // todo
-   int wait_period = 20; // todo
    uint32_t free_bytes;
    struct timespec timeout_store;
 
+   uint16_t size = data_size; // todo
    uint8_t block = (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
    uint32_t buffer_i = c->active_buffer;
@@ -1275,29 +1294,37 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int time
       return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
    }
 
-   free_bytes = c->buffer_size - buffer->wr_index;
+/*
+   int i, j;
+   static int q=0;
+   //if(!q++)usleep(3000000);
+   for(i=0;i<c->buffer_count;++i){
+      if(i == c->active_buffer)
+         printf("> ");
+      else
+         printf("  ");
+      printf("B%d: fin %d - sent to %d - clients: ", i, c->buffers[i].finished, c->buffers[i].sent_to);
+      for(j=0; j<c->clients_arr_size;++j){
+         if(c->clients[j].sd < 0)
+            continue;
+         if(c->clients[j].assigned_buffer == i)
+            printf("C%d(%lu) ", j, c->clients[j].received_buffers);
+      }
+      printf(" | finished buffers %lu\n", c->finished_buffers);
+   }
+   printf("---------------------%d---------------------\n", q++);
+*/
 
    /* check if we can store the message */
-   if (buffer->finished == 0) {
-      if (free_bytes >= (size + sizeof(size))) {
-         goto store_msg;
-      } else {
-         finish_buffer(c, buffer);
-      }
-   }
-
-   /* active buffer is full, try the next buffer */
-   buffer_i = (c->active_buffer + 1) % c->buffer_count;
-   buffer = &c->buffers[buffer_i];
-
-   if (c->is_terminated != 0) {
-      return TRAP_E_TERMINATED;
-   }
-
+repeat:
    if (block == 0) {
+      if (c->connected_clients == 0) {
+         goto timeout;
+      }
+
       if (timeout == 0) {
          if (pthread_mutex_trylock(&buffer->lock) != 0) {
-            return TRAP_E_TIMEOUT;
+            goto timeout;
          }
       } else {
          clock_gettime(CLOCK_REALTIME, &timeout_store);
@@ -1310,55 +1337,58 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int time
          if (res != 0) {
             if (res == ETIMEDOUT) {
                // todo disconnect slow clients
-               return TRAP_E_TIMEOUT;
+               goto timeout;
             } else if (res == EINVAL) {
                printf("fix me!\n");
                assert(0);
             } else {
                VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-               return TRAP_E_TIMEOUT;
+               goto timeout;
             }
          }
       }
    } else {
+      if (c->connected_clients == 0) {
+         if (timeout == TRAP_WAIT) {
+            usleep(0);
+            goto repeat;
+         } else {
+            goto timeout;
+         }
+      }
+
       res = pthread_mutex_lock(&buffer->lock);
 
       if (res != 0) {
          VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_lock()");
-         return TRAP_E_TIMEOUT;
+         goto timeout;
       }
    }
-
-reset_buffer:
-   buffer->finished = 0;
-   buffer->wr_index = 0;
-   buffer->sent_to = 0;
    pthread_mutex_unlock(&buffer->lock);
 
-store_msg:
-   insert_into_buffer(buffer, data, size);
-   c->active_buffer = buffer_i;
-
-   if (size == 1) {
-      uint8_t loop;
-
-      finish_buffer(c, buffer);
-      do {
-         usleep(wait_period);
-         switch (timeout) {
-            case TRAP_WAIT:
-               loop = (c->connected_clients == 0 || buffer->sent_to != c->connected_clients);
-               break;
-            case TRAP_HALFWAIT:
-               loop = (buffer->sent_to != c->connected_clients);
-               break;
-            default:
-               loop = 0;
+   free_bytes = c->buffer_size - buffer->wr_index;
+   if (free_bytes >= (size + sizeof(size))) {
+      insert_into_buffer(buffer, data, size);
+      if (size == 1) {
+         finish_buffer(c, buffer);
+         if (block == 1) {
+            // wait until all clients receive last buffer
+            pthread_mutex_lock(&buffer->lock);
+            pthread_mutex_unlock(&buffer->lock);
          }
-      } while (c->is_terminated == 0 && loop != 0);
-      // todo clients disconnecting too fast after receiving eof might cause other clients not to receive it
+      }
+      c->ctx->counter_send_message[c->ifc_idx]++;
+      return TRAP_E_OK;
+   } else {
+      finish_buffer(c, buffer);
+      c->active_buffer = (c->active_buffer + 1) % c->buffer_count;
+      buffer = &c->buffers[c->active_buffer];
+      goto repeat;
    }
-   return TRAP_E_OK;
+
+timeout:
+   c->ctx->counter_dropped_message[c->ifc_idx]++;
+   return TRAP_E_TIMEOUT;
 }
 
 /**
@@ -1605,13 +1635,12 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->finished_buffers = 0;
    priv->timeout_accept = DEFAULT_TIMEOUT_ACCEPT;
    priv->timeout_send = DEFAULT_TIMEOUT_SEND;
-   priv->timeout_store = ifc->datatimeout;
 
    pthread_mutex_init(&priv->lock, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\n"
-      "buffer count:\t%u\nbuffer size:\t%uB\nstore timeout:\t%uus\n", priv->server_port, priv->clients_arr_size,
-      priv->buffer_count, priv->buffer_size, priv->timeout_store);
+      "buffer count:\t%u\nbuffer size:\t%uB\n", priv->server_port, priv->clients_arr_size,
+      priv->buffer_count, priv->buffer_size);
 
    result = server_socket_open(priv);
    if (result != TRAP_E_OK) {

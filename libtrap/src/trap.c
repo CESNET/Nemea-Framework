@@ -537,7 +537,6 @@ static inline int trap_copy_autoflush(trap_ctx_priv_t *ctx)
  */
 static void *trap_automatic_flush_thr(void *arg)
 {
-   pthread_exit(NULL); // todo
    int i, n;
    int64_t usec;
    uint32_t j;
@@ -565,6 +564,9 @@ static void *trap_automatic_flush_thr(void *arg)
       if (__sync_fetch_and_add(&ctx->ifc_change, 0) > 0) {
          n = trap_copy_autoflush(ctx);
       }
+
+      usleep(100000);
+      continue;
 
       // Sort array by timeout if we have more than one output interface
       if (n != 0) {
@@ -1887,9 +1889,6 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
    if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TYPE_UNIX) {
       /* interface handles buffering */
       ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
-      if (ret_val == TRAP_E_OK) {
-         __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
-      }
    } else {
       /* handle buffering */
       ret_val = trap_store_into_buffer(c, ifc, data, size, c->out_ifc_list[ifc].datatimeout);
