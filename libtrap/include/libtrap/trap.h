@@ -210,15 +210,6 @@ enum trap_ifcctl_request {
 #define TRAP_IFC_MESSAGEQ_SIZE 100000 ///< size of message queue used for buffering
 #endif
 
-/**
- * Record with message of multi-result #trap_get_data
- */
-typedef struct trap_multi_result {
-   uint16_t message_size;   ///< Size of incoming message
-   void *message;           ///< Data of incoming message
-   int result_code;         ///< TRAP_OK if record is valid (message was received successfuly)
-} trap_multi_result_t;
-
 /** Structure with specification of interface types and their parameters.
  *  This can be filled by command-line parameters using trap_parse_params
  *  function.
@@ -493,9 +484,9 @@ int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /** Function to terminate module's operation.
  * This function stops all read/write operations on all interfaces.
- * Any waiting in trap_get_data and trap_send_data is interrupted and these
+ * Any waiting in trap_recv() and trap_send()_data is interrupted and these
  * functions return immediately with TRAP_E_TERMINATED.
- * Any call of trap_get_data or trap_send_data after call of this function
+ * Any call of trap_recv() or trap_send() after call of this function
  * returns TRAP_E_TERMINATED.
  *
  * This function is used to terminate module's operation (asynchronously), e.g.
@@ -509,22 +500,6 @@ int trap_terminate();
  * @return Error code
  */
 int trap_finalize();
-
-/** Read data from input interface.
- * Read a record from one of interfaces specified by `ifc_mask` and store
- * pointer to it into `data`. If data are not available on any of specified
- * interfaces, wait until data are available or `timeout` microseconds elapses.
- * If `timeout` < 0, wait indefinitely.
- * When function returns due to timeout, contents of `data` and `size` are undefined.
- * @param[in] ifc_mask Mask of interfaces to listen on (if *i*-th bit is set, interface *i* is enabled).
- * @param[out] data Pointer to received data. When only one IFC is selected by ifc_mask, data contains the payload of message. When ifc_mask contains more than one IFC, array of #trap_multi_result_t is returned. The array size is equal to number of input IFCs. \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_get_data() call.
- * @param[out] size Number of bytes of data. When only one IFC is selected by ifc_mask, size contains the size of incoming message. Otherwise, (when more than one IFC are selected) size contains the size of #trap_multi_result_t array in bytes.
- * @param[in] timeout Timeout in microseconds for non-blocking mode; timeout
- * can be also: TRAP_WAIT, TRAP_HALFWAIT, or TRAP_NO_WAIT.
- * @return Error code - 0 on success, TRAP_E_TIMEOUT if timeout elapses.
- * \deprecated This function should be replaced by trap_recv().
- */
-int trap_get_data(uint32_t ifc_mask, const void **data, uint16_t *size, int timeout);
 
 /** Send data to output interface.
  * Write data of size `size` given by `data` pointer into interface `ifc`.
@@ -553,7 +528,7 @@ int trap_send_data(unsigned int ifcidx, const void *data, uint16_t size, int tim
  * @param[out] size     Size of received data in bytes of data.
  * @return Error code - #TRAP_E_OK on success, #TRAP_E_TIMEOUT if timeout elapses.
  *
- * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_get_data() call.
+ * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_recv() call.
  * \see trap_ifcctl() to set timeout (#TRAPCTL_SETTIMEOUT)
  */
 int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size);
@@ -569,7 +544,6 @@ int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size);
  * @param[out] size     Size of message in bytes.
  * @return Error code - #TRAP_E_OK on success, #TRAP_E_TIMEOUT if timeout elapses.
  *
- * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_get_data() call.
  * \see trap_ifcctl() to set timeout (#TRAPCTL_SETTIMEOUT)
  */
 int trap_send(uint32_t ifcidx, const void *data, uint16_t size);
@@ -737,28 +711,6 @@ int trap_ctx_terminate(trap_ctx_t *ctx);
  * \see #trap_ctx_ifcctl
  */
 int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifc, const void **data, uint16_t *size);
-
-/**
- * \brief Read data from input interfaces according to ifc_mask.
- *
- * Read a record from one of interfaces specified by `ifc_mask` and store
- * pointer to it into `data`. If data are not available on any of specified
- * interfaces, wait until data are available or `timeout` elapses.
- * If `timeout` < 0, wait indefinitely.
- * When function returns due to timeout, contents of `data` and `size` are undefined.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (trap_ctx_init()).
- * \param[in] ifc_mask  Mask of interfaces to listen on (if *i*-th bit is set, interface *i* is enabled).
- * \param[out] data  Pointer to received data. The result is an array of #trap_multi_result_t.
- * The size of array is equal to the number of input IFCs.
- * \param[out] size  Size of data in bytes containing the size of #trap_multi_result_t array in bytes.
- * \return Error code - 0 on success, TRAP_E_TIMEOUT if timeout elapses.
- *
- * \note Data must not be freed! Library stores
- * incomming data into static array and rewrites it during every trap_get_data() call.
- * \see #trap_ctx_ifcctl, #trap_multi_result_t
- */
-int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
 
 /**
  * \brief Send data via output interface.
@@ -1006,8 +958,8 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
 #define TRAP_DEFAULT_FINALIZATION() \
    trap_finalize();
 
-/** \brief Handle possible errors after call to trap_get_data.
- * \param[in] ret_code Return code of trap_get_data.
+/** \brief Handle possible errors after call to trap_recv().
+ * \param[in] ret_code Return code of trap_recv().
  * \param timeout_cmd Command to run when a timeout has occured, e.g. "continue".
  * \param error_cmd Command to run when an error has occured or interface was
  *                  terminated, e.g. "break".
@@ -1021,12 +973,12 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
          error_cmd;\
       } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
          /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro */ \
-         /* (module can perform some special operations with templates after trap_get_data() signals format change) */ \
+         /* (module can perform some special operations with templates after trap_recv() signals format change) */ \
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
-         fprintf(stderr, "trap_get_data() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
+         fprintf(stderr, "trap_recv() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
          error_cmd; \
       } else {\
-         fprintf(stderr, "Error: trap_get_data() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
+         fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
          error_cmd;\
       }\
    }
