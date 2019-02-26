@@ -959,6 +959,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
 static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
 {
+   int i;
    client_t *c = &priv->clients[cl_id];
 
    close(c->sd);
@@ -967,6 +968,17 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
    c->sending_pointer = NULL;
 
    priv->connected_clients--;
+
+   for (i = 0; i < priv->buffer_count; ++i) {
+      if (priv->buffers[i].finished == 1) {
+         if (priv->buffers[i].sent_to == priv->connected_clients) {
+            priv->buffers[i].finished = 0;
+            priv->buffers[i].wr_index = 0;
+            priv->buffers[i].sent_to = 0;
+            pthread_mutex_unlock(&priv->buffers[i].lock);
+         }
+      }
+   }
 }
 
 /**
@@ -1113,8 +1125,10 @@ static int send_data(tcpip_sender_private_t *priv, client_t *c)
    sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
 
    if (sent < 0) {
+      // todo handle error
       switch (errno) {
-         // todo handle error
+      default:
+         return TRAP_E_IO_ERROR;
       }
    } else {
       c->pending_bytes -= sent;
@@ -1255,6 +1269,7 @@ static void *sending_thread_func(void *priv)
 
             if (res != TRAP_E_OK) {
                // todo handle error
+               disconnect_client(c, cl);
             }
          }
       }
