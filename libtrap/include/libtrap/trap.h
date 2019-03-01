@@ -104,11 +104,6 @@ extern char *trap_default_socket_path_format;
 /**@}*/
 
 /**
- * All 'ones' constant for binary operations...
- */
-#define TRAP_MASK_ALL 0xffffffff
-
-/**
  * \defgroup trap_timeout TRAP Timeout
  *
  * TRAP IFC works with timeout to decide wether it should block or just wait
