@@ -1120,14 +1120,27 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 static int send_data(tcpip_sender_private_t *priv, client_t *c)
 {
    int sent;
+   /* Pointer to client's assigned buffer */
    buffer_t* buffer = &priv->buffers[c->assigned_buffer];
 
+again:
    sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
 
    if (sent < 0) {
-      // todo handle error
+      /* Send failed */
+      if (priv->is_terminated != 0) {
+         return TRAP_E_TERMINATED;
+      }
       switch (errno) {
+      case EBADF:
+      case EPIPE:
+      case EFAULT:
+         return TRAP_E_IO_ERROR;
+      case EAGAIN:
+         usleep(1);
+         goto again;
       default:
+         VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_data (errno: %i)", errno);
          return TRAP_E_IO_ERROR;
       }
    } else {
@@ -1232,14 +1245,16 @@ static void *sending_thread_func(void *priv)
          continue;
       }
 
-      if (select(maxsd + 1, &disset, &set, NULL, NULL) < 0 && errno != EINTR) {
-         VERBOSE(CL_ERROR, "Sending thread: unexpected error in select.");
+      if (select(maxsd + 1, &disset, &set, NULL, NULL) < 0) {
+         if (c->is_terminated == 0) {
+            VERBOSE(CL_ERROR, "Sending thread: unexpected error in select (errno: %i)", errno);
+         }
          pthread_exit(NULL);
       }
 
       if (FD_ISSET(c->term_pipe[0], &disset)) {
          /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
-         VERBOSE(CL_VERBOSE_ADVANCED, "Sending was interrupted by terminate().");
+         VERBOSE(CL_VERBOSE_ADVANCED, "Sending was interrupted by terminate()");
          pthread_exit(NULL);
       }
 
@@ -1255,7 +1270,7 @@ static void *sending_thread_func(void *priv)
             res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
             if (res < 1) {
                disconnect_client(c, i);
-               VERBOSE(CL_VERBOSE_LIBRARY, "Client %u disconnected.", cl->id);
+               VERBOSE(CL_VERBOSE_LIBRARY, "Client %u disconnected", cl->id);
                continue;
             }
          }
@@ -1271,7 +1286,7 @@ static void *sending_thread_func(void *priv)
             cl->timer_total += cl->timer_last;
 
             if (res != TRAP_E_OK) {
-               // todo handle error
+               VERBOSE(CL_VERBOSE_OFF, "Disconnected client %d (ret val: %d)", cl->id, res);
                disconnect_client(c, i);
             }
          }
@@ -1329,22 +1344,18 @@ repeat:
          }
 
          res = pthread_mutex_timedlock(&buffer->lock, &timeout_store);
-         if (res != 0) {
-            if (res == ETIMEDOUT) {
-               /* Desired buffer is still full after timeout, either drop message or force buffer reset (not implemented) */
-               if (c->connected_clients > 0) {
-                  goto timeout;
-               } else {
-                  /* There are no connected clients, reset buffer and store the message */
-                  buffer->finished = 0;
-                  buffer->wr_index = 0;
-               }
-            } else if (res == EINVAL) {
-               assert(0);
-            } else {
-               VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-               goto timeout;
-            }
+         switch (res) {
+         case 0:
+            break;
+         case ETIMEDOUT:
+            /* Desired buffer is still full after timeout, either drop message or force buffer reset (not implemented) */
+            goto timeout;
+         case EINVAL:
+            assert(0);
+            break;
+         default:
+            VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
+            goto timeout;
          }
       }
    } else {
