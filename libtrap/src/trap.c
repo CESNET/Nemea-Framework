@@ -1886,7 +1886,7 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
-   if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TYPE_UNIX) {
+   if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TYPE_UNIX || ifc_ptr->ifc_type == TRAP_IFC_TYPE_FILE) {
       /* interface handles buffering */
       ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
    } else {

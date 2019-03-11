@@ -46,21 +46,34 @@
 #include <limits.h>
 #include "trap_ifc.h"
 
+typedef struct file_buffer_s {
+    uint32_t wr_index;                      /**< Pointer to first free byte in buffer payload */
+    uint8_t *header;                        /**< Pointer to first byte in buffer */
+    uint8_t *data;                          /**< Pointer to first byte of buffer payload */
+    uint8_t finished;                       /**< Flag indicating whether buffer is full and ready to be sent */
+} file_buffer_t;
+
 typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
    FILE *fd;
+   time_t create_time;
+   size_t file_index;
    char **files;
    char filename_tmplt[PATH_MAX];
    char filename[PATH_MAX];
    char mode[3];
    char is_terminated;
    uint8_t neg_initialized;
-   time_t create_time;
-   size_t file_index;
+
    uint32_t file_cnt;
-   uint32_t ifc_idx;
    uint32_t file_change_size;
    uint32_t file_change_time;
+   uint32_t buffer_size;                   /**< Buffer size [bytes] */
+   uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
+
+   file_buffer_t buffer;
+
+   pthread_mutex_t lock;
 } file_private_t;
 
 /** Create file receive interface (input ifc).

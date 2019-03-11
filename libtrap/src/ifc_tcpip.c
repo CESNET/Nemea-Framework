@@ -1303,13 +1303,16 @@ static inline void insert_into_buffer(buffer_t *buffer, const void *data, uint16
 }
 
 /**
- * \brief Store a message into buffer.
+ * \brief Store message into buffer.
  *
- * \param[in] priv  pointer to module private data
- * \param[in] data  pointer to data
- * \param[in] size  size of data
- * \param[in] timeout  timeout in microseconds
- * \return 0 on success (TRAP_E_OK), TRAP_E_BAD_FPARAMS if sender was not properly initialized, TRAP_E_TERMINATED if interface was terminated.
+ * \param[in] priv      pointer to module private data
+ * \param[in] data      pointer to data to write
+ * \param[in] size      size of data to write
+ * \param[in] timeout   maximum time spent waiting for the message to be stored [microseconds]
+ *
+ * \return TRAP_E_OK         Success.
+ * \return TRAP_E_TIMEOUT    Message was not stored into buffer and the attempt should be repeated.
+ * \return TRAP_E_TERMINATED Libtrap was terminated during the process.
  */
 int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int timeout)
 {
@@ -1323,6 +1326,7 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int time
    uint32_t buffer_i = c->active_buffer;
    buffer_t* buffer = &c->buffers[buffer_i];
 
+   /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
    if ((size + sizeof(size)) > c->buffer_size) {
       return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
    }
