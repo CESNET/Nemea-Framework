@@ -8,7 +8,7 @@ pytrapmodule = Extension('pytrap',
                     libraries = ['trap', 'unirec'])
 
 setup(name = 'nemea-pytrap',
-       version = '0.9.12',
+       version = '0.10.0',
        description = 'Python extension of the NEMEA project.',
        long_description = 'The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.',
        author = 'Tomas Cejka',
