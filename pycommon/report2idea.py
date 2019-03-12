@@ -147,14 +147,14 @@ def check_valid_timestamps(idea, dpast, dfuture):
     if not create:
         return True
     else:
-	create = parseRFCtime(create)
+        create = parseRFCtime(create)
     deltapast = create - timedelta(dpast)
     deltafuture = create + timedelta(dfuture)
     for t in [et, ct, dt]:
         if t:
             # convert timestamp to datetime
-	    t = parseRFCtime(t)
-	    # check allowed interval
+            t = parseRFCtime(t)
+            # check allowed interval
             if t < deltapast or t > deltafuture:
                 return False
     return True
