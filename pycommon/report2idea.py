@@ -297,13 +297,13 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             # Pass the input record to conversion function to create IDEA message
             idea = conv_func(rec, args)
 
+            if idea is None:
+                # Record can't be converted - skip it
+                continue
+
             # Sanity check of timestamps
             if not check_valid_timestamps(idea):
                 print("Invalid timestamps in skipped message: {0}".format(idea))
-                continue
-
-            if idea is None:
-                # Record can't be converted - skip it
                 continue
 
             if args.name is not None:
