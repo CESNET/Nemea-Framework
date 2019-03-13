@@ -107,7 +107,7 @@ def signal_h(signal, f):
     global trap
     trap.terminate()
 
-def check_valid_timestamps(idea, dpast, dfuture):
+def check_valid_timestamps(idea, dpast=1, dfuture=0):
     """
     Return True if EventTime, CeaseTime, and DetectTime are in the interval (CreateTime - dpast, CreateTime + dfuture).
 
