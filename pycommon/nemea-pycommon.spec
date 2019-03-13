@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.4.4
+%global pypi_version 1.4.5
 
 
 %if 0%{?el6}
@@ -14,7 +14,7 @@
 
 Name:	%{pypi_name}
 Version: %{pypi_version}
-Release:	2%{?dist}
+Release:	1%{?dist}
 Summary: Common Python modules and methods of the NEMEA system.
 
 BuildArch: noarch
