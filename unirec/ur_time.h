@@ -157,7 +157,7 @@ The current implementation satisfies these rules:
 static inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
 {
    ur_time_t c = (a > b) ? a - b : b - a;
-   return ur_time_get_sec(c) * 1000 + ur_time_get_msec(c);
+   return (uint64_t) ur_time_get_sec(c) * 1000 + ur_time_get_msec(c);
 }
 
 /**
@@ -170,7 +170,7 @@ static inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
 static inline uint64_t ur_timediff_us(ur_time_t a, ur_time_t b)
 {
    ur_time_t c = (a > b) ? a - b : b - a;
-   return ur_time_get_sec(c) * 1000000 + ur_time_get_usec(c);
+   return (uint64_t) ur_time_get_sec(c) * 1000000 + ur_time_get_usec(c);
 }
 
 /**
@@ -183,7 +183,7 @@ static inline uint64_t ur_timediff_us(ur_time_t a, ur_time_t b)
 static inline uint64_t ur_timediff_ns(ur_time_t a, ur_time_t b)
 {
    ur_time_t c = (a > b) ? a - b : b - a;
-   return ur_time_get_sec(c) * 1000000000 + ur_time_get_nsec(c);
+   return (uint64_t) ur_time_get_sec(c) * 1000000000 + ur_time_get_nsec(c);
 }
 
 /**
