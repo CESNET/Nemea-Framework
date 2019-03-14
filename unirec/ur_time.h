@@ -130,7 +130,7 @@ The current implementation satisfies these rules:
  * \return nanoseconds
  */
 #define ur_time_get_nsec(time) \
-   (uint32_t) ((((uint64_t) (time) & 0xffffffff) * 1000000000ULL) >> 32)
+   (uint32_t) ((((uint64_t) (time) & 0xffffffff) * 1000000000ULL + 0xffffffff) >> 32)
 
 /** \brief Get number of microeconds from ur_time_t
  * \param time UniRec timestamp
