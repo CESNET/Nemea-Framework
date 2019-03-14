@@ -83,7 +83,7 @@ int main()
    }
 
    if (ur_time_get_msec(ut) != 123) {
-      fprintf(stderr, "5. Number of miliseconds (%" PRIu32 ") is not the expected value (123).\n", ur_time_get_msec(ut));
+      fprintf(stderr, "5. Number of milliseconds (%" PRIu32 ") is not the expected value (123).\n", ur_time_get_msec(ut));
       errors++;
    }
 
@@ -99,7 +99,7 @@ int main()
    }
 
    if (ur_time_get_msec(ut) != 0) {
-      fprintf(stderr, "8. Number of miliseconds is not the expected value.\n");
+      fprintf(stderr, "8. Number of milliseconds is not the expected value.\n");
       errors++;
    }
 
@@ -215,8 +215,15 @@ int main()
       }
    }
 
-   printf("ur_timediff_us: %" PRIu64 "\n", ur_timediff_us(ut, ut2));
-   printf("ur_timediff_ns: %" PRIu64 "\n", ur_timediff_ns(ut, ut2));
+   if (ur_timediff_us(ut, ut2) != 316666677876543) {
+      printf("ur_timediff_us: %" PRIu64 ", %" PRIu32 ".%" PRIu32 " - %" PRIu32 ".%" PRIu32 "\n",
+             ur_timediff_us(ut, ut2), ur_time_get_sec(ut), ur_time_get_usec(ut), ur_time_get_sec(ut2), ur_time_get_usec(ut2));
+   }
+
+   if (ur_timediff_ns(ut, ut2) != 316666677876543999) {
+      printf("ur_timediff_ns: %" PRIu64 ", %" PRIu32 ".%" PRIu32 " - %" PRIu32 ".%" PRIu32 "\n",
+             ur_timediff_ns(ut, ut2), ur_time_get_sec(ut), ur_time_get_nsec(ut), ur_time_get_sec(ut2), ur_time_get_nsec(ut2));
+   }
 
    res = ur_time_from_string(&ut, strusec);
    if (res != 0) {
