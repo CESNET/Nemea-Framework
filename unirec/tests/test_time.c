@@ -55,80 +55,88 @@ int main()
    const char *strmsec = "2018-06-27T16:52:54.123";
    const char *strusec = "2018-06-27T16:52:54.123456";
    const char *strnsec = "2018-06-27T16:52:54.122456789";
-   const char *badstr2 = "2018-06-27T16:52:54.122456789000";
+   const char *badstr2 = "2018-06-27T16:52:54.222222222000";
    const char *str = "2018-06-27T16:52:54";
 
    res = ur_time_from_string(&ut, NULL);
    if (res != 2) {
-      fprintf(stderr, "Passing NULL didn't cause error.\n");
+      fprintf(stderr, "1. Passing NULL didn't cause error.\n");
       return 1;
    }
 
    res = ur_time_from_string(NULL, str);
    if (res != 2) {
-      fprintf(stderr, "Passing NULL didn't cause error.\n");
+      fprintf(stderr, "2. Passing NULL didn't cause error.\n");
       return 1;
    }
 
    res = ur_time_from_string(&ut, badstr);
    if (res != 1) {
-      fprintf(stderr, "Parsing succeeded while it should fail.\n");
+      fprintf(stderr, "3. Parsing succeeded while it should fail.\n");
       return 1;
    }
 
    res = ur_time_from_string(&ut, strmsec);
    if (res != 0) {
-      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      fprintf(stderr, "4. Parsing failed while it should succeed.\n");
       errors++;
    }
 
    if (ur_time_get_msec(ut) != 122) {
-      fprintf(stderr, "Number of miliseconds (%" PRIu32 ") is not the expected value (122).\n", ur_time_get_msec(ut));
+      fprintf(stderr, "5. Number of miliseconds (%" PRIu32 ") is not the expected value (122).\n", ur_time_get_msec(ut));
       errors++;
    }
 
    res = ur_time_from_string(&ut, str);
    if (res != 0) {
-      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      fprintf(stderr, "6. Parsing failed while it should succeed.\n");
       errors++;
    }
 
    if (ur_time_get_sec(ut) != 1530118374) {
-      fprintf(stderr, "Number of seconds is not the expected value.\n");
+      fprintf(stderr, "7. Number of seconds is not the expected value.\n");
       errors++;
    }
 
    if (ur_time_get_msec(ut) != 0) {
-      fprintf(stderr, "Number of miliseconds is not the expected value.\n");
+      fprintf(stderr, "8. Number of miliseconds is not the expected value.\n");
       errors++;
    }
 
    ut2 = ur_time_from_sec_msec(1530118373, 500);
 
    if (ur_timediff(ut, ut2) != 500) {
-      fprintf(stderr, "Timediff returned unexpected result.\n");
+      fprintf(stderr, "9. Timediff returned unexpected result.\n");
       errors++;
    }
 
    ut = ur_time_from_sec_usec(1234567890, 123456);
 
    if (ur_time_get_usec(ut) != 123456) {
-      fprintf(stderr, "Number of microseconds (%" PRIu32 "us / %" PRIu32 "ns) is not the expected value (123456).\n", ur_time_get_usec(ut), ur_time_get_nsec(ut));
+      fprintf(stderr, "10. Number of microseconds (%" PRIu32 "us / %" PRIu32 "ns) is not the expected value (123456).\n", ur_time_get_usec(ut), ur_time_get_nsec(ut));
       errors++;
    }
    if (ur_time_get_sec(ut) != 1234567890) {
-      fprintf(stderr, "Number of seconds (%" PRIu32 ") is not the expected value (1234567890).\n", ur_time_get_sec(ut));
+      fprintf(stderr, "11. Number of seconds (%" PRIu32 ") is not the expected value (1234567890).\n", ur_time_get_sec(ut));
       errors++;
    }
 
-   ut2 = ur_time_from_sec_usec(1234567890, 123456789);
+   ut2 = ur_time_from_sec_usec(1234567890, 123456);
 
-   if (ur_time_get_nsec(ut) != 123456789) {
-      fprintf(stderr, "Number of nanoseconds (%" PRIu32 ") is not the expected value (123456789).\n", ur_time_get_nsec(ut));
+   if (ur_time_get_nsec(ut2) != 123456000) {
+      fprintf(stderr, "12. Number of nanoseconds (%" PRIu32 ") is not the expected value (123456000).\n", ur_time_get_nsec(ut2));
       errors++;
    }
-   if (ur_time_get_sec(ut) != 1234567890) {
-      fprintf(stderr, "Number of seconds (%" PRIu32 ") is not the expected value (1234567890).\n", ur_time_get_sec(ut));
+   if (ur_time_get_usec(ut2) != 123456) {
+      fprintf(stderr, "13. Number of microseconds (%" PRIu32 ") is not the expected value (123456).\n", ur_time_get_usec(ut2));
+      errors++;
+   }
+   if (ur_time_get_msec(ut2) != 123) {
+      fprintf(stderr, "14. Number of milliseconds (%" PRIu32 ") is not the expected value (123).\n", ur_time_get_msec(ut2));
+      errors++;
+   }
+   if (ur_time_get_sec(ut2) != 1234567890) {
+      fprintf(stderr, "15. Number of seconds (%" PRIu32 ") is not the expected value (1234567890).\n", ur_time_get_sec(ut2));
       errors++;
    }
 
@@ -137,31 +145,31 @@ int main()
 
    res = ur_time_from_string(&ut, strusec);
    if (res != 0) {
-      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      fprintf(stderr, "16. Parsing failed while it should succeed.\n");
       errors++;
    }
    if (ur_time_get_usec(ut) != 123456) {
-      fprintf(stderr, "Number of microseconds (%" PRIu32 ") is not the expected value (123456).\n", ur_time_get_usec(ut));
+      fprintf(stderr, "17. Number of microseconds (%" PRIu32 ") is not the expected value (123456).\n", ur_time_get_usec(ut));
       errors++;
    }
 
    res = ur_time_from_string(&ut, strnsec);
    if (res != 0) {
-      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      fprintf(stderr, "18. Parsing failed while it should succeed.\n");
       errors++;
    }
    if (ur_time_get_usec(ut) != 122456789) {
-      fprintf(stderr, "Number of nanoseconds (%" PRIu32 ") is not the expected value (122456789).\n", ur_time_get_nsec(ut));
+      fprintf(stderr, "19. Number of nanoseconds (%" PRIu32 ") is not the expected value (122456789).\n", ur_time_get_nsec(ut));
       errors++;
    }
 
    res = ur_time_from_string(&ut, badstr2);
    if (res != 0) {
-      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      fprintf(stderr, "20. Parsing failed while it should succeed.\n");
       errors++;
    }
-   if (ur_time_get_usec(ut) != 122456789) {
-      fprintf(stderr, "Number of nanoseconds (%" PRIu32 ") is not the expected value (122456789).\n", ur_time_get_nsec(ut));
+   if (ur_time_get_nsec(ut) != 222222222) {
+      fprintf(stderr, "21. Number of nanoseconds (%" PRIu32 ") is not the expected value (222222222).\n", ur_time_get_nsec(ut));
       errors++;
    }
 
