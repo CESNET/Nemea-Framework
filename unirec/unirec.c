@@ -1363,7 +1363,7 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
                 frac_len = 9;
             }
             memcpy(frac_buffer, res, frac_len);
-            nsec = strtoul(res, NULL, 10); // returns 0 on error - that's OK
+            nsec = strtoul(frac_buffer, NULL, 10); // returns 0 on error - that's OK
          }
          *ur = ur_time_from_sec_nsec((uint64_t) sec, nsec);
       } else {
