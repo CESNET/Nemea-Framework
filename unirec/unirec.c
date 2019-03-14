@@ -1353,11 +1353,14 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
       sec = timegm(&t);
       if (sec != -1) {
          if (*res != 0 && *++res != 0) {
+            char frac_buffer[10];
+            memset(frac_buffer, '0', 9);
+            frac_buffer[9] = 0;
+
             // now "res" points to the beginning of the fractional part,
             // which have at leat one char.
             // Expand the number by zeros to the right to get it in ns
             // (if there are more than 9 digits, truncate the rest)
-            char *frac_buffer = "000000000";
             size_t frac_len = strlen(res);
             if (frac_len > 9) {
                 frac_len = 9;

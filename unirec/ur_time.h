@@ -161,6 +161,32 @@ static inline uint64_t ur_timediff(ur_time_t a, ur_time_t b)
 }
 
 /**
+ * Return a time difference between A and B in microseconds.
+ *
+ * \param [in] a  Timestamp A
+ * \param [in] b  Timestamp B
+ * \returns abs(A - B), the result is in microseconds.
+ */
+static inline uint64_t ur_timediff_us(ur_time_t a, ur_time_t b)
+{
+   ur_time_t c = (a > b) ? a - b : b - a;
+   return ur_time_get_sec(c) * 1000000 + ur_time_get_usec(c);
+}
+
+/**
+ * Return a time difference between A and B in nanoseconds.
+ *
+ * \param [in] a  Timestamp A
+ * \param [in] b  Timestamp B
+ * \returns abs(A - B), the result is in nanoseconds.
+ */
+static inline uint64_t ur_timediff_ns(ur_time_t a, ur_time_t b)
+{
+   ur_time_t c = (a > b) ? a - b : b - a;
+   return ur_time_get_sec(c) * 1000000000 + ur_time_get_nsec(c);
+}
+
+/**
  * Convert string value str into UniRec time ur.
  *
  * \param [out] ur   Target pointer to store result.
