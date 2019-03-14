@@ -43,13 +43,19 @@
 
 #include "../ur_time.h"
 #include <stdio.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 int main()
 {
+   uint8_t errors = 0;
    uint8_t res = 0;
    ur_time_t ut = 0, ut2 = 0;
    const char *badstr = "1.1.2018 16:52:54";
    const char *strmsec = "2018-06-27T16:52:54.123";
+   const char *strusec = "2018-06-27T16:52:54.123456";
+   const char *strnsec = "2018-06-27T16:52:54.122456789";
+   const char *badstr2 = "2018-06-27T16:52:54.122456789000";
    const char *str = "2018-06-27T16:52:54";
 
    res = ur_time_from_string(&ut, NULL);
@@ -73,36 +79,92 @@ int main()
    res = ur_time_from_string(&ut, strmsec);
    if (res != 0) {
       fprintf(stderr, "Parsing failed while it should succeed.\n");
-      return 1;
+      errors++;
    }
 
-   if (ur_time_get_msec(ut) != 123) {
-      fprintf(stderr, "Number of miliseconds is not the expected value.\n");
-      return 2;
+   if (ur_time_get_msec(ut) != 122) {
+      fprintf(stderr, "Number of miliseconds (%" PRIu32 ") is not the expected value (122).\n", ur_time_get_msec(ut));
+      errors++;
    }
 
    res = ur_time_from_string(&ut, str);
    if (res != 0) {
       fprintf(stderr, "Parsing failed while it should succeed.\n");
-      return 1;
+      errors++;
    }
 
    if (ur_time_get_sec(ut) != 1530118374) {
       fprintf(stderr, "Number of seconds is not the expected value.\n");
-      return 3;
+      errors++;
    }
 
    if (ur_time_get_msec(ut) != 0) {
       fprintf(stderr, "Number of miliseconds is not the expected value.\n");
-      return 3;
+      errors++;
    }
 
    ut2 = ur_time_from_sec_msec(1530118373, 500);
 
    if (ur_timediff(ut, ut2) != 500) {
       fprintf(stderr, "Timediff returned unexpected result.\n");
-      return 4;
+      errors++;
    }
-   return 0;
+
+   ut = ur_time_from_sec_usec(1234567890, 123456);
+
+   if (ur_time_get_usec(ut) != 123456) {
+      fprintf(stderr, "Number of microseconds (%" PRIu32 "us / %" PRIu32 "ns) is not the expected value (123456).\n", ur_time_get_usec(ut), ur_time_get_nsec(ut));
+      errors++;
+   }
+   if (ur_time_get_sec(ut) != 1234567890) {
+      fprintf(stderr, "Number of seconds (%" PRIu32 ") is not the expected value (1234567890).\n", ur_time_get_sec(ut));
+      errors++;
+   }
+
+   ut2 = ur_time_from_sec_usec(1234567890, 123456789);
+
+   if (ur_time_get_nsec(ut) != 123456789) {
+      fprintf(stderr, "Number of nanoseconds (%" PRIu32 ") is not the expected value (123456789).\n", ur_time_get_nsec(ut));
+      errors++;
+   }
+   if (ur_time_get_sec(ut) != 1234567890) {
+      fprintf(stderr, "Number of seconds (%" PRIu32 ") is not the expected value (1234567890).\n", ur_time_get_sec(ut));
+      errors++;
+   }
+
+   printf("ur_timediff_us: %" PRIu64 "\n", ur_timediff_us(ut, ut2));
+   printf("ur_timediff_ns: %" PRIu64 "\n", ur_timediff_ns(ut, ut2));
+
+   res = ur_time_from_string(&ut, strusec);
+   if (res != 0) {
+      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      errors++;
+   }
+   if (ur_time_get_usec(ut) != 123456) {
+      fprintf(stderr, "Number of microseconds (%" PRIu32 ") is not the expected value (123456).\n", ur_time_get_usec(ut));
+      errors++;
+   }
+
+   res = ur_time_from_string(&ut, strnsec);
+   if (res != 0) {
+      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      errors++;
+   }
+   if (ur_time_get_usec(ut) != 122456789) {
+      fprintf(stderr, "Number of nanoseconds (%" PRIu32 ") is not the expected value (122456789).\n", ur_time_get_nsec(ut));
+      errors++;
+   }
+
+   res = ur_time_from_string(&ut, badstr2);
+   if (res != 0) {
+      fprintf(stderr, "Parsing failed while it should succeed.\n");
+      errors++;
+   }
+   if (ur_time_get_usec(ut) != 122456789) {
+      fprintf(stderr, "Number of nanoseconds (%" PRIu32 ") is not the expected value (122456789).\n", ur_time_get_nsec(ut));
+      errors++;
+   }
+
+   return errors;
 }
 
