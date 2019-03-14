@@ -1124,8 +1124,8 @@ uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec)
 void *ur_create_record(const ur_template_t *tmplt, uint16_t max_var_size)
 {
    unsigned int size = (unsigned int)tmplt->static_size + max_var_size;
-   if (size > 0xffff)
-      size = 0xffff;
+   if (size > UR_MAX_SIZE)
+      size = UR_MAX_SIZE;
    return (void *) calloc(size, 1);
 }
 

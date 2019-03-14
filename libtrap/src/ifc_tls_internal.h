@@ -85,6 +85,9 @@ struct tlsclient_s {
    void *buffer; /**< separate message buffer */
    uint32_t pending_bytes; /**< The size of data that must be sent */
    enum tlsclient_send_state client_state; /**< State of sending */
+   uint64_t timer_total; /**< Total time spent sending (in microseconds) */
+   uint32_t timer_last; /**< Time spent on last send call (in microseconds) */
+   uint32_t id; /** Client identification - PID for unix socket, port number for TCP socket */
 };
 
 /**

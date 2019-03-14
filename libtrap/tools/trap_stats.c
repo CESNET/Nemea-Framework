@@ -104,6 +104,7 @@ int connect_to_module_service_ifc()
 int decode_cnts_from_json(char **data)
 {
    size_t arr_idx = 0;
+   size_t c_arr_idx = 0;
 
    uint64_t ifc_cnts[4];
    memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
@@ -122,6 +123,13 @@ int decode_cnts_from_json(char **data)
    uint32_t ifc_cnt = 0;
    uint8_t ifc_state = 0;
    int32_t num_clients = 0;
+
+   json_t *val = NULL;
+   json_t *client_stats_arr = NULL;
+   json_t *client = NULL;
+   uint32_t client_timer_last;
+   uint64_t client_timer_total;
+   uint32_t client_id;
 
    /***********************************/
 
@@ -314,6 +322,50 @@ int decode_cnts_from_json(char **data)
 
       printf("\tID: %s, TYPE: %c, NUM_CLI: %d, SM: %" PRIu64 ", DM: %" PRIu64 ", SB: %" PRIu64 ", AF: %" PRIu64 "\n", ifc_id, ifc_type, num_clients, ifc_cnts[msg_idx], ifc_cnts[dropped_msg_idx], ifc_cnts[buffers_idx], ifc_cnts[af_idx]);
       memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
+
+      client_stats_arr = json_object_get(out_ifc_cnts, "client_stats_arr");
+      if (json_is_array(client_stats_arr) == 0) {
+         printf("[ERROR] Value of key \"client_stats_arr\" is not a json array.\n");
+         json_decref(json_struct);
+         return -1;
+      }
+      
+      if (json_array_size(client_stats_arr) > 0)
+      {
+         printf("\tClient statistics:\n");
+         json_array_foreach(client_stats_arr, c_arr_idx, client) { 
+            if (json_is_object(client) == 0) {
+               printf("[ERROR] Client timer is not a json object in received json structure.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            
+            val = json_object_get(client, "id");
+            if (val == NULL) {
+               printf("[ERROR] Could not get string value of key \"id\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_id = (uint32_t)(json_integer_value(val));
+                    
+            val = json_object_get(client, "timer_last");
+            if (val == NULL) {
+               printf("[ERROR] Could not get string value of key \"timer_last\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1; 
+            }
+            client_timer_last = (uint32_t)(json_integer_value(val));
+            
+            val = json_object_get(client, "timer_total");
+            if (val == NULL) {
+               printf("[ERROR] Could not get string value of key \"timer_total\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_timer_total = (uint64_t)(json_integer_value(val));
+            printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu\n", client_id, client_timer_last, client_timer_total);
+         }
+      }
    }
 
    json_decref(json_struct);

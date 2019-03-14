@@ -4,7 +4,8 @@ import json
 import pytrap
 from time import time, gmtime
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timedelta
+import re
 import logging
 import signal
 
@@ -38,7 +39,12 @@ Usage: setAddr(idea['Source'][0], rec.SRC_IP)"""
 def getIDEAtime(unirecField = None):
     """Return timestamp in IDEA format (string).
     If unirecField is provided, it will convert it into correct format.
-    Otherwise, current time is returned."""
+    Otherwise, current time is returned.
+
+    Example:
+    >>> getIDEAtime(pytrap.UnirecTime(1234567890))
+    '2009-02-13T23:31:30Z'
+    """
 
     if unirecField:
         # Convert UnirecTime
@@ -48,6 +54,29 @@ def getIDEAtime(unirecField = None):
         g = gmtime()
         iso = '%04d-%02d-%02dT%02d:%02d:%02dZ' % g[0:6]
     return iso
+
+
+def parseRFCtime(time_str):
+    """Parse time_str in RFC 3339 format and return it as native datetime in UTC.
+
+    Example:
+
+    >>> parseRFCtime('2019-03-11T14:59:54Z')
+    datetime.datetime(2019, 3, 11, 14, 59, 54)
+    """
+    # Regex for RFC 3339 time format
+    timestamp_re = re.compile(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})[Tt ]([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?([Zz]|(?:[+-][0-9]{2}:[0-9]{2}))$")
+    res = timestamp_re.match(time_str)
+    if res is not None:
+        year, month, day, hour, minute, second = (int(n or 0) for n in res.group(*range(1, 7)))
+        us_str = (res.group(7) or "0")[:6].ljust(6, "0")
+        us = int(us_str)
+        zonestr = res.group(8)
+        zoneoffset = 0 if zonestr in ('z', 'Z') else int(zonestr[:3])*60 + int(zonestr[4:6])
+        zonediff = timedelta(minutes=zoneoffset)
+        return datetime(year, month, day, hour, minute, second, us) - zonediff
+    else:
+        raise ValueError("Wrong timestamp format")
 
 
 # TODO: resolve argument parsing and help in Python modules
@@ -77,6 +106,59 @@ trap = pytrap.TrapCtx()
 def signal_h(signal, f):
     global trap
     trap.terminate()
+
+def check_valid_timestamps(idea, dpast=1, dfuture=0):
+    """
+    Return True if EventTime, CeaseTime, and DetectTime are in the interval (CreateTime - dpast, CreateTime + dfuture).
+
+    :param idea: dict with filled IDEA message
+    :param dpast: int maximal number of days into past
+    :param dfuture: int maximal number of days into future
+
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T14:59:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    True
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T15:00:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    True
+    >>> # One day tolerance for the future
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T15:10:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 1)
+    True
+    >>> # DetecTime from future
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T15:10:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    False
+    >>> # CreateTime from past
+    >>> idea = {"CreateTime": "2019-03-10T15:00:00Z", "DetectTime": "2019-03-11T14:59:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    False
+
+    """
+    et = idea.get("EventTime", None)
+    ct = idea.get("CeaseTime", None)
+    dt = idea.get("DetectTime", None)
+    create = idea.get("CreateTime", None)
+    if not create:
+        return True
+    else:
+        create = parseRFCtime(create)
+    deltapast = create - timedelta(dpast)
+    deltafuture = create + timedelta(dfuture)
+    for t in [et, ct, dt]:
+        if t:
+            # convert timestamp to datetime
+            t = parseRFCtime(t)
+            # check allowed interval
+            if t < deltapast or t > deltafuture:
+                return False
+    return True
+
 
 def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = None):
     """Run the main loop of the reporter module called `module_name` with `module_desc` (used in help).
@@ -217,6 +299,11 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
             if idea is None:
                 # Record can't be converted - skip it
+                continue
+
+            # Sanity check of timestamps
+            if not check_valid_timestamps(idea):
+                print("Invalid timestamps in skipped message: {0}".format(idea))
                 continue
 
             if args.name is not None:

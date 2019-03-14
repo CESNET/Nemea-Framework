@@ -3,11 +3,11 @@
  * \brief Error handling for TRAP.
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
  * \author Tomas Cejka <cejkato2@fit.cvut.cz>
- * \date 2013
- * \date 2014
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2013 - 2018
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013 - 2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -62,7 +62,8 @@ extern const char* default_err_msg[256]; // default messages
  */
 static inline int trap_error(trap_ctx_priv_t *ctx, int err_num)
 {
-   if (ctx != NULL) {
+   if (ctx != NULL && ctx->trap_last_error != err_num) {
+      pthread_mutex_lock(&ctx->error_mtx);
       ctx->trap_last_error = err_num;
       if (err_num >= 0 &&
             err_num < sizeof(default_err_msg)/sizeof(char*) &&
@@ -73,7 +74,9 @@ static inline int trap_error(trap_ctx_priv_t *ctx, int err_num)
          snprintf(ctx->error_msg_buffer, MAX_ERROR_MSG_BUFF_SIZE, "Unknown error (%i).", err_num);
          ctx->trap_last_error_msg = ctx->error_msg_buffer;
       }
+      pthread_mutex_unlock(&ctx->error_mtx);
    }
+
    return err_num;
 }
 
@@ -88,17 +91,17 @@ static inline int trap_error(trap_ctx_priv_t *ctx, int err_num)
  */
 static inline int trap_errorf(trap_ctx_priv_t *ctx, int err_num, const char *msg, ...)
 {
-   if (pthread_rwlock_wrlock(&ctx->context_lock) != 0) {
-      VERBOSE(CL_ERROR, "%s: lock failed.", __func__);
-      return err_num;
+   if (ctx != NULL) {
+      pthread_mutex_lock(&ctx->error_mtx);
+      ctx->trap_last_error = err_num;
+      va_list args;
+      va_start(args, msg);
+      vsnprintf(ctx->error_msg_buffer, MAX_ERROR_MSG_BUFF_SIZE, msg, args);
+      va_end(args);
+      ctx->trap_last_error_msg = ctx->error_msg_buffer;
+      pthread_mutex_unlock(&ctx->error_mtx);
    }
-   ctx->trap_last_error = err_num;
-   va_list args;
-   va_start(args, msg);
-   vsnprintf(ctx->error_msg_buffer, MAX_ERROR_MSG_BUFF_SIZE, msg, args);
-   va_end(args);
-   ctx->trap_last_error_msg = ctx->error_msg_buffer;
-   pthread_rwlock_unlock(&ctx->context_lock);
+
    return err_num;
 }
 
@@ -116,17 +119,24 @@ static inline int trap_errorf(trap_ctx_priv_t *ctx, int err_num, const char *msg
  */
 static inline int trap_errorp(trap_ctx_priv_t *ctx, const char *msg, ...)
 {
-   char tmp_str[MAX_ERROR_MSG_BUFF_SIZE];
-   strcpy(tmp_str, ctx->trap_last_error_msg);
-   va_list args;
-   va_start(args, msg);
-   int n = vsnprintf(ctx->error_msg_buffer, MAX_ERROR_MSG_BUFF_SIZE, msg, args);
-   va_end(args);
-   if (n >= 0 && n < MAX_ERROR_MSG_BUFF_SIZE) {
-      snprintf(ctx->error_msg_buffer + n, MAX_ERROR_MSG_BUFF_SIZE - n, tmp_str, args);
+   int retval = TRAP_E_BAD_FPARAMS;
+   if (ctx != NULL) {
+      pthread_mutex_lock(&ctx->error_mtx);
+      char tmp_str[MAX_ERROR_MSG_BUFF_SIZE];
+      strcpy(tmp_str, ctx->trap_last_error_msg);
+      va_list args;
+      va_start(args, msg);
+      int n = vsnprintf(ctx->error_msg_buffer, MAX_ERROR_MSG_BUFF_SIZE, msg, args);
+      va_end(args);
+      if (n >= 0 && n < MAX_ERROR_MSG_BUFF_SIZE) {
+         snprintf(ctx->error_msg_buffer + n, MAX_ERROR_MSG_BUFF_SIZE - n, tmp_str, args);
+      }
+      ctx->trap_last_error_msg = ctx->error_msg_buffer;
+      retval = ctx->trap_last_error;
+      pthread_mutex_unlock(&ctx->error_mtx);
    }
-   ctx->trap_last_error_msg = ctx->error_msg_buffer;
-   return ctx->trap_last_error;
+
+   return retval;
 }
 
 #endif

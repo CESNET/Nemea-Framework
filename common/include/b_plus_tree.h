@@ -136,9 +136,10 @@ void bpt_clean(bpt_t *btree);
 
 /*!
  * \brief Insert or find item in B+ tree
- * Function tries to find key in the tree. If the key is found,
- * the appropriate value is returned. Otherwise it inserts key into
- * the tree and allocates new value which is returned.
+ * Function tries to find key in the tree. If the key is found, the
+ * appropriate value is returned. Otherwise it inserts key into the
+ * tree and allocates and zeroes space for a new value which is
+ * returned.
  * \param[in] btree pointer to B+ tree.
  * \param[in] key key to insert.
  * \return pointer to the value. New allocated or found in the tree.
@@ -147,9 +148,9 @@ void *bpt_search_or_insert(bpt_t *btree, void *key);
 
 /*!
  * \brief Insert item to B+ tree
- * Function inserts key to the tree and allocates space for value,
- * which is returned. If the key is already in the tree, the NULL is
- * returned.
+ * Function inserts key to the tree and allocates and zeroes space for
+ * value, which is returned. If the key is already in the tree, the
+ * NULL is returned.
  * \param[in] btree pointer to B+ tree.
  * \param[in] key key to insert.
  * \return pointer to value or NULL.
