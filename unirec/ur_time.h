@@ -68,13 +68,13 @@ typedef uint64_t ur_time_t;
 //#define UR_TIME_USEC_TO_FRAC 0x10C6F7A0B5EEULL
 //#define UR_TIME_MSEC_TO_FRAC 0x4189374BC6A7F0ULL
 
-/* 
+/*
 Note: We could use spearate constants for direct conversion from ms, us
 and ns, but each such constant would have a different rounding error.
 It would result in incorrect results when a value would be encoded from
 one precision and decoded in another one (e.g. store as ms -> read as us
 wouldn't result in a number like "x.xxx000").
-The only consistent way is to always convert to fixed-point using the 
+The only consistent way is to always convert to fixed-point using the
 highest precision (ns) and do additional conversion to/from ms/us by
 multiplying/dividing it by 1000 or 1000000, i.e. in decadic form.
 
@@ -83,7 +83,7 @@ The current implementation satisfies these rules:
 - Converting the time to unirec and back using the same precision always results
   in exactly the same number. Example:
     123456us -> ur_time -> 123456us
-- Setting the time in lower precision and reading it in higer precision 
+- Setting the time in lower precision and reading it in higer precision
   results in a number ending with zeros. Example:
     123ms -> ur_time -> 123000000ns
 - Seting the time in higher precision and reading it in lower precision
@@ -98,7 +98,7 @@ The current implementation satisfies these rules:
  * \return UniRec timestamp (ur_time_t)
  */
 #define ur_time_from_sec_nsec(sec, nsec) \
-   (ur_time_t)( ((uint64_t)(sec) << 32) | (((uint64_t)(nsec)*UR_TIME_NSEC_TO_FRAC) >> 32) )
+   (ur_time_t) (((uint64_t) (sec) << 32) | (((uint64_t) (nsec) * UR_TIME_NSEC_TO_FRAC) >> 32))
 
 /** \brief Convert seconds and microseconds to ur_time_t.
  * \param sec seconds
@@ -106,7 +106,7 @@ The current implementation satisfies these rules:
  * \return UniRec timestamp (ur_time_t)
  */
 #define ur_time_from_sec_usec(sec, usec) \
-   (ur_time_t)( ((uint64_t)(sec) << 32) | (((uint64_t)(usec)*1000*UR_TIME_NSEC_TO_FRAC) >> 32) )
+   (ur_time_t) (((uint64_t) (sec) << 32) | (((uint64_t) (usec) * 1000 * UR_TIME_NSEC_TO_FRAC) >> 32))
 
 /** \brief Convert seconds and milliseconds to ur_time_t.
  * \param sec seconds
@@ -114,7 +114,7 @@ The current implementation satisfies these rules:
  * \return UniRec timestamp (ur_time_t)
  */
 #define ur_time_from_sec_msec(sec, msec) \
-   (ur_time_t)( ((uint64_t)(sec) << 32) | (((uint64_t)(msec)*1000000*UR_TIME_NSEC_TO_FRAC) >> 32) )
+   (ur_time_t) (((uint64_t) (sec) << 32) | (((uint64_t) (msec) * 1000000 * UR_TIME_NSEC_TO_FRAC) >> 32))
 
 
 /** \brief Get number of seconds from ur_time_t
@@ -122,7 +122,7 @@ The current implementation satisfies these rules:
  * \return seconds
  */
 #define ur_time_get_sec(time) \
-   (uint32_t)((uint64_t)(time) >> 32)
+   (uint32_t) ((uint64_t) (time) >> 32)
 
 
 /** \brief Get number of nanoseconds from ur_time_t
@@ -130,21 +130,21 @@ The current implementation satisfies these rules:
  * \return nanoseconds
  */
 #define ur_time_get_nsec(time) \
-   (uint32_t)((((uint64_t)(time) & 0xffffffff) * 1000000000ULL) >> 32)
+   (uint32_t) ((((uint64_t) (time) & 0xffffffff) * 1000000000ULL) >> 32)
 
 /** \brief Get number of microeconds from ur_time_t
  * \param time UniRec timestamp
  * \return microseconds
  */
 #define ur_time_get_usec(time) \
-   (uint32_t)(ur_time_get_nsec(time) / 1000)
+   (uint32_t) (ur_time_get_nsec(time) / 1000)
 
 /** \brief Get number of milliseconds from ur_time_t
  * \param time UniRec timestamp
  * \return milliseconds
  */
 #define ur_time_get_msec(time) \
-   (uint32_t)(ur_time_get_nsec(time) / 1000000)
+   (uint32_t) (ur_time_get_nsec(time) / 1000000)
 
 
 /**
@@ -194,8 +194,6 @@ static inline uint64_t ur_timediff_ns(ur_time_t a, ur_time_t b)
  * \return 0 on success, 1 is returned on parsing error (malformed format of str) and ur is set to 0, 2 on bad parameter (NULL was passed).
  */
 uint8_t ur_time_from_string(ur_time_t *ur, const char *str);
-
-/** \todo Conversion from/to micro- and nano seconds */
 
 /**
  * @}
