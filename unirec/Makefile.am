@@ -83,3 +83,9 @@ deb-clean:
 clean-local: rpm-clean deb-clean
 	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
 	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
+
+.PHONY: coverage
+coverage: check
+	@lcov --capture --directory . --output-file coverage.info
+	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"
+
