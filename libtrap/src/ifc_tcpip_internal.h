@@ -57,9 +57,10 @@
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
 #define DEFAULT_TIMEOUT_ACCEPT   0         /**< Default timeout used in accept_new_client() [microseconds] */
-#define DEFAULT_BUFFER_COUNT     1
+#define DEFAULT_BUFFER_COUNT     1         /**< Default buffer count */
 #define DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
-#define DEFAULT_MAX_CLIENTS      10
+#define DEFAULT_MAX_CLIENTS      10        /**< Default size of client array */
+#define DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
 
 typedef struct buffer_s {
    uint32_t wr_index;                      /**< Pointer to first free byte in buffer */
@@ -88,25 +89,20 @@ typedef struct client_s {
 
 typedef struct tcpip_sender_private_s {
    trap_ctx_priv_t *ctx;                   /**< Libtrap context */
-   /**
-    * File descriptor pair for select() termination.
-    *
-    * Using python wrapper, it is not possible to terminate module
-    * when no receiver is connected to output IFC.  Therefore,
-    * this file descriptor will be used to signal termination to
-    * select().
-    */
-   int term_pipe[2];
+
+   int term_pipe[2];                       /**< File descriptor pair for select() termination */
    int server_sd;                          /**< Server socket descriptor */
    int timeout_accept;                     /**< Timeout used in accept_new_client() [microseconds] */
+   int timeout_autoflush;                  /**< Timeout used for autoflush [microseconds] */
 
-   char *server_port;
-   char is_terminated;
-   char initialized;
+   char *server_port;                      /**< TCPIP port number / UNIX socket path */
+   char is_terminated;                     /**< Termination flag */
+   char initialized;                       /**< Initialization flag */
 
    enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
 
    uint64_t finished_buffers;              /**< Counter of 'finished' buffers since trap initialization */
+   uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished. Used for autoflush. */
 
    uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
    uint32_t connected_clients;             /**< Number of currently connected clients */
@@ -115,11 +111,11 @@ typedef struct tcpip_sender_private_s {
    uint32_t buffer_size;                   /**< Buffer size [bytes] */
    uint32_t active_buffer;                 /**< Index of active buffer in 'buffers' array */
 
-   buffer_t *buffers;
-   client_t *clients;
+   buffer_t *buffers;                      /**< Array of buffer structures */
+   client_t *clients;                      /**< Array of client structures */
 
-   pthread_t send_thr;
-   pthread_mutex_t lock;
+   pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
+   pthread_mutex_t lock;                   /**< Interface lock. Used for autoflush. */
 } tcpip_sender_private_t;
 
 /**

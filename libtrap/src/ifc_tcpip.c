@@ -1109,10 +1109,11 @@ refuse_client:
 
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
+   pthread_mutex_lock(&buffer->lock);
+
    uint32_t header = htonl(buffer->wr_index);
    memcpy(buffer->header, &header, sizeof(header));
 
-   pthread_mutex_lock(&buffer->lock);
    buffer->finished = 1;
    priv->finished_buffers++;
 }
@@ -1203,6 +1204,16 @@ static void *sending_thread_func(void *priv)
       accept_new_client(c, &timeout_accept);
       if (c->connected_clients == 0) {
          continue;
+      }
+
+      /* Handle autoflush - if current active buffer wasnt finished until timeout elapsed, it will be finished now */
+      if (get_cur_timestamp() - c->autoflush_timestamp >= c->timeout_autoflush && c->buffers[c->active_buffer].wr_index != 0) {
+         pthread_mutex_lock(&c->lock);
+         finish_buffer(c, &c->buffers[c->active_buffer]);
+         c->active_buffer = (c->active_buffer + 1) % c->buffer_count;
+         pthread_mutex_unlock(&c->lock);
+         c->autoflush_timestamp = get_cur_timestamp();
+         c->ctx->counter_autoflush[c->ifc_idx]++;
       }
 
       FD_ZERO(&disset);
@@ -1323,6 +1334,9 @@ int tcpip_sender_send(void *priv, const void *data, uint32_t data_size, int time
    uint16_t size = data_size; // todo
    uint8_t block = (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
+
+   pthread_mutex_lock(&c->lock);
+
    uint32_t buffer_i = c->active_buffer;
    buffer_t* buffer = &c->buffers[buffer_i];
 
@@ -1391,21 +1405,14 @@ repeat:
    if (free_bytes >= (size + sizeof(size))) {
       /* Store message into buffer */
       insert_into_buffer(buffer, data, size);
-      if (size == 1) {
-         /* EOF message, finish buffer and wait for clients to receive it if this is a blocking call */
-         finish_buffer(c, buffer);
-         if (block == 1 && c->connected_clients > 0) {
-            /* wait until all clients receive last buffer */
-            pthread_mutex_lock(&buffer->lock);
-            pthread_mutex_unlock(&buffer->lock);
-         }
-      }
       c->ctx->counter_send_message[c->ifc_idx]++;
+      pthread_mutex_unlock(&c->lock);
       return TRAP_E_OK;
    } else {
       /* Not enough space for message, finish current buffer and try to store message into next buffer */
       finish_buffer(c, buffer);
       c->active_buffer = (c->active_buffer + 1) % c->buffer_count;
+      c->autoflush_timestamp = get_cur_timestamp();
       buffer = &c->buffers[c->active_buffer];
       goto repeat;
    }
@@ -1413,6 +1420,7 @@ repeat:
 timeout:
    /* Drop message */
    c->ctx->counter_dropped_message[c->ifc_idx]++;
+   pthread_mutex_unlock(&c->lock);
    return TRAP_E_TIMEOUT;
 }
 
@@ -1711,6 +1719,8 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->active_buffer = 0;
    priv->finished_buffers = 0;
    priv->timeout_accept = DEFAULT_TIMEOUT_ACCEPT;
+   priv->timeout_autoflush = DEFAULT_TIMEOUT_FLUSH;
+   priv->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_init(&priv->lock, NULL);
 
