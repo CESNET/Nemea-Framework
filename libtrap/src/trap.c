@@ -134,7 +134,6 @@ char error_msg_buffer[MAX_ERROR_MSG_BUFF_SIZE];
 #define ifcdir2str(type) (((type) == TRAPIFC_OUTPUT) ? "Output" : "Input")
 
 static inline char *get_param_by_delimiter(const char *source, char **dest, const char delimiter);
-static int compare_timeouts(const void *a, const void *b);
 int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
 void *service_thread_routine(void *arg);
 
@@ -319,127 +318,6 @@ exit:
    return result;
 }
 
-static inline void insert_into_buffer(trap_output_ifc_t *priv, const void *data, const uint16_t size)
-{
-   uint16_t *msize = (uint16_t *) &priv->buffer[priv->buffer_index];
-   (*msize) = htons(size);
-   memcpy((void *) (msize + 1), data, size);
-   priv->buffer_index += size + sizeof(size);
-}
-
-static inline void reset_buffer(trap_output_ifc_t *oifc)
-{
-   oifc->buffer_occupied = 0;
-   oifc->buffer_index = 0;
-}
-
-static inline void buffer_finish(trap_output_ifc_t *oifc)
-{
-   trap_buffer_header_t *h = (trap_buffer_header_t *) oifc->buffer_header;
-   h->data_length = htonl(oifc->buffer_index);
-   oifc->buffer_occupied = 1;
-}
-
-/**
- * \brief Store message into buffer. Send the buffer to output interface if full.
- *
- * If buffering is disabled, the message is sent to the output interface immediately.
- * If TRAP_NO_WAIT is specified, the function may return TRAP_E_TIMEOUT if fails to lock interface
- * which might be caused due to other thread holding the lock. (Other sending thread uses the interface or autoflush occurred.)
- *
- * \param[in] ctx     Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] ifc     Index of interface to write into.
- * \param[in] data    Pointer to data which ought to be stored.
- * \param[in] size    Number of bytes of the data.
- * \param[in] timeout Timeout in microseconds for non-blocking mode.
- *                    Can be also: TRAP_WAIT | TRAP_HALFWAIT | TRAP_NO_WAIT.
- *
- * \return TRAP_E_OK         Success.
- * \return TRAP_E_TIMEOUT    Message was not stored into buffer and the attempt should be repeated.
- * \return TRAP_E_TERMINATED Libtrap was terminated during the process.
- */
-static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc, const void *data, uint16_t size, int timeout)
-{
-   /* Declaration of variables, we can have small buffer, initialization after checking the condition. */
-   trap_output_ifc_t *oifc = &ctx->out_ifc_list[ifc];
-   int result = TRAP_E_OK;
-   uint32_t needed_size = size + sizeof(size);
-   char reinsert = 0;
-
-   if (oifc->ifc_type == TRAP_IFC_TYPE_BLACKHOLE) {
-      return TRAP_E_OK;
-   }
-
-   /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
-   if (needed_size > TRAP_IFC_MESSAGEQ_SIZE) {
-      return trap_errorf(ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
-   }
-
-   /* Lock only if the thread should block. */
-   if (timeout >= TRAP_NO_WAIT) {
-      if (pthread_mutex_trylock(&oifc->ifc_mtx) != 0) {
-         __sync_fetch_and_add(&ctx->counter_dropped_message[ifc], 1);
-         return TRAP_E_TIMEOUT;
-      }
-   } else {
-      pthread_mutex_lock(&oifc->ifc_mtx);
-   }
-
-   /* LOCKED SECTION. */
-
-   /* Check whether the message can be stored into buffer. */
-   if ((needed_size <= TRAP_IFC_MESSAGEQ_SIZE - oifc->buffer_index) && oifc->buffer_occupied == 0) {
-      insert_into_buffer(oifc, data, size);
-
-      /* Only 1 message in buffer allowed. */
-      if (oifc->bufferswitch == 0) {
-         buffer_finish(oifc);
-      }
-   } else {
-      /* Need to send buffer first. */
-      buffer_finish(oifc);
-      reinsert = 1;
-   }
-
-   /* Buffer ready to be sent. */
-   if (oifc->buffer_occupied) {
-
-#ifdef BUFFERING_CHECK_HEADERS
-         if (trap_check_buffer_content(oifc->buffer, oifc->buffer_index) != 0) {
-            VERBOSE(CL_ERROR, "Buffer is not valid.");
-         }
-#endif
-
-      result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), timeout);
-
-      /* No need to call autoflush. */
-      __sync_fetch_and_add(&oifc->bufferflush, 1);
-
-      if (result == TRAP_E_OK) {
-         /* Reset buffer and insert the message if it was not inserted. */
-         reset_buffer(oifc);
-         __sync_fetch_and_add(&ctx->counter_send_buffer[ifc], 1);
-         if (reinsert) {
-            insert_into_buffer(oifc, data, size);
-         }
-      } else if (result == TRAP_E_TIMEOUT) {
-         __sync_fetch_and_add(&ctx->counter_dropped_message[ifc], 1);
-
-         /* Drop buffer if no client is connected. */
-         if (oifc->get_client_count(oifc->priv) == 0) {
-            reset_buffer(oifc);
-         }
-      }
-   }
-
-   if (oifc->bufferswitch == 0) {
-      oifc->buffer_occupied = 0;
-   }
-
-   pthread_mutex_unlock(&oifc->ifc_mtx);
-   return result;
-}
-
 /**
  * @}
  */
@@ -501,35 +379,6 @@ void *reader_threads_fn(void *arg)
 }
 
 /**
- * Initialize or update a list of autoflush timeouts of output interfaces.
- *
- * \param[in,out] ctx pointer to the private libtrap context data (trap_ctx_init())
- *
- * \return Number of output interfaces, where the autoflush timeout is set.
- */
-static inline int trap_copy_autoflush(trap_ctx_priv_t *ctx)
-{
-   int i, idx;
-   ifc_autoflush_t *timeouts = ctx->ifc_autoflush_timeout;
-   idx = 0;
-   for (i = 0; i < ctx->num_ifc_out; i++) {
-      trap_output_ifc_t *oifc = &ctx->out_ifc_list[i];
-
-      pthread_mutex_lock(&oifc->ifc_mtx);
-      if ((oifc->timeout != TRAP_NO_AUTO_FLUSH) && (oifc->bufferswitch != 0)) {
-         timeouts[idx].idx = i;
-         timeouts[idx].tm = oifc->timeout;
-         timeouts[idx].tm_backup = oifc->timeout;
-         idx++;
-      }
-      pthread_mutex_unlock(&oifc->ifc_mtx);
-   }
-
-   __sync_fetch_and_sub(&ctx->ifc_change, 1);
-   return idx;
-}
-
-/**
  * Handle the timeouts on output interfaces and flush buffer after timeout is reached.
  *
  *
@@ -537,12 +386,8 @@ static inline int trap_copy_autoflush(trap_ctx_priv_t *ctx)
  */
 static void *trap_automatic_flush_thr(void *arg)
 {
-   int i, n;
-   int64_t usec;
    uint32_t j;
    trap_ctx_priv_t *ctx = (trap_ctx_priv_t *) arg;
-
-   n = trap_copy_autoflush(ctx);
 
    while (1) {
       if (ctx->terminated) {
@@ -556,63 +401,11 @@ static void *trap_automatic_flush_thr(void *arg)
       }
       VERBOSE(CL_VERBOSE_BASIC, "------------- OUTPUT IFC ------------ ");
       for (j = 0; j < ctx->num_ifc_out; j++) {
-         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: sent buf: %" PRIu64 ", msg: %" PRIu64 ", drop msg: %" PRIu64 ", flush: %" PRIu64 ".", j, __sync_fetch_and_add(&ctx->counter_send_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_send_message[j], 0), __sync_fetch_and_add(&ctx->counter_dropped_message[j], 0), __sync_fetch_and_add(&ctx->counter_autoflush[j], 0));
+         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: sent buf: %" PRIu64 ", msg: %" PRIu64 ", drop msg: %" PRIu64 ", flush: %" PRIu64 ", clients: %" PRIu32 ".", j, __sync_fetch_and_add(&ctx->counter_send_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_send_message[j], 0), __sync_fetch_and_add(&ctx->counter_dropped_message[j], 0), __sync_fetch_and_add(&ctx->counter_autoflush[j], 0), ctx->out_ifc_list[j].get_client_count(ctx->out_ifc_list[j].priv));
       }
       VERBOSE(CL_VERBOSE_BASIC, "------------------------------------- ");
 
-      // Checking if automatic flushing or buffering was changed or disabled
-      if (__sync_fetch_and_add(&ctx->ifc_change, 0) > 0) {
-         n = trap_copy_autoflush(ctx);
-      }
-
       usleep(100000);
-      continue;
-
-      // Sort array by timeout if we have more than one output interface
-      if (n != 0) {
-         if (n > 1) {
-            qsort(ctx->ifc_autoflush_timeout, n, sizeof(ifc_autoflush_t), compare_timeouts);
-         }
-
-         usec = ctx->ifc_autoflush_timeout[0].tm;
-         if (sleep(usec / 1000000) != 0) {
-            if (ctx->terminated) {
-               break;
-            }
-         }
-         if (usleep(usec % 1000000) == -1) {
-            if (ctx->terminated) {
-               break;
-            }
-         }
-
-         // Check all interfaces if timeout has elapsed, otherwise break
-         for (i = 0; i < n; i++) {
-            trap_output_ifc_t *oifc = &ctx->out_ifc_list[ctx->ifc_autoflush_timeout[i].idx];
-
-            ctx->ifc_autoflush_timeout[i].tm -= usec;
-            if (ctx->ifc_autoflush_timeout[i].tm == 0) {
-               if (oifc->bufferflush == 0) {
-                  // No buffer sent on the output interface since last check.
-                  trap_ctx_send_flush((trap_ctx_t *) ctx, i);
-                  __sync_fetch_and_add(&ctx->counter_autoflush[ctx->ifc_autoflush_timeout[i].idx], 1);
-               }
-               else {
-                  // Buffer was sent before timeout has elapsed, no need to flush the buffer
-                  __sync_fetch_and_and(&oifc->bufferflush, 0);
-               }
-               // Restore timeout
-               ctx->ifc_autoflush_timeout[i].tm = ctx->ifc_autoflush_timeout[i].tm_backup;
-            } else {
-               continue;
-            }
-         }
-      } else {
-         // Sleep for defined time, default 2 seconds
-         if (sleep(TRAP_NO_IFC_SLEEP)) {
-            break;
-         }
-      }
    }
 
    pthread_exit(NULL);
@@ -1587,11 +1380,6 @@ void trap_send_flush(uint32_t ifc)
    trap_ctx_send_flush((trap_ctx_t *) trap_glob_ctx, ifc);
 }
 
-static int compare_timeouts (const void *a, const void *b)
-{
-   return ((*(ifc_autoflush_t *)a).tm - (*(ifc_autoflush_t *)b).tm);
-}
-
 /**
  * \addtogroup contextapi Context API
  * @{
@@ -1664,10 +1452,6 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
       for (i = 0; i < c->num_ifc_out; i++) {
          if (c->out_ifc_list[i].destroy != NULL) {
             c->out_ifc_list[i].destroy(c->out_ifc_list[i].priv);
-         }
-         if (c->out_ifc_list[i].buffer_header != NULL) {
-            free(c->out_ifc_list[i].buffer_header);
-            c->out_ifc_list[i].buffer_header = NULL;
          }
          if (c->out_ifc_list[i].data_fmt_spec != NULL) {
             free(c->out_ifc_list[i].data_fmt_spec);
@@ -1870,7 +1654,7 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
 
 int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t size)
 {
-   int ret_val = 0;
+   int ret_val = TRAP_E_OK;
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
    trap_output_ifc_t* ifc_ptr = &c->out_ifc_list[ifc];
 
@@ -1886,16 +1670,11 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
-   if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_ptr->ifc_type == TRAP_IFC_TYPE_UNIX || ifc_ptr->ifc_type == TRAP_IFC_TYPE_FILE) {
-      /* interface handles buffering */
-      ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
-   } else {
-      /* handle buffering */
-      ret_val = trap_store_into_buffer(c, ifc, data, size, c->out_ifc_list[ifc].datatimeout);
-      if (ret_val == TRAP_E_OK) {
-         __sync_fetch_and_add(&c->counter_send_message[ifc], 1);
-      }
+   if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_BLACKHOLE) {
+      return TRAP_E_OK;
    }
+
+   ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
 
    return trap_error(ctx, ret_val);
 }
@@ -2308,7 +2087,6 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
          sem_destroy(&ctx->sem_collector);
          goto freein_readers;
       }
-
    }
 
    for (i = 0; i < ctx->num_ifc_in; i++) {
@@ -2375,14 +2153,6 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
       ctx->out_ifc_list[i].data_type = TRAP_FMT_UNKNOWN;
       ctx->out_ifc_list[i].data_fmt_spec = NULL;
 
-      ctx->out_ifc_list[i].buffer_header = (void *) calloc(1, TRAP_IFC_MESSAGEQ_SIZE + sizeof(trap_buffer_header_t) + 1);
-      if (ctx->out_ifc_list[i].buffer_header == NULL) {
-         trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for input ifc buffer.");
-         goto freein_on_failed;
-      }
-      ctx->out_ifc_list[i].buffer = ((trap_buffer_header_t *) ctx->out_ifc_list[i].buffer_header)->data;
-      ctx->out_ifc_list[i].buffer_index = 0;
-      ctx->out_ifc_list[i].bufferflush = 0;
       if (pthread_mutex_init(&ctx->out_ifc_list[i].ifc_mtx, NULL) != 0) {
          goto freein_on_failed;
       }
@@ -2606,30 +2376,7 @@ const char *trap_ctx_get_last_error_msg(trap_ctx_t *ctx)
 
 void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
 {
-   trap_ctx_priv_t *c = ctx;
-
-   if (c == NULL || c->initialized == 0) {
-      return;
-   }
-
-   trap_output_ifc_t *oifc = &c->out_ifc_list[ifc];
-   pthread_mutex_lock(&oifc->ifc_mtx);
-   if (oifc->buffer_index != 0) {
-      int result;
-      buffer_finish(oifc);
-      result = oifc->send(oifc->priv, oifc->buffer_header, oifc->buffer_index + sizeof(trap_buffer_header_t), oifc->datatimeout);
-      if (result == TRAP_E_OK) {
-         reset_buffer(oifc);
-         __sync_fetch_and_add(&c->counter_send_buffer[ifc], 1);
-      } else {
-         oifc->buffer_occupied = 1;
-         if (oifc->get_client_count(oifc->priv) == 0) {
-            reset_buffer(oifc);
-         }
-      }
-   }
-
-   pthread_mutex_unlock(&oifc->ifc_mtx);
+   // TODO
 }
 
 /**

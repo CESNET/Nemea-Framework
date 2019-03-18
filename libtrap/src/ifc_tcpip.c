@@ -986,7 +986,7 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
  *
  * \param[in] priv Pointer to output interface private structure.
  */
-void server_disconnect_all_clients(void *priv)
+void tcpip_server_disconnect_all_clients(void *priv)
 {
    uint32_t i;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
@@ -1476,7 +1476,7 @@ void tcpip_sender_destroy(void *priv)
 
       /* disconnect all clients */
       if (c->clients != NULL) {
-         server_disconnect_all_clients(priv);
+         tcpip_server_disconnect_all_clients(priv);
          X(c->clients);
       }
 
@@ -1664,7 +1664,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
          }
       } else if (strncmp(param_str, "max_clients=x", 12) == 0) {
          if (sscanf(param_str+12, "%u", &max_clients) != 1) {
-            VERBOSE(CL_ERROR, "Optional buffer count given, but it is probably in wrong format.");
+            VERBOSE(CL_ERROR, "Optional max clients number given, but it is probably in wrong format.");
             max_clients = DEFAULT_MAX_CLIENTS;
          }
       } else {
@@ -1724,9 +1724,8 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
 
    pthread_mutex_init(&priv->lock, NULL);
 
-   VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\n"
-      "buffer count:\t%u\nbuffer size:\t%uB\n", priv->server_port, priv->clients_arr_size,
-      priv->buffer_count, priv->buffer_size);
+   VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
+                                priv->server_port, priv->clients_arr_size, priv->buffer_count, priv->buffer_size);
 
    result = server_socket_open(priv);
    if (result != TRAP_E_OK) {
@@ -1740,7 +1739,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    }
 
    // Fill struct defining the interface
-   ifc->disconn_clients = server_disconnect_all_clients;
+   ifc->disconn_clients = tcpip_server_disconnect_all_clients;
    ifc->send = tcpip_sender_send;
    ifc->terminate = tcpip_sender_terminate;
    ifc->destroy = tcpip_sender_destroy;

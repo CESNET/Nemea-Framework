@@ -94,6 +94,10 @@ void file_destroy(void *priv)
          fclose(config->fd);
       }
 
+      if (config->buffer.header) {
+         free(config->buffer.header);
+      }
+
       free(config);
    } else {
       VERBOSE(CL_ERROR, "FILE IFC: attempt to destroy IFC that is probably not initialized.");
