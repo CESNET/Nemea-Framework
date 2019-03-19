@@ -56,6 +56,8 @@ int main()
    const char *strusec = "2018-06-27T16:52:54.123456";
    const char *strnsec = "2018-06-27T16:52:54.122456789";
    const char *badstr2 = "2018-06-27T16:52:54.222222222000";
+   const char *tzstr = "2018-06-27T16:52:54Z";
+   const char *tzstr2 = "2018-06-27T16:52:54.123Z";
    const char *str = "2018-06-27T16:52:54";
 
    res = ur_time_from_string(&ut, NULL);
@@ -252,6 +254,18 @@ int main()
    }
    if (ur_time_get_nsec(ut) != 222222222) {
       fprintf(stderr, "22. Number of nanoseconds (%" PRIu32 ") is not the expected value (222222222).\n", ur_time_get_nsec(ut));
+      errors++;
+   }
+
+   // string with timezone
+   res = ur_time_from_string(&ut, tzstr);
+   if (res != 0) {
+      fprintf(stderr, "23. Parsing failed while it should succeed.\n");
+      errors++;
+   }
+   res = ur_time_from_string(&ut, tzstr2);
+   if (res != 0) {
+      fprintf(stderr, "24. Parsing failed while it should succeed.\n");
       errors++;
    }
 
