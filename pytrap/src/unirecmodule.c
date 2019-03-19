@@ -472,7 +472,9 @@ static PyTypeObject pytrap_UnirecTime = {
     "    Args:\n"
     "        str: datetime, e.g., \"2019-03-18T12:11:10.123Z\"\n"
     "        double or int: number of seconds\n"
-    "        Optional[int]: number of miliseconds (when the first argument is int)\n", /* tp_doc */
+    "        Optional[int]: number of miliseconds (when the first argument is int)\n\n"
+    "    Raises:\n"
+    "        TypeError: unsupported type was provided or string is malformed.\n", /* tp_doc */
     0, /* tp_traverse */
     0, /* tp_clear */
     (richcmpfunc) UnirecTime_compare, /* tp_richcompare */
