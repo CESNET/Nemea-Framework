@@ -1349,7 +1349,7 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
 
    res = strptime(str, "%FT%T", &t);
    /* parsed to sec - msec delimiter */
-   if ((res != NULL) && ((*res == '.') || (*res == 0))) {
+   if ((res != NULL) && ((*res == '.') || (*res == 0) || (*res == 'z') || (*res == 'Z'))) {
       sec = timegm(&t);
       if (sec != -1) {
          if (*res != 0 && *++res != 0) {
@@ -1357,11 +1357,14 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
             memset(frac_buffer, '0', 9);
             frac_buffer[9] = 0;
 
-            // now "res" points to the beginning of the fractional part,
-            // which have at leat one char.
+            // now "res" points to the beginning of the fractional part or 'Z' for UTC timezone,
+            // which have at least one char.
             // Expand the number by zeros to the right to get it in ns
             // (if there are more than 9 digits, truncate the rest)
             size_t frac_len = strlen(res);
+            if (frac_len > 0 && (res[frac_len - 1] == 'z' || res[frac_len - 1] == 'Z')) {
+                frac_len--;
+            }
             if (frac_len > 9) {
                 frac_len = 9;
             }
