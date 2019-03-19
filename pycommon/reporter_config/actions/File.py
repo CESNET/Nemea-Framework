@@ -38,9 +38,12 @@ class FileAction(Action):
     def run(self, record):
         super(type(self), self).run(record)
         try:
-            if self.path == '-':
+            if self.path in ['-', "/dev/stdout"]:
                 sys.stdout.write(json.dumps(record) + '\n')
                 sys.stdout.flush()
+            elif self.path == "/dev/stderr":
+                sys.stderr.write(json.dumps(record) + '\n')
+                sys.stderr.flush()
             elif self.dir:
                 # Store record into separate file
                 filename = record["ID"] + ".idea"
