@@ -255,6 +255,9 @@ UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
         } else if (PyInt_Check(arg1)) {
             secs = (uint32_t) PyInt_AsLong(arg1);
 #endif
+        } else {
+           PyErr_SetString(PyExc_TypeError, "Unsupported argument type.");
+           return -1;
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
     } else {
