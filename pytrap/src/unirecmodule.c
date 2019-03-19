@@ -238,8 +238,10 @@ int
 UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
 {
     PyObject *arg1;
-    uint32_t secs, msecs = 0;
+    uint32_t secs = 0, msecs = 0;
     double fl_time;
+    char *cstr = NULL;
+    Py_ssize_t csize;
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "O|I", &arg1, &msecs)) {
@@ -255,6 +257,26 @@ UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
         } else if (PyInt_Check(arg1)) {
             secs = (uint32_t) PyInt_AsLong(arg1);
 #endif
+#if PY_MAJOR_VERSION >= 3
+        } else if (PyUnicode_Check(arg1)) {
+            cstr = PyUnicode_AsUTF8AndSize(arg1, &csize);
+#else
+        } else if (PyString_Check(arg1)) {
+            if (PyString_AsStringAndSize(arg1, &cstr, &csize) == -1) {
+                return -1;
+            }
+#endif
+        } else {
+           PyErr_SetString(PyExc_TypeError, "Unsupported argument type.");
+           return -1;
+        }
+        if (cstr != NULL) {
+            if (ur_time_from_string(&s->timestamp, cstr) == 0) {
+                return 0;
+            } else {
+                PyErr_SetString(PyExc_TypeError, "Malformed string argument, YYYY-mm-ddTHH:MM:SS expected.");
+                return -1;
+            }
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
     } else {
@@ -445,10 +467,14 @@ static PyTypeObject pytrap_UnirecTime = {
         Py_TPFLAGS_BASETYPE, /* tp_flags */
     "UnirecTime(int(seconds), [int(miliseconds)])\n"
     "UnirecTime(double(secs_and_msecs))\n"
+    "UnirecTime(str(\"2019-03-18T12:11:10Z\"))\n"
     "    Class for UniRec timestamp storage and base data access.\n\n"
     "    Args:\n"
+    "        str: datetime, e.g., \"2019-03-18T12:11:10.123Z\"\n"
     "        double or int: number of seconds\n"
-    "        Optional[int]: number of miliseconds (when the first argument is int)\n", /* tp_doc */
+    "        Optional[int]: number of miliseconds (when the first argument is int)\n\n"
+    "    Raises:\n"
+    "        TypeError: unsupported type was provided or string is malformed.\n", /* tp_doc */
     0, /* tp_traverse */
     0, /* tp_clear */
     (richcmpfunc) UnirecTime_compare, /* tp_richcompare */
