@@ -23,17 +23,16 @@ class Config():
     parser = None
     compiler = None
 
-    def __init__(self, path, trap = None, warden = None):
+    def __init__(self, parsed_config, trap = None, warden = None):
         """
-        :param path Path to YAML configuration file
+        :param parsed_config Parser with parsed Yaml configuration
 
         :param trap Instance of TRAP client used in TrapAction
 
         :param warden Instance of Warden Client used in WardenAction
         """
-        # Parse given config file
-        with open(path, 'r') as f:
-            self.conf = Parser(f)
+
+        self.conf = parsed_config
 
         if not self.conf:
             raise Exception("Loading YAML file ({0}) failed. Isn't it empty?".format(path))
@@ -45,6 +44,9 @@ class Config():
         self.compiler = IDEAFilterCompiler()
 
         self.addrGroups = dict()
+
+        if "namespace" not in self.conf:
+            logger.error("ERROR: 'namespace' is required but is missing. Please specify 'namespace' in YAML config to identify names of reporters (e.g., com.example.collectornemea).")
 
         # Create all address groups if there are any
         if "addressgroups" in self.conf:

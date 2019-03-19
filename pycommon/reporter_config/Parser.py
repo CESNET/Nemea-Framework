@@ -4,8 +4,10 @@ import yaml
 class Parser:
     config = None
 
-    def __init__(self, config):
-        self.config = self.load(config)
+    def __init__(self, config_path):
+        # Parse given config file
+        with open(config_path, 'r') as f:
+            self.config = self.load(f)
 
     @classmethod
     def load(self, config):
@@ -23,3 +25,6 @@ class Parser:
     def __contains__(self, key):
         if self.config:
             return key in self.config
+
+    def get(self, key, value=None):
+        return self.config.get(key, value)
