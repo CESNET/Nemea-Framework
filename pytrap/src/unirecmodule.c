@@ -238,7 +238,7 @@ int
 UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
 {
     PyObject *arg1;
-    uint32_t secs, msecs = 0;
+    uint32_t secs = 0, msecs = 0;
     double fl_time;
 
     if (s != NULL) {
