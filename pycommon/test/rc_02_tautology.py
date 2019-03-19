@@ -2,7 +2,7 @@ import unittest
 import os
 import json
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCBaseTest(unittest.TestCase):
 
@@ -17,7 +17,8 @@ class RCBaseTest(unittest.TestCase):
         pass
 
     def test_02_basic_match(self):
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/tautology.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/tautology.yaml');
+        self.config = Config(self.parser);
 
         results, actions = self.config.match(self.msg)
 

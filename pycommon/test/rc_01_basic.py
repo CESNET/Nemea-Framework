@@ -2,7 +2,7 @@ import unittest
 import os
 import json
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCBaseTest(unittest.TestCase):
 
@@ -22,7 +22,8 @@ class RCBaseTest(unittest.TestCase):
 
         This shouldn't rise any exceptions
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/basic.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/basic.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
 
@@ -36,7 +37,8 @@ class RCBaseTest(unittest.TestCase):
         self.assertEqual(len(self.config.rules), 1)
 
     def test_02_basic_match(self):
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/basic.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/basic.yaml');
+        self.config = Config(self.parser);
 
         try:
             results, actions = self.config.match(self.msg)

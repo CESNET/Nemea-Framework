@@ -3,7 +3,7 @@ import os
 import json
 import copy
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCAddressGroupTest(unittest.TestCase):
 
@@ -15,7 +15,8 @@ class RCAddressGroupTest(unittest.TestCase):
                         f.write("192.168.0.0/24\n10.0.1.1\n")
                 with open(os.path.dirname(__file__) + '/rc_msg.json', 'r') as f:
                         self.msg = json.load(f)
-                self.config = Config(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
+                self.parser = Parser(os.path.dirname(__file__) + '/rc_config/mongo.yaml')
+                self.config = Config(self.parser);
 
                 # format from IDEA message: "Source": [{"IP4": ["1.2.3.4"]}]
                 self.messages_pass = []
@@ -38,7 +39,8 @@ class RCAddressGroupTest(unittest.TestCase):
 
                 Should store message in DB and test if there is one record
                 """
-                self.config = Config(os.path.dirname(__file__) + '/rc_config/addressgroup.yaml');
+                self.parser = Parser(os.path.dirname(__file__) + '/rc_config/addressgroup.yaml');
+                self.config = Config(self.parser);
 
                 self.assertNotEqual(self.config, None)
                 for idea in self.messages_pass:
