@@ -237,18 +237,54 @@ def timedelta_total_seconds(timedelta):
     return (
         timedelta.microseconds + 0.0 +
         (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+class DataTypesTimeConstructors(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        # Unsupported type
+        try:
+            t = pytrap.UnirecTime(tuple(1, 3))
+            self.fail("Tuple is not supported but exception was not thrown.")
+        except TypeError:
+            pass
+
+        # Float
+        t = pytrap.UnirecTime(1.5)
+        self.assertEqual(t.getSeconds(), 1)
+        self.assertEqual(t.getMiliSeconds(), 500)
+
+        # seconds and miliseconds
+        t = pytrap.UnirecTime(1466701316, 123)
+        self.assertEqual(t.getSeconds(), 1466701316, "Number of seconds differs.")
+        self.assertEqual(t.getMiliSeconds(), 123, "Number of miliseconds differs.")
+        self.assertEqual(t.getTimeAsFloat(), 1466701316.123, "Time as float differs.")
+
+        t1 = pytrap.UnirecTime("2019-03-18T20:58:12.100")
+        self.assertEqual(t1, pytrap.UnirecTime(1552942692, 100))
+
+        # test conversion from string with timezone to UnirecTime
+        t1 = pytrap.UnirecTime("2019-03-18T20:58:12.100Z")
+        t2 = pytrap.UnirecTime("2019-03-19T20:58:12.222Z")
+        self.assertEqual(t1, pytrap.UnirecTime(1552942692, 100))
+        self.assertEqual(t2, pytrap.UnirecTime(1553029092, 222))
+        self.assertEqual(t2.getSeconds() - t1.getSeconds(), 24 * 60 * 60)
+
+        # malformed format
+        try:
+            t1 = pytrap.UnirecTime("18.3.2019 20:58:12.100Z")
+        except TypeError:
+            pass
+
 class DataTypesTime(unittest.TestCase):
     def runTest(self):
         import pytrap
+
         t = pytrap.UnirecTime(1466701316, 123)
         self.assertEqual(type(t), pytrap.UnirecTime, "Bad type of Time object.")
         self.assertEqual(str(t),  "1466701316.123", "Time is not equal to its str().")
         self.assertEqual(repr(t), "UnirecTime(1466701316, 123)", "Time is not equal to its repr().")
         self.assertEqual(float(t), 1466701316.123, "Conversion of Time to float failed.")
         self.assertEqual(t, t)
-        self.assertEqual(t.getSeconds(), 1466701316, "Number of seconds differs.")
-        self.assertEqual(t.getMiliSeconds(), 123, "Number of miliseconds differs.")
-        self.assertEqual(t.getTimeAsFloat(), 1466701316.123, "Time as float differs.")
 
         t2 = pytrap.UnirecTime(10, 100)
         self.assertEqual(type(t2), pytrap.UnirecTime, "Bad type of Time object.")
