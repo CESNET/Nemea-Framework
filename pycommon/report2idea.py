@@ -314,13 +314,13 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                 # Record can't be converted - skip it
                 continue
 
-            # Sanity check of timestamps
-            if not check_valid_timestamps(idea):
-                print("Invalid timestamps in skipped message: {0}".format(idea))
-                continue
-
             if args.name is not None:
                 idea['Node'][0]['Name'] = args.name
+
+            # Sanity check of timestamps
+            if not check_valid_timestamps(idea):
+                print("Invalid timestamps in skipped message: {0}".format(json.dumps(idea)))
+                continue
 
             # *** Send IDEA to outputs ***
             # Perform rule matching and action running on the idea message
