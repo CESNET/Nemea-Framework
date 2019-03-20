@@ -213,9 +213,12 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
 
     parsed_config = Config.Parser(args.config)
+    if not parsed_config or not parsed_config.config:
+        print("error: Parsing configuration file failed.")
+        sys.exit(1)
 
     # Check if node name is set if Warden output is enabled
-    if not args.name:
+    if args and not args.name:
         args.name = ".".join([parsed_config.get("namespace", "com.example"), module_name])
     else:
         logger.warning("Node name is specified as '-n' argument.")
