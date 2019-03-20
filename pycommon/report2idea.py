@@ -10,6 +10,7 @@ import logging
 import signal
 
 from reporter_config import Config
+from reporter_config import Parser
 from reporter_config.actions.Drop import DropMsg
 FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
 
@@ -176,7 +177,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Set description
     arg_parser.description = str.format(desc_template,
-            name=module_name,
+            name=module_name + "2idea",
             type={pytrap.FMT_RAW:'raw', pytrap.FMT_UNIREC:'UniRec', pytrap.FMT_JSON:'JSON'}.get(req_type,'???'),
             fmt=req_format,
             original_desc = module_desc+"\n\n  " if module_desc else "",
@@ -197,36 +198,48 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Other options
     arg_parser.add_argument('-n', '--name', metavar='NODE_NAME',
-            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required argument.')
+            help='Name of the node, filled into "Node.Name" element of the IDEA message.')
+
     arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
             help="""Enable verbose mode (may be used by some modules, common part doesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
-    trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
-            help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
+    trap_args.add_argument('-i', metavar="IFC_SPEC", help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
     # Parse arguments
     args = arg_parser.parse_args()
 
     # Set log level
     logging.basicConfig(level=(args.verbose*10), format=FORMAT)
 
+
+    parsed_config = Config.Parser(args.config)
+    if not parsed_config or not parsed_config.config:
+        print("error: Parsing configuration file failed.")
+        sys.exit(1)
+
     # Check if node name is set if Warden output is enabled
-    if args.name is None:
-        #if args.warden:
-        #    sys.stderr.write(module_name+": Error: Node name must be specified if Warden output is used (set param --name).\n")
-        #    exit(1)
-        logger.warning("Node name is not specified.")
+    if not args.name:
+        args.name = ".".join([parsed_config.get("namespace", "com.example"), module_name])
+    else:
+        logger.warning("Node name is specified as '-n' argument.")
+    logger.info("Node name: %s", args.name)
 
-    # *** Initialize TRAP ***
-    logger.info("Trap arguments: %s", args.i)
-    trap.init(["-i", args.i], 1, 1 if args.trap else 0)
-    #trap.setVerboseLevel(3)
-    signal.signal(signal.SIGINT, signal_h)
+    if not args.dry:
+        if not args.i:
+            arg_parser.print_usage()
+            print("error: the following arguments are required: -i")
+            sys.exit(1)
 
-    # Set required input format
-    trap.setRequiredFmt(0, req_type, req_format)
-    if args.trap:
-       trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
+        # *** Initialize TRAP ***
+        logger.info("Trap arguments: %s", args.i)
+        trap.init(["-i", args.i], 1, 1 if args.trap else 0)
+        #trap.setVerboseLevel(3)
+        signal.signal(signal.SIGINT, signal_h)
+
+        # Set required input format
+        trap.setRequiredFmt(0, req_type, req_format)
+        if args.trap:
+           trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
     # *** Create output handles/clients/etc ***
     wardenclient = None
@@ -242,7 +255,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         wardenclient = warden_client.Client(**config)
 
     # Initialize configuration
-    config = Config.Config(args.config, trap = trap, warden = wardenclient)
+    config = Config.Config(parsed_config, trap = trap, warden = wardenclient)
 
 
     if not args.dry:
@@ -326,6 +339,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         # DRY argument given, just print config and exit
         print(config)
 
-    if wardenclient:
-        wardenclient.close()
-    trap.finalize()
+    if not args.dry:
+        if wardenclient:
+            wardenclient.close()
+        trap.finalize()
