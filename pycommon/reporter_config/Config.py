@@ -190,8 +190,8 @@ class Config():
         ag = "\n".join([str(self.addrGroups[key]) for key in self.addrGroups])
         a = "\n".join([key + ":\n\t" + str(self.actions[key]) for key in self.actions])
         r = "\n".join([str(val) for val in self.rules])
-        string = "Smtp connections:\n{0}\n----------------\nAddress Groups:\n{1}\n----------------\n"\
-                 "Custom Actions:\n{2}\n----------------\nRules:\n{3}\n".format(s, ag, a, r)
+        string = "Namespace: {0}\n----------------\nSmtp connections:\n{1}\n----------------\nAddress Groups:\n{2}\n"\
+                 "----------------\nCustom Actions:\n{3}\n----------------\nRules:\n{4}\n".format(self.conf.get("namespace"), s, ag, a, r)
         return string
 
 if __name__ == "__main__":
