@@ -177,7 +177,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Set description
     arg_parser.description = str.format(desc_template,
-            name=module_name,
+            name=module_name + "2idea",
             type={pytrap.FMT_RAW:'raw', pytrap.FMT_UNIREC:'UniRec', pytrap.FMT_JSON:'JSON'}.get(req_type,'???'),
             fmt=req_format,
             original_desc = module_desc+"\n\n  " if module_desc else "",
