@@ -4,6 +4,9 @@ from __future__ import absolute_import
 
 import os, sys
 import argparse
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 from report2idea import *
 
 # Moudle name, description and required input data format
