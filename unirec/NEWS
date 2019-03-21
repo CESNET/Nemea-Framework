@@ -1,3 +1,19 @@
+2019-03-19 (Tomas Cejka): unirec: time: add tests of ur_time_from_str() with UTC timezone
+2019-03-19 (Tomas Cejka): unirec: time: add support for UTF timestamp string (ending with 'Z')
+2019-03-14 (Tomas Cejka): unirec: time: improved test (timediff), fixed typo
+2019-03-14 (Tomas Cejka): unirec: timediff: explicitly cast to uint64_t
+2019-03-14 (Tomas Cejka): unirec: coverage target in Makefile
+2019-03-14 (Václav Bartoš): unirec: time: updated and fixed tests
+2019-03-14 (Václav Bartoš): unirec: time: Fixed a rounding error in conversion to ms/us/ns
+2019-03-14 (Tomas Cejka): unirec: time: updated tests (fixed some and added numbers)
+2019-03-14 (Tomas Cejka): unirec: time: add new tests for usec and nsec precision
+2019-03-14 (Tomas Cejka): unirec: time: MAINTENANCE coding style & trailing spaces
+2019-03-14 (Tomas Cejka): unirec: time: add missing timediff prototypes (usec, nsec)
+2019-03-14 (Tomas Cejka): unirec: time: BUGFIX used pointer value instead of prepared one
+2018-09-24 (Ulrik Haugen): Remove hard coded constant and clarify unirec docs (#102)
+2018-09-10 (Václav Bartoš): unirec: updated ur_time_from_string() to support precision
+2018-09-10 (Václav Bartoš): ur_time_t: Allowed conversion from/to micro- and nanoseconds
+
 2018-07-25 (Tomas Cejka): unirec: add lists of types and defined fields into public API
 2018-07-25 (Tomas Cejka): unirec: add ur_get_field_type_from_str() to public API
 
