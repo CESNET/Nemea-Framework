@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.4.5
+%global pypi_version 1.5.0
 
 
 %if 0%{?el6}
