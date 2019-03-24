@@ -129,6 +129,7 @@ int decode_cnts_from_json(char **data)
    json_t *client = NULL;
    uint32_t client_timer_last;
    uint64_t client_timer_total;
+   uint64_t client_timeouts;
    uint32_t client_id;
 
    /***********************************/
@@ -363,7 +364,15 @@ int decode_cnts_from_json(char **data)
                return -1;
             }
             client_timer_total = (uint64_t)(json_integer_value(val));
-            printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu\n", client_id, client_timer_last, client_timer_total);
+
+            val = json_object_get(client, "timeouts");
+            if (val == NULL) {
+               printf("[ERROR] Could not get string value of key \"timeouts\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_timeouts = (uint64_t)(json_integer_value(val));
+            printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu, TIMEOUTS: %lu\n", client_id, client_timer_last, client_timer_total, client_timeouts);
          }
       }
    }

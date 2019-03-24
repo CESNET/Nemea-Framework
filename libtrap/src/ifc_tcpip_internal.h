@@ -80,6 +80,7 @@ typedef struct client_s {
 
    uint64_t timer_total;                   /**< Total time spent sending (microseconds) since client connection */
    uint64_t received_buffers;              /**< Total number of received buffers since client connection */
+   uint64_t timeouts;                      /**< Number of messages dropped (since connection) due to client blocking active buffer */
 
    uint32_t timer_last;                    /**< Time spent on last send call [microseconds] */
    uint32_t pending_bytes;                 /**< The size of data that must be sent */

@@ -1070,6 +1070,7 @@ static void accept_new_client(tcpip_sender_private_t *priv, struct timeval *time
          cl->id = client_id;
          cl->assigned_buffer = priv->active_buffer;
          cl->received_buffers = priv->finished_buffers;
+         cl->timeouts = 0;
 
 #ifdef ENABLE_NEGOTIATION
          int ret_val = output_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP, i);
@@ -1348,7 +1349,7 @@ static inline void insert_into_buffer(buffer_t *buffer, const void *data, uint16
  */
 int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
 {
-   int res;
+   int res, i;
    uint32_t free_bytes;
    struct timespec timeout_store;
 
@@ -1362,8 +1363,8 @@ int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
 
    /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
    if ((size + sizeof(size)) > c->buffer_size) {
-      pthread_mutex_unlock(&c->lock);
-      return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
+      VERBOSE(CL_ERROR, "Buffer is too small for this message. Skipping...");
+      goto timeout;
    }
 
    /* Check if buffer is occupied */
@@ -1444,6 +1445,10 @@ repeat:
 
 timeout:
    /* Drop message */
+   for (i = 0; i < c->clients_arr_size; i++)
+      if (c->clients[i].sd > 0 && c->clients[i].assigned_buffer == c->active_buffer)
+         c->clients[i].timeouts++;
+
    c->ctx->counter_dropped_message[c->ifc_idx]++;
    pthread_mutex_unlock(&c->lock);
    return TRAP_E_TIMEOUT;
@@ -1541,7 +1546,7 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
          continue;
       }
 
-      client_stats = json_pack("{sisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last);
+      client_stats = json_pack("{sisisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last, "timeouts", c->clients[i].timeouts);
       if (client_stats == NULL) {
          return 0;
       }
