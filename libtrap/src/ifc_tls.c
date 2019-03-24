@@ -1323,6 +1323,32 @@ static inline void finish_buffer(tls_sender_private_t *priv, tlsbuffer_t *buffer
 
    buffer->finished = 1;
    priv->finished_buffers++;
+   priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
+   priv->autoflush_timestamp = get_cur_timestamp();
+}
+
+/**
+ * \brief Force flush of active buffer
+ *
+ * \param[in] priv pointer to interface private data
+ */
+void tls_sender_flush(void *priv)
+{
+   tls_sender_private_t *c = (tls_sender_private_t *) priv;
+
+   pthread_mutex_lock(&c->lock);
+
+   /* Dont flush if active buffer is already finished or if there is no data to be sent */
+   if (c->buffers[c->active_buffer].finished != 0 || c->buffers[c->active_buffer].wr_index == 0) {
+      pthread_mutex_unlock(&c->lock);
+      return;
+   }
+
+   /* Flush (finish) active buffer */
+   finish_buffer(c, &c->buffers[c->active_buffer]);
+   c->ctx->counter_autoflush[c->ifc_idx]++;
+
+   pthread_mutex_unlock(&c->lock);
 }
 
 static int send_data(tls_sender_private_t *priv, tlsclient_t *c)
@@ -1414,14 +1440,8 @@ static void *sending_thread_func(void *priv)
       }
 
       /* Handle autoflush - if current active buffer wasnt finished until timeout elapsed, it will be finished now */
-      if (get_cur_timestamp() - c->autoflush_timestamp >= c->timeout_autoflush && c->buffers[c->active_buffer].wr_index != 0) {
-         pthread_mutex_lock(&c->lock);
-         finish_buffer(c, &c->buffers[c->active_buffer]);
-         c->active_buffer = (c->active_buffer + 1) % c->buffer_count;
-         pthread_mutex_unlock(&c->lock);
-
-         c->autoflush_timestamp = get_cur_timestamp();
-         c->ctx->counter_autoflush[c->ifc_idx]++;
+      if (get_cur_timestamp() - c->autoflush_timestamp >= c->timeout_autoflush) {
+         tls_sender_flush(c);
       }
 
       FD_ZERO(&disset);
@@ -1533,13 +1553,12 @@ static inline void insert_into_buffer(tlsbuffer_t *buffer, const void *data, uin
  * \return TRAP_E_TIMEOUT    Message was not stored into buffer and the attempt should be repeated.
  * \return TRAP_E_TERMINATED Libtrap was terminated during the process.
  */
-int tls_sender_send(void *priv, const void *data, uint32_t data_size, int timeout)
+int tls_sender_send(void *priv, const void *data, uint16_t size, int timeout)
 {
    int res;
    uint32_t free_bytes;
    struct timespec timeout_store;
 
-   uint16_t size = data_size; // todo
    uint8_t block = (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0;
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
 
@@ -1550,6 +1569,7 @@ int tls_sender_send(void *priv, const void *data, uint32_t data_size, int timeou
 
    /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
    if ((size + sizeof(size)) > c->buffer_size) {
+      pthread_mutex_unlock(&c->lock);
       return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
    }
 
@@ -1614,6 +1634,12 @@ repeat:
       /* Store message into buffer */
       insert_into_buffer(buffer, data, size);
       c->ctx->counter_send_message[c->ifc_idx]++;
+
+      /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
+      if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
+         finish_buffer(c, buffer);
+      }
+
       pthread_mutex_unlock(&c->lock);
       return TRAP_E_OK;
    } else {
@@ -1989,6 +2015,7 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    /* Fill struct defining the interface */
    ifc->disconn_clients = tls_server_disconnect_all_clients;
    ifc->send = tls_sender_send;
+   ifc->flush = tls_sender_flush;
    ifc->terminate = tls_sender_terminate;
    ifc->destroy = tls_sender_destroy;
    ifc->get_client_count = tls_sender_get_client_count;

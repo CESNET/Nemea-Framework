@@ -57,9 +57,9 @@
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
 #define DEFAULT_TIMEOUT_ACCEPT   0         /**< Default timeout used in accept_new_client() [microseconds] */
-#define DEFAULT_BUFFER_COUNT     1         /**< Default buffer count */
+#define DEFAULT_BUFFER_COUNT     10        /**< Default buffer count */
 #define DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
-#define DEFAULT_MAX_CLIENTS      10        /**< Default size of client array */
+#define DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
 #define DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
 
 typedef struct buffer_s {

@@ -663,6 +663,11 @@ static inline void insert_into_buffer(file_buffer_t *buffer, const void *data, u
    buffer->wr_index += (size + sizeof(size));
 }
 
+void file_flush(void *priv)
+{
+   // not used in this interface
+}
+
 /**
  * \brief Store message into buffer. Write buffer into file if full. If buffering is disabled, the message is sent to the output interface immediately.
  *
@@ -675,9 +680,8 @@ static inline void insert_into_buffer(file_buffer_t *buffer, const void *data, u
  * \return TRAP_E_TIMEOUT    Message was not stored into buffer and the attempt should be repeated.
  * \return TRAP_E_TERMINATED Libtrap was terminated during the process.
  */
-static inline int file_send(void *priv, const void *data, uint32_t data_size, int timeout)
+static inline int file_send(void *priv, const void *data, uint16_t size, int timeout)
 {
-   uint16_t size = data_size; // todo
    int result = TRAP_E_OK;
    file_private_t *c = (file_private_t *) priv;
    file_buffer_t *buffer = &c->buffer;
@@ -876,6 +880,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
    /* Fills interface structure */
    ifc->send = file_send;
+   ifc->flush = file_flush;
    ifc->disconn_clients = open_next_file_wrapper;
    ifc->terminate = file_terminate;
    ifc->destroy = file_destroy;

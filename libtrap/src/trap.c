@@ -386,6 +386,7 @@ void *reader_threads_fn(void *arg)
  */
 static void *trap_automatic_flush_thr(void *arg)
 {
+   pthread_exit(NULL);
    uint32_t j;
    trap_ctx_priv_t *ctx = (trap_ctx_priv_t *) arg;
 
@@ -2376,7 +2377,8 @@ const char *trap_ctx_get_last_error_msg(trap_ctx_t *ctx)
 
 void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
 {
-   // TODO
+   trap_ctx_priv_t *c = ctx;
+   c->out_ifc_list[ifc].flush(c->out_ifc_list[ifc].priv);
 }
 
 /**

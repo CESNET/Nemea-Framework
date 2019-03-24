@@ -185,7 +185,7 @@ failure:
 /***** Blackhole *****/
 // Everything sent to blackhole is dropped
 
-int blackhole_send(void *priv, const void *data, uint32_t size, int timeout)
+int blackhole_send(void *priv, const void *data, uint16_t size, int timeout)
 {
    return TRAP_E_OK;
 }
