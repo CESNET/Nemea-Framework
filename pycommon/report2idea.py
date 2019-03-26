@@ -202,6 +202,10 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
             help="""Enable verbose mode (may be used by some modules, common part doesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
+
+    arg_parser.add_argument('-D', '--dontvalidate', action='store_true', default=False,
+            help="""Disable timestamp validation, i.e. allow timestamps to be far in the past or future.""")
+
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
     trap_args.add_argument('-i', metavar="IFC_SPEC", help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
@@ -318,7 +322,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                 idea['Node'][0]['Name'] = args.name
 
             # Sanity check of timestamps
-            if not check_valid_timestamps(idea):
+            if args.dontvalidate == False and not check_valid_timestamps(idea):
                 print("Invalid timestamps in skipped message: {0}".format(json.dumps(idea)))
                 continue
 
