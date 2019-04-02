@@ -1559,73 +1559,64 @@ int tls_sender_send(void *priv, const void *data, uint16_t size, int timeout)
    uint32_t free_bytes;
    struct timespec timeout_store;
 
-   uint8_t block = (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) ? 1 : 0;
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
 
    pthread_mutex_lock(&c->lock);
 
    uint32_t buffer_i = c->active_buffer;
    tlsbuffer_t* buffer = &c->buffers[buffer_i];
+   uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
+
+   /* If timeout is wait or half wait, we need to set some valid timeout value (>= 0)*/
+   if (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) {
+      timeout = 10000;
+   }
 
    /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
    if ((size + sizeof(size)) > c->buffer_size) {
-      pthread_mutex_unlock(&c->lock);
-      return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
+      VERBOSE(CL_ERROR, "Buffer is too small for this message. Skipping...");
+      goto timeout;
    }
 
-   /* Check if buffer is occupied */
 repeat:
-   if (block == 0) {
-      // Non blocking send - wait until we can use the buffer or until timeout elapses
-      if (timeout == 0) {
-         if (pthread_mutex_trylock(&buffer->lock) != 0) {
-            goto timeout;
-         }
-      } else {
-         clock_gettime(CLOCK_REALTIME, &timeout_store);
-         // If number of nanoseconds is greater or equal to 1 second, timedlock will fail
-         if ((timeout_store.tv_nsec += timeout * 1000) >= 1000000000) {
-            timeout_store.tv_nsec -= 1000000000;
-            timeout_store.tv_sec += 1;
-         }
-
-         res = pthread_mutex_timedlock(&buffer->lock, &timeout_store);
-         switch (res) {
-            case 0:
-               break;
-            case ETIMEDOUT:
-               /* Desired buffer is still full after timeout, either drop message or force buffer reset (not implemented) */
-               goto timeout;
-            case EINVAL:
-               assert(0);
-               break;
-            default:
-               VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-               goto timeout;
-         }
-      }
-   } else {
-      /* Blocking send - wait until we can use the buffer */
-      if (c->connected_clients > 0) {
-         res = pthread_mutex_lock(&buffer->lock);
-         if (res != 0) {
-            VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_lock()");
-            goto timeout;
-         }
-      } else {
-         /* There are no connected clients */
-         if (timeout == TRAP_WAIT) {
-            /* Wait for a client to connect */
-            usleep(100);
-            goto repeat;
-         } else {
-            /* Reset buffer and store message */
-            buffer->finished = 0;
-            buffer->wr_index = 0;
-         }
-      }
+   if (c->is_terminated != 0) {
+      /* TRAP was terminated */
+      pthread_mutex_unlock(&c->lock);
+      return TRAP_E_TERMINATED;
    }
-   /* If we got here, it means that buffer is locked and might not be full - unlock it to avoid deadlock in finish_buffer() */
+
+   clock_gettime(CLOCK_REALTIME, &timeout_store);
+   /* If number of nanoseconds is greater or equal to 1 second, timedlock will fail */
+   if ((timeout_store.tv_nsec += timeout * 1000) >= 1000000000) {
+      timeout_store.tv_nsec -= 1000000000;
+      timeout_store.tv_sec += 1;
+   }
+
+   /* Wait until we obtain buffer lock or until timeout elapses */
+   res = pthread_mutex_timedlock(&buffer->lock, &timeout_store);
+   switch (res) {
+      case 0:
+         /* Succesfully locked, buffer can be used */
+         break;
+      case ETIMEDOUT:
+         /* Desired buffer is still full after timeout */
+         if (block)
+            /* Blocking send, wait until buffer is free to use */
+            goto repeat;
+         else
+            /* Non-blocking send, drop message or force buffer reset (not implemented) */
+            goto timeout;
+      case EINVAL:
+         /* We should never end up here */
+         assert(0);
+         break;
+      default:
+         /* Or here */
+         VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
+         goto timeout;
+   }
+
+   /* Buffer is locked and might not be full - unlock it to avoid deadlock in finish_buffer() */
    pthread_mutex_unlock(&buffer->lock);
 
    /* Check if there is enough space in buffer */
