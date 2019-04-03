@@ -665,7 +665,21 @@ static inline void insert_into_buffer(file_buffer_t *buffer, const void *data, u
 
 void file_flush(void *priv)
 {
-   // not used in this interface
+   int result;
+   file_private_t *c = (file_private_t *) priv;
+   file_buffer_t *buffer = &c->buffer;
+
+   finish_buffer(buffer);
+
+   result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), 0);
+
+   if (result == TRAP_E_OK) {
+      c->ctx->counter_send_buffer[c->ifc_idx]++;
+
+      /* Reset buffer and insert the message if it was not inserted. */
+      buffer->wr_index = 0;
+      buffer->finished = 0;
+   }
 }
 
 /**
