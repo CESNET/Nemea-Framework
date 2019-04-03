@@ -2379,6 +2379,11 @@ const char *trap_ctx_get_last_error_msg(trap_ctx_t *ctx)
 void trap_ctx_send_flush(trap_ctx_t *ctx, uint32_t ifc)
 {
    trap_ctx_priv_t *c = ctx;
+
+   if (c == NULL || c->initialized == 0) {
+      return;
+   }
+
    c->out_ifc_list[ifc].flush(c->out_ifc_list[ifc].priv);
 }
 

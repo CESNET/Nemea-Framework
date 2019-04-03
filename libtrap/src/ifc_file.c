@@ -698,6 +698,11 @@ static inline int file_send(void *priv, const void *data, uint16_t size, int tim
    if (buffer->finished == 0) {
       if (free_bytes >= needed_size) {
          insert_into_buffer(buffer, data, size);
+
+         /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
+         if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
+            finish_buffer(buffer);
+         }
       } else {
          /* Need to send buffer first. */
          finish_buffer(buffer);
