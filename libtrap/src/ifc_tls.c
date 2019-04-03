@@ -1624,7 +1624,6 @@ repeat:
    if (free_bytes >= (size + sizeof(size))) {
       /* Store message into buffer */
       insert_into_buffer(buffer, data, size);
-      c->ctx->counter_send_message[c->ifc_idx]++;
 
       /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
       if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
@@ -1644,7 +1643,6 @@ repeat:
 
 timeout:
    /* Drop message */
-   c->ctx->counter_dropped_message[c->ifc_idx]++;
    pthread_mutex_unlock(&c->lock);
    return TRAP_E_TIMEOUT;
 }

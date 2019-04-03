@@ -1671,12 +1671,13 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
       return trap_error(c, TRAP_E_BAD_IFC_INDEX);
    }
 
-   if (ifc_ptr->ifc_type == TRAP_IFC_TYPE_BLACKHOLE) {
-      return TRAP_E_OK;
-   }
-
    ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
 
+   if (ret_val == TRAP_E_OK) {
+      c->counter_send_message[ifc]++;
+   } else {
+      c->counter_dropped_message[ifc]++;
+   }
    return trap_error(ctx, ret_val);
 }
 

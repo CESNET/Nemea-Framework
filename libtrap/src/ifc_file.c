@@ -698,7 +698,6 @@ static inline int file_send(void *priv, const void *data, uint16_t size, int tim
    if (buffer->finished == 0) {
       if (free_bytes >= needed_size) {
          insert_into_buffer(buffer, data, size);
-         c->ctx->counter_send_message[c->ifc_idx]++;
       } else {
          /* Need to send buffer first. */
          finish_buffer(buffer);
@@ -719,10 +718,7 @@ static inline int file_send(void *priv, const void *data, uint16_t size, int tim
          buffer->finished = 0;
          if (reinsert) {
             insert_into_buffer(buffer, data, size);
-            c->ctx->counter_send_message[c->ifc_idx]++;
          }
-      } else {
-         c->ctx->counter_dropped_message[c->ifc_idx]++;
       }
    }
    
