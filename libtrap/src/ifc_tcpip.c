@@ -1357,8 +1357,7 @@ int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
 
    pthread_mutex_lock(&c->lock);
 
-   uint32_t buffer_i = c->active_buffer;
-   buffer_t* buffer = &c->buffers[buffer_i];
+   buffer_t* buffer = &c->buffers[c->active_buffer];
    uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
 
    /* If timeout is wait or half wait, we need to set some valid timeout value (>= 0)*/
@@ -1379,13 +1378,27 @@ repeat:
       return TRAP_E_TERMINATED;
    }
 
+   if (buffer->finished == 0) {
+      goto store_msg;
+   } else if (c->connected_clients == 0) {
+      /* Drop oldest buffer */
+      buffer->finished = 0;
+      buffer->wr_index = 0;
+      buffer->sent_to = 0;
+      pthread_mutex_unlock(&buffer->lock);
+      goto store_msg;
+   }
+
    clock_gettime(CLOCK_REALTIME, &timeout_store);
    /* If number of nanoseconds is greater or equal to 1 second, timedlock will fail */
+   while (timeout >= 1000000) {
+      timeout -= 1000000;
+      timeout_store.tv_sec += 1;
+   }
    if ((timeout_store.tv_nsec += timeout * 1000) >= 1000000000) {
       timeout_store.tv_nsec -= 1000000000;
       timeout_store.tv_sec += 1;
    }
-
    /* Wait until we obtain buffer lock or until timeout elapses */
    res = pthread_mutex_timedlock(&buffer->lock, &timeout_store);
    switch (res) {
@@ -1413,6 +1426,7 @@ repeat:
    /* Buffer is locked and might not be full - unlock it to avoid deadlock in finish_buffer() */
    pthread_mutex_unlock(&buffer->lock);
 
+store_msg:
    /* Check if there is enough space in buffer */
    free_bytes = c->buffer_size - buffer->wr_index;
    if (free_bytes >= (size + sizeof(size))) {

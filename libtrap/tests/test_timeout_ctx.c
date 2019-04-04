@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 {
    int ret;
    trap_ifc_spec_t ifc_spec;
-   char *ifc_params[] = {"libtraptimeouttest"};
+   char *ifc_params[] = {"libtraptimeouttest:buffer_count=1"};
    ifc_spec.types = "u";
    ifc_spec.params = ifc_params;
 
@@ -120,12 +120,15 @@ int main(int argc, char **argv)
       fprintf(stderr, "Trap_ctx_init returned error.\n");
       return 1;
    }
-
+/*
    trap_ctx_ifcctl(ctx_output, TRAPIFC_OUTPUT, 0, TRAPCTL_AUTOFLUSH_TIMEOUT, TRAP_NO_AUTO_FLUSH);
    trap_ctx_ifcctl(ctx_output, TRAPIFC_OUTPUT, 0, TRAPCTL_BUFFERSWITCH, 0);
    trap_ctx_ifcctl(ctx_output, TRAPIFC_OUTPUT, 0, TRAPCTL_SETTIMEOUT, 2500000);
 
    duration = time(NULL);
+   // fill buffer with a message
+   ret = trap_ctx_send(ctx_output, 0, (void *) payload, payload_size);
+   // this call should time out
    ret = trap_ctx_send(ctx_output, 0, (void *) payload, payload_size);
    t2 = time(NULL);
    printf("timeout in %"PRId64", t1: %"PRId64" t2: %"PRId64"\n", t2 - duration, duration, t2);
@@ -137,8 +140,8 @@ int main(int argc, char **argv)
       printf("expected ret %d but received %d.\n", TRAP_E_TIMEOUT, ret);
       goto error;
    }
+*/
    trap_ctx_terminate(ctx_output);
-
 
    trap_ctx_finalize(&ctx_input);
    trap_ctx_finalize(&ctx_output);
