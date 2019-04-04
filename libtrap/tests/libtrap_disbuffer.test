@@ -1,5 +1,5 @@
 #!/bin/bash
-exit 0
+
 #set -x
 
 sock1="rxtxtest1"
