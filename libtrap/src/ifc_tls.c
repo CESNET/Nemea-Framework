@@ -1441,7 +1441,7 @@ static void *sending_thread_func(void *priv)
 
       /* Handle autoflush - if current active buffer wasnt finished until timeout elapsed, it will be finished now */
       if (get_cur_timestamp() - c->autoflush_timestamp >= c->timeout_autoflush) {
-         tls_sender_flush(c);
+         //tls_sender_flush(c);
       }
 
       FD_ZERO(&disset);
@@ -1584,14 +1584,20 @@ repeat:
       return TRAP_E_TERMINATED;
    }
 
-   if (buffer->finished == 0) {
-      goto store_msg;
-   } else if (c->connected_clients == 0) {
-      /* Drop oldest buffer */
-      buffer->finished = 0;
-      buffer->wr_index = 0;
-      buffer->sent_to = 0;
-      pthread_mutex_unlock(&buffer->lock);
+   if (c->connected_clients == 0) {
+      if (block == 0) {
+         if (buffer->finished == 1) {
+            /* Drop oldest buffer */
+            buffer->finished = 0;
+            buffer->wr_index = 0;
+            buffer->sent_to = 0;
+            pthread_mutex_unlock(&buffer->lock);
+         }
+         goto store_msg;
+      } else {
+         goto repeat;
+      }
+   } else if (buffer->finished == 0) {
       goto store_msg;
    }
 

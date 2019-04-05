@@ -45,8 +45,8 @@ PROG_ECHO_REPLY="test_echo_reply"
 test -z "$srcdir" && export srcdir=.
 
 #checking if some leftover tests are running
-pgrep "^$PROG_ECHO_REPLY$" > /dev/null && { echo "Existing process..."; exit 1; }
-pgrep "^$PROG_ECHO$" > /dev/null && { echo "Existing process..."; exit 1; }
+pgrep "^$PROG_ECHO_REPLY$" > /dev/null && { echo "Killing leftover tests"; kill -9 `pgrep test_echo_reply`; }
+pgrep "^$PROG_ECHO$" > /dev/null && { echo "Killing leftover tests"; kill -9 `pgrep test_echo`; }
 
 INTERFACE_SENDER="T:12345:${srcdir}/tls-certificates/server.key:${srcdir}/tls-certificates/server.crt:${srcdir}/tls-certificates/ca.crt"
 INTERFACE_RECEIVER="T:12345:${srcdir}/tls-certificates/unver.key:${srcdir}/tls-certificates/unver.crt:${srcdir}/tls-certificates/ca.crt"
@@ -71,6 +71,9 @@ if [ "`pgrep "^$PROG_ECHO_REPLY$"`" != "" ]; then
    exit 1
 fi
 
+kill -INT $replypid 2> /dev/null
+sleep 1
+
 INTERFACE_RECEIVER="T:12345:${srcdir}/tls-certificates/client.key:${srcdir}/tls-certificates/client.crt:${srcdir}/tls-certificates/ca.crt"
 
 #running the client with valid certificate
@@ -88,7 +91,7 @@ RECV=$(grep "Last received value" "$REPLYOUTOK" | sed 's/.* \([0-9]*\)/\1/')
 SENT=$(grep "Last sent" "$ECHOOUT" | sed 's/.* \([0-9]*\)/\1/')
 ERRCOUNT=$(grep Error "$REPLYOUTOK" | cut -f2 -d" ")
 echo "Errors: $ERRCOUNT"
-if [ $ERRCOUNT != "0" ]; then
+if [ "$ERRCOUNT" != "0" ]; then
    echo "Some errors occured. ($ERRCOUNT)"
    exit 1
 fi
