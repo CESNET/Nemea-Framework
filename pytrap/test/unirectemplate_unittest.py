@@ -185,8 +185,8 @@ class DataTypesMACAddrRange(unittest.TestCase):
             pytrap.UnirecMACAddr("1:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("c:0:0:0:0:0"))
 
         self.assertEqual(type(bl2), pytrap.UnirecMACAddrRange, "Bad type of MAC address object.")
-        self.assertEqual(str(bl6), "1:0:0:ff:ff:ff - c:0:0:0:0:0", "String representation of UnirecMACAddrRange not equal to expected string.")
-        self.assertEqual(repr(bl6), "UnirecMACAddrRange(UnirecMACAddr('1:0:0:ff:ff:ff'), UnirecMACAddr('c:0:0:0:0:0'))", "String representation of UnirecMACAddrRange not equal to expected string.")
+        self.assertEqual(str(bl6), "01:00:00:ff:ff:ff - 0c:00:00:00:00:00", "String representation of UnirecMACAddrRange not equal to expected string.")
+        self.assertEqual(repr(bl6), "UnirecMACAddrRange(UnirecMACAddr('01:00:00:ff:ff:ff'), UnirecMACAddr('0c:00:00:00:00:00'))", "String representation of UnirecMACAddrRange not equal to expected string.")
 
         # both are True:
         self.assertTrue(mac in bl1)
