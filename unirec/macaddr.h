@@ -49,11 +49,15 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
-#include <netinet/ether.h>
 #include "inline.h"
 
 #define MAC_STR_LEN 18
+
+#define MAC_ADD_FORMAT_SCN "%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ""
+#define MAC_ADD_FORMAT_PRI "%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ""
 
 /**
  * Structure containing MAC address bytes.
@@ -86,15 +90,14 @@ INLINE mac_addr_t mac_from_bytes(uint8_t *array)
  */
 INLINE int mac_from_str(const char *str, mac_addr_t *addr)
 {
-   struct ether_addr *tmp = ether_aton(str);
-
-   if (tmp == NULL) {
-      return 0;
+   int res = sscanf(str, MAC_ADD_FORMAT_SCN, &addr->bytes[0], &addr->bytes[1], &addr->bytes[2],
+                    &addr->bytes[3], &addr->bytes[4], &addr->bytes[5]);
+   if (res == 6) {
+      return 1;
    } else {
-      memcpy(addr->bytes, tmp->ether_addr_octet, 6);
+      memset(addr->bytes, 0, 6);
+      return 0;
    }
-
-   return 1;
 }
 
 /**
@@ -117,8 +120,11 @@ INLINE int mac_cmp(const mac_addr_t *addr1, const mac_addr_t *addr2)
  */
 INLINE void mac_to_str(const mac_addr_t *addr, char *str)
 {
-   char *tmp = ether_ntoa((const struct ether_addr *) &addr->bytes);
-   strcpy(str, tmp);
+   if (str != NULL) {
+      snprintf(str, MAC_STR_LEN, MAC_ADD_FORMAT_PRI,
+               addr->bytes[0], addr->bytes[1], addr->bytes[2],
+               addr->bytes[3], addr->bytes[4], addr->bytes[5]);
+   }
 }
 
 /**
