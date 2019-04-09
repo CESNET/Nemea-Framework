@@ -1166,7 +1166,7 @@ UnirecTemplate_recVarlenSize(pytrap_unirectemplate *self, PyObject *args, PyObje
         if (self->data != NULL) {
             data = self->data;
         } else {
-            PyErr_SetString(PyExc_TypeError, "Data was not set nor expolicitly passed as argument.");
+            PyErr_SetString(PyExc_TypeError, "Data was not set nor explicitly passed as argument.");
             return NULL;
         }
     }
