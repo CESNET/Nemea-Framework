@@ -998,114 +998,134 @@ void tcpip_server_disconnect_all_clients(void *priv)
    }
 }
 
-static void accept_new_client(tcpip_sender_private_t *priv, struct timeval *timeout)
+static void *accept_clients_thread(void *arg)
 {
    char remoteIP[INET6_ADDRSTRLEN];
    struct sockaddr_storage remoteaddr; // client address
-   client_t *cl;
+   struct client_s *cl;
+   socklen_t addrlen;
    int newclient, fdmax;
    fd_set scset;
+   tcpip_sender_private_t *c = (tcpip_sender_private_t *) arg;
    int i;
    struct sockaddr *tmpaddr;
    struct ucred ucred;
    uint32_t ucredlen = sizeof(struct ucred);
    uint32_t client_id = 0;
 
-   socklen_t addrlen = sizeof remoteaddr;
-
-   FD_ZERO(&scset);
-   FD_SET(priv->server_sd, &scset);
-   fdmax = priv->server_sd;
-
-   if (select(fdmax + 1, &scset, NULL, NULL, timeout) == -1) {
-      if (errno == EINTR) {
-         return;
-      } else {
-         VERBOSE(CL_ERROR, "%s:%d unexpected error code %d", __func__, __LINE__, errno);
+   // handle new connections
+   addrlen = sizeof remoteaddr;
+   while (1) {
+      pthread_mutex_lock(&c->lock);
+      if (c->is_terminated != 0) {
+         pthread_mutex_unlock(&c->lock);
+         break;
       }
-   }
+      pthread_mutex_unlock(&c->lock);
+      FD_ZERO(&scset);
+      FD_SET(c->server_sd, &scset);
+      fdmax = c->server_sd;
 
-   if (FD_ISSET(priv->server_sd, &scset)) {
-      newclient = accept(priv->server_sd, (struct sockaddr *) &remoteaddr, &addrlen);
-      if (newclient == -1) {
-         VERBOSE(CL_ERROR, "Accepting new client failed.\n");
-      } else {
-         if (priv->socket_type == TRAP_IFC_TCPIP) {
-            // tcp socket
-            tmpaddr = (struct sockaddr *) &remoteaddr;
-            switch (((struct sockaddr *) tmpaddr)->sa_family) {
-            case AF_INET:
-               client_id = ntohs(((struct sockaddr_in *) tmpaddr)->sin_port);
-               break;
-            case AF_INET6:
-               client_id = ntohs(((struct sockaddr_in6 *) tmpaddr)->sin6_port);
+      if (select(fdmax + 1, &scset, NULL, NULL, NULL) == -1) {
+         if (errno == EINTR) {
+            if (c->is_terminated != 0) {
                break;
             }
-            VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TCP socket, address: %s, port: %u\n",
-                    inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr *) &remoteaddr), remoteIP, INET6_ADDRSTRLEN), client_id);
+            continue;
          } else {
-            // unix socket
-            if (getsockopt(newclient, SOL_SOCKET, SO_PEERCRED, &ucred, &ucredlen) == -1) {
-               goto refuse_client;
-            }
-            client_id = (uint32_t) ucred.pid;
-            VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via UNIX socket, pid: %ld\n", (long) ucred.pid);
+            VERBOSE(CL_ERROR, "%s:%d unexpected error code %d", __func__, __LINE__, errno);
          }
+      }
 
-         cl = NULL;
-         for (i = 0; i < priv->clients_arr_size; ++i) {
-            if (priv->clients[i].sd < 1) {
-               cl = &priv->clients[i];
-               break;
+      if (FD_ISSET(c->server_sd, &scset)) {
+         newclient = accept(c->server_sd, (struct sockaddr *) &remoteaddr, &addrlen);
+         if (newclient == -1) {
+            VERBOSE(CL_ERROR, "Accepting new client failed.");
+         } else {
+            if (c->socket_type == TRAP_IFC_TCPIP) {
+               // tcp socket
+               tmpaddr = (struct sockaddr *) &remoteaddr;
+               switch (((struct sockaddr *) tmpaddr)->sa_family) {
+                  case AF_INET:
+                     client_id = ntohs(((struct sockaddr_in *) tmpaddr)->sin_port);
+                     break;
+                  case AF_INET6:
+                     client_id = ntohs(((struct sockaddr_in6 *) tmpaddr)->sin6_port);
+                     break;
+               }
+               VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TCP socket, port=%u", client_id);
+            } else {
+               // unix socket
+               if (getsockopt(newclient, SOL_SOCKET, SO_PEERCRED, &ucred, &ucredlen) == -1) {
+                  goto refuse_client;
+               }
+               client_id = (uint32_t) ucred.pid;
+               VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via UNIX socket, pid=%ld", (long) ucred.pid);
             }
-         }
-         if (cl == NULL) {
-            goto refuse_client;
-         }
 
-         cl->sd = newclient;
-         cl->sending_pointer = NULL;
-         cl->pending_bytes = 0;
-         cl->timer_total = 0;
-         cl->id = client_id;
-         cl->assigned_buffer = priv->active_buffer;
-         cl->received_buffers = priv->finished_buffers;
-         cl->timeouts = 0;
+            VERBOSE(CL_VERBOSE_ADVANCED, "New connection from %s on socket %d",
+                    inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
+                    newclient);
+
+            pthread_mutex_lock(&c->accept_lock);
+
+            if (c->connected_clients < c->clients_arr_size) {
+               cl = NULL;
+               for (i = 0; i < c->clients_arr_size; ++i) {
+                  if (c->clients[i].sd < 1) {
+                     cl = &c->clients[i];
+                     break;
+                  }
+               }
+               if (cl == NULL) {
+                  goto refuse_client;
+               }
+
+               cl->sd = newclient;
+               cl->sending_pointer = NULL;
+               cl->pending_bytes = 0;
+               cl->timer_total = 0;
+               cl->id = client_id;
+               cl->assigned_buffer = c->active_buffer;
+               cl->received_buffers = c->finished_buffers;
+               cl->timeouts = 0;
 
 #ifdef ENABLE_NEGOTIATION
-         int ret_val = output_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP, i);
-         if (ret_val == NEG_RES_OK) {
-            VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
-         } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-            VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-            cl->sd = -1;
-            goto refuse_client;
-         } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
-            VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-            cl->sd = -1;
-            goto refuse_client;
-         }
-#endif
-
-         priv->connected_clients++;
-         for (i = 0; i < priv->buffer_count; ++i) {
-            if (priv->buffers[i].finished == 1) {
-               if (++priv->buffers[i].sent_to == priv->connected_clients) {
-                  priv->buffers[i].finished = 0;
-                  priv->buffers[i].wr_index = 0;
-                  priv->buffers[i].sent_to = 0;
-                  pthread_mutex_unlock(&priv->buffers[i].lock);
+               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, i);
+               if (ret_val == NEG_RES_OK) {
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
+               } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
+                  cl->sd = -1;
+                  goto refuse_client;
+               } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
+                  VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
+                  cl->sd = -1;
+                  goto refuse_client;
                }
-            }
-         }
-         return;
-
+#endif
+               c->connected_clients++;
+               for (i = 0; i < c->buffer_count; ++i) {
+                  if (c->buffers[i].finished == 1) {
+                     if (++c->buffers[i].sent_to == c->connected_clients) {
+                        c->buffers[i].finished = 0;
+                        c->buffers[i].wr_index = 0;
+                        c->buffers[i].sent_to = 0;
+                        pthread_mutex_unlock(&c->buffers[i].lock);
+                     }
+                  }
+               }
+            } else {
 refuse_client:
-         VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)\n", priv->connected_clients, priv->clients_arr_size);
-         shutdown(newclient, SHUT_RDWR);
-         close(newclient);
+               VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)", c->connected_clients, c->clients_arr_size);
+               shutdown(newclient, SHUT_RDWR);
+               close(newclient);
+            }
+            pthread_mutex_unlock(&c->accept_lock);
+         }
       }
    }
+   pthread_exit(NULL);
 }
 
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
@@ -1151,24 +1171,29 @@ static int send_data(tcpip_sender_private_t *priv, client_t *c)
    /* Pointer to client's assigned buffer */
    buffer_t* buffer = &priv->buffers[c->assigned_buffer];
 
+   pthread_mutex_lock(&priv->accept_lock);
+
 again:
    sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
 
    if (sent < 0) {
       /* Send failed */
       if (priv->is_terminated != 0) {
+         pthread_mutex_unlock(&priv->accept_lock);
          return TRAP_E_TERMINATED;
       }
       switch (errno) {
       case EBADF:
       case EPIPE:
       case EFAULT:
+         pthread_mutex_unlock(&priv->accept_lock);
          return TRAP_E_IO_ERROR;
       case EAGAIN:
          usleep(1);
          goto again;
       default:
          VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_data (errno: %i)", errno);
+         pthread_mutex_unlock(&priv->accept_lock);
          return TRAP_E_IO_ERROR;
       }
    } else {
@@ -1194,6 +1219,7 @@ again:
       }
    }
 
+   pthread_mutex_unlock(&priv->accept_lock);
    return TRAP_E_OK;
 }
 
@@ -1214,22 +1240,13 @@ static void *sending_thread_func(void *priv)
    uint64_t send_exit_time;
    uint8_t client_ready;
 
-   struct timeval timeout_accept;
-
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
    while (1) {
       if (c->is_terminated != 0) {
          pthread_exit(NULL);
-      }
-
-      /* Reset timeout for select in accept_new_client() */
-      timeout_accept.tv_sec = 0;
-      timeout_accept.tv_usec = c->timeout_accept;
-
-      /* Wait 'timeout_accept' microseconds for a new client */
-      accept_new_client(c, &timeout_accept);
-      if (c->connected_clients == 0) {
+      } else if (c->connected_clients == 0) {
+         usleep(10000);
          continue;
       }
 
@@ -1508,7 +1525,9 @@ void tcpip_sender_destroy(void *priv)
       }
       if ((c->initialized) && (c->socket_type != TRAP_IFC_TCPIP_SERVICE)) {
          pthread_cancel(c->send_thr);
+         pthread_cancel(c->accept_thr);
          pthread_join(c->send_thr, &res);
+         pthread_join(c->accept_thr, &res);
       }
 
       /* close server socket */
@@ -1758,7 +1777,6 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->is_terminated = 0;
    priv->active_buffer = 0;
    priv->finished_buffers = 0;
-   priv->timeout_accept = DEFAULT_TIMEOUT_ACCEPT;
    priv->timeout_autoflush = DEFAULT_TIMEOUT_FLUSH;
    priv->autoflush_timestamp = get_cur_timestamp();
 
@@ -1901,6 +1919,13 @@ static int server_socket_open(void *priv)
    if (c->socket_type != TRAP_IFC_TCPIP_SERVICE) {
       if (pthread_create(&c->send_thr, NULL, sending_thread_func, priv) != 0) {
          VERBOSE(CL_ERROR, "Failed to create sending thread.");
+         return TRAP_E_IO_ERROR;
+      }
+   }
+
+   if (c->socket_type != TRAP_IFC_TCPIP_SERVICE) {
+      if (pthread_create(&c->accept_thr, NULL, accept_clients_thread, priv) != 0) {
+         VERBOSE(CL_ERROR, "Failed to create accept_thread.");
          return TRAP_E_IO_ERROR;
       }
    }

@@ -56,7 +56,6 @@
  */
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
-#define DEFAULT_TIMEOUT_ACCEPT   0         /**< Default timeout used in accept_new_client() [microseconds] */
 #define DEFAULT_BUFFER_COUNT     10        /**< Default buffer count */
 #define DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
 #define DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
@@ -93,7 +92,6 @@ typedef struct tcpip_sender_private_s {
 
    int term_pipe[2];                       /**< File descriptor pair for select() termination */
    int server_sd;                          /**< Server socket descriptor */
-   int timeout_accept;                     /**< Timeout used in accept_new_client() [microseconds] */
    int timeout_autoflush;                  /**< Timeout used for autoflush [microseconds] */
 
    char *server_port;                      /**< TCPIP port number / UNIX socket path */
@@ -115,8 +113,10 @@ typedef struct tcpip_sender_private_s {
    buffer_t *buffers;                      /**< Array of buffer structures */
    client_t *clients;                      /**< Array of client structures */
 
+   pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
    pthread_mutex_t lock;                   /**< Interface lock. Used for autoflush. */
+   pthread_mutex_t accept_lock;            /**< Accept lock. Used to prevent rece conditions between accept and send threads. */
 } tcpip_sender_private_t;
 
 /**
