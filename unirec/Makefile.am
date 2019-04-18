@@ -22,7 +22,7 @@ ur_values.py: ur_values.h
 lib_LTLIBRARIES=libunirec.la
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h macaddr.h links.h ur_time.h
+libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h macaddr.h links.h ur_time.h unirec2csv.h unirec2csv.c
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
@@ -34,6 +34,7 @@ unirecinclude_HEADERS=unirec.h \
 		     macaddr.h \
 		     links.h  \
 		     ur_time.h \
+		     unirec2csv.h \
 		     ur_values.h
 
 bin_SCRIPTS=ur_values.sh ur_processor.sh

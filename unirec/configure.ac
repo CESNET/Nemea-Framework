@@ -68,6 +68,9 @@ AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
 
+PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
+AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
+
 if test -z "${top_srcdir}"; then
 top_srcdir="."
 fi
