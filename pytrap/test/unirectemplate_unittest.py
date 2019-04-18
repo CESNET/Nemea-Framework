@@ -96,10 +96,15 @@ class DataTypesIPAddr(unittest.TestCase):
 class DataTypesMACAddr(unittest.TestCase):
     def runTest(self):
         import pytrap
+        mac0 = pytrap.UnirecMACAddr("0:1:11:A:AA:FF")
+        self.assertEqual(str(mac0), "00:01:11:0a:aa:ff",
+                         "MAC address .str() did not produce canonical representation.")
         mac1 = pytrap.UnirecMACAddr("11:22:33:44:55:66")
         self.assertEqual(mac1, mac1)
         self.assertEqual(type(mac1), pytrap.UnirecMACAddr, "Bad type of MAC address object.")
-        self.assertEqual(str(mac1), "11:22:33:44:55:66", "MAC address is not equal to its str().")
+        self.assertEqual(str(mac1),
+                         "11:22:33:44:55:66",
+                         "MAC address .str() did not produce canonical representation.")
         self.assertEqual(repr(mac1), "UnirecMACAddr('11:22:33:44:55:66')", "MAC address is not equal to its repr().")
 
         mac2 = pytrap.UnirecMACAddr("10:20:30:40:50:60")
@@ -184,9 +189,15 @@ class DataTypesMACAddrRange(unittest.TestCase):
         bl6 = pytrap.UnirecMACAddrRange(
             pytrap.UnirecMACAddr("1:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("c:0:0:0:0:0"))
 
-        self.assertEqual(type(bl2), pytrap.UnirecMACAddrRange, "Bad type of MAC address object.")
-        self.assertEqual(str(bl6), "1:0:0:ff:ff:ff - c:0:0:0:0:0", "String representation of UnirecMACAddrRange not equal to expected string.")
-        self.assertEqual(repr(bl6), "UnirecMACAddrRange(UnirecMACAddr('1:0:0:ff:ff:ff'), UnirecMACAddr('c:0:0:0:0:0'))", "String representation of UnirecMACAddrRange not equal to expected string.")
+        self.assertEqual(type(bl2),
+                         pytrap.UnirecMACAddrRange,
+                         "Bad type of MAC address object.")
+        self.assertEqual(str(bl6),
+                         "01:00:00:ff:ff:ff - 0c:00:00:00:00:00",
+                         "String representation of UnirecMACAddrRange not equal to expected string.")
+        self.assertEqual(repr(bl6),
+                         "UnirecMACAddrRange(UnirecMACAddr('01:00:00:ff:ff:ff'), UnirecMACAddr('0c:00:00:00:00:00'))",
+                         "Representation of UnirecMACAddrRange not equal to expected string.")
 
         # both are True:
         self.assertTrue(mac in bl1)
