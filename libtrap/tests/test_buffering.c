@@ -99,11 +99,11 @@ int main(int argc, char **argv)
 
    // Read data from input, process them and write to output
    while(!stop) {
-      ret = trap_get_data(0, (const void **) &payload, &payload_size, TRAP_WAIT);
+      ret = trap_recv(0, (const void **) &payload, &payload_size);
       if (ret != TRAP_E_OK) {
          VERBOSE(CL_ERROR, "error: %s", trap_last_error_msg);
       }
-      ret = trap_send_data(0, (void *) payload, payload_size, TRAP_WAIT);
+      ret = trap_send(0, (void *) payload, payload_size);
       if (ret == TRAP_E_OK) {
          counter++;
       } else {

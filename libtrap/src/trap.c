@@ -124,18 +124,11 @@ const char *trap_last_error_msg = NULL;
 
 char error_msg_buffer[MAX_ERROR_MSG_BUFF_SIZE];
 
-/** Share semaphore between process? 0 for share between threads only. */
-#define SEM_PSHARED  0
-
-/** Size of multiresult array for reading from more than one interface at once. */
-#define IN_IFC_RESULTS_SIZE(ctx) ((ctx)->num_ifc_in * sizeof(trap_multi_result_t))
-
 /** String representation of interface direction (Input/Output) */
 #define ifcdir2str(type) (((type) == TRAPIFC_OUTPUT) ? "Output" : "Input")
 
 static inline char *get_param_by_delimiter(const char *source, char **dest, const char delimiter);
 static int compare_timeouts(const void *a, const void *b);
-int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
 void *service_thread_routine(void *arg);
 
 /**
@@ -443,62 +436,6 @@ static inline int trap_store_into_buffer(trap_ctx_priv_t *ctx, unsigned int ifc,
 /**
  * @}
  */
-
-struct reader_threads_arg {
-   trap_ctx_priv_t *ctx;
-   int thread_index;
-};
-
-/**
- * Function of reader-thread.
- *
- * \param[in] arg struct reader_threads_arg with context and thread id - used as the index in ctx->in_ifc_list, in_ifc_results
- * \return NULL
- */
-void *reader_threads_fn(void *arg)
-{
-   struct reader_threads_arg *argdata = (struct reader_threads_arg *) arg;
-   trap_ctx_priv_t *ctx = NULL;
-   int thread_id;
-   int retval;
-
-   if (argdata == NULL) {
-      pthread_exit(NULL);
-   }
-   ctx = argdata->ctx;
-   thread_id = argdata->thread_index;
-   do {
-      sem_wait(&ctx->reader_threads[thread_id].sem);
-      if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
-         break;
-      }
-
-
-      /* handle buffering */
-      retval = trap_read_from_buffer(ctx, thread_id, (const void **) &ctx->in_ifc_results[thread_id].message,
-                                     &ctx->in_ifc_results[thread_id].message_size,
-                                     ctx->get_data_timeout);
-
-      ctx->in_ifc_results[thread_id].result_code = retval;
-      pthread_mutex_lock(&ctx->mut_sem_collector);
-      ctx->readers_count--;
-      if (ctx->readers_count == 0) {
-         /* the last reader wakes collector */
-         retval = sem_post(&ctx->sem_collector);
-         if (retval != 0) {
-            VERBOSE(CL_ERROR, "Waking up collector thread of multiread function failed. (%d)", retval);
-         }
-      }
-      pthread_mutex_unlock(&ctx->mut_sem_collector);
-      /* inform collector about finished job */
-
-      if (__sync_add_and_fetch(&ctx->terminated, 0) != 0) {
-         break;
-      }
-   } while (1);
-   free(arg);
-   pthread_exit(NULL);
-}
 
 /**
  * Initialize or update a list of autoflush timeouts of output interfaces.
@@ -849,9 +786,9 @@ int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec)
 
 /** Function to terminate module's operation.
  * This function stops all read/write operations on all interfaces.
- * Any waiting in trap_get_data and trap_send_data is interrupted and these
+ * Any waiting in trap_recv() and trap_send()_data is interrupted and these
  * functions return immediately with TRAP_E_TERMINATED.
- * Any call of trap_get_data or trap_send_data after call of this function
+ * Any call of trap_recv() or trap_send() after call of this function
  * returns TRAP_E_TERMINATED.
  *
  * This function is used to terminate module's operation (asynchronously), e.g.
@@ -902,49 +839,6 @@ void trap_get_internal_buffer(trap_ctx_priv_t *ctx, uint16_t ifc_idx, const void
    /* mark internal buffer as free for next reading */
    ctx->in_ifc_list[ifc_idx].buffer_pointer = ctx->in_ifc_list[ifc_idx].buffer;
    ctx->in_ifc_list[ifc_idx].buffer_unread_bytes = 0;
-}
-
-/** Read data from input interface.
- * Read a record from one of interfaces specified by `ifc_mask` and store
- * pointer to it into `data`. If `ifc_mask` contains more than 1 interface,
- * data are retrieve via parallel threads. In this case, resulting `data` is array
- * of `trap_multi_result` number of elements same as number of interfaces (returned `size` is size of
- * array in bytes --- number_of_interfaces * sizeof(trap_multi_result)).
- * If data are not available on any of specified
- * interfaces, wait until data are available or `timeout` microseconds elapses.
- * If `timeout` is equal to TRAP_WAIT, wait indefinitely. If `timeout` is equal to TRAP_NO_WAIT,
- * function is non-blocking with no timeout.
- * When function returns due to timeout, contents of `data` and `size` are undefined.
- * @param[in] ifc_mask Mask of interfaces to listen on (if *i*-th bit is set, interface *i* is enabled).
- * @param[out] data Pointer to data, you have to cast it to appropriate structure.
- * @param[out] size Number of bytes of data.
- * @param[in] timeout Timeout in microseconds.
- * @return Error code - 0 on success, TRAP_E_TIMEOUT if timeout elapses.
- */
-int trap_get_data(uint32_t ifc_mask, const void **data, uint16_t *size, int timeout)
-{
-   int counter;
-   int selected_mask = 0x1;
-   int res;
-   /* timeout */
-   for (counter = 0; counter < trap_glob_ctx->num_ifc_in; ++counter) {
-      if ((ifc_mask & selected_mask) != 0) {
-         trap_glob_ctx->in_ifc_list[counter].datatimeout = timeout;
-      }
-      selected_mask <<= 1;
-   }
-   /* receive data */
-   if (trap_glob_ctx->num_ifc_in > 1) {
-      res = trap_ctx_multi_recv((trap_ctx_t *) trap_glob_ctx, ifc_mask, data, size);
-      trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;
-      trap_last_error = trap_glob_ctx->trap_last_error;
-   } else {
-      /* libtrap initialized with only one IFC */
-      res = trap_ctx_recv((trap_ctx_t *) trap_glob_ctx, 0, data, size);
-      trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;
-      trap_last_error = trap_glob_ctx->trap_last_error;
-   }
-   return res;
 }
 
 #define SEND_DATA() do { \
@@ -1651,10 +1545,6 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
          pthread_mutex_destroy(&c->in_ifc_list[i].ifc_mtx);
       }
       free(c->in_ifc_list);
-      if (c->in_ifc_results != NULL) {
-         free(c->in_ifc_results);
-         c->in_ifc_results = NULL;
-      }
    }
 
    if ((c->num_ifc_out > 0) && (c->out_ifc_list != NULL)) {
@@ -1676,21 +1566,6 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
       c->out_ifc_list = NULL;
       free(c->ifc_autoflush_timeout);
       c->ifc_autoflush_timeout = NULL;
-   }
-
-   // Free threads and semaphores
-   if (c->reader_threads != NULL) {
-      for (i = 0; i < c->num_ifc_in; ++i) {
-         sem_post(&c->reader_threads[i].sem);
-         pthread_join(c->reader_threads[i].thr, NULL);
-         sem_destroy(&c->reader_threads[i].sem);
-      }
-      free(c->reader_threads);
-   }
-
-   if (c->in_ifc_results != NULL) {
-      free(c->in_ifc_results);
-      c->in_ifc_results = NULL;
    }
 
    if (c->service_ifc_name != NULL) {
@@ -1754,67 +1629,6 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
 
    ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout);
    return trap_error(ctx, ret_val);
-}
-
-int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size)
-{
-   uint32_t counter = 0;
-   uint32_t selected_mask = 1;
-   uint32_t selected_ifcs = 0;
-   uint32_t selected_idx = 0;
-   /* max number of interfaces (given by mask size) = 32 */
-   uint32_t selected_ifc_arr[sizeof(ifc_mask) * 8];
-   trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
-
-   if (c->initialized == 0) {
-      return trap_error(c, TRAP_E_NOT_INITIALIZED);
-   }
-
-   if (c->terminated) {
-      return trap_error(c, TRAP_E_TERMINATED);
-   }
-
-   if (ifc_mask == 0) {
-      /* no interface selected by mask... */
-      return trap_errorf(c, TRAP_E_OK, "No interface selected by mask that is probably wrong.");
-   }
-
-   for (counter = 0; counter < c->num_ifc_in; ++counter) {
-      if ((ifc_mask & selected_mask) != 0) {
-         selected_ifc_arr[selected_ifcs++] = counter;
-         selected_idx = counter;
-      }
-      c->in_ifc_results[counter].result_code = TRAP_E_TIMEOUT;
-      selected_mask <<= 1;
-   }
-   if (selected_ifcs == 1) {
-      /* get data from one IFC */
-      c->in_ifc_results[counter].result_code = trap_ctx_recv(ctx, selected_idx,
-            (const void **) &c->in_ifc_results[selected_idx].message, &c->in_ifc_results[selected_idx].message_size);
-      (*data) = c->in_ifc_results;
-      (*size) = IN_IFC_RESULTS_SIZE(c);
-      return trap_error(c, c->in_ifc_results[counter].result_code);
-   } else if (selected_ifcs > 1) {
-      // selected_ifcs initialized to 1
-      c->get_data_timeout = c->in_ifc_list[selected_ifc_arr[0]].datatimeout;
-      pthread_mutex_lock(&c->mut_sem_collector);
-      c->readers_count = selected_ifcs;
-      pthread_mutex_unlock(&c->mut_sem_collector);
-      for (counter = 0; counter < selected_ifcs; ++counter) {
-         // unblock all selected threads
-         /* get minimal timeout of selected ifcs */
-         if (c->get_data_timeout > c->in_ifc_list[selected_ifc_arr[counter]].datatimeout) {
-            c->get_data_timeout = c->in_ifc_list[selected_ifc_arr[counter]].datatimeout;
-         }
-         sem_post(&c->reader_threads[selected_ifc_arr[counter]].sem);
-      }
-      sem_wait(&c->sem_collector);
-
-      (*data) = c->in_ifc_results;
-      (*size) = IN_IFC_RESULTS_SIZE(c);
-      return trap_error(c, TRAP_E_OK);
-   }
-   return trap_errorf(c, TRAP_E_NOT_SELECTED, "No input ifc to get data from...");
 }
 
 /** Cleanup function.
@@ -2275,79 +2089,33 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
          trap_error(ctx, TRAP_E_MEMORY);
          goto alloc_counter_failed;
       }
+
       /* set default value of datatimeout */
       for (i=0; i<ctx->num_ifc_in; ++i) {
          ctx->in_ifc_list[i].datatimeout = TRAP_WAIT;
-      }
-      if (ctx->num_ifc_in > 1) {
-         ctx->in_ifc_results = (trap_multi_result_t *) calloc(1, IN_IFC_RESULTS_SIZE(ctx));
-         if (ctx->in_ifc_results == NULL) {
-            trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for multi-result storage.");
-            goto freein_list;
+         ctx->in_ifc_list[i].client_state = FMT_WAITING;
+
+         ctx->in_ifc_list[i].data_type = TRAP_FMT_UNKNOWN;
+         ctx->in_ifc_list[i].data_fmt_spec = NULL;
+         ctx->in_ifc_list[i].req_data_type = TRAP_FMT_UNKNOWN;
+         ctx->in_ifc_list[i].req_data_fmt_spec = NULL;
+
+         /* allocate extra bytes for TCPIP IFC checksum */
+         ctx->in_ifc_list[i].buffer = (void *) calloc(1, TRAP_IFC_MESSAGEQ_SIZE + 1);
+         if (ctx->in_ifc_list[i].buffer == NULL) {
+            trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for input ifc buffer.");
+            goto freein_on_failed;
          }
-         ctx->reader_threads = (struct reader_threads_s *) calloc(ctx->num_ifc_in, sizeof(struct reader_threads_s));
-         if (ctx->reader_threads == NULL) {
-            trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for reader-threads.");
-            goto freein_results;
-         }
-      }
-      ctx->readers_count = 0;
-      if (sem_init(&ctx->sem_collector, SEM_PSHARED, 0) != 0) {
-         goto freein_readers;
-      }
-      if (pthread_mutex_init(&ctx->mut_sem_collector, NULL) != 0) {
-         sem_destroy(&ctx->sem_collector);
-         goto freein_readers;
-      }
+         ctx->in_ifc_list[i].buffer_unread_bytes = 0;
+         ctx->in_ifc_list[i].buffer_pointer = ctx->in_ifc_list[i].buffer;
+         ctx->in_ifc_list[i].ifc_type = ifc_spec.types[i];
 
-   }
-
-   for (i = 0; i < ctx->num_ifc_in; i++) {
-      ctx->in_ifc_list[i].client_state = FMT_WAITING;
-      ctx->in_ifc_list[i].data_type = TRAP_FMT_UNKNOWN;
-      ctx->in_ifc_list[i].data_fmt_spec = NULL;
-
-      ctx->in_ifc_list[i].req_data_type = TRAP_FMT_UNKNOWN;
-      ctx->in_ifc_list[i].req_data_fmt_spec = NULL;
-
-      if (pthread_mutex_init(&ctx->in_ifc_list[i].ifc_mtx, NULL) != 0) {
-         goto freein_readers;
-      }
-      /* initialize reader-threads and their semaphores */
-      if (ctx->num_ifc_in > 1) {
-         struct reader_threads_arg *dataarg = (struct reader_threads_arg *) calloc(1, sizeof(struct reader_threads_arg));
-         if (dataarg == NULL) {
-            goto freein_readers;
-         }
-         dataarg->ctx = ctx;
-         dataarg->thread_index = i;
-         if (sem_init(&ctx->reader_threads[i].sem, SEM_PSHARED, 0) != 0) {
-            VERBOSE(CL_ERROR, "Creation of reader semaphore failed.");
-            trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader semaphore failed.");
-            goto freein_readers;
-         }
-
-         if (pthread_create(&ctx->reader_threads[i].thr, NULL, reader_threads_fn, (void *) dataarg) != 0) {
-            VERBOSE(CL_ERROR, "Creation of reader thread failed.");
-            trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader thread failed.");
-            free(dataarg);
-            goto freein_readers;
+         /* call input IFC constructor */
+         if (trapifc_in_construct(ctx, &ifc_spec, i) == EXIT_FAILURE) {
+            goto freein_on_failed;
          }
       }
-      /* allocate extra bytes for TCPIP IFC checksum */
-      ctx->in_ifc_list[i].buffer = (void *) calloc(1, TRAP_IFC_MESSAGEQ_SIZE + 1);
-      if (ctx->in_ifc_list[i].buffer == NULL) {
-         trap_errorf(ctx, TRAP_E_MEMORY, "Not enough memory for input ifc buffer.");
-         goto freein_on_failed;
-      }
-      ctx->in_ifc_list[i].buffer_unread_bytes = 0;
-      ctx->in_ifc_list[i].buffer_pointer = ctx->in_ifc_list[i].buffer;
-      ctx->in_ifc_list[i].ifc_type = ifc_spec.types[i];
 
-      /* call input IFC constructor */
-      if (trapifc_in_construct(ctx, &ifc_spec, i) == EXIT_FAILURE) {
-         goto freein_on_failed;
-      }
    }
 
    // Create output interfaces
@@ -2394,7 +2162,7 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
       // Create thread for handling timeouts outputs interfaces
       if (pthread_create(&ctx->timeout_thread, NULL, trap_automatic_flush_thr, (void *) ctx) != 0) {
          VERBOSE(CL_ERROR, "Creation of timeout handler thread failed.");
-         trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader thread failed.");
+         trap_errorf(ctx, TRAP_E_MEMORY, "Creation of autoflush thread failed.");
          goto freeall_on_failed;
       }
       ctx->timeout_thread_initialized = 1;
@@ -2448,24 +2216,8 @@ freein_on_failed:
          }
       }
    }
-freein_readers:
    ctx->terminated = 1;
 
-   if (ctx->reader_threads != NULL) {
-      for (i = 0; i < ctx->num_ifc_in; i++) {
-         pthread_kill(ctx->reader_threads[i].thr, 1);
-         pthread_join(ctx->reader_threads[i].thr, NULL);
-         sem_destroy(&ctx->reader_threads[i].sem);
-      }
-      free(ctx->reader_threads);
-      ctx->reader_threads = NULL;
-   }
-freein_results:
-   if (ctx->in_ifc_results) {
-      free(ctx->in_ifc_results);
-      ctx->in_ifc_results = NULL;
-   }
-freein_list:
    if (ctx->in_ifc_list) {
       free(ctx->in_ifc_list);
       ctx->in_ifc_list = NULL;
