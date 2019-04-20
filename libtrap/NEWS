@@ -1,3 +1,8 @@
+2019-04-20 (Tomas Cejka): libtrap: add error message when UniRec negotiation fails
+2019-04-20 (Tomas Cejka): libtrap: fixed error message
+2019-03-01 (Tomas Cejka): libtrap: cleanup: removed TRAP_MASK_ALL and updated doc
+2019-02-26 (Tomas Cejka): libtrap: remove multi_recv feature
+
 2019-02-07 (Tomáš Jánský): libtrap: bugfix: reader threads may on sem_wait in reader_threads_fn (#113)
 
 2018-09-28 (Tomáš Jánský): libtrap: temporary fix of segfaults - nonblocking receive (#103)
