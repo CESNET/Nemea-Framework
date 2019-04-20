@@ -10,7 +10,7 @@ except:
     missing_pymongo = True
 
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCMongoTest(unittest.TestCase):
 
@@ -29,7 +29,8 @@ class RCMongoTest(unittest.TestCase):
 
         Should store message in DB and test if there is one record
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)
@@ -44,7 +45,8 @@ class RCMongoTest(unittest.TestCase):
 
         Should store message in DB, find it, and check contents
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

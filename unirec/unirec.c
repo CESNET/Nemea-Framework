@@ -1124,8 +1124,8 @@ uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec)
 void *ur_create_record(const ur_template_t *tmplt, uint16_t max_var_size)
 {
    unsigned int size = (unsigned int)tmplt->static_size + max_var_size;
-   if (size > 0xffff)
-      size = 0xffff;
+   if (size > UR_MAX_SIZE)
+      size = UR_MAX_SIZE;
    return (void *) calloc(size, 1);
 }
 
@@ -1340,7 +1340,7 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
 {
    struct tm t;
    time_t sec = -1;
-   uint64_t msec = 0;
+   uint64_t nsec = 0;
    char *res = NULL;
 
    if (ur == NULL || str == NULL) {
@@ -1349,13 +1349,29 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
 
    res = strptime(str, "%FT%T", &t);
    /* parsed to sec - msec delimiter */
-   if ((res != NULL) && ((*res == '.') || (*res == 0))) {
+   if ((res != NULL) && ((*res == '.') || (*res == 0) || (*res == 'z') || (*res == 'Z'))) {
       sec = timegm(&t);
       if (sec != -1) {
-         if (*res != 0) {
-            msec = atoi(res + 1);
+         if (*res != 0 && *++res != 0) {
+            char frac_buffer[10];
+            memset(frac_buffer, '0', 9);
+            frac_buffer[9] = 0;
+
+            // now "res" points to the beginning of the fractional part or 'Z' for UTC timezone,
+            // which have at least one char.
+            // Expand the number by zeros to the right to get it in ns
+            // (if there are more than 9 digits, truncate the rest)
+            size_t frac_len = strlen(res);
+            if (frac_len > 0 && (res[frac_len - 1] == 'z' || res[frac_len - 1] == 'Z')) {
+                frac_len--;
+            }
+            if (frac_len > 9) {
+                frac_len = 9;
+            }
+            memcpy(frac_buffer, res, frac_len);
+            nsec = strtoul(frac_buffer, NULL, 10); // returns 0 on error - that's OK
          }
-         *ur = ur_time_from_sec_msec((uint64_t) sec, msec);
+         *ur = ur_time_from_sec_nsec((uint64_t) sec, nsec);
       } else {
          goto failed_time_parsing;
       }

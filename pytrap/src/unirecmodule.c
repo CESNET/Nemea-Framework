@@ -13,6 +13,7 @@
 
 #include "fields.h"
 #include "unirecipaddr.h"
+#include "unirecmacaddr.h"
 #include "pytrapexceptions.h"
 
 UR_FIELDS()
@@ -237,8 +238,10 @@ int
 UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
 {
     PyObject *arg1;
-    uint32_t secs, msecs = 0;
+    uint32_t secs = 0, msecs = 0;
     double fl_time;
+    char *cstr = NULL;
+    Py_ssize_t csize;
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "O|I", &arg1, &msecs)) {
@@ -254,6 +257,26 @@ UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
         } else if (PyInt_Check(arg1)) {
             secs = (uint32_t) PyInt_AsLong(arg1);
 #endif
+#if PY_MAJOR_VERSION >= 3
+        } else if (PyUnicode_Check(arg1)) {
+            cstr = PyUnicode_AsUTF8AndSize(arg1, &csize);
+#else
+        } else if (PyString_Check(arg1)) {
+            if (PyString_AsStringAndSize(arg1, &cstr, &csize) == -1) {
+                return -1;
+            }
+#endif
+        } else {
+           PyErr_SetString(PyExc_TypeError, "Unsupported argument type.");
+           return -1;
+        }
+        if (cstr != NULL) {
+            if (ur_time_from_string(&s->timestamp, cstr) == 0) {
+                return 0;
+            } else {
+                PyErr_SetString(PyExc_TypeError, "Malformed string argument, YYYY-mm-ddTHH:MM:SS expected.");
+                return -1;
+            }
         }
         s->timestamp = ur_time_from_sec_msec(secs, msecs);
     } else {
@@ -444,10 +467,14 @@ static PyTypeObject pytrap_UnirecTime = {
         Py_TPFLAGS_BASETYPE, /* tp_flags */
     "UnirecTime(int(seconds), [int(miliseconds)])\n"
     "UnirecTime(double(secs_and_msecs))\n"
+    "UnirecTime(str(\"2019-03-18T12:11:10Z\"))\n"
     "    Class for UniRec timestamp storage and base data access.\n\n"
     "    Args:\n"
+    "        str: datetime, e.g., \"2019-03-18T12:11:10.123Z\"\n"
     "        double or int: number of seconds\n"
-    "        Optional[int]: number of miliseconds (when the first argument is int)\n", /* tp_doc */
+    "        Optional[int]: number of miliseconds (when the first argument is int)\n\n"
+    "    Raises:\n"
+    "        TypeError: unsupported type was provided or string is malformed.\n", /* tp_doc */
     0, /* tp_traverse */
     0, /* tp_clear */
     (richcmpfunc) UnirecTime_compare, /* tp_richcompare */
@@ -536,12 +563,21 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             memcpy(&new_ip->ip, value, sizeof(ip_addr_t));
             return (PyObject *) new_ip;
         }
+        break;
+    case UR_TYPE_MAC:
+        {
+            pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
+            memcpy(&new_mac->mac, value, sizeof(mac_addr_t));
+            return (PyObject *) new_mac;
+        }
+        break;
     case UR_TYPE_TIME:
         {
             pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
             new_time->timestamp = *((ur_time_t *) value);
             return (PyObject *) new_time;
         }
+        break;
     case UR_TYPE_STRING:
         {
             Py_ssize_t value_size = ur_get_var_len(self->urtmplt, data, field_id);
@@ -728,6 +764,13 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
             ip_addr_t *dest = (ip_addr_t *) value;
             dest->ui64[0] = src->ip.ui64[0];
             dest->ui64[1] = src->ip.ui64[1];
+        }
+        break;
+    case UR_TYPE_MAC:
+        if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecMACAddr)) {
+            pytrap_unirecmacaddr *src = ((pytrap_unirecmacaddr *) valueObj);
+            mac_addr_t *dest = (mac_addr_t *) value;
+            memcpy(dest, &src->mac, sizeof(mac_addr_t));
         }
         break;
     case UR_TYPE_TIME:
@@ -1017,8 +1060,8 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
         val = UnirecTemplate_get_local(self, self->data, id);
         keyval =  PyObject_CallMethodObjArgs(i, format, val, NULL);
         PyList_Append(l, keyval);
-        Py_DECREF(i);
-        Py_DECREF(val);
+        Py_XDECREF(i);
+        Py_XDECREF(val);
         Py_XDECREF(keyval);
     }
     PyObject *delim = PyUnicode_FromString(", ");
@@ -1069,6 +1112,8 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
         break;
     case UR_TYPE_IP:
         return (PyObject *) &pytrap_UnirecIPAddr;
+    case UR_TYPE_MAC:
+        return (PyObject *) &pytrap_UnirecMACAddr;
     case UR_TYPE_TIME:
         return (PyObject *) &pytrap_UnirecTime;
     case UR_TYPE_STRING:
@@ -1121,7 +1166,7 @@ UnirecTemplate_recVarlenSize(pytrap_unirectemplate *self, PyObject *args, PyObje
         if (self->data != NULL) {
             data = self->data;
         } else {
-            PyErr_SetString(PyExc_TypeError, "Data was not set nor expolicitly passed as argument.");
+            PyErr_SetString(PyExc_TypeError, "Data was not set nor explicitly passed as argument.");
             return NULL;
         }
     }
@@ -1504,6 +1549,21 @@ init_unirectemplate(PyObject *m)
     }
     Py_INCREF(&pytrap_UnirecIPAddrRange);
     PyModule_AddObject(m, "UnirecIPAddrRange", (PyObject *) &pytrap_UnirecIPAddrRange);
+
+    /* Add MACAddr */
+    //pytrap_UnirecTemplate.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&pytrap_UnirecMACAddr) < 0) {
+        return EXIT_FAILURE;
+    }
+    Py_INCREF(&pytrap_UnirecMACAddr);
+    PyModule_AddObject(m, "UnirecMACAddr", (PyObject *) &pytrap_UnirecMACAddr);
+
+    /* Add MACAddrRange */
+    if (PyType_Ready(&pytrap_UnirecMACAddrRange) < 0) {
+        return EXIT_FAILURE;
+    }
+    Py_INCREF(&pytrap_UnirecMACAddrRange);
+    PyModule_AddObject(m, "UnirecMACAddrRange", (PyObject *) &pytrap_UnirecMACAddrRange);
 
     /* Add Template */
     if (PyType_Ready(&pytrap_UnirecTemplate) < 0) {

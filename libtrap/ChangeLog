@@ -1,3 +1,38 @@
+2019-02-07 libtrap-1.12.2
+	* Bugfix in init - possible deadlock on uninitialized semaphore
+
+2018-11-23 libtrap-0.12.1
+	* libtrap:
+		Libtrap buffer now properly empties itself if no client is
+		connected to the ouput interface. (This changes how statistics
+		- number of messages sent and dropped - are treated when
+		no client is connected).
+
+		Added client identification for TCP and UNIX output interfaces
+		and computation of statistics. For UNIX IFC type, ID is set to PID of the connected client.
+		For TCP or TLS IFC types, ID is set to a remote TCP port of the connected
+		client (which can be looked up using `netstat(8)` or `ss(8)`).
+
+2018-10-26 libtrap-0.12.0
+	* libtrap:
+		Refactoring, improved throughput.
+		Fixed problems with not setting trap last error.
+		Most of the context functions are now thread safe.
+		Autoflush is no longer called in situations when send procedure keeps failing repeatedly.
+		Added periodical interface statistics printings when run in verbose mode.
+		Improved documentation.
+
+2018-10-09 libtrap-0.11.8
+	* libtrap:
+		Fix non-blocking recv in libtrap.
+		Fix possible write to uninitialized address.
+		Improved VERBOSE CPP macro to print file&line in debug.
+
+2018-09-18 libtrap-0.11.7
+	* libtrap:
+		Bugfixes and performance improvement (locks rework)
+	* trap_stats:
+		Improved trap_stats argument to allow passing just PID
 2018-07-30 libtrap-0.11.6
 	* libtrap:
 		bugfixes of TLS IFC

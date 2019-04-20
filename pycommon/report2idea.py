@@ -4,11 +4,13 @@ import json
 import pytrap
 from time import time, gmtime
 from uuid import uuid4
-from datetime import datetime
+from datetime import datetime, timedelta
+import re
 import logging
 import signal
 
 from reporter_config import Config
+from reporter_config import Parser
 from reporter_config.actions.Drop import DropMsg
 FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
 
@@ -38,7 +40,12 @@ Usage: setAddr(idea['Source'][0], rec.SRC_IP)"""
 def getIDEAtime(unirecField = None):
     """Return timestamp in IDEA format (string).
     If unirecField is provided, it will convert it into correct format.
-    Otherwise, current time is returned."""
+    Otherwise, current time is returned.
+
+    Example:
+    >>> getIDEAtime(pytrap.UnirecTime(1234567890))
+    '2009-02-13T23:31:30Z'
+    """
 
     if unirecField:
         # Convert UnirecTime
@@ -48,6 +55,29 @@ def getIDEAtime(unirecField = None):
         g = gmtime()
         iso = '%04d-%02d-%02dT%02d:%02d:%02dZ' % g[0:6]
     return iso
+
+
+def parseRFCtime(time_str):
+    """Parse time_str in RFC 3339 format and return it as native datetime in UTC.
+
+    Example:
+
+    >>> parseRFCtime('2019-03-11T14:59:54Z')
+    datetime.datetime(2019, 3, 11, 14, 59, 54)
+    """
+    # Regex for RFC 3339 time format
+    timestamp_re = re.compile(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})[Tt ]([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?([Zz]|(?:[+-][0-9]{2}:[0-9]{2}))$")
+    res = timestamp_re.match(time_str)
+    if res is not None:
+        year, month, day, hour, minute, second = (int(n or 0) for n in res.group(*range(1, 7)))
+        us_str = (res.group(7) or "0")[:6].ljust(6, "0")
+        us = int(us_str)
+        zonestr = res.group(8)
+        zoneoffset = 0 if zonestr in ('z', 'Z') else int(zonestr[:3])*60 + int(zonestr[4:6])
+        zonediff = timedelta(minutes=zoneoffset)
+        return datetime(year, month, day, hour, minute, second, us) - zonediff
+    else:
+        raise ValueError("Wrong timestamp format")
 
 
 # TODO: resolve argument parsing and help in Python modules
@@ -78,6 +108,59 @@ def signal_h(signal, f):
     global trap
     trap.terminate()
 
+def check_valid_timestamps(idea, dpast=1, dfuture=0):
+    """
+    Return True if EventTime, CeaseTime, and DetectTime are in the interval (CreateTime - dpast, CreateTime + dfuture).
+
+    :param idea: dict with filled IDEA message
+    :param dpast: int maximal number of days into past
+    :param dfuture: int maximal number of days into future
+
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T14:59:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    True
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T15:00:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    True
+    >>> # One day tolerance for the future
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T15:10:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 1)
+    True
+    >>> # DetecTime from future
+    >>> idea = {"CreateTime": "2019-03-11T15:00:00Z", "DetectTime": "2019-03-11T15:10:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    False
+    >>> # CreateTime from past
+    >>> idea = {"CreateTime": "2019-03-10T15:00:00Z", "DetectTime": "2019-03-11T14:59:00Z",
+    ... "EventTime": "2019-03-11T14:57:00Z", "CeaseTime": "2019-03-11T14:58:50Z"}
+    >>> check_valid_timestamps(idea, 1, 0)
+    False
+
+    """
+    et = idea.get("EventTime", None)
+    ct = idea.get("CeaseTime", None)
+    dt = idea.get("DetectTime", None)
+    create = idea.get("CreateTime", None)
+    if not create:
+        return True
+    else:
+        create = parseRFCtime(create)
+    deltapast = create - timedelta(dpast)
+    deltafuture = create + timedelta(dfuture)
+    for t in [et, ct, dt]:
+        if t:
+            # convert timestamp to datetime
+            t = parseRFCtime(t)
+            # check allowed interval
+            if t < deltapast or t > deltafuture:
+                return False
+    return True
+
+
 def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = None):
     """Run the main loop of the reporter module called `module_name` with `module_desc` (used in help).
 
@@ -94,7 +177,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Set description
     arg_parser.description = str.format(desc_template,
-            name=module_name,
+            name=module_name + "2idea",
             type={pytrap.FMT_RAW:'raw', pytrap.FMT_UNIREC:'UniRec', pytrap.FMT_JSON:'JSON'}.get(req_type,'???'),
             fmt=req_format,
             original_desc = module_desc+"\n\n  " if module_desc else "",
@@ -115,36 +198,52 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     # Other options
     arg_parser.add_argument('-n', '--name', metavar='NODE_NAME',
-            help='Name of the node, filled into "Node.Name" element of the IDEA message. Required argument.')
+            help='Name of the node, filled into "Node.Name" element of the IDEA message.')
+
     arg_parser.add_argument('-v', '--verbose', metavar='VERBOSE_LEVEL', default=3, type=int,
             help="""Enable verbose mode (may be used by some modules, common part doesn't print anything).\nLevel 1 logs everything, level 5 only critical errors. Level 0 doesn't log.""")
+
+    arg_parser.add_argument('-D', '--dontvalidate', action='store_true', default=False,
+            help="""Disable timestamp validation, i.e. allow timestamps to be far in the past or future.""")
+
     # TRAP parameters
     trap_args = arg_parser.add_argument_group('Common TRAP parameters')
-    trap_args.add_argument('-i', metavar="IFC_SPEC", required=True,
-            help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
+    trap_args.add_argument('-i', metavar="IFC_SPEC", help='See http://nemea.liberouter.org/trap-ifcspec/ for more information.')
     # Parse arguments
     args = arg_parser.parse_args()
 
     # Set log level
     logging.basicConfig(level=(args.verbose*10), format=FORMAT)
 
+
+    parsed_config = Config.Parser(args.config)
+    if not parsed_config or not parsed_config.config:
+        print("error: Parsing configuration file failed.")
+        sys.exit(1)
+
     # Check if node name is set if Warden output is enabled
-    if args.name is None:
-        #if args.warden:
-        #    sys.stderr.write(module_name+": Error: Node name must be specified if Warden output is used (set param --name).\n")
-        #    exit(1)
-        logger.warning("Node name is not specified.")
+    if not args.name:
+        args.name = ".".join([parsed_config.get("namespace", "com.example"), module_name])
+    else:
+        logger.warning("Node name is specified as '-n' argument.")
+    logger.info("Node name: %s", args.name)
 
-    # *** Initialize TRAP ***
-    logger.info("Trap arguments: %s", args.i)
-    trap.init(["-i", args.i], 1, 1 if args.trap else 0)
-    #trap.setVerboseLevel(3)
-    signal.signal(signal.SIGINT, signal_h)
+    if not args.dry:
+        if not args.i:
+            arg_parser.print_usage()
+            print("error: the following arguments are required: -i")
+            sys.exit(1)
 
-    # Set required input format
-    trap.setRequiredFmt(0, req_type, req_format)
-    if args.trap:
-       trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
+        # *** Initialize TRAP ***
+        logger.info("Trap arguments: %s", args.i)
+        trap.init(["-i", args.i], 1, 1 if args.trap else 0)
+        #trap.setVerboseLevel(3)
+        signal.signal(signal.SIGINT, signal_h)
+
+        # Set required input format
+        trap.setRequiredFmt(0, req_type, req_format)
+        if args.trap:
+           trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
     # *** Create output handles/clients/etc ***
     wardenclient = None
@@ -160,7 +259,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         wardenclient = warden_client.Client(**config)
 
     # Initialize configuration
-    config = Config.Config(args.config, trap = trap, warden = wardenclient)
+    config = Config.Config(parsed_config, trap = trap, warden = wardenclient)
 
 
     if not args.dry:
@@ -222,6 +321,11 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             if args.name is not None:
                 idea['Node'][0]['Name'] = args.name
 
+            # Sanity check of timestamps
+            if args.dontvalidate == False and not check_valid_timestamps(idea):
+                print("Invalid timestamps in skipped message: {0}".format(json.dumps(idea)))
+                continue
+
             # *** Send IDEA to outputs ***
             # Perform rule matching and action running on the idea message
             try:
@@ -239,6 +343,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         # DRY argument given, just print config and exit
         print(config)
 
-    if wardenclient:
-        wardenclient.close()
-    trap.finalize()
+    if not args.dry:
+        if wardenclient:
+            wardenclient.close()
+        trap.finalize()

@@ -849,18 +849,20 @@ void ur_clear_varlen(const ur_template_t * tmplt, void *rec);
 uint16_t ur_rec_varlen_size(const ur_template_t *tmplt, const void *rec);
 
 /** Create UniRec record.
- * Allocate memory for a record with given template. It allocates N+M bytes,
- * where N is the size of static part of the record (inferred from template),
- * and M is the size of variable part (variable-length fields), which must be
- * provided by caller.
- * No more than 65535 bytes is allocated (even if N+M is greater), since this is
- * the maximal possible size of UniRec record.
+ * Allocate and zero memory for a record with given template. It
+ * allocates N+M bytes, where N is the size of static part of the
+ * record (inferred from template), and M is the size of variable part
+ * (variable-length fields), which must be provided by caller.
+ * No more than 65535 bytes is allocated (even if N+M is greater),
+ * since this is the maximal possible size of UniRec record.
  * \param[in] tmplt Pointer to UniRec template.
- * \param[in] max_var_size Size of variable-length part, i.e. sum of lengths of all
- *                     variable-length fields. If it is not known at the time of
- *                     record creation, use UR_MAX_SIZE, which allocates enough
- *                     memory to hold the largest possible UniRec record (65535 bytes).
- *                     Set to 0 if there are no variable-length fields in the template.
+ * \param[in] max_var_size Size of variable-length part, i.e. sum of
+ *                     lengths of all variable-length fields. If it is
+ *                     not known at the time of record creation, use
+ *                     UR_MAX_SIZE, which allocates enough memory to
+ *                     hold the largest possible UniRec record (65535
+ *                     bytes). Set to 0 if there are no
+ *                     variable-length fields in the template.
  */
 void *ur_create_record(const ur_template_t *tmplt, uint16_t max_var_size);
 #define UR_MAX_SIZE 0xffff

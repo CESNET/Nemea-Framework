@@ -11,6 +11,11 @@ check_PROGRAMS=test_basic test_creation test_ipaddr test_time test_macaddr test_
 
 TESTS = test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
 
+if HAVE_CMOCKA
+check_PROGRAMS += test_ur2csv
+TESTS += test_ur2csv
+endif
+
 AM_LDFLAGS=-static ../libunirec.la
 COM_CPPFLAGS=-I../../ -I../ -I${top_srcdir}/../../
 
@@ -49,6 +54,12 @@ test_speed_uro_CPPFLAGS=$(COM_CPPFLAGS)
 test_template_cmp_SOURCES=test_template_cmp.c fields.c
 test_template_cmp_CFLAGS=-DUNIREC
 test_template_cmp_CPPFLAGS=$(COM_CPPFLAGS)
+
+if HAVE_CMOCKA
+test_ur2csv_SOURCES=test_ur2csv.c fields.c
+test_ur2csv_CPPFLAGS=$(COM_CPPFLAGS)
+test_ur2csv_LDADD=-lcmocka
+endif
 
 clean-local:
 	rm -f fields.c fields.h

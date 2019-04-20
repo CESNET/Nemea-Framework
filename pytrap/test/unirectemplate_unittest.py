@@ -50,16 +50,15 @@ class DataTypesIPAddr(unittest.TestCase):
         self.assertEqual(d[i1], 1)
         self.assertEqual(d[i2], 2)
         i4 = pytrap.UnirecIPAddr("8.8.4.4")
-        try:
+
+        # IP address shouldn't be in dict
+        with self.assertRaises(KeyError):
             print(d[i4])
-            self.fail("IP address shouldn't be in dict")
-        except:
-            pass
-        try:
+
+        # Only string is a valid argument of UnirecIPAddr()
+        with self.assertRaises(TypeError):
             i = pytrap.UnirecIPAddr(0)
-            self.fail("Only string is a valid argument of UnirecIPAddr()")
-        except:
-            pass
+
         i = pytrap.UnirecIPAddr("::")
         self.assertTrue(i.isNull())
         self.assertFalse(i)
@@ -90,29 +89,198 @@ class DataTypesIPAddr(unittest.TestCase):
         self.assertFalse(ip in bl4)
 
 
-        try:
+        # only UnirecIPAddr type supported
+        with self.assertRaises(TypeError):
             i = 1 in i4
-            self.fail("only UnirecIPAddr type supported.")
-        except TypeError:
-            # expected UnirecIPAddr type
-            pass
+
+class DataTypesMACAddr(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        mac0 = pytrap.UnirecMACAddr("0:1:11:A:AA:FF")
+        self.assertEqual(str(mac0), "00:01:11:0a:aa:ff",
+                         "MAC address .str() did not produce canonical representation.")
+        mac1 = pytrap.UnirecMACAddr("11:22:33:44:55:66")
+        self.assertEqual(mac1, mac1)
+        self.assertEqual(type(mac1), pytrap.UnirecMACAddr, "Bad type of MAC address object.")
+        self.assertEqual(str(mac1),
+                         "11:22:33:44:55:66",
+                         "MAC address .str() did not produce canonical representation.")
+        self.assertEqual(repr(mac1), "UnirecMACAddr('11:22:33:44:55:66')", "MAC address is not equal to its repr().")
+
+        mac2 = pytrap.UnirecMACAddr("10:20:30:40:50:60")
+        mac3 = pytrap.UnirecMACAddr("11:22:33:44:55:66")
+        self.assertFalse(mac1 == mac2, "Comparison of different MAC addresses failed.")
+        self.assertFalse(mac1 <= mac2, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac2 >= mac1, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac1 != mac3, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac1  < mac3, "Comparison of the same MAC addresses failed.")
+        self.assertFalse(mac1  > mac3, "Comparison of the same MAC addresses failed.")
+
+        mac4 = mac1
+        for i in range(0, 256):
+            mac4 = mac4.inc();
+
+        self.assertTrue(mac4 == pytrap.UnirecMACAddr("11:22:33:44:56:66"), "Incrementation failed.")
+
+        for i in range(0, 256):
+            mac4 = mac4.dec();
+
+        self.assertTrue(mac4 == mac1, "Decrementation failed.")
+
+        mac5 = pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF").inc()
+        mac6 = pytrap.UnirecMACAddr("00:00:00:00:00:00").dec()
+        self.assertTrue(mac5 == pytrap.UnirecMACAddr("00:00:00:00:00:00"), "Incrementation failed.")
+        self.assertTrue(mac6 == pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF"), "Decrementation failed.")
+
+        # test mac address bytes conversion to integer (bytes consist of uint32_t part and uint16_t part)
+        mac7 = pytrap.UnirecMACAddr("12:34:FF:FF:FF:FF").inc()
+        mac8 = pytrap.UnirecMACAddr("12:34:56:78:FF:FF").inc()
+        self.assertTrue(mac7 == pytrap.UnirecMACAddr("12:35:00:00:00:00"), "uint32_t test failed.")
+        self.assertTrue(mac8 == pytrap.UnirecMACAddr("12:34:56:79:00:00"), "uint16_t test failed.")
+
+        d = dict()
+        m1 = pytrap.UnirecMACAddr("1:2:3:4:5:6")
+        m2 = pytrap.UnirecMACAddr("6:5:4:3:2:1")
+        m3 = pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF")
+        d[m1] = 1
+        d[m2] = 2
+        d[m3] = 3
+        self.assertEqual(d[m3], 3)
+        self.assertEqual(d[m1], 1)
+        self.assertEqual(d[m2], 2)
+        m4 = pytrap.UnirecMACAddr("1:2:3:0:0:0")
+
+        # MAC address shouldn't be in dict
+        with self.assertRaises(KeyError):
+            print(d[m4])
+
+        # Only string is a valid argument of UnirecMACAddr()
+        with self.assertRaises(TypeError):
+            i = pytrap.UnirecMACAddr(0)
+
+        # Only string is a valid argument of UnirecMACAddr()
+        with self.assertRaises(TypeError if sys.version_info[0] >= 3 else pytrap.TrapError):
+            i = pytrap.UnirecMACAddr(bytes([11, 22, 33, 44, 55, 66]))
+
+        i = pytrap.UnirecMACAddr("00:00:00:00:00:00")
+        self.assertTrue(i.isNull())
+        self.assertFalse(i)
+        i = pytrap.UnirecMACAddr("00:00:00:00:00:01")
+        self.assertFalse(i.isNull())
+        self.assertTrue(i)
+
+        # __contains__
+        self.assertFalse(m3 in m4)
+        self.assertTrue(m4 in m4)
+        self.assertTrue(pytrap.UnirecMACAddr("d:e:a:d:be:ef") in pytrap.UnirecMACAddr("d:e:a:d:be:ef"))
+
+class DataTypesMACAddrRange(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        mac = pytrap.UnirecMACAddr("d:e:a:d:be:ef")
+        bl1 = pytrap.UnirecMACAddr("d:e:a:d:be:ef")
+        bl2 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("d:0:0:0:0:0"), pytrap.UnirecMACAddr("d:f:f:f:f:f"))
+        bl3 = pytrap.UnirecMACAddr("b:e:a:d:de:ef")
+        bl4 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("0:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("1:2:3:4:5:6"))
+        bl5 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("0:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("1:0:0:0:0:0"))
+        bl6 = pytrap.UnirecMACAddrRange(
+            pytrap.UnirecMACAddr("1:0:0:FF:FF:FF"), pytrap.UnirecMACAddr("c:0:0:0:0:0"))
+
+        self.assertEqual(type(bl2),
+                         pytrap.UnirecMACAddrRange,
+                         "Bad type of MAC address object.")
+        self.assertEqual(str(bl6),
+                         "01:00:00:ff:ff:ff - 0c:00:00:00:00:00",
+                         "String representation of UnirecMACAddrRange not equal to expected string.")
+        self.assertEqual(repr(bl6),
+                         "UnirecMACAddrRange(UnirecMACAddr('01:00:00:ff:ff:ff'), UnirecMACAddr('0c:00:00:00:00:00'))",
+                         "Representation of UnirecMACAddrRange not equal to expected string.")
+
+        # both are True:
+        self.assertTrue(mac in bl1)
+        self.assertTrue(mac in bl2)
+        # both are False
+        self.assertFalse(mac in bl3)
+        self.assertFalse(mac in bl4)
+
+        self.assertTrue(bl2.isIn(mac) == 0)
+        self.assertTrue(bl4.isIn(mac) == 1)
+        self.assertTrue(bl4.isIn(pytrap.UnirecMACAddr("0:0:0:0:0:1")) == -1)
+
+        self.assertTrue(bl4.isOverlap(bl4))
+        self.assertTrue(bl4.isOverlap(bl5))
+        self.assertTrue(bl5.isOverlap(bl4))
+        self.assertTrue(bl4.isOverlap(bl6))
+        self.assertTrue(not bl6.isOverlap(bl2))
+        self.assertTrue(not bl2.isOverlap(bl4))
+
+        self.assertTrue(not bl2 == bl4)
+        self.assertTrue(bl2 == bl2)
+
+        mac1 = pytrap.UnirecMACAddr("d:e:ad:be:e:f")
+        mac2 = pytrap.UnirecMACAddr("b:a:d:f0:0:d")
+        rangemap = dict()
+        rangemap[mac1] = 1
+        rangemap[mac2] = 2
+        if mac1 not in rangemap:
+            self.fail("mac1 should be already in dict.")
+        if mac2 not in rangemap:
+            self.fail("mac2 should be already in dict.")
+        s = 0
+        for key in rangemap:
+            s += rangemap[key]
+        self.assertEqual(s, 3)
 
 def timedelta_total_seconds(timedelta):
     return (
         timedelta.microseconds + 0.0 +
         (timedelta.seconds + timedelta.days * 24 * 3600) * 10 ** 6) / 10 ** 6
+
+class DataTypesTimeConstructors(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        # Unsupported type
+        with self.assertRaises(TypeError):
+            pytrap.UnirecTime(tuple([1, 3]))
+
+        # Float
+        t = pytrap.UnirecTime(1.5)
+        self.assertEqual(t.getSeconds(), 1)
+        self.assertEqual(t.getMiliSeconds(), 500)
+
+        # seconds and miliseconds
+        t = pytrap.UnirecTime(1466701316, 123)
+        self.assertEqual(t.getSeconds(), 1466701316, "Number of seconds differs.")
+        self.assertEqual(t.getMiliSeconds(), 123, "Number of miliseconds differs.")
+        self.assertEqual(t.getTimeAsFloat(), 1466701316.123, "Time as float differs.")
+
+        t1 = pytrap.UnirecTime("2019-03-18T20:58:12.100")
+        self.assertEqual(t1, pytrap.UnirecTime(1552942692, 100))
+
+        # test conversion from string with timezone to UnirecTime
+        t1 = pytrap.UnirecTime("2019-03-18T20:58:12.100Z")
+        t2 = pytrap.UnirecTime("2019-03-19T20:58:12.222Z")
+        self.assertEqual(t1, pytrap.UnirecTime(1552942692, 100))
+        self.assertEqual(t2, pytrap.UnirecTime(1553029092, 222))
+        self.assertEqual(t2.getSeconds() - t1.getSeconds(), 24 * 60 * 60)
+
+        # malformed format
+        with self.assertRaises(TypeError):
+            pytrap.UnirecTime("18.3.2019 20:58:12.100Z")
+
 class DataTypesTime(unittest.TestCase):
     def runTest(self):
         import pytrap
+
         t = pytrap.UnirecTime(1466701316, 123)
         self.assertEqual(type(t), pytrap.UnirecTime, "Bad type of Time object.")
         self.assertEqual(str(t),  "1466701316.123", "Time is not equal to its str().")
         self.assertEqual(repr(t), "UnirecTime(1466701316, 123)", "Time is not equal to its repr().")
         self.assertEqual(float(t), 1466701316.123, "Conversion of Time to float failed.")
         self.assertEqual(t, t)
-        self.assertEqual(t.getSeconds(), 1466701316, "Number of seconds differs.")
-        self.assertEqual(t.getMiliSeconds(), 123, "Number of miliseconds differs.")
-        self.assertEqual(t.getTimeAsFloat(), 1466701316.123, "Time as float differs.")
 
         t2 = pytrap.UnirecTime(10, 100)
         self.assertEqual(type(t2), pytrap.UnirecTime, "Bad type of Time object.")
@@ -271,19 +439,17 @@ class Template2Test(unittest.TestCase):
             self.assertEqual(tc, a.strRecord())
         a = pytrap.UnirecTemplate("ipaddr DST_IP,time TIME_FIRST,uint32 BCD,string TEXT2,bytes STREAMBYTES")
         self.assertEqual(a.getFieldsDict(), {'BCD': 3, 'DST_IP': 6, 'TIME_FIRST': 1, 'STREAMBYTES': 5, 'TEXT2': 7})
-        try:
+
+        # Data was not set, this should raise exception.
+        with self.assertRaises(pytrap.TrapError):
             a.DST_IP = pytrap.UnirecIPAddr("4.4.4.4")
-        except:
-            pass
-        else:
-            self.fail("Data was not set, this should raise exception.")
+
         a.createMessage(100)
-        try:
+
+        # This template has no SRC_IP.
+        with self.assertRaises(AttributeError):
             a.SRC_IP = pytrap.UnirecIPAddr("4.4.4.4")
-        except:
-            pass
-        else:
-            self.fail("This template has no SRC_IP.")
+
         a.DST_IP = pytrap.UnirecIPAddr("4.4.4.4")
         a.STREAMBYTES = bytearray(b"hello")
         valdict = {}
@@ -296,9 +462,10 @@ class Template2Test(unittest.TestCase):
 class Template3Test(unittest.TestCase):
     def runTest(self):
         import pytrap
-        a = pytrap.UnirecTemplate("ipaddr IP,time TIME,uint64 U64,uint32 U32,uint16 U16,uint8 U8,int64 I64,int32 I32,int16 I16,int8 I8,float FL,double DB,char CHR,string TEXT,bytes STREAMBYTES")
+        a = pytrap.UnirecTemplate("ipaddr IP, macaddr MAC,time TIME,uint64 U64,uint32 U32,uint16 U16,uint8 U8,int64 I64,int32 I32,int16 I16,int8 I8,float FL,double DB,char CHR,string TEXT,bytes STREAMBYTES")
         a.createMessage(100)
         a.IP = pytrap.UnirecIPAddr("1.2.3.4")
+        a.MAC = pytrap.UnirecMACAddr("1:2:3:4:5:6")
         a.TIME = pytrap.UnirecTime(123456)
         a.U64 = 0x100000000
         a.U32 = 0x10000
@@ -315,6 +482,7 @@ class Template3Test(unittest.TestCase):
         a.STREAMBYTES = b"streambytes"
 
         self.assertTrue(a.IP == pytrap.UnirecIPAddr("1.2.3.4"))
+        self.assertTrue(a.MAC == pytrap.UnirecMACAddr("1:2:3:4:5:6"))
         self.assertTrue(a.TIME == pytrap.UnirecTime(123456))
         self.assertTrue(a.U64 == 0x100000000)
         self.assertTrue(a.U32 == 0x10000)
@@ -332,6 +500,7 @@ class Template3Test(unittest.TestCase):
 
         # Check types
         self.assertEqual(type(a.IP), pytrap.UnirecIPAddr)
+        self.assertEqual(type(a.MAC), pytrap.UnirecMACAddr)
         self.assertEqual(type(a.TIME), pytrap.UnirecTime)
         self.assertEqual(type(a.U64), long)
         self.assertEqual(type(a.U32), int)
@@ -348,6 +517,7 @@ class Template3Test(unittest.TestCase):
         self.assertEqual(type(a.STREAMBYTES), bytearray)
 
         self.assertEqual(a.getFieldType("IP"), pytrap.UnirecIPAddr)
+        self.assertEqual(a.getFieldType("MAC"), pytrap.UnirecMACAddr)
         self.assertEqual(a.getFieldType("TIME"), pytrap.UnirecTime)
         self.assertEqual(a.getFieldType("U64"), long)
         self.assertEqual(a.getFieldType("U32"), long)
@@ -371,8 +541,14 @@ class TemplateSizeTest(unittest.TestCase):
         self.assertEqual(a.recSize(data), 50)
         self.assertEqual(a.recFixlenSize(), 40)
         self.assertEqual(a.recVarlenSize(data), 10)
-        self.assertRaises(TypeError, a.recSize)  # recSize can't by called without arguments unless data was set by setData
-        self.assertRaises(TypeError, a.recVarlenSize)
+
+        # recSize can't be called without arguments unless data was set by setData
+        with self.assertRaises(TypeError):
+            a.recSize()
+
+        with self.assertRaises(TypeError):
+            a.recVarlenSize()
+
         a.setData(data)
         self.assertEqual(a.recSize(), 50) # now it should be OK
         self.assertEqual(a.recVarlenSize(), 10)
@@ -397,21 +573,17 @@ class TemplateSizeTest(unittest.TestCase):
 class DataTypesIPAddrRange(unittest.TestCase):
     def runTest(self):
         import pytrap
-        try:
-            ip1 = pytrap.UnirecIPAddrRange("1.2.3.4")
-            self.fail("2 arguments or <ip>/<netmask> are required")
-        except:
-            pass
-        try:
-            ip1 = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("1.2.3.4"))
-            self.fail("2 arguments or <ip>/<netmask> are required")
-        except:
-            pass
-        try:
-            ip1 = pytrap.UnirecIPAddrRange(1, 2)
-            self.fail("Integer arguments are not supported.")
-        except:
-            pass
+
+        # 2 arguments or <ip>/<netmask> are required
+        with self.assertRaises(TypeError):
+            pytrap.UnirecIPAddrRange("1.2.3.4")
+        with self.assertRaises(TypeError):
+            pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("1.2.3.4"))
+
+        # Integer arguments are not supported
+        with self.assertRaises(TypeError):
+            pytrap.UnirecIPAddrRange(1, 2)
+
         ip1 = pytrap.UnirecIPAddrRange("192.168.3.1/24")
         self.assertEqual(ip1, ip1)
         self.assertEqual(type(ip1), pytrap.UnirecIPAddrRange, "Bad type of IP address Range object.")
