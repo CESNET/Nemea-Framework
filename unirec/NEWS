@@ -1,3 +1,9 @@
+2019-04-18 (Tomas Cejka): unirec: csv: add missing include
+2019-04-18 (Tomas Cejka): unirec: csv: add missing test
+2019-04-09 (Ulrik Haugen): Tune mac address tests
+2019-04-08 (Tomas Cejka): unirec: add API for translation into CSV
+2019-04-07 (Tomas Cejka): unirec: macaddr: conversion from/to string using sscanf/snprintf
+
 2019-03-19 (Tomas Cejka): unirec: time: add tests of ur_time_from_str() with UTC timezone
 2019-03-19 (Tomas Cejka): unirec: time: add support for UTF timestamp string (ending with 'Z')
 2019-03-14 (Tomas Cejka): unirec: time: improved test (timediff), fixed typo
