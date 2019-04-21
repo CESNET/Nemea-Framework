@@ -215,7 +215,6 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Set log level
     logging.basicConfig(level=(args.verbose*10), format=FORMAT)
 
-
     parsed_config = Config.Parser(args.config)
     if not parsed_config or not parsed_config.config:
         print("error: Parsing configuration file failed.")
