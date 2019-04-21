@@ -1,3 +1,6 @@
+2019-04-21 unirec-2.5.1
+	* UniRec2CSV: bugfixes string termination
+
 2019-04-20 unirec-2.5.0
 	* Fixed MAC address conversion functions
 	* Added API for UniRec to CSV conversion

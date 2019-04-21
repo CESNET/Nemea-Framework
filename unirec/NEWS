@@ -1,3 +1,5 @@
+2019-04-21 (Tomas Cejka): unirec: BUGFIX missing string termination & bad move of curpos
+
 2019-04-18 (Tomas Cejka): unirec: csv: add missing include
 2019-04-18 (Tomas Cejka): unirec: csv: add missing test
 2019-04-09 (Ulrik Haugen): Tune mac address tests
