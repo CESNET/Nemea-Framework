@@ -1174,7 +1174,7 @@ static int send_data(tcpip_sender_private_t *priv, client_t *c)
    pthread_mutex_lock(&priv->accept_lock);
 
 again:
-   sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL | MSG_DONTWAIT);
+   sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL);
 
    if (sent < 0) {
       /* Send failed */
@@ -1229,7 +1229,7 @@ again:
  */
 static void *sending_thread_func(void *priv)
 {
-   uint32_t i;
+   uint32_t i, j;
    int res;
    int maxsd = -1;
    fd_set set, disset;
@@ -1245,14 +1245,6 @@ static void *sending_thread_func(void *priv)
    while (1) {
       if (c->is_terminated != 0) {
          pthread_exit(NULL);
-      } else if (c->connected_clients == 0) {
-         usleep(10000);
-         continue;
-      }
-
-      //* Handle autoflush - if current active buffer wasnt finished until timeout elapsed, it will be finished now */
-      if (get_cur_timestamp() - c->autoflush_timestamp >= c->timeout_autoflush) {
-         //tcpip_sender_flush(c);
       }
 
       FD_ZERO(&disset);
@@ -1266,18 +1258,28 @@ static void *sending_thread_func(void *priv)
       }
 
       /* Check whether clients are connected and there is data for them to receive. */
-      for (i = 0; i < c->clients_arr_size; ++i) {
+      for (i = j = 0; i < c->clients_arr_size; ++i) {
+         if (j == c->connected_clients) {
+            break;
+         }
+
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         if (cl->sd <= 0 || assigned_buffer->finished == 0) {
+         if (cl->sd <= 0) {
             continue;
          }
-         if (maxsd < cl->sd) {
-            maxsd = cl->sd;
+
+         ++j;
+
+         if (assigned_buffer->finished == 0) {
+            continue;
          }
 
          FD_SET(cl->sd, &disset);
+         if (maxsd < cl->sd) {
+            maxsd = cl->sd;
+         }
 
          if (cl->pending_bytes <= 0) {
             if (cl->received_buffers == c->finished_buffers) {
@@ -1286,6 +1288,7 @@ static void *sending_thread_func(void *priv)
             cl->sending_pointer = assigned_buffer->header;
             cl->pending_bytes = assigned_buffer->wr_index + sizeof(assigned_buffer->wr_index);
          }
+
          FD_SET(cl->sd, &set);
          ++client_ready;
       }
@@ -1309,11 +1312,17 @@ static void *sending_thread_func(void *priv)
       }
 
       /* Check file descriptors. Disconnect "inactive" clients and send data to those designated by select */
-      for (i=0; i<c->clients_arr_size; ++i) {
+      for (i = j = 0; i < c->clients_arr_size; ++i) {
+         if (j == c->connected_clients) {
+            break;
+         }
+
          cl = &(c->clients[i]);
          if (cl->sd < 0) {
             continue;
          }
+
+         ++j;
 
          /* Check if client is still connected */
          if (FD_ISSET(cl->sd, &disset)) {
@@ -1377,11 +1386,6 @@ int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
    buffer_t* buffer = &c->buffers[c->active_buffer];
    uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
 
-   /* If timeout is wait or half wait, we need to set some valid timeout value (>= 0)*/
-   if (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) {
-      timeout = 10000;
-   }
-
    /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
    if ((size + sizeof(size)) > c->buffer_size) {
       VERBOSE(CL_ERROR, "Buffer is too small for this message. Skipping...");
@@ -1395,33 +1399,21 @@ repeat:
       return TRAP_E_TERMINATED;
    }
 
-   if (c->connected_clients == 0) {
-      if (block == 0) {
-         if (buffer->finished == 1) {
-            /* Drop oldest buffer */
-            buffer->finished = 0;
-            buffer->wr_index = 0;
-            buffer->sent_to = 0;
-            pthread_mutex_unlock(&buffer->lock);
-         }
-         goto store_msg;
-      } else {
-         goto repeat;
-      }
-   } else if (buffer->finished == 0) {
+   if (buffer->finished == 0) {
       goto store_msg;
    }
 
+   /* If timeout is wait or half wait, we need to set some valid timeout value (>= 0)*/
+   if (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) {
+      timeout = 10000;
+   }
+
    clock_gettime(CLOCK_REALTIME, &timeout_store);
-   /* If number of nanoseconds is greater or equal to 1 second, timedlock will fail */
-   while (timeout >= 1000000) {
-      timeout -= 1000000;
+   if (timeout_store.tv_nsec += timeout * 1000 >= 1000000000) {
+      timeout_store.tv_nsec -= timeout * 1000;
       timeout_store.tv_sec += 1;
    }
-   if ((timeout_store.tv_nsec += timeout * 1000) >= 1000000000) {
-      timeout_store.tv_nsec -= 1000000000;
-      timeout_store.tv_sec += 1;
-   }
+
    /* Wait until we obtain buffer lock or until timeout elapses */
    res = pthread_mutex_timedlock(&buffer->lock, &timeout_store);
    switch (res) {
