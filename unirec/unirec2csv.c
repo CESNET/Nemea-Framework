@@ -53,12 +53,13 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
    }
 
    urcsv->curpos = urcsv->buffer;
+   urcsv->free_space = urcsv->buffer_size;
 
    // Iterate over all output fields
    while ((id = ur_iter_fields_record_order(urcsv->tmplt, i++)) != UR_ITER_END) {
       if (delim != 0) {
          *(urcsv->curpos++) = urcsv->delimiter;
-         urcsv->free_space -= written;
+         urcsv->free_space -= 1;
       }
 
       delim = 1;
@@ -157,6 +158,7 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
                }
                *(urcsv->curpos++) = '"';
                urcsv->free_space--;
+               goto skipped_move;
             }
             break;
          case UR_TYPE_BYTES:
@@ -207,6 +209,7 @@ skipped_move:
       }
    } // loop over fields
 
+   *urcsv->curpos = 0;
    return strdup(urcsv->buffer);
 }
 
