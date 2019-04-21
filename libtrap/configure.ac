@@ -161,6 +161,8 @@ AC_FUNC_FORK
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime memset munmap select socket strchr strdup strerror dup2 mkdir])
 
+AX_ATOMIC8()
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  include/Makefile
