@@ -362,5 +362,12 @@ struct trap_buffer_header_s {
 } __attribute__ ((__packed__));
 typedef struct trap_buffer_header_s trap_buffer_header_t;
 
+#ifndef ATOMICOPS
+_Bool __sync_bool_compare_and_swap_8(int64_t *ptr, int64_t oldvar, int64_t newval);
+
+uint64_t __sync_fetch_and_add_8(uint64_t *ptr, uint64_t value);
+
+#endif
+
 #endif
 
