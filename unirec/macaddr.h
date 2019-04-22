@@ -56,6 +56,14 @@ extern "C" {
 
 #define MAC_STR_LEN 18
 
+#ifndef PRIx8
+#define PRIx8 "x"
+#endif
+
+#ifndef SCNx8
+#define SCNx8 "hhx"
+#endif
+
 #define MAC_ADD_FORMAT_SCN "%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ":%02" SCNx8 ""
 #define MAC_ADD_FORMAT_PRI "%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ":%02" PRIx8 ""
 
