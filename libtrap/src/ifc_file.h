@@ -62,6 +62,7 @@ typedef struct file_private_s {
    char mode[3];
    char is_terminated;
    char is_gzip;
+   char is_input;
    uint8_t neg_initialized;
    time_t create_time;
    size_t file_index;

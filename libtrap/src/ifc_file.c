@@ -431,11 +431,18 @@ char *get_next_file(void *priv)
    return NULL;
 }
 
-char check_gzip_format(FILE *fd)
+char check_gzip_format(file_private_t *priv)
 {
+   if (priv->is_input == 0) {
+      /* gzip is supported for input IFC only */
+      return 0;
+   }
+
    char ret = 0;
+
+#ifdef HAVE_ZLIB_H
    char magic[3];
-   fread(magic, 3, 1, fd);
+   fread(magic, 3, 1, priv->fd);
    if (memcmp(magic, "\x1f\x8b\x08", 3) == 0) {
       /* discovered gzip format */
       VERBOSE(CL_VERBOSE_BASIC, "gzip format");
@@ -443,9 +450,10 @@ char check_gzip_format(FILE *fd)
    } else {
       VERBOSE(CL_VERBOSE_BASIC, "normal format");
    }
-   ungetc(magic[2], fd);
-   ungetc(magic[1], fd);
-   ungetc(magic[0], fd);
+   ungetc(magic[2], priv->fd);
+   ungetc(magic[1], priv->fd);
+   ungetc(magic[0], priv->fd);
+#endif
 
    return ret;
 }
@@ -484,7 +492,7 @@ int open_next_file(file_private_t *c, char *new_filename)
       return TRAP_E_BADPARAMS;
    }
 
-   c->is_gzip = check_gzip_format(c->fd);
+   c->is_gzip = check_gzip_format(c);
    if (c->is_gzip) {
       zlibifc_init(c);
    }
@@ -718,7 +726,8 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
       free(priv);
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "INPUT FILE IFC[%"PRIu32"]: Unable to open file.", idx);
    }
-   priv->is_gzip = check_gzip_format(priv->fd);
+   priv->is_input = 1;
+   priv->is_gzip = check_gzip_format(priv);
    if (priv->is_gzip) {
       zlibifc_init(priv);
    }
@@ -968,6 +977,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
          params_next = params_next + length + 1;
       }
    }
+   priv->is_input = 0;
+   priv->is_gzip = 0;
 
    /* Create first filename from the prepared template */
    int status = create_next_filename(priv);
