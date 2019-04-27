@@ -354,7 +354,7 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
 int create_next_filename(void *priv)
 {
    file_private_t *config = (file_private_t*) priv;
-   char buf[SAFE_PATH];
+   char buf[SAFE_PATH + 100];
    config->create_time = time(NULL);
    if (config->create_time == -1) {
       VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Unable to retrieve current timestamp.", config->ifc_idx);
