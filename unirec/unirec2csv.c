@@ -42,6 +42,139 @@ char *urcsv_header(urcsv_t *urcsv)
    return ur_template_string_delimiter(urcsv->tmplt, urcsv->delimiter);
 }
 
+int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, ur_template_t *tmplt)
+{
+   int written = 0;
+   char *p = dst;
+
+   // Get pointer to the field (valid for static fields only)
+   void *ptr = ur_get_ptr_by_id(tmplt, rec, id);
+
+   // Static field - check what type is it and use appropriate format
+   switch (ur_get_type(id)) {
+   case UR_TYPE_UINT8:
+      written = snprintf(p, size, "%" PRIu8, *(uint8_t*) ptr);
+      break;
+   case UR_TYPE_UINT16:
+      written = snprintf(p, size, "%" PRIu16, *(uint16_t*) ptr);
+      break;
+   case UR_TYPE_UINT32:
+      written = snprintf(p, size, "%" PRIu32, *(uint32_t*) ptr);
+      break;
+   case UR_TYPE_UINT64:
+      written = snprintf(p, size, "%" PRIu64, *(uint64_t*) ptr);
+      break;
+   case UR_TYPE_INT8:
+      written = snprintf(p, size, "%" PRIi8, *(int8_t*) ptr);
+      break;
+   case UR_TYPE_INT16:
+      written = snprintf(p, size, "%" PRIi16, *(int16_t*) ptr);
+      break;
+   case UR_TYPE_INT32:
+      written = snprintf(p, size, "%" PRIi32, *(int32_t*) ptr);
+      break;
+   case UR_TYPE_INT64:
+      written = snprintf(p, size, "%" PRIi64, *(int64_t*) ptr);
+      break;
+   case UR_TYPE_CHAR:
+      written = snprintf(p, size, "%c", *(char*) ptr);
+      break;
+   case UR_TYPE_FLOAT:
+      written = snprintf(p, size, "%f", *(float*) ptr);
+      break;
+   case UR_TYPE_DOUBLE:
+      written = snprintf(p, size, "%f", *(double*) ptr);
+      break;
+   case UR_TYPE_IP:
+      {
+         // IP address - convert to human-readable format and print
+         char str[46];
+         ip_to_str((ip_addr_t*) ptr, str);
+         written = snprintf(p, size, "%s", str);
+      }
+      break;
+   case UR_TYPE_MAC:
+      {
+         // MAC address - convert to human-readable format and print
+         char str[MAC_STR_LEN];
+         mac_to_str((mac_addr_t *) ptr, str);
+         written = snprintf(p, size, "%s", str);
+      }
+      break;
+   case UR_TYPE_TIME:
+      {
+         // Timestamp - convert to human-readable format and print
+         time_t sec = ur_time_get_sec(*(ur_time_t*)ptr);
+         int msec = ur_time_get_msec(*(ur_time_t*)ptr);
+         char str[32];
+         strftime(str, 31, "%FT%T", gmtime(&sec));
+         written = snprintf(p, size, "%s.%03i", str, msec);
+      }
+      break;
+   case UR_TYPE_STRING:
+      {
+         // Printable string - print it as it is
+         int fs = ur_get_var_len(tmplt, rec, id);
+         char *data = ur_get_ptr_by_id(tmplt, rec, id);
+         *(p++) = '"';
+         written++;
+
+         while (fs-- && (written < size)) {
+            switch (*data) {
+            case '\n': // Replace newline with space
+               /* TODO / FIXME possible bug - info lost */
+               *(p++) = ' ';
+               written++;
+               break;
+            case '"' : // Double quotes in string
+               *(p++) = '"';
+               written++;
+               *(p++) = '"';
+               written++;
+               break;
+            default: // Check if character is printable
+               if (isprint(*data)) {
+                  *(p++) = *data;
+                  written++;
+               }
+            }
+            data++;
+         }
+         *(p++) = '"';
+         written++;
+      }
+      break;
+   case UR_TYPE_BYTES:
+      {
+         // Generic string of bytes - print each byte as two hex digits
+         int fs = ur_get_var_len(tmplt, rec, id);
+         unsigned char *data = ur_get_ptr_by_id(tmplt, rec, id);
+         while (fs-- && (written < size)) {
+            int w = snprintf(p, size, "%02x", *data++);
+            written += w;
+            p += w;
+         }
+      }
+      break;
+   default:
+      {
+         // Unknown type - print the value in hex
+         int fs = ur_get_len(tmplt, rec, id);
+         strncpy(p, "0x", size);
+         written += 2;
+         p += 2;
+         for (int i = 0; i < fs && written < size; i++) {
+            int w = snprintf(p, size - written, "%02x", ((unsigned char *) ptr)[i]);
+            written += w;
+            p += w;
+         }
+      }
+      break;
+   } // case (field type)
+
+   return written;
+}
+
 char *urcsv_record(urcsv_t *urcsv, const void *rec)
 {
    int delim = 0;
@@ -64,137 +197,15 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
 
       delim = 1;
       if (ur_is_present(urcsv->tmplt, id)) {
-         // Get pointer to the field (valid for static fields only)
-         void *ptr = ur_get_ptr_by_id(urcsv->tmplt, rec, id);
          // Static field - check what type is it and use appropriate format
-         switch (ur_get_type(id)) {
-         case UR_TYPE_UINT8:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIu8, *(uint8_t*) ptr);
-            break;
-         case UR_TYPE_UINT16:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIu16, *(uint16_t*) ptr);
-            break;
-         case UR_TYPE_UINT32:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIu32, *(uint32_t*) ptr);
-            break;
-         case UR_TYPE_UINT64:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIu64, *(uint64_t*) ptr);
-            break;
-         case UR_TYPE_INT8:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIi8, *(int8_t*) ptr);
-            break;
-         case UR_TYPE_INT16:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIi16, *(int16_t*) ptr);
-            break;
-         case UR_TYPE_INT32:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIi32, *(int32_t*) ptr);
-            break;
-         case UR_TYPE_INT64:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%" PRIi64, *(int64_t*) ptr);
-            break;
-         case UR_TYPE_CHAR:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%c", *(char*) ptr);
-            break;
-         case UR_TYPE_FLOAT:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%f", *(float*) ptr);
-            break;
-         case UR_TYPE_DOUBLE:
-            written = snprintf(urcsv->curpos, urcsv->free_space, "%f", *(double*) ptr);
-            break;
-         case UR_TYPE_IP:
-            {
-               // IP address - convert to human-readable format and print
-               char str[46];
-               ip_to_str((ip_addr_t*) ptr, str);
-               written = snprintf(urcsv->curpos, urcsv->free_space, "%s", str);
-            }
-            break;
-         case UR_TYPE_MAC:
-            {
-               // MAC address - convert to human-readable format and print
-               char str[MAC_STR_LEN];
-               mac_to_str((mac_addr_t *) ptr, str);
-               written = snprintf(urcsv->curpos, urcsv->free_space, "%s", str);
-            }
-            break;
-         case UR_TYPE_TIME:
-            {
-               // Timestamp - convert to human-readable format and print
-               time_t sec = ur_time_get_sec(*(ur_time_t*)ptr);
-               int msec = ur_time_get_msec(*(ur_time_t*)ptr);
-               char str[32];
-               strftime(str, 31, "%FT%T", gmtime(&sec));
-               written = snprintf(urcsv->curpos, urcsv->free_space, "%s.%03i", str, msec);
-            }
-            break;
-         case UR_TYPE_STRING:
-            {
-               // Printable string - print it as it is
-               int size = ur_get_var_len(urcsv->tmplt, rec, id);
-               char *data = ur_get_ptr_by_id(urcsv->tmplt, rec, id);
-               *(urcsv->curpos++) = '"';
-               urcsv->free_space--;
+         written = urcsv_field(urcsv->curpos, urcsv->free_space, rec, id, urcsv->tmplt);
 
-               while (size--) {
-                  switch (*data) {
-                  case '\n': // Replace newline with space
-                     /* TODO / FIXME possible bug - info lost */
-                     *(urcsv->curpos++) = ' ';
-                     urcsv->free_space--;
-                     break;
-                  case '"' : // Double quotes in string
-                     *(urcsv->curpos++) = '"';
-                     urcsv->free_space--;
-                     *(urcsv->curpos++) = '"';
-                     urcsv->free_space--;
-                     break;
-                  default: // Check if character is printable
-                     if (isprint(*data)) {
-                        *(urcsv->curpos++) = *data;
-                        urcsv->free_space--;
-                     }
-                  }
-                  data++;
-               }
-               *(urcsv->curpos++) = '"';
-               urcsv->free_space--;
-               goto skipped_move;
-            }
-            break;
-         case UR_TYPE_BYTES:
-            {
-               // Generic string of bytes - print each byte as two hex digits
-               int size = ur_get_var_len(urcsv->tmplt, rec, id);
-               unsigned char *data = ur_get_ptr_by_id(urcsv->tmplt, rec, id);
-               while (size--) {
-                  written = snprintf(urcsv->curpos, urcsv->free_space, "%02x", *data++);
-                  urcsv->free_space -= written;
-                  urcsv->curpos += written;
-               }
-               goto skipped_move;
-            }
-            break;
-         default:
-            {
-               // Unknown type - print the value in hex
-               int size = ur_get_len(urcsv->tmplt, rec, id);
-               strncpy(urcsv->curpos, "0x", urcsv->free_space);
-               urcsv->free_space -= 2;
-               urcsv->curpos += 2;
-               for (int i = 0; i < size; i++) {
-                  written = snprintf(urcsv->curpos, urcsv->free_space, "%02x", ((unsigned char*)ptr)[i]);
-                  urcsv->free_space -= written;
-                  urcsv->curpos += written;
-               }
-               goto skipped_move;
-            }
-            break;
-         } // case (field type)
          urcsv->free_space -= written;
          urcsv->curpos += written;
-      } // if present
+      } else {
+         continue;
+      }
 
-skipped_move:
       if (urcsv->free_space < 100) {
          urcsv->free_space += urcsv->buffer_size / 2;
          urcsv->buffer_size += urcsv->buffer_size / 2;
