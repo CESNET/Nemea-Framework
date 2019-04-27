@@ -105,8 +105,6 @@ void zerr_read(int ret)
 
 int zlibifc_init(file_private_t *priv)
 {
-   int ret;
-
    priv->zlib_instate = Z_OK;
 
    /* allocate inflate state */
@@ -115,44 +113,45 @@ int zlibifc_init(file_private_t *priv)
    priv->zlib_strm.opaque = Z_NULL;
    priv->zlib_strm.avail_in = 0;
    priv->zlib_strm.next_in = Z_NULL;
-   ret = inflateInit2(&priv->zlib_strm, 16+MAX_WBITS);
-   if (ret != Z_OK) {
-      return ret;
-   }
    priv->zlib_strm.avail_out = ZLIB_CHUNK;
-   priv->zlib_repeat = 0;
-   return Z_OK;
+   priv->outdata_avail = 0;
+   priv->outdata_p = priv->zlib_outdata;
+   return inflateInit2(&priv->zlib_strm, 16+MAX_WBITS);
 }
 
+/** Read new compressed data and decompress them, load them zlib_outdata and set apropriate variables.
+ *
+ *  @param[in] priv    Pointer to the private file IFC context.
+ *
+ *  @return Z_OK on success, Z_STREAM_END on end, Z_ERRNO on error
+ */
 int zlib_loadinf(file_private_t *priv)
 {
-   unsigned char in[ZLIB_CHUNK];
+   /* Read from file if input buffer is empty and stream is not ended */
+   if (priv->zlib_instate != Z_STREAM_END && priv->zlib_strm.avail_in == 0) {
+      priv->zlib_strm.avail_in = fread(priv->zlib_indata, 1, ZLIB_CHUNK, priv->fd);
 
-   if (priv->zlib_repeat) {
-      goto decompress;
-   }
+      VERBOSE(CL_VERBOSE_LIBRARY, "ZLIB: Read %u B from file.", priv->zlib_strm.avail_in);
 
-   /* decompress until deflate stream ends or end of file */
-   if (priv->zlib_instate != Z_STREAM_END) {
-      priv->zlib_strm.avail_in = fread(in, 1, ZLIB_CHUNK, priv->fd);
-      VERBOSE(CL_VERBOSE_BASIC, "Read %u B from file.", priv->zlib_strm.avail_in);
       if (ferror(priv->fd)) {
-         (void)inflateEnd(&priv->zlib_strm);
+         (void) inflateEnd(&priv->zlib_strm);
          return Z_ERRNO;
       }
       if (priv->zlib_strm.avail_in == 0) {
          priv->zlib_instate = Z_STREAM_END;
       }
-      priv->zlib_strm.next_in = in;
-
-      /* done when inflate() says it's done */
+      /* reset next_in to the beginning of incoming data */
+      priv->zlib_strm.next_in = priv->zlib_indata;
+   } else {
+      VERBOSE(CL_VERBOSE_LIBRARY, "ZLIB: Skip file reading, instate: %u, %uB available", priv->zlib_instate, priv->zlib_strm.avail_in);
    }
-decompress:
-   /* run inflate() on input until output buffer not full */
+   /* run inflate() on input until output buffer not full or input is not empty */
    priv->zlib_strm.avail_out = ZLIB_CHUNK;
    priv->zlib_strm.next_out = priv->zlib_outdata;
+   VERBOSE(CL_VERBOSE_LIBRARY, "ZLIB: Inflate: in %p, avail_in: %u, out %p, avail_out: %u", priv->zlib_strm.next_in, priv->zlib_strm.avail_in,  priv->zlib_strm.next_out, priv->zlib_strm.avail_out);
+
    priv->zlib_instate = inflate(&priv->zlib_strm, Z_NO_FLUSH);
-   //assert(priv->zlib_instate != Z_STREAM_ERROR);  /* state not clobbered */
+
    switch (priv->zlib_instate) {
    case Z_NEED_DICT:
       priv->zlib_instate = Z_DATA_ERROR;     /* and fall through */
@@ -161,25 +160,28 @@ decompress:
       (void) inflateEnd(&priv->zlib_strm);
       return priv->zlib_instate;
    }
-   priv->outdata_size = ZLIB_CHUNK - priv->zlib_strm.avail_out;
-   priv->outdata_avail = priv->outdata_size;
+   priv->outdata_avail = ZLIB_CHUNK - priv->zlib_strm.avail_out;
    priv->outdata_p = priv->zlib_outdata;
-   priv->zlib_repeat = !priv->zlib_strm.avail_out;
-   VERBOSE(CL_VERBOSE_BASIC, "Decompressed %u B, repeat %i.", priv->outdata_size, priv->zlib_repeat);
+   VERBOSE(CL_VERBOSE_BASIC, "ZLIB: Decompressed %u B.", priv->outdata_avail);
 
    return priv->zlib_instate;
 }
 
-void zlib_close(file_private_t *priv)
-{
-   /* clean up and return */
-   (void) inflateEnd(&priv->zlib_strm);
-}
-
+/** Read decompressed data.
+ *
+ *  Return decompressed data from zlib_outdata, decompress next chunk if needed using zlib_loadinf().
+ *
+ *  @param[in] priv    Pointer to the private file IFC context.
+ *  @param[out] ptr    Pointer to memory where to store data.
+ *  @param[in] size    Size of element to read.
+ *  @param[in] nmemb   Number of elements to read.
+ *
+ *  @return Number of read elements.
+ */
 size_t zlib_fread(file_private_t *priv, void *ptr, size_t size, size_t nmemb)
 {
    int ret;
-   size_t wanted_nmemb = nmemb;
+   size_t wanted_size = size * nmemb;
    void *temp_ptr = ptr;
 restart:
    if (priv->outdata_avail == 0) {
@@ -192,16 +194,15 @@ restart:
          zerr_read(ret);
       }
    }
-   if (priv->outdata_avail / size >= 1) {
-      size_t avail_memb = priv->outdata_avail / size;
-      size_t tw_memb = wanted_nmemb < avail_memb ? wanted_nmemb : avail_memb;
-      size_t tw_size = tw_memb * size;
+   if (priv->outdata_avail >= 1) {
+      size_t tw_size = wanted_size < priv->outdata_avail ? wanted_size : priv->outdata_avail;
+      VERBOSE(CL_VERBOSE_LIBRARY, "ZLIB: copy %lu B of decompressed data out of wanted %lu B to %p, remaining %lu B", tw_size, wanted_size, temp_ptr, priv->outdata_avail - tw_size);
       memcpy(temp_ptr, priv->outdata_p, tw_size);
       priv->outdata_p += tw_size;
       temp_ptr += tw_size;
       priv->outdata_avail -= tw_size;
-      wanted_nmemb -= tw_memb;
-      if (wanted_nmemb > 0) {
+      wanted_size -= tw_size;
+      if (wanted_size > 0) {
          goto restart;
       }
    } else {

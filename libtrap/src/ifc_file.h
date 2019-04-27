@@ -44,11 +44,14 @@
 #define _TRAP_IFC_FILE_H_
 
 #include <limits.h>
+
 #ifdef HAVE_ZLIB_H
-#include <zlib.h>
+#  include <zlib.h>
+#  define ZLIB_CHUNK (2 * TRAP_IFC_MESSAGEQ_SIZE)
 #endif
 
 #include "trap_ifc.h"
+
 
 typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
@@ -67,18 +70,37 @@ typedef struct file_private_s {
    uint32_t file_change_size;
    uint32_t file_change_time;
 #ifdef HAVE_ZLIB_H
+   /**
+    * Internal structure for zlib
+    */
    z_stream zlib_strm;
+
+   /**
+    * State of zlib inflate, signalizes Z_STREAM_END.
+    */
    int zlib_instate;
-   unsigned char zlib_outdata[TRAP_IFC_MESSAGEQ_SIZE];
+
+   /**
+    * Input buffer for zlib
+    */
+   unsigned char zlib_outdata[ZLIB_CHUNK];
+
+   /**
+    * Output buffer for zlib
+    */
+   unsigned char zlib_indata[ZLIB_CHUNK];
+
+   /**
+    * Pointer into zlib_outdata, used to serve decompressed data via zlib_fread()
+    */
    unsigned char *outdata_p;
-   char zlib_repeat;
+
+   /**
+    * Size of available decompressed data via zlib_fread()
+    */
    uint32_t outdata_avail;
-   uint32_t outdata_size;
 #endif
 } file_private_t;
-
-#define ZLIB_CHUNK TRAP_IFC_MESSAGEQ_SIZE
-//16384
 
 /** Create file receive interface (input ifc).
  *  Receive function of this interface reads data from defined file.
