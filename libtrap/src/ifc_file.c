@@ -215,6 +215,24 @@ restart:
  */
 #endif
 
+size_t file_ifc_fread(file_private_t *priv, void *ptr, size_t size, size_t nmemb)
+{
+   size_t ret_val;
+
+#ifdef HAVE_ZLIB_H
+   if (priv->is_gzip) {
+      ret_val = zlib_fread(priv, ptr, size, nmemb);
+   } else {
+#endif
+
+      ret_val = fread(ptr, size, nmemb, priv->fd);
+
+#ifdef HAVE_ZLIB_H
+   }
+#endif
+   return ret_val;
+}
+
 /**
  * \brief Close file and free allocated memory.
  * \param[in] priv   pointer to module private data

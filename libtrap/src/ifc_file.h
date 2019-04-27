@@ -100,8 +100,14 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
  */
 int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx);
 
-#ifdef HAVE_ZLIB_H
-size_t zlib_fread(file_private_t *priv, void *ptr, size_t size, size_t nmemb);
-#endif
+/** Universal fread of file IFC, it can be used to read any supported file type.
+ *  This function should be used outside the file IFC source code.
+ *  @param[in] priv    Pointer to the private file IFC context.
+ *  @param[out] ptr    Pointer to memory where to store data.
+ *  @param[in] size    Size of element to read.
+ *  @param[in] nmemb   Number of elements to read.
+ *  @return Number of read elements.
+ */
+size_t file_ifc_fread(file_private_t *priv, void *ptr, size_t size, size_t nmemb);
 
 #endif
