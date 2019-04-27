@@ -94,6 +94,7 @@ fi
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h stdarg.h string.h sys/socket.h sys/time.h unistd.h pthread.h endian.h locale.h sched.h sys/param.h sys/stat.h sys/types.h getopt.h])
 
 AC_CHECK_HEADERS([zlib.h])
+PKG_CHECK_MODULES([zlib], [zlib], [LIBS="$zlib_LIBS $LIBS"], [])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_LONG_LONG_INT
