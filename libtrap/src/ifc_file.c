@@ -52,6 +52,10 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#ifdef HAVE_ZLIB_H
+#include <zlib.h>
+#endif
+
 #include "../include/libtrap/trap.h"
 #include "trap_ifc.h"
 #include "trap_internal.h"
@@ -71,6 +75,145 @@
  * @{
  */
 
+#ifdef HAVE_ZLIB_H
+/**
+ * \addtogroup file_ifc_gzip gzip support
+ *
+ * gzip support is inspired by zpipe.c example at https://zlib.net/zlib_how.html
+ * @{
+ */
+/* report a zlib or i/o error */
+void zerr_read(int ret)
+{
+   switch (ret) {
+   case Z_ERRNO:
+      VERBOSE(CL_ERROR, "ZLIB: Error reading from input.");
+      break;
+   case Z_STREAM_ERROR:
+      VERBOSE(CL_ERROR, "ZLIB: Invalid compression level.");
+      break;
+   case Z_DATA_ERROR:
+      VERBOSE(CL_ERROR, "ZLIB: invalid or incomplete deflate data.");
+      break;
+   case Z_MEM_ERROR:
+      VERBOSE(CL_ERROR, "ZLIB: Out of memory.");
+      break;
+   case Z_VERSION_ERROR:
+      VERBOSE(CL_ERROR, "ZLIB: zlib version mismatch.");
+   }
+}
+
+int zlibifc_init(file_private_t *priv)
+{
+   int ret;
+
+   priv->zlib_instate = Z_OK;
+
+   /* allocate inflate state */
+   priv->zlib_strm.zalloc = Z_NULL;
+   priv->zlib_strm.zfree = Z_NULL;
+   priv->zlib_strm.opaque = Z_NULL;
+   priv->zlib_strm.avail_in = 0;
+   priv->zlib_strm.next_in = Z_NULL;
+   ret = inflateInit2(&priv->zlib_strm, 16+MAX_WBITS);
+   if (ret != Z_OK) {
+      return ret;
+   }
+   priv->zlib_strm.avail_out = ZLIB_CHUNK;
+   priv->zlib_repeat = 0;
+   return Z_OK;
+}
+
+int zlib_loadinf(file_private_t *priv)
+{
+   unsigned char in[ZLIB_CHUNK];
+
+   if (priv->zlib_repeat) {
+      goto decompress;
+   }
+
+   /* decompress until deflate stream ends or end of file */
+   if (priv->zlib_instate != Z_STREAM_END) {
+      priv->zlib_strm.avail_in = fread(in, 1, ZLIB_CHUNK, priv->fd);
+      VERBOSE(CL_VERBOSE_BASIC, "Read %u B from file.", priv->zlib_strm.avail_in);
+      if (ferror(priv->fd)) {
+         (void)inflateEnd(&priv->zlib_strm);
+         return Z_ERRNO;
+      }
+      if (priv->zlib_strm.avail_in == 0) {
+         priv->zlib_instate = Z_STREAM_END;
+      }
+      priv->zlib_strm.next_in = in;
+
+      /* done when inflate() says it's done */
+   }
+decompress:
+   /* run inflate() on input until output buffer not full */
+   priv->zlib_strm.avail_out = ZLIB_CHUNK;
+   priv->zlib_strm.next_out = priv->zlib_outdata;
+   priv->zlib_instate = inflate(&priv->zlib_strm, Z_NO_FLUSH);
+   //assert(priv->zlib_instate != Z_STREAM_ERROR);  /* state not clobbered */
+   switch (priv->zlib_instate) {
+   case Z_NEED_DICT:
+      priv->zlib_instate = Z_DATA_ERROR;     /* and fall through */
+   case Z_DATA_ERROR:
+   case Z_MEM_ERROR:
+      (void) inflateEnd(&priv->zlib_strm);
+      return priv->zlib_instate;
+   }
+   priv->outdata_size = ZLIB_CHUNK - priv->zlib_strm.avail_out;
+   priv->outdata_avail = priv->outdata_size;
+   priv->outdata_p = priv->zlib_outdata;
+   priv->zlib_repeat = !priv->zlib_strm.avail_out;
+   VERBOSE(CL_VERBOSE_BASIC, "Decompressed %u B, repeat %i.", priv->outdata_size, priv->zlib_repeat);
+
+   return priv->zlib_instate;
+}
+
+void zlib_close(file_private_t *priv)
+{
+   /* clean up and return */
+   (void) inflateEnd(&priv->zlib_strm);
+}
+
+size_t zlib_fread(file_private_t *priv, void *ptr, size_t size, size_t nmemb)
+{
+   int ret;
+   size_t wanted_nmemb = nmemb;
+   void *temp_ptr = ptr;
+restart:
+   if (priv->outdata_avail == 0) {
+      ret = zlib_loadinf(priv);
+      if (ret == Z_STREAM_END) {
+         if (priv->outdata_avail == 0) {
+            return 0;
+         }
+      } else {
+         zerr_read(ret);
+      }
+   }
+   if (priv->outdata_avail / size >= 1) {
+      size_t avail_memb = priv->outdata_avail / size;
+      size_t tw_memb = wanted_nmemb < avail_memb ? wanted_nmemb : avail_memb;
+      size_t tw_size = tw_memb * size;
+      memcpy(temp_ptr, priv->outdata_p, tw_size);
+      priv->outdata_p += tw_size;
+      temp_ptr += tw_size;
+      priv->outdata_avail -= tw_size;
+      wanted_nmemb -= tw_memb;
+      if (wanted_nmemb > 0) {
+         goto restart;
+      }
+   } else {
+      return 0;
+   }
+   return nmemb;
+}
+
+/**
+ * @}
+ */
+#endif
 
 /**
  * \brief Close file and free allocated memory.
@@ -269,6 +412,26 @@ char *get_next_file(void *priv)
    return NULL;
 }
 
+char check_gzip_format(FILE *fd)
+{
+   char ret = 0;
+   char magic[4];
+   fread(magic, 4, 1, fd);
+   if (memcmp(magic, "\x1f\x8b\x08\x00", 4) == 0) {
+      /* discovered gzip format */
+      VERBOSE(CL_VERBOSE_BASIC, "gzip format");
+      ret = 1;
+   } else {
+      VERBOSE(CL_VERBOSE_BASIC, "normal format");
+   }
+   ungetc(magic[3], fd);
+   ungetc(magic[2], fd);
+   ungetc(magic[1], fd);
+   ungetc(magic[0], fd);
+
+   return ret;
+}
+
 int open_next_file(file_private_t *c, char *new_filename)
 {
    if (!c) {
@@ -303,6 +466,10 @@ int open_next_file(file_private_t *c, char *new_filename)
       return TRAP_E_BADPARAMS;
    }
 
+   c->is_gzip = check_gzip_format(c->fd);
+   if (c->is_gzip) {
+      zlibifc_init(c);
+   }
    return TRAP_E_OK;
 }
 
@@ -379,7 +546,11 @@ neg_start:
 #endif
 
    /* Reads 4 bytes from the file, determining the length of bytes to be read to @param[out] data */
-   loaded = fread(&data_size, sizeof(uint32_t), 1, config->fd);
+   if (config->is_gzip) {
+      loaded = zlib_fread(config, &data_size, sizeof(uint32_t), 1);
+   } else {
+      loaded = fread(&data_size, sizeof(uint32_t), 1, config->fd);
+   }
    if (loaded != 1) {
       if (feof(config->fd)) {
          next_file = get_next_file(priv);
@@ -407,7 +578,11 @@ neg_start:
 
    *size = ntohl(data_size);
    /* Reads (*size) bytes from the file */
-   loaded = fread(data, 1, (*size), config->fd);
+   if (config->is_gzip) {
+      loaded = zlib_fread(config, data, 1, (*size));
+   } else {
+      loaded = fread(data, 1, (*size), config->fd);
+   }
    if (loaded != (*size)) {
          VERBOSE(CL_ERROR, "INPUT FILE IFC[%"PRIu32"]: Read incorrect number of bytes from file: %s. Attempted to read %d bytes, but the actual count of bytes read was %zu.", config->ifc_idx, config->filename, (*size), loaded);
    }
@@ -524,6 +699,10 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
       free(priv->files);
       free(priv);
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "INPUT FILE IFC[%"PRIu32"]: Unable to open file.", idx);
+   }
+   priv->is_gzip = check_gzip_format(priv->fd);
+   if (priv->is_gzip) {
+      zlibifc_init(priv);
    }
 
    /* Fills interface structure */

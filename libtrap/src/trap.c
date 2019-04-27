@@ -3282,7 +3282,11 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    p_p = (void *) hello_msg_header;
 
    if (ifc_type == TRAP_IFC_TYPE_FILE) {
-      ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+      if (file_ifc_priv->is_gzip) {
+         ret_val = zlib_fread(file_ifc_priv, p_p, sizeof(char), size);
+      } else {
+         ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+      }
       compare = size;
    } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
       ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);
@@ -3402,7 +3406,11 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
 
       if (hello_msg_header->data_fmt_spec_size > 0) {
          if (ifc_type == TRAP_IFC_TYPE_FILE) {
-            ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+            if (file_ifc_priv->is_gzip) {
+               ret_val = zlib_fread(file_ifc_priv, p_p, sizeof(char), size);
+            } else {
+               ret_val = fread(p_p, sizeof(char), size, file_ifc_priv->fd);
+            }
             compare = size;
          } else if (ifc_type == TRAP_IFC_TYPE_TCPIP || ifc_type == TRAP_IFC_TYPE_UNIX) {
             ret_val = service_get_data(tcp_ifc_priv->sd, size, &p_p);

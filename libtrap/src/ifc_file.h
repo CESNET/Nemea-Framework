@@ -44,6 +44,10 @@
 #define _TRAP_IFC_FILE_H_
 
 #include <limits.h>
+#ifdef HAVE_ZLIB_H
+#include <zlib.h>
+#endif
+
 #include "trap_ifc.h"
 
 typedef struct file_private_s {
@@ -54,6 +58,7 @@ typedef struct file_private_s {
    char filename[PATH_MAX];
    char mode[3];
    char is_terminated;
+   char is_gzip;
    uint8_t neg_initialized;
    time_t create_time;
    size_t file_index;
@@ -61,7 +66,19 @@ typedef struct file_private_s {
    uint32_t ifc_idx;
    uint32_t file_change_size;
    uint32_t file_change_time;
+#ifdef HAVE_ZLIB_H
+   z_stream zlib_strm;
+   int zlib_instate;
+   unsigned char zlib_outdata[TRAP_IFC_MESSAGEQ_SIZE];
+   unsigned char *outdata_p;
+   char zlib_repeat;
+   uint32_t outdata_avail;
+   uint32_t outdata_size;
+#endif
 } file_private_t;
+
+#define ZLIB_CHUNK TRAP_IFC_MESSAGEQ_SIZE
+//16384
 
 /** Create file receive interface (input ifc).
  *  Receive function of this interface reads data from defined file.
@@ -82,5 +99,9 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */
 int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_ifc_t *ifc, uint32_t idx);
+
+#ifdef HAVE_ZLIB_H
+size_t zlib_fread(file_private_t *priv, void *ptr, size_t size, size_t nmemb);
+#endif
 
 #endif
