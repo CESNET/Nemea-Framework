@@ -415,16 +415,15 @@ char *get_next_file(void *priv)
 char check_gzip_format(FILE *fd)
 {
    char ret = 0;
-   char magic[4];
-   fread(magic, 4, 1, fd);
-   if (memcmp(magic, "\x1f\x8b\x08\x00", 4) == 0) {
+   char magic[3];
+   fread(magic, 3, 1, fd);
+   if (memcmp(magic, "\x1f\x8b\x08", 3) == 0) {
       /* discovered gzip format */
       VERBOSE(CL_VERBOSE_BASIC, "gzip format");
       ret = 1;
    } else {
       VERBOSE(CL_VERBOSE_BASIC, "normal format");
    }
-   ungetc(magic[3], fd);
    ungetc(magic[2], fd);
    ungetc(magic[1], fd);
    ungetc(magic[0], fd);
