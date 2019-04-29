@@ -69,8 +69,6 @@ typedef struct buffer_s {
 
    uint8_t *header;                        /**< Pointer to first byte in buffer */
    uint8_t *data;                          /**< Pointer to first byte of buffer payload */
-
-   pthread_mutex_t lock;
 } buffer_t;
 
 typedef struct client_s {
@@ -101,7 +99,7 @@ typedef struct tcpip_sender_private_s {
    enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
 
    uint64_t finished_buffers;              /**< Counter of 'finished' buffers since trap initialization */
-   uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished. Used for autoflush. */
+   uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
 
    uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
    uint32_t connected_clients;             /**< Number of currently connected clients */
@@ -109,14 +107,16 @@ typedef struct tcpip_sender_private_s {
    uint32_t buffer_count;                  /**< Number of buffers used */
    uint32_t buffer_size;                   /**< Buffer size [bytes] */
    uint32_t active_buffer;                 /**< Index of active buffer in 'buffers' array */
+   uint32_t free_buffers;                  /**< Number of unused buffers */
 
    buffer_t *buffers;                      /**< Array of buffer structures */
    client_t *clients;                      /**< Array of client structures */
 
    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
-   pthread_mutex_t lock;                   /**< Interface lock. Used for autoflush. */
-   pthread_mutex_t accept_lock;            /**< Accept lock. Used to prevent rece conditions between accept and send threads. */
+
+   pthread_mutex_t buffer_lock;            /**< Mutex used in pthread_cond_timedwait() when waiting for a free buffer */
+   pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
 } tcpip_sender_private_t;
 
 /**
