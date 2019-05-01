@@ -956,28 +956,60 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
  * \addtogroup tcpip_sender
  * @{
  */
+static uint64_t mask[64] = {
+        1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288,
+        1048576, 2097152, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824,
+        2147483648, 4294967296, 8589934592, 17179869184, 34359738368, 68719476736, 137438953472, 274877906944,
+        549755813888, 1099511627776, 2199023255552, 4398046511104, 8796093022208, 17592186044416, 35184372088832,
+        70368744177664, 140737488355328, 281474976710656, 562949953421312, 1125899906842624, 2251799813685248,
+        4503599627370496, 9007199254740992, 18014398509481984, 36028797018963968, 72057594037927936, 144115188075855872,
+        288230376151711744, 576460752303423488, 1152921504606846976, 2305843009213693952, 4611686018427387904, 9223372036854775808
+};
+
+static inline void set_index(uint64_t *bits, int i)
+{
+   //printf("===add====\nbits:\t%lx\n", *bits);
+   *bits |= mask[i];
+   //printf("res:\t%lx\n", *bits);
+}
+
+static inline void del_index(uint64_t *bits, int i)
+{
+   //printf("===del====\nbits:\t%lx\n", *bits);
+   *bits &= (0xffffffffffffffff - mask[i]);
+   //printf("bits:\t%lx\n", *bits);
+}
+
+static inline uint8_t check_index(uint64_t bits, int i)
+{
+   return (bits & mask[i]);
+}
 
 static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
 {
    int i;
    client_t *c = &priv->clients[cl_id];
 
+   pthread_mutex_lock(&priv->client_lock);
+   for (i = 0; i < priv->buffer_count; ++i) {
+      del_index(&priv->buffers[i].clients_bit_arr, cl_id);
+
+      if (priv->buffers[i].clients_bit_arr == 0) {
+         pthread_mutex_lock(&priv->buffer_lock);
+         priv->free_buffers++;
+         pthread_cond_broadcast(&priv->cond);
+         pthread_mutex_unlock(&priv->buffer_lock);
+      }
+   }
+   del_index(&priv->clients_bit_arr, cl_id);
+   priv->connected_clients--;
+   pthread_mutex_unlock(&priv->client_lock);
+
+   shutdown(c->sd, SHUT_RDWR);
    close(c->sd);
    c->sd = -1;
    c->pending_bytes = 0;
    c->sending_pointer = NULL;
-
-   priv->connected_clients--;
-
-   for (i = 0; i < priv->buffer_count; ++i) {
-      if (priv->buffers[i].finished == 1) {
-         if (priv->buffers[i].sent_to == priv->connected_clients) {
-            priv->buffers[i].finished = 0;
-            priv->buffers[i].wr_index = 0;
-            priv->buffers[i].sent_to = 0;
-         }
-      }
-   }
 }
 
 /**
@@ -1066,7 +1098,7 @@ static void *accept_clients_thread(void *arg)
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
-                  if (c->clients[i].sd < 1) {
+                  if (check_index(c->clients_bit_arr, i) == 0) {
                      cl = &c->clients[i];
                      break;
                   }
@@ -1081,7 +1113,6 @@ static void *accept_clients_thread(void *arg)
                cl->timer_total = 0;
                cl->id = client_id;
                cl->assigned_buffer = c->active_buffer;
-               cl->received_buffers = c->finished_buffers;
                cl->timeouts = 0;
 
 #ifdef ENABLE_NEGOTIATION
@@ -1098,16 +1129,16 @@ static void *accept_clients_thread(void *arg)
                   goto refuse_client;
                }
 #endif
-               c->connected_clients++;
+
+               pthread_mutex_lock(&c->client_lock);
+               set_index(&c->clients_bit_arr, i);
                for (i = 0; i < c->buffer_count; ++i) {
-                  if (c->buffers[i].finished == 1) {
-                     if (++c->buffers[i].sent_to == c->connected_clients) {
-                        c->buffers[i].finished = 0;
-                        c->buffers[i].wr_index = 0;
-                        c->buffers[i].sent_to = 0;
-                     }
+                  if (c->buffers[cl->assigned_buffer].clients_bit_arr != 0) {
+                     set_index(&c->buffers[cl->assigned_buffer].clients_bit_arr, i);
                   }
                }
+               c->connected_clients++;
+               pthread_mutex_unlock(&c->client_lock);
             } else {
 refuse_client:
                VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)", c->connected_clients, c->clients_arr_size);
@@ -1125,11 +1156,14 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
    uint32_t header = htonl(buffer->wr_index);
    memcpy(buffer->header, &header, sizeof(header));
 
-   buffer->finished = 1;
-   priv->finished_buffers++;
    priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
    priv->autoflush_timestamp = get_cur_timestamp();
 
+   buffer->wr_index = 0;
+   buffer->clients_bit_arr = priv->clients_bit_arr;
+   if (buffer->clients_bit_arr == 0) {
+      return;
+   }
    pthread_mutex_lock(&priv->buffer_lock);
    priv->free_buffers--;
    pthread_mutex_unlock(&priv->buffer_lock);
@@ -1144,17 +1178,12 @@ void tcpip_sender_flush(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
-   /* Dont flush if active buffer is already finished or if there is no data to be sent */
-   if (c->buffers[c->active_buffer].finished != 0 || c->buffers[c->active_buffer].wr_index == 0) {
-      return;
-   }
+   // todo
 
-   /* Flush (finish) active buffer */
-   finish_buffer(c, &c->buffers[c->active_buffer]);
    c->ctx->counter_autoflush[c->ifc_idx]++;
 }
 
-static int send_data(tcpip_sender_private_t *priv, client_t *c)
+static int send_data(tcpip_sender_private_t *priv, client_t *c, uint32_t cl_id)
 {
    int sent;
    /* Pointer to client's assigned buffer */
@@ -1182,19 +1211,16 @@ again:
       }
    } else {
       c->pending_bytes -= sent;
-      c->sending_pointer = (uint8_t *) c->sending_pointer + sent;
+      c->sending_pointer = (uint8_t *)c->sending_pointer + sent;
 
       /* Client received whole buffer */
       if (c->pending_bytes <= 0) {
-         c->received_buffers++;
-         buffer->sent_to++;
+         pthread_mutex_lock(&priv->client_lock);
+         del_index(&buffer->clients_bit_arr, cl_id);
+         pthread_mutex_unlock(&priv->client_lock);
 
-         if (buffer->sent_to == priv->connected_clients) {
+         if (buffer->clients_bit_arr == 0) {
             priv->ctx->counter_send_buffer[priv->ifc_idx]++;
-            /* Reset buffer */
-            buffer->finished = 0;
-            buffer->wr_index = 0;
-            buffer->sent_to = 0;
 
             pthread_mutex_lock(&priv->buffer_lock);
             priv->free_buffers++;
@@ -1252,27 +1278,24 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         if (cl->sd <= 0) {
+         if (check_index(c->clients_bit_arr, i) == 0) {
             continue;
          }
 
          ++j;
-
-         if (assigned_buffer->finished == 0) {
-            continue;
-         }
 
          FD_SET(cl->sd, &disset);
          if (maxsd < cl->sd) {
             maxsd = cl->sd;
          }
 
+         if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
+            continue;
+         }
+
          if (cl->pending_bytes <= 0) {
-            if (cl->received_buffers == c->finished_buffers) {
-               continue;
-            }
             cl->sending_pointer = assigned_buffer->header;
-            cl->pending_bytes = assigned_buffer->wr_index + sizeof(assigned_buffer->wr_index);
+            cl->pending_bytes = ntohl(*(uint32_t *)assigned_buffer->header) + sizeof(uint32_t);
          }
 
          FD_SET(cl->sd, &set);
@@ -1304,7 +1327,7 @@ static void *sending_thread_func(void *priv)
          }
 
          cl = &(c->clients[i]);
-         if (cl->sd < 0) {
+         if (cl->sd < 1) {
             continue;
          }
 
@@ -1323,7 +1346,7 @@ static void *sending_thread_func(void *priv)
          /* Check if client is ready for data */
          if (FD_ISSET(cl->sd, &set)) {
             send_entry_time = get_cur_timestamp();
-            res = send_data(c, cl);
+            res = send_data(c, cl, i);
             send_exit_time = get_cur_timestamp();
 
             /* Measure how much time we spent sending to this client (in microseconds) */
@@ -1382,6 +1405,9 @@ int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
    }
 
 repeat:
+   if (c->is_terminated != 0) {
+      return TRAP_E_TERMINATED;
+   }
    if (block && c->connected_clients == 0) {
       usleep(10000);
       goto repeat;
@@ -1407,7 +1433,8 @@ repeat:
             /* Desired buffer is still full after timeout */
             if (block) {
                /* Blocking send, wait until buffer is free to use */
-               continue;
+               pthread_mutex_unlock(&c->buffer_lock);
+               goto repeat;
             } else {
                /* Non-blocking send, drop message or force buffer reset (not implemented) */
                pthread_mutex_unlock(&c->buffer_lock);
@@ -1537,7 +1564,7 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
    }
 
    for (i = 0; i < c->clients_arr_size; ++i) {
-      if (c->clients[i].sd < 0) {
+      if (check_index(c->clients_bit_arr, i) == 0) {
          continue;
       }
 
@@ -1563,7 +1590,6 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
    FILE *f = NULL;
    int32_t i;
    client_t *cl;
-   buffer_t *b;
 
    r = asprintf(&conf_file, "%s/trap-o%02"PRIu32"-config.txt", path, idx);
    if (r == -1) {
@@ -1582,8 +1608,7 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
               "Terminated: %d\n"
               "Initialized: %d\n"
               "Socket type: %s\n"
-              "Timeout: %u us\n"
-              "Buffers:\n",
+              "Timeout: %u us\n",
               c->server_port,
               c->server_sd,
               c->connected_clients,
@@ -1595,10 +1620,6 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
               c->initialized,
               TCPIP_SOCKETTYPE_STR(c->socket_type),
               c->ctx->out_ifc_list[idx].datatimeout);
-   for (i = 0; i < c->buffer_count; i++) {
-      b = &c->buffers[i];
-      fprintf(f, "\t{%d, %p, %u, %u, %u}\n", i, b, b->wr_index, b->finished, b->sent_to);
-   }
    fprintf(f, "Clients:\n");
    for (i = 0; i < c->clients_arr_size; i++) {
       cl = &c->clients[i];
@@ -1688,7 +1709,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
             buffer_size = DEFAULT_BUFFER_SIZE;
          }
       } else if (strncmp(param_str, "max_clients=x", 12) == 0) {
-         if (sscanf(param_str+12, "%u", &max_clients) != 1) {
+         if (sscanf(param_str+12, "%u", &max_clients) != 1 || max_clients > 64) {
             VERBOSE(CL_ERROR, "Optional max clients number given, but it is probably in wrong format.");
             max_clients = DEFAULT_MAX_CLIENTS;
          }
@@ -1711,8 +1732,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       b->header = malloc(buffer_size + sizeof(buffer_size));
       b->data = b->header + sizeof(buffer_size);
       b->wr_index = 0;
-      b->finished = 0;
-      b->sent_to = 0;
+      b->clients_bit_arr = 0;
    }
 
    priv->clients = calloc(max_clients, sizeof(client_t));
@@ -1737,11 +1757,11 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->buffer_size = buffer_size;
    priv->buffer_count = buffer_count;
    priv->clients_arr_size = max_clients;
+   priv->clients_bit_arr = 0;
    priv->connected_clients = 0;
    priv->is_terminated = 0;
    priv->active_buffer = 0;
    priv->free_buffers = buffer_count;
-   priv->finished_buffers = 0;
    priv->timeout_autoflush = DEFAULT_TIMEOUT_FLUSH;
    priv->autoflush_timestamp = get_cur_timestamp();
 

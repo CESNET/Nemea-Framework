@@ -63,9 +63,7 @@
 
 typedef struct buffer_s {
    uint32_t wr_index;                      /**< Pointer to first free byte in buffer */
-   uint32_t sent_to;                       /**< Number of clients buffer was successfully sent to */
-
-   uint8_t finished;                       /**< Flag indicating whether buffer is full and ready to be sent */
+   uint64_t clients_bit_arr;               /**< Bit array of clients that have not yet received the buffer */
 
    uint8_t *header;                        /**< Pointer to first byte in buffer */
    uint8_t *data;                          /**< Pointer to first byte of buffer payload */
@@ -76,7 +74,6 @@ typedef struct client_s {
    void *sending_pointer;                  /**< Pointer to data in client's assigned buffer */
 
    uint64_t timer_total;                   /**< Total time spent sending (microseconds) since client connection */
-   uint64_t received_buffers;              /**< Total number of received buffers since client connection */
    uint64_t timeouts;                      /**< Number of messages dropped (since connection) due to client blocking active buffer */
 
    uint32_t timer_last;                    /**< Time spent on last send call [microseconds] */
@@ -98,8 +95,8 @@ typedef struct tcpip_sender_private_s {
 
    enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
 
-   uint64_t finished_buffers;              /**< Counter of 'finished' buffers since trap initialization */
    uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
+   uint64_t clients_bit_arr;               /**< Bit array of currently connected clients - lowest bit = index 0, highest bit = index 63 */
 
    uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
    uint32_t connected_clients;             /**< Number of currently connected clients */
@@ -115,7 +112,8 @@ typedef struct tcpip_sender_private_s {
    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
 
-   pthread_mutex_t buffer_lock;            /**< Mutex used in pthread_cond_timedwait() when waiting for a free buffer */
+   pthread_mutex_t client_lock;            /**< used to lock (dis)connecting clients */
+   pthread_mutex_t buffer_lock;            /**< used to lock 'free_buffers' */
    pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
 } tcpip_sender_private_t;
 
