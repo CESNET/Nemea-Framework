@@ -223,7 +223,7 @@ int create_next_filename(void *priv)
 
    /* If the user specified file splitting based on size */
    if (config->file_change_size != 0) {
-      int new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
+      int new_len = sprintf(buf, "%s.%04zu", backup, config->file_index);
       if (new_len < 0) {
          VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
          return TRAP_E_IO_ERROR;
@@ -239,7 +239,7 @@ int create_next_filename(void *priv)
    /* If the user specified append mode, get the lowest possible numeric suffix for which there does not exist a file */
    if (config->mode[0] == 'a') {
       while (access(buf, F_OK) != -1) {
-         int new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
+         int new_len = sprintf(buf, "%s.%04zu", backup, config->file_index);
          if (new_len < 0) {
             VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
             return TRAP_E_IO_ERROR;
