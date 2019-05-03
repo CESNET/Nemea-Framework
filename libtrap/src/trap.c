@@ -378,40 +378,6 @@ void *reader_threads_fn(void *arg)
    pthread_exit(NULL);
 }
 
-/**
- * Handle the timeouts on output interfaces and flush buffer after timeout is reached.
- *
- *
- * @return NULL
- */
-static void *trap_automatic_flush_thr(void *arg)
-{
-   pthread_exit(NULL);
-   uint32_t j;
-   trap_ctx_priv_t *ctx = (trap_ctx_priv_t *) arg;
-
-   while (1) {
-      if (ctx->terminated) {
-         break;
-      }
-
-      VERBOSE(CL_VERBOSE_BASIC, "--------------- STATS --------------- ");
-      VERBOSE(CL_VERBOSE_BASIC, "------------- INPUT IFC ------------- ");
-      for (j = 0; j < ctx->num_ifc_in; j++) {
-         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: recv buf: %" PRIu64 ", msg: %" PRIu64 ".", j, __sync_fetch_and_add(&ctx->counter_recv_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_recv_message[j], 0));
-      }
-      VERBOSE(CL_VERBOSE_BASIC, "------------- OUTPUT IFC ------------ ");
-      for (j = 0; j < ctx->num_ifc_out; j++) {
-         VERBOSE(CL_VERBOSE_BASIC, "IFC[%" PRIu32 "]: sent buf: %" PRIu64 ", msg: %" PRIu64 ", drop msg: %" PRIu64 ", flush: %" PRIu64 ", clients: %" PRIu32 ".", j, __sync_fetch_and_add(&ctx->counter_send_buffer[j], 0), __sync_fetch_and_add(&ctx->counter_send_message[j], 0), __sync_fetch_and_add(&ctx->counter_dropped_message[j], 0), __sync_fetch_and_add(&ctx->counter_autoflush[j], 0), ctx->out_ifc_list[j].get_client_count(ctx->out_ifc_list[j].priv));
-      }
-      VERBOSE(CL_VERBOSE_BASIC, "------------------------------------- ");
-
-      usleep(100000);
-   }
-
-   pthread_exit(NULL);
-}
-
 /** Set section for trap_print_help()
  *
  * \param [in] level  0 for default info about module, 1 for info about IFC specifier

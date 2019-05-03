@@ -1098,6 +1098,7 @@ static void *accept_clients_thread(void *arg)
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
+                  // !!! connect
                   if (check_index(c->clients_bit_arr, i) == 0) {
                      cl = &c->clients[i];
                      break;
@@ -1160,10 +1161,15 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
    priv->autoflush_timestamp = get_cur_timestamp();
 
    buffer->wr_index = 0;
+
+   pthread_mutex_lock(&priv->client_lock);
    buffer->clients_bit_arr = priv->clients_bit_arr;
    if (buffer->clients_bit_arr == 0) {
+      pthread_mutex_unlock(&priv->client_lock);
       return;
    }
+   pthread_mutex_unlock(&priv->client_lock);
+
    pthread_mutex_lock(&priv->buffer_lock);
    priv->free_buffers--;
    pthread_mutex_unlock(&priv->buffer_lock);
@@ -1216,9 +1222,8 @@ again:
       /* Client received whole buffer */
       if (c->pending_bytes <= 0) {
          pthread_mutex_lock(&priv->client_lock);
-         del_index(&buffer->clients_bit_arr, cl_id);
-         pthread_mutex_unlock(&priv->client_lock);
 
+         del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
             priv->ctx->counter_send_buffer[priv->ifc_idx]++;
 
@@ -1227,6 +1232,7 @@ again:
             pthread_cond_broadcast(&priv->cond);
             pthread_mutex_unlock(&priv->buffer_lock);
          }
+         pthread_mutex_unlock(&priv->client_lock);
 
          /* Assign client the next buffer in sequence */
          c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
@@ -1278,6 +1284,7 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
+         // !!! disconnect
          if (check_index(c->clients_bit_arr, i) == 0) {
             continue;
          }
@@ -1289,6 +1296,7 @@ static void *sending_thread_func(void *priv)
             maxsd = cl->sd;
          }
 
+         // !!! del_index
          if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
             continue;
          }
@@ -1564,6 +1572,7 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
    }
 
    for (i = 0; i < c->clients_arr_size; ++i) {
+      // !!!
       if (check_index(c->clients_bit_arr, i) == 0) {
          continue;
       }
