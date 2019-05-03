@@ -2135,17 +2135,6 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
 
    }
 
-   if (ctx->num_ifc_out > 0) {
-      ctx->ifc_autoflush_timeout = calloc(ctx->num_ifc_out, sizeof(ifc_autoflush_t));
-      // Create thread for handling timeouts outputs interfaces
-      if (pthread_create(&ctx->timeout_thread, NULL, trap_automatic_flush_thr, (void *) ctx) != 0) {
-         VERBOSE(CL_ERROR, "Creation of timeout handler thread failed.");
-         trap_errorf(ctx, TRAP_E_MEMORY, "Creation of reader thread failed.");
-         goto freeall_on_failed;
-      }
-      ctx->timeout_thread_initialized = 1;
-   }
-
    /*
     * Set the name of service IFC, which is passed in context to service thread.
     * Service thread creates service IFC (UNIX IFC) with the given name and handles client
