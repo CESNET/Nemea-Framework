@@ -968,16 +968,12 @@ static uint64_t mask[64] = {
 
 static inline void set_index(uint64_t *bits, int i)
 {
-   //printf("===add====\nbits:\t%lx\n", *bits);
    *bits |= mask[i];
-   //printf("res:\t%lx\n", *bits);
 }
 
 static inline void del_index(uint64_t *bits, int i)
 {
-   //printf("===del====\nbits:\t%lx\n", *bits);
    *bits &= (0xffffffffffffffff - mask[i]);
-   //printf("bits:\t%lx\n", *bits);
 }
 
 static inline uint8_t check_index(uint64_t bits, int i)
@@ -993,12 +989,8 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
    pthread_mutex_lock(&priv->client_lock);
    for (i = 0; i < priv->buffer_count; ++i) {
       del_index(&priv->buffers[i].clients_bit_arr, cl_id);
-
       if (priv->buffers[i].clients_bit_arr == 0) {
-         pthread_mutex_lock(&priv->buffer_lock);
-         priv->free_buffers++;
          pthread_cond_broadcast(&priv->cond);
-         pthread_mutex_unlock(&priv->buffer_lock);
       }
    }
    del_index(&priv->clients_bit_arr, cl_id);
@@ -1095,10 +1087,11 @@ static void *accept_clients_thread(void *arg)
                     inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
                     newclient);
 
+            // race condition
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
-                  // !!! connect
+                  // race condition
                   if (check_index(c->clients_bit_arr, i) == 0) {
                      cl = &c->clients[i];
                      break;
@@ -1164,15 +1157,7 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 
    pthread_mutex_lock(&priv->client_lock);
    buffer->clients_bit_arr = priv->clients_bit_arr;
-   if (buffer->clients_bit_arr == 0) {
-      pthread_mutex_unlock(&priv->client_lock);
-      return;
-   }
    pthread_mutex_unlock(&priv->client_lock);
-
-   pthread_mutex_lock(&priv->buffer_lock);
-   priv->free_buffers--;
-   pthread_mutex_unlock(&priv->buffer_lock);
 }
 
 /**
@@ -1209,7 +1194,6 @@ again:
       case EFAULT:
          return TRAP_E_IO_ERROR;
       case EAGAIN:
-         usleep(1);
          goto again;
       default:
          VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_data (errno: %i)", errno);
@@ -1222,15 +1206,10 @@ again:
       /* Client received whole buffer */
       if (c->pending_bytes <= 0) {
          pthread_mutex_lock(&priv->client_lock);
-
          del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
             priv->ctx->counter_send_buffer[priv->ifc_idx]++;
-
-            pthread_mutex_lock(&priv->buffer_lock);
-            priv->free_buffers++;
             pthread_cond_broadcast(&priv->cond);
-            pthread_mutex_unlock(&priv->buffer_lock);
          }
          pthread_mutex_unlock(&priv->client_lock);
 
@@ -1261,8 +1240,14 @@ static void *sending_thread_func(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
    while (1) {
+      // race condition
       if (c->is_terminated != 0) {
          pthread_exit(NULL);
+      }
+      // race condition
+      if (c->connected_clients == 0) {
+         usleep(10000);
+         continue;
       }
 
       FD_ZERO(&disset);
@@ -1277,6 +1262,7 @@ static void *sending_thread_func(void *priv)
 
       /* Check whether clients are connected and there is data for them to receive. */
       for (i = j = 0; i < c->clients_arr_size; ++i) {
+         // race condition
          if (j == c->connected_clients) {
             break;
          }
@@ -1284,7 +1270,7 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         // !!! disconnect
+         // race condition
          if (check_index(c->clients_bit_arr, i) == 0) {
             continue;
          }
@@ -1296,7 +1282,7 @@ static void *sending_thread_func(void *priv)
             maxsd = cl->sd;
          }
 
-         // !!! del_index
+         // race condition
          if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
             continue;
          }
@@ -1330,6 +1316,7 @@ static void *sending_thread_func(void *priv)
 
       /* Check file descriptors. Disconnect "inactive" clients and send data to those designated by select */
       for (i = j = 0; i < c->clients_arr_size; ++i) {
+         // race condition
          if (j == c->connected_clients) {
             break;
          }
@@ -1397,8 +1384,8 @@ int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
    struct timespec ts;
 
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-
    buffer_t* buffer = &c->buffers[c->active_buffer];
+   // race condition
    uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
 
    /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
@@ -1413,17 +1400,19 @@ int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
    }
 
 repeat:
+   // race condition
    if (c->is_terminated != 0) {
       return TRAP_E_TERMINATED;
    }
+   // race condition
    if (block && c->connected_clients == 0) {
       usleep(10000);
       goto repeat;
    }
 
-   pthread_mutex_lock(&c->buffer_lock);
+   pthread_mutex_lock(&c->client_lock);
 
-   while (c->free_buffers == 0) {
+   while (buffer->clients_bit_arr != 0) {
       clock_gettime(CLOCK_REALTIME, &ts);
 
       ts.tv_nsec = (ts.tv_nsec + timeout * 1000) % 1000000000;
@@ -1432,7 +1421,7 @@ repeat:
       }
 
       /* Wait until we obtain buffer lock or until timeout elapses */
-      res = pthread_cond_timedwait(&c->cond, &c->buffer_lock, &ts);
+      res = pthread_cond_timedwait(&c->cond, &c->client_lock, &ts);
       switch (res) {
          case 0:
             /* Succesfully locked, buffer can be used */
@@ -1441,21 +1430,21 @@ repeat:
             /* Desired buffer is still full after timeout */
             if (block) {
                /* Blocking send, wait until buffer is free to use */
-               pthread_mutex_unlock(&c->buffer_lock);
+               pthread_mutex_unlock(&c->client_lock);
                goto repeat;
             } else {
                /* Non-blocking send, drop message or force buffer reset (not implemented) */
-               pthread_mutex_unlock(&c->buffer_lock);
+               pthread_mutex_unlock(&c->client_lock);
                goto timeout;
             }
          default:
             VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-            pthread_mutex_unlock(&c->buffer_lock);
+            pthread_mutex_unlock(&c->client_lock);
             goto timeout;
       }
    }
 
-   pthread_mutex_unlock(&c->buffer_lock);
+   pthread_mutex_unlock(&c->client_lock);
 
    /* Check if there is enough space in buffer */
    free_bytes = c->buffer_size - buffer->wr_index;
@@ -1548,7 +1537,8 @@ void tcpip_sender_destroy(void *priv)
          X(c->buffers);
       }
 
-      pthread_mutex_destroy(&c->buffer_lock);
+      pthread_mutex_destroy(&c->client_lock);
+      pthread_cond_destroy(&c->cond);
       X(c)
    }
 #undef X
@@ -1572,7 +1562,7 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
    }
 
    for (i = 0; i < c->clients_arr_size; ++i) {
-      // !!!
+      // race condition
       if (check_index(c->clients_bit_arr, i) == 0) {
          continue;
       }
@@ -1770,11 +1760,11 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->connected_clients = 0;
    priv->is_terminated = 0;
    priv->active_buffer = 0;
-   priv->free_buffers = buffer_count;
    priv->timeout_autoflush = DEFAULT_TIMEOUT_FLUSH;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   pthread_mutex_init(&priv->buffer_lock, NULL);
+   pthread_mutex_init(&priv->client_lock, NULL);
+   pthread_cond_init(&priv->cond, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
                                 priv->server_port, priv->clients_arr_size, priv->buffer_count, priv->buffer_size);
@@ -1816,7 +1806,8 @@ failsafe_cleanup:
       if (priv->clients != NULL) {
          X(priv->clients);
       }
-      pthread_mutex_destroy(&priv->buffer_lock);
+      pthread_mutex_destroy(&priv->client_lock);
+      pthread_cond_destroy(&priv->cond);
       X(priv);
    }
 #undef X
