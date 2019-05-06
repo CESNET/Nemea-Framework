@@ -976,7 +976,7 @@ static inline void del_index(uint64_t *bits, int i)
    *bits &= (0xffffffffffffffff - mask[i]);
 }
 
-static inline uint8_t check_index(uint64_t bits, int i)
+static inline uint64_t check_index(uint64_t bits, int i)
 {
    return (bits & mask[i]);
 }
@@ -1126,11 +1126,6 @@ static void *accept_clients_thread(void *arg)
 
                pthread_mutex_lock(&c->client_lock);
                set_index(&c->clients_bit_arr, i);
-               for (i = 0; i < c->buffer_count; ++i) {
-                  if (c->buffers[cl->assigned_buffer].clients_bit_arr != 0) {
-                     set_index(&c->buffers[cl->assigned_buffer].clients_bit_arr, i);
-                  }
-               }
                c->connected_clients++;
                pthread_mutex_unlock(&c->client_lock);
             } else {
