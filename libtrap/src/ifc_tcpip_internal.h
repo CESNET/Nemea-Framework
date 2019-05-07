@@ -56,7 +56,7 @@
  */
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
-#define DEFAULT_BUFFER_COUNT     25        /**< Default buffer count */
+#define DEFAULT_BUFFER_COUNT     50        /**< Default buffer count */
 #define DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
 #define DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
 #define DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
@@ -111,6 +111,7 @@ typedef struct tcpip_sender_private_s {
    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
 
+   pthread_mutex_t flush_lock;             /**< Used to lock autoflush */
    pthread_mutex_t client_lock;            /**< Used to lock bit arrays of clients */
    pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
 } tcpip_sender_private_t;

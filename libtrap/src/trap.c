@@ -1481,12 +1481,6 @@ int trap_ctx_terminate(trap_ctx_t *ctx)
       }
    }
 
-   /* Cancel autoflush thread... it might be stuck in select() or send()
-      on an output interface and thus holding the interface lock. */
-   if (c->timeout_thread_initialized == 1) {
-      pthread_cancel(c->timeout_thread);
-   }
-
    return trap_error(ctx, TRAP_E_OK);
 }
 
@@ -1603,11 +1597,6 @@ int trap_ctx_finalize(trap_ctx_t **ctx)
       trap_ctx_terminate(c);
    }
 
-   // Destroy timeouts handling thread for output interfaces
-   if (c->timeout_thread_initialized == 1) {
-      pthread_cancel(c->timeout_thread);
-      pthread_join(c->timeout_thread, NULL);
-   }
    if (c->service_thread_initialized == 1) {
       pthread_join(c->service_thread, NULL);
    }

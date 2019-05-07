@@ -307,16 +307,6 @@ struct trap_ctx_priv_s {
    int32_t readers_count;
 
    /**
-    * Thread to handle timeouts on output interfaces.
-    */
-   pthread_t timeout_thread;
-
-   /**
-    * Indicator of initialized autoflush thread
-    */
-   int timeout_thread_initialized;
-
-   /**
     * Timeouts for autoflush thread.
     */
    ifc_autoflush_t *ifc_autoflush_timeout;
