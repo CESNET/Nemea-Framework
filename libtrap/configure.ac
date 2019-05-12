@@ -23,8 +23,8 @@ AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
-                CFLAGS="-Wall -g -O0 $CFLAGS"
-        fi], [CFLAGS="-Wall -g -O3 $CFLAGS"
+                CFLAGS="-Wall -Wno-format-truncation -g -O0 $CFLAGS"
+        fi], [CFLAGS="-Wall -Wno-format-truncation -g -O3 $CFLAGS"
               CPPFLAGS="-DNDEBUG=1"])
 
 LT_INIT()

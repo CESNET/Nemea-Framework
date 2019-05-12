@@ -117,7 +117,7 @@ Output interface:
 ```
 Name of file (path to the file) must be specified.
 
-Mode is optional. There are two types of mode: `a` - append (default), `w` - write.
+Mode is optional. There are two types of mode: `a` - append, `w` - write (default).
 If the specified file exists, mode write overwrites it, mode append creates a new file with an integer suffix, e.g. `data.trapcap.0` (or `data.trapcap.1` if the former exists, and so on, it simply finds the first unused number).
 
 If parameter `time=` is set, the output interface will split captured data to individual files as often, as value of this parameter indicates.
@@ -134,10 +134,10 @@ If both `time=` and `size=` are specified, the data are split primarily by time,
 
 Example:
 ```
--i "f:~/nemea/data.trapcap:w"					// stores all captured data to one file (overwrites current file if it exists)
--i "f:~/nemea/data.trapcap:w:time=30"			// creates individual files each 30 minutes, e.g. "data.trapcap.201604180930", "data.trapcap.201604181000" etc.
--i "f:~/nemea/data.trapcap:w:size=100"			// creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.0", then "data.trapcap.1" etc.
--i "f:~/nemea/data.trapcap:w:time=30:size=100"	// creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.0" etc. and after 30 minutes, "data.trapcap.201604181000"
+-i "f:~/nemea/data.trapcap:w"                  // stores all captured data to one file (overwrites current file if it exists)
+-i "f:~/nemea/data.trapcap:w:time=30"          // creates individual files each 30 minutes, e.g. "data.trapcap.201604180930", "data.trapcap.201604181000" etc.
+-i "f:~/nemea/data.trapcap:w:size=100"         // creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.0", then "data.trapcap.1" etc.
+-i "f:~/nemea/data.trapcap:w:time=30:size=100" // creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.0" etc. and after 30 minutes, "data.trapcap.201604181000"
 ```
 Output file interface and negotiation:
 Whenever new format of data is created, output interface creates new file with numeric suffix.
