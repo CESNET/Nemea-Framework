@@ -1347,7 +1347,7 @@ uint8_t ur_time_from_string(ur_time_t *ur, const char *str)
       return 2;
    }
 
-   res = strptime(str, "%FT%T", &t);
+   res = strptime(str, "%Y-%m-%dT%T", &t);
    /* parsed to sec - msec delimiter */
    if ((res != NULL) && ((*res == '.') || (*res == 0) || (*res == 'z') || (*res == 'Z'))) {
       sec = timegm(&t);
