@@ -1,3 +1,7 @@
+2019-05-14 (Tomas Cejka): unirec: hotfix: parsing timestamps failed on Turris Omnia
+2019-04-28 (Tomas Cejka): unirec: csv: decomposition of urcsv_record(), added urcsv_field()
+2019-04-22 (Tomas Cejka): unirec: define default PRIx8, SCNx8 if missing
+
 2019-04-21 (Tomas Cejka): unirec: BUGFIX missing string termination & bad move of curpos
 
 2019-04-18 (Tomas Cejka): unirec: csv: add missing include

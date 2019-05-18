@@ -1,3 +1,7 @@
+2019-05-18 unirec-2.6.0
+	* Bugfixes for openwrt - timestamps, undefined constants
+	* csv - improved API to convert any field value to string
+
 2019-04-21 unirec-2.5.1
 	* UniRec2CSV: bugfixes string termination
 
