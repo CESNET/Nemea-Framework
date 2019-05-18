@@ -22,7 +22,7 @@ endif
 endif
 
 
-EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh $(normal_tests_scripts) $(long_tests_scripts) $(tlscertfiles) $(disabled_tests)
+EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh test_tls.sh $(normal_tests_scripts) $(long_tests_scripts) $(tlscertfiles) $(disabled_tests)
 
 check_PROGRAMS = basic_test $(normal_tests_progs)
 
