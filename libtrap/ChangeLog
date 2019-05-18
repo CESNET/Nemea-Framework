@@ -1,3 +1,9 @@
+2019-05-18 libtrap-1.13.1
+	* Replace 8B atomics on platforms that do not support it (turris)
+	* File IFC file numbers are aligned to 5 digits with leading zeros
+	* File IFC file has default mode set to 'w' now
+	* Maintenance and fixing warnings.
+
 2019-04-20 libtrap-1.13.0
 	* Improved error messages
 	* Removed multi_recv unused feature

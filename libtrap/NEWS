@@ -1,3 +1,8 @@
+2019-05-18 (Tomas Cejka): libtrap: add test_tls.sh to dist package (fixed make distcheck)
+2019-05-12 (Tomas Jansky): libtrap: file ifc: code refactoring
+2019-05-02 (Tomas Cejka): libtrap: file: extend suffix to 4 digits for better ordering (#127)
+2019-04-22 (Tomas Cejka): libtrap: replace atomic ops when target doesn't support them
+
 2019-04-20 (Tomas Cejka): libtrap: add error message when UniRec negotiation fails
 2019-04-20 (Tomas Cejka): libtrap: fixed error message
 2019-03-01 (Tomas Cejka): libtrap: cleanup: removed TRAP_MASK_ALL and updated doc
