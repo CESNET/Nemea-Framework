@@ -115,6 +115,19 @@ char *urcsv_header(urcsv_t *urcsv);
 char *urcsv_record(urcsv_t *urcsv, const void *rec);
 
 /**
+ * Convert value of UniRec field to its string representation.
+ *
+ * \param[out] dst   Pointer to memory where to store result (pointer is not moved)
+ * \param[in] size   Size of available memory for result
+ * \param[in] rec    UniRec record - value of the field is taken
+ * \param[in] id     UniRec field id
+ * \param[in] tmplt  UniRec template
+ *
+ * \return Number of written bytes.
+ */
+int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, ur_template_t *tmplt);
+
+/**
  * @}
  *//* unirec2csv */
 
