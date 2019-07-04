@@ -1036,7 +1036,7 @@ static void *accept_clients_thread(void *arg)
    uint32_t ucredlen = sizeof(struct ucred);
    uint32_t client_id = 0;
 
-   // handle new connections
+   /* handle new connections */
    addrlen = sizeof remoteaddr;
    while (1) {
       if (c->is_terminated != 0) {
@@ -1063,7 +1063,6 @@ static void *accept_clients_thread(void *arg)
             VERBOSE(CL_ERROR, "Accepting new client failed.");
          } else {
             if (c->socket_type == TRAP_IFC_TCPIP) {
-               // tcp socket
                tmpaddr = (struct sockaddr *) &remoteaddr;
                switch (((struct sockaddr *) tmpaddr)->sa_family) {
                   case AF_INET:
@@ -1075,7 +1074,6 @@ static void *accept_clients_thread(void *arg)
                }
                VERBOSE(CL_VERBOSE_ADVANCED, "Client connected via TCP socket, port=%u", client_id);
             } else {
-               // unix socket
                if (getsockopt(newclient, SOL_SOCKET, SO_PEERCRED, &ucred, &ucredlen) == -1) {
                   goto refuse_client;
                }
@@ -1087,11 +1085,9 @@ static void *accept_clients_thread(void *arg)
                     inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
                     newclient);
 
-            // race condition
             if (c->connected_clients < c->clients_arr_size) {
                cl = NULL;
                for (i = 0; i < c->clients_arr_size; ++i) {
-                  // race condition
                   if (check_index(c->clients_bit_arr, i) == 0) {
                      cl = &c->clients[i];
                      break;
@@ -1562,6 +1558,10 @@ int32_t tcpip_sender_get_client_count(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
+   if (c == NULL) {
+      return 0;
+   }
+
    return c->connected_clients;
 }
 
@@ -1732,7 +1732,6 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       X(param_str);
    }
    /* Parsing params ended */
-   X(param_str);
 
    priv->buffers = calloc(buffer_count, sizeof(buffer_t));
    if (priv->buffers == NULL) {
@@ -1827,7 +1826,6 @@ failsafe_cleanup:
       X(priv);
    }
 #undef X
-
    return result;
 }
 

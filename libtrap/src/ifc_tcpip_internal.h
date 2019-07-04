@@ -56,7 +56,7 @@
  */
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
-#define DEFAULT_BUFFER_COUNT     50        /**< Default buffer count */
+#define DEFAULT_BUFFER_COUNT     20        /**< Default buffer count */
 #define DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
 #define DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
 #define DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
@@ -69,6 +69,9 @@ typedef struct buffer_s {
    uint8_t *data;                          /**< Pointer to first byte of buffer payload */
 } buffer_t;
 
+/**
+ * \brief Structure for TCP/IP IFC client information.
+ */
 typedef struct client_s {
    int sd;                                 /**< Client socket descriptor */
    void *sending_pointer;                  /**< Pointer to data in client's assigned buffer */
@@ -82,8 +85,13 @@ typedef struct client_s {
    uint32_t assigned_buffer;               /**< Index of assigned buffer in array of buffers */
 } client_t;
 
+/**
+ * \brief Structure for TCP/IP IFC private information.
+ */
 typedef struct tcpip_sender_private_s {
    trap_ctx_priv_t *ctx;                   /**< Libtrap context */
+
+   enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
 
    int term_pipe[2];                       /**< File descriptor pair for select() termination */
    int server_sd;                          /**< Server socket descriptor */
@@ -93,12 +101,10 @@ typedef struct tcpip_sender_private_s {
    char is_terminated;                     /**< Termination flag */
    char initialized;                       /**< Initialization flag */
 
-   enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
-
    uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
    uint64_t clients_bit_arr;               /**< Bit array of currently connected clients - lowest bit = index 0, highest bit = index 63 */
 
-   uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
+   uint32_t ifc_idx;                       /**< Index of interface in 'out_ifc_list' array */
    uint32_t connected_clients;             /**< Number of currently connected clients */
    uint32_t clients_arr_size;              /**< Maximum number of clients */
    uint32_t buffer_count;                  /**< Number of buffers used */

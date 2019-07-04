@@ -59,22 +59,18 @@
  * @{
  */
 
-#define TLS_DEFAULT_TIMEOUT_ACCEPT   0         /**< Default timeout used in accept_new_client() [microseconds] */
-#define TLS_DEFAULT_BUFFER_COUNT     1         /**< Default buffer count */
+#define DEFAULT_MAX_DATA_LENGTH      (sizeof(trap_buffer_header_t) + 1024)
+#define TLS_DEFAULT_BUFFER_COUNT     20        /**< Default buffer count */
 #define TLS_DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
-#define TLS_DEFAULT_MAX_CLIENTS      10        /**< Default size of client array */
+#define TLS_DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
 #define TLS_DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
 
 typedef struct tlsbuffer_s {
     uint32_t wr_index;                      /**< Pointer to first free byte in buffer */
-    uint32_t sent_to;                       /**< Number of clients buffer was successfully sent to */
-
-    uint8_t finished;                       /**< Flag indicating whether buffer is full and ready to be sent */
+    uint64_t clients_bit_arr;               /**< Bit array of clients that have not yet received the buffer */
 
     uint8_t *header;                        /**< Pointer to first byte in buffer */
     uint8_t *data;                          /**< Pointer to first byte of buffer payload */
-
-    pthread_mutex_t lock;
 } tlsbuffer_t;
 
 /**
@@ -87,7 +83,7 @@ typedef struct tlsclient_s {
    void *sending_pointer;                   /**< Pointer to data in client's assigned buffer */
 
    uint64_t timer_total;                    /**< Total time spent sending (microseconds) since client connection */
-   uint64_t received_buffers;               /**< Total number of received buffers since client connection */
+   uint64_t timeouts;                       /**< Number of messages dropped (since connection) due to client blocking active buffer */
 
    uint32_t timer_last;                     /**< Time spent on last send call [microseconds] */
    uint32_t pending_bytes;                  /**< The size of data that must be sent */
@@ -109,17 +105,16 @@ typedef struct tls_sender_private_s {
 
     int term_pipe[2];                       /**< File descriptor pair for select() termination */
     int server_sd;                          /**< Server socket descriptor */
-    int timeout_accept;                     /**< Timeout used in accept_new_client() [microseconds] */
     int timeout_autoflush;                  /**< Timeout used for autoflush [microseconds] */
 
     char *server_port;                      /**< TCPIP port number / UNIX socket path */
     char is_terminated;                     /**< Termination flag */
     char initialized;                       /**< Initialization flag */
 
-    uint64_t finished_buffers;              /**< Counter of 'finished' buffers since trap initialization */
-    uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished. Used for autoflush. */
+    uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
+    uint64_t clients_bit_arr;               /**< Bit array of currently connected clients - lowest bit = index 0, highest bit = index 63 */
 
-    uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
+    uint32_t ifc_idx;                       /**< Index of interface in 'out_ifc_list' array */
     uint32_t connected_clients;             /**< Number of currently connected clients */
     uint32_t clients_arr_size;              /**< Maximum number of clients */
     uint32_t buffer_count;                  /**< Number of buffers used */
@@ -129,8 +124,12 @@ typedef struct tls_sender_private_s {
     tlsbuffer_t *buffers;                   /**< Array of buffer structures */
     tlsclient_t *clients;                   /**< Array of client structures */
 
+    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
     pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
-    pthread_mutex_t lock;                   /**< Interface lock. Used for autoflush. */
+
+    pthread_mutex_t flush_lock;             /**< Used to lock autoflush */
+    pthread_mutex_t client_lock;            /**< Used to lock bit arrays of clients */
+    pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
 } tls_sender_private_t;
 
 /**
