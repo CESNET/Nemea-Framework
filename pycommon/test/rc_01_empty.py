@@ -3,7 +3,7 @@ import os
 import json
 
 from reporter_config.actions.Drop import DropMsg
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCEmptyFileTest(unittest.TestCase):
 
@@ -19,24 +19,28 @@ class RCEmptyFileTest(unittest.TestCase):
 
     def test_00_load_basic_config(self):
         try:
-            self.config = Config(os.path.dirname(__file__) + '/rc_config/empty.yaml');
+            self.parser = Parser(os.path.dirname(__file__) + '/rc_config/empty.yaml');
+            self.config = Config(self.parser);
             self.fail("Empty configuration file shouldn't be loaded! It must contain rules.")
         except Exception as e:
             self.assertEqual(str(e), "YAML file must contain `rules`.")
 
     def test_01_load_basic_config(self):
         try:
-            self.config = Config(os.path.dirname(__file__) + '/rc_config/incompleterules.yaml');
+            self.parser = Parser(os.path.dirname(__file__) + '/rc_config/incompleterules.yaml');
+            self.config = Config(self.parser);
             self.fail("Rules must contain at least one rule.")
         except Exception as e:
             self.assertEqual(str(e), "YAML file should contain at least one `rule` in `rules`.")
 
     def test_02_onerule(self):
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/minimal.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/minimal.yaml');
+        self.config = Config(self.parser);
         self.assertNotEqual(self.config, None)
 
     def test_03_oneruledrop(self):
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/minimaldrop.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/minimaldrop.yaml');
+        self.config = Config(self.parser);
         self.assertNotEqual(self.config, None)
 
         results, actions = self.config.match(self.msg)
@@ -46,7 +50,8 @@ class RCEmptyFileTest(unittest.TestCase):
         of = "/tmp/output1.idea"
         if os.path.isfile(of):
             os.unlink(of)
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/minimalfirstdrop.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/minimalfirstdrop.yaml');
+        self.config = Config(self.parser);
         self.assertNotEqual(self.config, None)
 
         results, actions = self.config.match(self.msg)
@@ -64,7 +69,8 @@ class RCEmptyFileTest(unittest.TestCase):
 
     def test_05_malformedyaml(self):
         try:
-            self.config = Config(os.path.dirname(__file__) + '/rc_config/malformedyaml.yaml');
+            self.parser = Parser(os.path.dirname(__file__) + '/rc_config/malformedyaml.yaml');
+            self.config = Config(self.parser);
             self.fail("Malformed YAML must raise exception with error.")
         except Exception:
             pass

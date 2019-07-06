@@ -2,10 +2,7 @@ import unittest
 import os
 import json
 
-
-
-from reporter_config.Config import Config
-
+from reporter_config.Config import Config, Parser
 
 class RCMarkTest(unittest.TestCase):
     def setUp(self):
@@ -24,7 +21,8 @@ class RCMarkTest(unittest.TestCase):
 
         This shouldn't rise any exceptions
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/mark.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/mark.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

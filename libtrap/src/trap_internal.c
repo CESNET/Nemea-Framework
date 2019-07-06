@@ -111,3 +111,26 @@ void trap_verbose_msg(int level, char *string)
    fflush(stderr);
    string[0] = 0;
 }
+
+#ifndef ATOMICOPS
+static pthread_mutex_t atomic_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+_Bool __sync_bool_compare_and_swap_8(int64_t *ptr, int64_t oldvar, int64_t newval)
+{
+   pthread_mutex_lock(&atomic_mutex);
+   int64_t tmp = *ptr;
+   *ptr = newval;
+   pthread_mutex_unlock(&atomic_mutex);
+   return tmp == oldvar;
+}
+
+uint64_t __sync_fetch_and_add_8(uint64_t *ptr, uint64_t value)
+{
+   pthread_mutex_lock(&atomic_mutex);
+   uint64_t tmp = *ptr;
+   *ptr += value;
+   pthread_mutex_unlock(&atomic_mutex);
+   return tmp;
+}
+#endif
+

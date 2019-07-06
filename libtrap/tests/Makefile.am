@@ -22,7 +22,7 @@ endif
 endif
 
 
-EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh $(normal_tests_scripts) $(long_tests_scripts) $(tlscertfiles) $(disabled_tests)
+EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh test_tls.sh $(normal_tests_scripts) $(long_tests_scripts) $(tlscertfiles) $(disabled_tests)
 
 check_PROGRAMS = basic_test $(normal_tests_progs)
 
@@ -35,7 +35,7 @@ if HAVE_OPENSSL
 TESTS += test_tls.sh
 endif
 
-noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx test_multi_recv
+noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx
 
 AM_LDFLAGS=-static ../src/libtrap.la
 COM_CPPFLAGS=-I../src -I../include -I${top_srcdir}/include -I${top_srcdir}/src
@@ -87,9 +87,6 @@ test_finalize_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_rxtx_SOURCES=test_rxtx.c
 test_rxtx_CPPFLAGS=$(COM_CPPFLAGS)
-
-test_multi_recv_SOURCES=test_multi_recv.c
-test_multi_recv_CPPFLAGS=$(COM_CPPFLAGS)
 
 valid_buffer_SOURCES=valid_buffer.c
 

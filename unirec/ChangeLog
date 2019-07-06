@@ -1,3 +1,18 @@
+2019-05-18 unirec-2.6.0
+	* Bugfixes for openwrt - timestamps, undefined constants
+	* csv - improved API to convert any field value to string
+
+2019-04-21 unirec-2.5.1
+	* UniRec2CSV: bugfixes string termination
+
+2019-04-20 unirec-2.5.0
+	* Fixed MAC address conversion functions
+	* Added API for UniRec to CSV conversion
+
+2019-03-21 unirec-2.4.0
+	* Add nanosecond precision for ur_time_t
+	* Improved ur_time_from_str() with UTC timezone format support
+
 2018-07-30 unirec-2.3.0
 	* unirec:
 		Add lists related to types and sizes of UniRec fields into public API

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([unirec], [2.3.0], [nemea@cesnet.cz])
+AC_INIT([unirec], [2.6.0], [nemea@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules])
@@ -67,6 +67,9 @@ AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
+
+PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
+AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
 
 if test -z "${top_srcdir}"; then
 top_srcdir="."

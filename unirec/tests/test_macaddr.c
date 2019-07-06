@@ -49,11 +49,12 @@ int main()
    mac_addr_t addr1;
    mac_addr_t addr2;
 
-   char tmp_str[MAC_STR_LEN];
+   char addr_str[MAC_STR_LEN];
    uint8_t tmp_bytes[6];
 
-   char mac_str[] = "AA:BB:CC:DD:EE:FF";
-   uint8_t mac_bytes[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+   char mac_str[] = "0:1:11:A:AA:FF";
+   char mac_str_canonical[] = "00:01:11:0a:aa:ff";
+   uint8_t mac_bytes[] = {0x00, 0x01, 0x11, 0x0A, 0xAA, 0xFF};
 
    /* addr1 STR -> MAC check. */
    if (!mac_from_str(mac_str, &addr1)) {
@@ -79,17 +80,22 @@ int main()
 
    /* addr1 and addr2 check. */
    if (mac_cmp(&addr1, &addr2)) {
-      fprintf(stderr, "Error: MAC and MAC compare check failed\n");
+      fprintf(stderr, "Error: MAC and MAC compare test failed\n");
       return 1;
    }
 
    /* MAC -> STR check. */
-   mac_to_str(&addr1, tmp_str);
-   mac_from_str(tmp_str, &addr2);
+   mac_to_str(&addr1, addr_str);
+   if (strncmp(addr_str, mac_str_canonical, MAC_STR_LEN - 1) != 0) {
+       fprintf(stderr, "Error: MAC -> STR test failed\n");
+       return 1;
+   }
 
-   /* addr1 and addr2 check. */
+   /* STR -> MAC check. */
+   mac_from_str(addr_str, &addr2);
+
    if (mac_cmp(&addr1, &addr2)) {
-      fprintf(stderr, "Error: MAC -> STR test failed\n");
+      fprintf(stderr, "Error: STR -> MAC test failed\n");
       return 1;
    }
 

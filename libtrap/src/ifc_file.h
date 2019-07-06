@@ -46,6 +46,15 @@
 #include <limits.h>
 #include "trap_ifc.h"
 
+#define TIME_PARAM             "time="
+#define TIME_PARAM_LEN         strlen(TIME_PARAM)
+#define SIZE_PARAM             "size="
+#define SIZE_PARAM_LEN         strlen(SIZE_PARAM)
+#define TIME_FORMAT_STRING     ".%Y%m%d%H%M"
+#define TIME_FORMAT_STRING_LEN strlen(TIME_FORMAT_STRING)
+#define FILE_SIZE_SUFFIX_LEN   6
+#define FILENAME_TEMPLATE_LEN  PATH_MAX + 256
+
 typedef struct file_buffer_s {
     uint32_t wr_index;                      /**< Pointer to first free byte in buffer payload */
     uint8_t *header;                        /**< Pointer to first byte in buffer */
@@ -57,15 +66,14 @@ typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
    FILE *fd;
    time_t create_time;
-   size_t file_index;
    char **files;
-   char filename_tmplt[PATH_MAX];
+   char filename_tmplt[FILENAME_TEMPLATE_LEN];
    char filename[PATH_MAX];
    char mode[3];
    char is_terminated;
    uint8_t neg_initialized;
-
-   uint32_t file_cnt;
+   uint16_t file_index;
+   uint16_t file_cnt;
    uint32_t file_change_size;
    uint32_t file_change_time;
    uint32_t buffer_size;                   /**< Buffer size [bytes] */
@@ -89,8 +97,10 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
 /** Create file send interface (output ifc).
  *  Send function of this interface stores data into defined file.
  *  @param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
- *  @param[in] params <filename>:<mode>
- *                    <mode> is optional, w - write, a - append. Append is set as default mode.
+ *  @param[in] params <filename>:<mode>:<time>:<size>
+ *                    <mode> is optional, w - write, a - append. Write is set as default mode.
+ *                    <time> is optional, periodically rotates file in which the data is being written.
+ *                    <size> is optional, rotates file in which the data is being written once it reaches specified size.
  *  @param[out] ifc Created interface.
  *  @return Error code (0 on success). Generated interface is returned in ifc.
  */

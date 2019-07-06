@@ -1,3 +1,31 @@
+2019-05-14 (Tomas Cejka): unirec: hotfix: parsing timestamps failed on Turris Omnia
+2019-04-28 (Tomas Cejka): unirec: csv: decomposition of urcsv_record(), added urcsv_field()
+2019-04-22 (Tomas Cejka): unirec: define default PRIx8, SCNx8 if missing
+
+2019-04-21 (Tomas Cejka): unirec: BUGFIX missing string termination & bad move of curpos
+
+2019-04-18 (Tomas Cejka): unirec: csv: add missing include
+2019-04-18 (Tomas Cejka): unirec: csv: add missing test
+2019-04-09 (Ulrik Haugen): Tune mac address tests
+2019-04-08 (Tomas Cejka): unirec: add API for translation into CSV
+2019-04-07 (Tomas Cejka): unirec: macaddr: conversion from/to string using sscanf/snprintf
+
+2019-03-19 (Tomas Cejka): unirec: time: add tests of ur_time_from_str() with UTC timezone
+2019-03-19 (Tomas Cejka): unirec: time: add support for UTF timestamp string (ending with 'Z')
+2019-03-14 (Tomas Cejka): unirec: time: improved test (timediff), fixed typo
+2019-03-14 (Tomas Cejka): unirec: timediff: explicitly cast to uint64_t
+2019-03-14 (Tomas Cejka): unirec: coverage target in Makefile
+2019-03-14 (Václav Bartoš): unirec: time: updated and fixed tests
+2019-03-14 (Václav Bartoš): unirec: time: Fixed a rounding error in conversion to ms/us/ns
+2019-03-14 (Tomas Cejka): unirec: time: updated tests (fixed some and added numbers)
+2019-03-14 (Tomas Cejka): unirec: time: add new tests for usec and nsec precision
+2019-03-14 (Tomas Cejka): unirec: time: MAINTENANCE coding style & trailing spaces
+2019-03-14 (Tomas Cejka): unirec: time: add missing timediff prototypes (usec, nsec)
+2019-03-14 (Tomas Cejka): unirec: time: BUGFIX used pointer value instead of prepared one
+2018-09-24 (Ulrik Haugen): Remove hard coded constant and clarify unirec docs (#102)
+2018-09-10 (Václav Bartoš): unirec: updated ur_time_from_string() to support precision
+2018-09-10 (Václav Bartoš): ur_time_t: Allowed conversion from/to micro- and nanoseconds
+
 2018-07-25 (Tomas Cejka): unirec: add lists of types and defined fields into public API
 2018-07-25 (Tomas Cejka): unirec: add ur_get_field_type_from_str() to public API
 

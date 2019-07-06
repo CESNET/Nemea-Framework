@@ -58,10 +58,6 @@
 #include "trap_error.h"
 #include "ifc_file.h"
 
-/* Buffer size for maximum path and 11 bytes for safety when creating file suffix using sprintf.
-   10 for maximum number of digits in UINT_MAX and 1 byte for dot. */
-#define SAFE_PATH PATH_MAX + 11
-
 /**
  * \addtogroup trap_ifc TRAP communication module interface
  * @{
@@ -70,7 +66,6 @@
  * \addtogroup file_ifc file interface module
  * @{
  */
-
 
 /**
  * \brief Close file and free allocated memory.
@@ -186,17 +181,22 @@ static void file_create_dump(void *priv, uint32_t idx, const char *path)
 }
 
 /**
- * \brief Create a new path and filename from the template created during interface initiation.
- * \param[in] priv   pointer to module private data
- * \return 0 on success (TRAP_E_OK),
-    TRAP_E_MEMORY if function time(NULL) returns -1,
-    TRAP_E_IO_ERROR if error occurs during directory creation,
-    TRAP_E_BADPARAMS if the specified path and filename exceeds MAX_PATH - 1 bytes.
+ * \brief Create a new path and filename from the template created during interface initialization.
+ *        New filename is stored in file_private_t->filename.
+ *
+ * \param[in,out] config Pointer to module private data.
+ *
+ * \return TRAP_E_OK        on success,
+           TRAP_E_MEMORY    if function time(NULL) returns -1,
+           TRAP_E_IO_ERROR  if error occurs during directory creation,
+           TRAP_E_BADPARAMS if the specified path and filename exceeds MAX_PATH - 1 bytes.
  */
-int create_next_filename(void *priv)
+int create_next_filename(file_private_t *config)
 {
-   file_private_t *config = (file_private_t*) priv;
-   char buf[SAFE_PATH];
+   char buf[PATH_MAX];
+   char suffix[FILE_SIZE_SUFFIX_LEN + 1];
+   uint8_t valid_suffix_present = 0;
+
    config->create_time = time(NULL);
    if (config->create_time == -1) {
       VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Unable to retrieve current timestamp.", config->ifc_idx);
@@ -209,9 +209,9 @@ int create_next_filename(void *priv)
    }
 
    /* Create valid path string based on the template and actual time */
-   size_t len = strftime(buf, PATH_MAX - 1, config->filename_tmplt, localtime(&config->create_time));
+   size_t len = strftime(buf, PATH_MAX - FILE_SIZE_SUFFIX_LEN, config->filename_tmplt, localtime(&config->create_time));
    if (len == 0) {
-      VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", config->ifc_idx, PATH_MAX - 1);
+      VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", config->ifc_idx, PATH_MAX - FILE_SIZE_SUFFIX_LEN);
       return TRAP_E_BADPARAMS;
    }
 
@@ -221,40 +221,41 @@ int create_next_filename(void *priv)
       return TRAP_E_IO_ERROR;
    }
 
-   /* Create a backup of current path */
-   char backup[SAFE_PATH];
-   memcpy(backup, buf, SAFE_PATH);
+   /* If the user specified append mode, get the lowest possible numeric suffix for which there does not exist a file */
+   if (config->mode[0] == 'a') {
+      while (42) {
+         if (sprintf(suffix, ".%05" PRIu16, config->file_index) < 0) {
+            VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
+            return TRAP_E_IO_ERROR;
+         }
 
-   /* If the user specified file splitting based on size */
-   if (config->file_change_size != 0) {
-      int new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
-      if (new_len < 0) {
-         VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
-         return TRAP_E_IO_ERROR;
-      } else if (new_len > PATH_MAX - 1) {
-         VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", config->ifc_idx, PATH_MAX - 1);
-         return TRAP_E_BADPARAMS;
-      } else {
+         strncpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
          config->file_index++;
-         len = new_len;
+
+         /* Detected overflow */
+         if (config->file_index == 0) {
+            VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: No valid file names left.", config->ifc_idx);
+            return TRAP_E_IO_ERROR;
+         }
+
+         if (access(buf, F_OK) != 0) {
+            len += FILE_SIZE_SUFFIX_LEN;
+            valid_suffix_present = 1;
+            break;
+         }
       }
    }
 
-   /* If the user specified append mode, get the lowest possible numeric suffix for which there does not exist a file */
-   if (config->mode[0] == 'a') {
-      while (access(buf, F_OK) != -1) {
-         int new_len = sprintf(buf, "%s.%zu", backup, config->file_index);
-         if (new_len < 0) {
-            VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
-            return TRAP_E_IO_ERROR;
-         } else if (new_len > PATH_MAX - 1) {
-            VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", config->ifc_idx, PATH_MAX - 1);
-            return TRAP_E_BADPARAMS;
-         }
-
-         config->file_index++;
-         len = new_len;
+   /* If the user specified file splitting based on size (and suffix was not yet added due to 'append' mode) */
+   if (config->file_change_size != 0 && !valid_suffix_present) {
+      if (sprintf(suffix, ".%05" PRIu16, config->file_index) < 0) {
+         VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: sprintf failed.", config->ifc_idx);
+         return TRAP_E_IO_ERROR;
       }
+
+      strncpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+      len += FILE_SIZE_SUFFIX_LEN;
+      config->file_index++;
    }
 
    /* Copy newly created path to context inner data structure */
@@ -262,48 +263,26 @@ int create_next_filename(void *priv)
    return TRAP_E_OK;
 }
 
-char *get_next_file(void *priv)
+/**
+ * \brief Close previous file, open next file (name taken in file_private_t->filename).
+ *        Negotiation must be performed after changing the file.
+ *
+ * \param[in,out] c Pointer to module private data.
+ *
+ * \return TRAP_E_OK         on success,
+ *         TRAP_E_BADPARAMS  if the next file cannot be opened.
+ */
+int switch_file(file_private_t *c)
 {
-   file_private_t *config = (file_private_t*) priv;
-   config->file_index++;
-   if (config->file_index < config->file_cnt) {
-      return config->files[config->file_index];
-   }
-
-   return NULL;
-}
-
-int open_next_file(file_private_t *c, char *new_filename)
-{
-   if (!c) {
-      VERBOSE(CL_ERROR, "FILE IFC[??]: NULL pointer to inner data structure.");
-      return TRAP_E_NOT_INITIALIZED;
-   }
-
-   if (!new_filename) {
-      VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: NULL pointer to file name.", c->ifc_idx);
-      return TRAP_E_NOT_INITIALIZED;
-   }
-
    if (c->fd != NULL) {
       fclose(c->fd);
       c->fd = NULL;
    }
 
-   /* Copy current filename to the context structure (only happens if it is input ifc */
-   if (new_filename != c->filename) {
-      if (strlen(new_filename) > PATH_MAX - 1) {
-         VERBOSE(CL_ERROR, "FILE INPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", c->ifc_idx, PATH_MAX - 1);
-         return TRAP_E_BADPARAMS;
-      }
-
-      strcpy(c->filename, new_filename);
-   }
-
    c->neg_initialized = 0;
-   c->fd = fopen(new_filename, c->mode);
+   c->fd = fopen(c->filename, c->mode);
    if (c->fd == NULL) {
-      VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"] : unable to open file \"%s\" in mode \"%c\". Possible reasons: non-existing file, bad permission, file can not be opened in this mode.", c->ifc_idx, new_filename, c->mode[0]);
+      VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: unable to open file \"%s\" in mode \"%c\". Possible reasons: non-existing file, bad permission, file can not be opened in this mode.", c->ifc_idx, c->filename, c->mode[0]);
       return TRAP_E_BADPARAMS;
    }
 
@@ -328,8 +307,7 @@ int open_next_file(file_private_t *c, char *new_filename)
 int file_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
    size_t loaded;
-   char *next_file = NULL;
-   /* header of message inside the buffer */
+   /* Header of message inside the buffer */
    uint16_t *m_head = data;
    uint32_t data_size = 0;
 
@@ -339,7 +317,7 @@ int file_recv(void *priv, void *data, uint32_t *size, int timeout)
       return trap_error(config->ctx, TRAP_E_TERMINATED);
    }
 
-   /* Check whether the file stream is opened */
+   /* Check whether the file stream is open */
    if (config->fd == NULL) {
       return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
    }
@@ -382,26 +360,28 @@ neg_start:
    }
 #endif
 
-   /* Reads 4 bytes from the file, determining the length of bytes to be read to @param[out] data */
+   /* Read 4 bytes from the file, determining the length of bytes to be read to @param[out] data */
    loaded = fread(&data_size, sizeof(uint32_t), 1, config->fd);
    if (loaded != 1) {
       if (feof(config->fd)) {
-         next_file = get_next_file(priv);
-         if (!next_file) {
-            /* set size of buffer to the size of 1 message (including its header) */
+
+         /* Test whether this was the last file */
+         if (++(config->file_index) >= config->file_cnt) {
+            /* Set size of buffer to the size of 1 message (including its header) */
             (*size) = 2;
-            /* set the header of message to 0B */
+            /* Set the header of message to 0B */
             *m_head = 0;
 
             return TRAP_E_OK;
-         } else {
-            if (open_next_file(config, next_file) == TRAP_E_OK) {
+         }
+
+         strncpy(config->filename, config->files[config->file_index], strlen(config->files[config->file_index]));
+         if (switch_file(config) == TRAP_E_OK) {
 #ifdef ENABLE_NEGOTIATION
-               goto neg_start;
+            goto neg_start;
 #endif
-            } else {
-               return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC[%"PRIu32"]: Unable to open next file.", config->ifc_idx);
-            }
+         } else {
+            return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "INPUT FILE IFC[%"PRIu32"]: Unable to open next file.", config->ifc_idx);
          }
       } else {
          VERBOSE(CL_ERROR, "INPUT FILE IFC[%"PRIu32"]: Read error occurred in file: %s", config->ifc_idx, config->filename);
@@ -410,7 +390,7 @@ neg_start:
    }
 
    *size = ntohl(data_size);
-   /* Reads (*size) bytes from the file */
+   /* Read (*size) bytes from the file */
    loaded = fread(data, 1, (*size), config->fd);
    if (loaded != (*size)) {
          VERBOSE(CL_ERROR, "INPUT FILE IFC[%"PRIu32"]: Read incorrect number of bytes from file: %s. Attempted to read %d bytes, but the actual count of bytes read was %zu.", config->ifc_idx, config->filename, (*size), loaded);
@@ -548,10 +528,11 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
 
 /***** Sender *****/
 
-void open_next_file_wrapper(void *priv)
+void switch_file_wrapper(void *priv)
 {
-   if (create_next_filename(priv) == TRAP_E_OK) {
-      open_next_file(priv, ((file_private_t *)priv)->filename);
+   file_private_t *c = (file_private_t *) priv;
+   if (c && !c->is_terminated && (create_next_filename(c) == TRAP_E_OK)) {
+      switch_file(c);
    }
 }
 /**
@@ -613,33 +594,31 @@ int file_write_buffer(void *priv, const void *data, uint32_t size, int timeout)
 
       /* Check whether new file should be created */
       if (difftime(current_time, config->create_time) / 60 >= config->file_change_time) {
-
+		   config->file_index = 0;
          /* Create new filename from the current timestamp */
-         int status = create_next_filename(priv);
+         int status = create_next_filename(config);
          if (status != TRAP_E_OK) {
             return trap_errorf(config->ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file creation.", config->ifc_idx);
          }
 
          /* Open newly created file */
-         status = open_next_file(priv, config->filename);
+         status = switch_file(config);
          if (status != TRAP_E_OK) {
             return trap_errorf(config->ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file opening.", config->ifc_idx);
          }
       }
-
-      config->file_index = 0;
    }
 
    if (config->file_change_size != 0 && (uint64_t)ftell(config->fd) >= (uint64_t)(1024 * 1024 * (uint64_t)config->file_change_size)) {
 
       /* Create new filename from the current timestamp */
-      int status = create_next_filename(priv);
+      int status = create_next_filename(config);
       if (status != TRAP_E_OK) {
          return trap_errorf(config->ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file creation.", config->ifc_idx);
       }
 
       /* Open newly created file */
-      status = open_next_file(priv, config->filename);
+      status = switch_file(config);
       if (status != TRAP_E_OK) {
          return trap_errorf(config->ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file opening.", config->ifc_idx);
       }
@@ -740,7 +719,7 @@ static inline int file_send(void *priv, const void *data, uint16_t size, int tim
          }
       }
    }
-   
+
    return result;
 }
 
@@ -799,7 +778,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    priv->buffer.wr_index = 0;
    priv->buffer.finished = 0;
    /* Set default mode */
-   strcpy(priv->mode, "ab");
+   strcpy(priv->mode, "wb");
 
    /* Parse file name */
    length = strcspn(params, ":");
@@ -830,15 +809,15 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    }
 
    free(dest);
-   strncpy(priv->filename_tmplt, exp_result.we_wordv[0], PATH_MAX - 1);
+   strncpy(priv->filename_tmplt, exp_result.we_wordv[0], sizeof(priv->filename_tmplt));
    wordfree(&exp_result);
 
    /* Parse mode */
    if (params_next) {
       length = strcspn(params_next, ":");
       if (length == 1) {
-         if (params_next[0] == 'w') {
-            priv->mode[0] = 'w';
+         if (params_next[0] == 'a') {
+            priv->mode[0] = 'a';
          }
 
          if (params_next[1] == ':') {
@@ -858,17 +837,17 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
       /* Parse remaining parameters */
       while (params_next) {
          length = strcspn(params_next, ":");
-         if (length > 5 && strncmp(params_next, "time=", 5) == 0) {
-            priv->file_change_time = atoi(params_next + 5);
-            if (strlen(priv->filename_tmplt) + 11 > PATH_MAX - 1) {
+         if (length > TIME_PARAM_LEN && strncmp(params_next, TIME_PARAM, TIME_PARAM_LEN) == 0) {
+            priv->file_change_time = atoi(params_next + TIME_PARAM_LEN);
+            if (strlen(priv->filename_tmplt) + TIME_FORMAT_STRING_LEN > sizeof(priv->filename_tmplt) - 1) {
                free(priv);
-               return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", idx, PATH_MAX - 1);
+               return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", idx, sizeof(priv->filename_tmplt) - 1);
             }
 
             /* Append timestamp formate to the current template */
-            strcat(priv->filename_tmplt, ".%Y%m%d%H%M");
-         } else if (length > 5 && strncmp(params_next, "size=", 5) == 0) {
-            priv->file_change_size = atoi(params_next + 5);
+            strcat(priv->filename_tmplt, TIME_FORMAT_STRING);
+         } else if (length > SIZE_PARAM_LEN && strncmp(params_next, SIZE_PARAM, SIZE_PARAM_LEN) == 0) {
+            priv->file_change_size = atoi(params_next + SIZE_PARAM_LEN);
          }
 
          if (params_next[length] == '\0') {
@@ -887,7 +866,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    }
 
    /* Open first file */
-   status = open_next_file(priv, priv->filename);
+   status = switch_file(priv);
    if (status != TRAP_E_OK) {
       free(priv);
       return trap_errorf(ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file opening.", idx);
@@ -896,7 +875,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    /* Fills interface structure */
    ifc->send = file_send;
    ifc->flush = file_flush;
-   ifc->disconn_clients = open_next_file_wrapper;
+   ifc->disconn_clients = switch_file_wrapper;
    ifc->terminate = file_terminate;
    ifc->destroy = file_destroy;
    ifc->get_client_count = file_get_client_count;

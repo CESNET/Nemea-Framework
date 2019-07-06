@@ -2,7 +2,7 @@ import unittest
 import os
 import json
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 from reporter_config.actions.Drop import DropMsg
 
 class RCDropTest(unittest.TestCase):
@@ -22,7 +22,8 @@ class RCDropTest(unittest.TestCase):
         Load drop.yaml configuration file, parse it and analyze it
 
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/drop.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/drop.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
 

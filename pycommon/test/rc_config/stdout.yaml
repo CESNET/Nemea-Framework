@@ -1,0 +1,11 @@
+---
+namespace: com.example.nemea
+custom_actions:
+  - id: stdout
+    file:
+      path: /dev/stdout
+rules:
+  - id: 1
+    condition: true
+    actions:
+      - stdout

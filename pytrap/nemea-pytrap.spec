@@ -11,7 +11,7 @@
 %endif
 
 Name:           %{pypi_name}
-Version:        0.9.12
+Version:        0.11.0
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
@@ -21,8 +21,7 @@ Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/pytrap/%{py
 
 %description
 The pytrap module is a native Python extension that allows for writing
-NEMEA
-modules in Python.
+NEMEA modules in Python.
 
 %package -n     python2-%{pypi_name}
 Summary:        Python extension of the NEMEA project
@@ -36,8 +35,7 @@ BuildRequires:  unirec
 
 %description -n python2-%{pypi_name}
 The pytrap module is a native Python extension that allows for writing
-NEMEA
-modules in Python.
+NEMEA modules in Python.
 
 %package -n     python%{python3_pkgversion}-%{pypi_name}
 Summary:        Python extension of the NEMEA project
@@ -51,8 +49,7 @@ BuildRequires:  unirec
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The pytrap module is a native Python extension that allows for writing
-NEMEA
-modules in Python.
+NEMEA modules in Python.
 
 
 %prep

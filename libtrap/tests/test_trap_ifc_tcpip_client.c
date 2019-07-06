@@ -103,6 +103,7 @@ int main(int argc, char **argv)
 #else
    timeout = 5000000; /* wait for 5 secs */
 #endif
+   trap_ifcctl(TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, timeout);
 
    VERBOSE(CL_VERBOSE_OFF, "Receiving...");
    // Read data from input, process them and write to output
@@ -119,7 +120,7 @@ int main(int argc, char **argv)
 #endif
 
       // Receive data from any interface, wait until data are available
-      ret = trap_get_data(TRAP_MASK_ALL, &data_ptr, &data_size, timeout);
+      ret = trap_recv(0, &data_ptr, &data_size);
       if (ret == TRAP_E_OK) {
          recvdata = (char *) calloc(1, data_size + 1);
          memcpy(recvdata, data_ptr, data_size);
@@ -135,12 +136,12 @@ int main(int argc, char **argv)
          printf("terminated or IO error\n");
          break;
       } else if (ret == TRAP_E_TIMEOUT) {
-         printf("trap_get_data() timeouted, this shouldn't happen!\n");
+         printf("trap_recv() timeouted, this shouldn't happen!\n");
 #ifdef WAITING
          sleep(6);
 #endif
       } else {
-         printf("Error: trap_get_data() returned %i (%s)\n", ret, trap_last_error_msg);
+         printf("Error: trap_recv() returned %i (%s)\n", ret, trap_last_error_msg);
       }
    }
 

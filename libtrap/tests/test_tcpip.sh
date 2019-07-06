@@ -134,7 +134,7 @@ function run_ertest()
 
    ./$PROG_ECHO_REPLY -i $INTERFACE > "$REPLYOUT" 2>&1 &
    replypid=$!
-   ./$PROG_ECHO -i $INTERFACE:buffer_count=1 -n $ERSIZE > "$ECHOOUT" 2>&1 &
+   ./$PROG_ECHO -i $INTERFACE -n $ERSIZE > "$ECHOOUT" 2>&1 &
    echopid=$!
 
    if [ -n "$DEBUG" ]; then echo "Running for ${ERTIME}s with ${ERSIZE}B messages"; fi
@@ -144,7 +144,6 @@ function run_ertest()
    if [ -n "$DEBUG" ]; then echo "Wait for shutting client"; fi
    sleep 3
    kill -INT $replypid 2> /dev/null
-   sleep 3
 
    RECV=$(grep "Last received value" "$REPLYOUT" | sed 's/.* \([0-9]*\)/\1/')
    SENT=$(grep "Last sent" "$ECHOOUT" | sed 's/.* \([0-9]*\)/\1/')

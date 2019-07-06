@@ -268,11 +268,6 @@ struct trap_ctx_priv_s {
    uint32_t num_ifc_out;
 
    /**
-    * Array of results for multiread feature
-    */
-   trap_multi_result_t *in_ifc_results;
-
-   /**
     * Timeout common to all readers for multiread feature
     */
    int get_data_timeout;
@@ -281,30 +276,6 @@ struct trap_ctx_priv_s {
     * Lock setting last error code and last error message.
     */
    pthread_mutex_t error_mtx;
-
-   /**
-    * Reader threads for multiread feature
-    */
-   struct reader_threads_s *reader_threads;
-
-   /**
-    * Semaphore used when collector (main thread, caller of ifc's recv)
-    * waits for incoming data from all threads.
-    */
-   sem_t sem_collector;
-
-   /**
-    * Mutex for manipulation with readers_count.
-    */
-   pthread_mutex_t mut_sem_collector;
-
-   /**
-    * Number of reader threads that will read messages during multiread (set
-    * by collector thread).  Every client decreases this value and the last
-    * reader (readers_count equals 0 after decrementation) wakes the collector
-    * thread.
-    */
-   int32_t readers_count;
 
    /**
     * Timeouts for autoflush thread.
@@ -380,6 +351,13 @@ struct trap_buffer_header_s {
    uint8_t data[0];
 } __attribute__ ((__packed__));
 typedef struct trap_buffer_header_s trap_buffer_header_t;
+
+#ifndef ATOMICOPS
+_Bool __sync_bool_compare_and_swap_8(int64_t *ptr, int64_t oldvar, int64_t newval);
+
+uint64_t __sync_fetch_and_add_8(uint64_t *ptr, uint64_t value);
+
+#endif
 
 #endif
 

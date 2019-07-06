@@ -28,11 +28,11 @@ if [ $error -ne 0 ]; then
 fi
 
 # start server
-./test_rxtx -i "u:$sock2,u:$sock1:buffer_count=1" -s -n 66&
+./test_rxtx -i "u:$sock2,u:$sock1" -s -n 66 -b&
 p1=$!
 
 #start client
-./test_rxtx -i "u:$sock1,u:$sock2:buffer_count=1" -n 66&
+./test_rxtx -i "u:$sock1,u:$sock2" -n 66 -b&
 p2=$!
 
 #sleep 5

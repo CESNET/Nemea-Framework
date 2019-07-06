@@ -1693,7 +1693,18 @@ repeat:
 void tls_sender_terminate(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
+
+   uint32_t i;
+   uint64_t sum;
+
    if (c != NULL) {
+      do {
+         sum = 0;
+         for (i = 0; i < c->buffer_count; i++) {
+            sum |= c->buffers[i].clients_bit_arr;
+         }
+      } while (sum != 0);
+
       c->is_terminated = 1;
       close(c->term_pipe[1]);
       VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break select()");

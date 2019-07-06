@@ -2,7 +2,7 @@ import unittest
 import os
 import json
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCFileTest(unittest.TestCase):
 
@@ -22,7 +22,8 @@ class RCFileTest(unittest.TestCase):
 
         This shouldn't rise any exceptions
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/file.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/file.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)
@@ -31,7 +32,8 @@ class RCFileTest(unittest.TestCase):
         os.remove(self.config.conf["custom_actions"][0]["file"]["path"])
 
     def test_02_file_content(self):
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/file.yaml');
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/file.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

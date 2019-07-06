@@ -1,3 +1,16 @@
+2019-05-18 libtrap-1.13.1
+	* Replace 8B atomics on platforms that do not support it (turris)
+	* File IFC file numbers are aligned to 5 digits with leading zeros
+	* File IFC file has default mode set to 'w' now
+	* Maintenance and fixing warnings.
+
+2019-04-20 libtrap-1.13.0
+	* Improved error messages
+	* Removed multi_recv unused feature
+
+2019-02-07 libtrap-1.12.2
+	* Bugfix in init - possible deadlock on uninitialized semaphore
+
 2018-11-23 libtrap-0.12.1
 	* libtrap:
 		Libtrap buffer now properly empties itself if no client is

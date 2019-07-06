@@ -285,7 +285,7 @@ typedef struct trap_output_ifc_s {
 /**
  * \brief Internal function for setting of timeout structs according to libtrap timeout.
  *
- * \param[in] timeout  timeout given to trap_get_data() or trap_send_data()
+ * \param[in] timeout  timeout in microseconds, or \ref trap_timeout
  * \param[out] tm      used for select() call when non-blocking
  * \param[out] tmnblk  used for sem_timedwait() call to block on semaphore.
  */

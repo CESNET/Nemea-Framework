@@ -5,7 +5,5 @@ export TRAP_SOCKET_DIR=/
 ./test_echo_reply -i t:11334 >/dev/null&
 ./test_echo -i t:11334 -n 100 >/dev/null&
 sleep 2;
-
-kill -INT %1
 kill -INT %2
 

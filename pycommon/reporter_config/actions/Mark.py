@@ -17,4 +17,4 @@ class MarkAction(Action):
         return self.mark(record)
 
     def __str__(self):
-        return "Path: " + self.path + ", Value: " + self.value + "\n"
+        return "Path: " + str(self.path) + ", Value: " + str(self.value) + "\n"

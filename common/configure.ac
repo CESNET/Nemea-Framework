@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-common], [1.6.0], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-common], [1.6.1], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([nemea-common.spec.in])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
