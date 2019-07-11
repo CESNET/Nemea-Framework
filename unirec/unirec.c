@@ -107,6 +107,22 @@ const int ur_field_type_size[] = {
    16, /*UR_TYPE_IP*/
    6, /*UR_TYPE_MAC*/
    8, /*UR_TYPE_TIME*/
+
+   // arrays
+   -1, /*UR_TYPE_A_CHAR*/
+   -1, /*UR_TYPE_A_UINT8*/
+   -1, /*UR_TYPE_A_INT8*/
+   -2, /*UR_TYPE_A_UINT16*/
+   -2, /*UR_TYPE_A_INT16*/
+   -4, /*UR_TYPE_A_UINT32*/
+   -4, /*UR_TYPE_A_INT32*/
+   -8, /*UR_TYPE_A_UINT64*/
+   -8, /*UR_TYPE_A_INT64*/
+   -4, /*UR_TYPE_A_FLOAT*/
+   -8, /*UR_TYPE_A_DOUBLE*/
+   -16, /*UR_TYPE_A_IP*/
+   -6, /*UR_TYPE_A_MAC*/
+   -8, /*UR_TYPE_A_TIME*/
 };
 
 /**
@@ -131,6 +147,20 @@ const char *ur_field_type_str[] = {
    "ipaddr", /*UR_TYPE_IP*/
    "macaddr", /*UR_TYPE_MAC*/
    "time", /*UR_TYPE_TIME*/
+   "char*", /*UR_TYPE_A_CHAR*/
+   "uint8*", /*UR_TYPE_A_UINT8*/
+   "int8*", /*UR_TYPE_A_INT8*/
+   "uint16*", /*UR_TYPE_A_UINT16*/
+   "int16*", /*UR_TYPE_A_INT16*/
+   "uint32*", /*UR_TYPE_A_UINT32*/
+   "int32*", /*UR_TYPE_A_INT32*/
+   "uint64*", /*UR_TYPE_A_UINT64*/
+   "int64*", /*UR_TYPE_A_INT64*/
+   "float*", /*UR_TYPE_A_FLOAT*/
+   "double*", /*UR_TYPE_A_DOUBLE*/
+   "ipaddr*", /*UR_TYPE_A_IP*/
+   "macaddr*", /*UR_TYPE_A_MAC*/
+   "time*", /*UR_TYPE_A_TIME*/
 };
 
 ur_field_specs_t ur_field_specs;
@@ -1102,6 +1132,20 @@ int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void 
    return UR_OK;
 }
 
+int ur_resize_array(const ur_template_t * tmplt, void *rec, int field_id, int len)
+{
+   if (tmplt->offset[field_id] == UR_INVALID_OFFSET) {
+      return UR_E_INVALID_FIELD_ID;
+   }
+   // wrong parameters or template does not contain dynamic fields
+   if (tmplt->first_dynamic == UR_NO_DYNAMIC_VALUES || ur_is_static(field_id)) {
+      return UR_E_INVALID_FIELD_ID;
+   }
+   //change size of a variable length field
+   ur_var_change_size(tmplt, rec, field_id, len);
+   return UR_OK;
+}
+
 void ur_clear_varlen(const ur_template_t * tmplt, void *rec)
 {
    //set null offset and length for all dynamic fields
@@ -1233,7 +1277,7 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
    if (ur_is_present(tmpl, f_id) == 0) {
       return 1;
    }
-   switch (ur_get_type(f_id)) {
+   switch (ur_get_type(f_id)) { //TODO
    case UR_TYPE_UINT8:
       if (sscanf(v, "%" SCNu8, (uint8_t *) ptr) != 1) {
          rv = 1;

@@ -63,6 +63,7 @@ UR_FIELDS(
    ipaddr IP,
    string STR1,
    string STR2,
+   uint32* ARR
 )
 
 
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
    // Create a record and store it to the buffer
    {
       // Create template
-      ur_template_t *tmplt = ur_create_template("STR1,FOO,BAR,IP,STR1,STR1,IP", NULL);
+      ur_template_t *tmplt = ur_create_template("STR1,FOO,BAR,IP,STR1,STR1,IP,ARR", NULL);
       if (tmplt == NULL) {
          fprintf(stderr, "Error during creating template\n");
          return 1;
@@ -94,6 +95,16 @@ int main(int argc, char **argv)
       ur_set(tmplt, rec, F_BAR, BAR_TEST_VALUE);
       ur_set(tmplt, rec, F_IP, ip_from_int(IP_TEST_VALUE));
       ur_set_string(tmplt, rec, F_STR1, STR_TEST_VALUE);
+/*
+      ur_preallocate_array(tmplt, rec, F_ARR, 5);
+      uint32_t *array = (uint32_t *)ur_get_ptr_by_id(tmplt, rec, F_ARR);
+      for (int i = 0;  i < 10; ++i) {
+         ur_set_array(tmplt, rec, F_ARR, 9-i, i);
+      }
+      for (int i = 0;  i < 10; ++i) {
+         printf("arr[%d] = %u\n", i, array[i]);
+      }
+*/
       // Store record into a buffer
       buffer = malloc(ur_rec_size(tmplt, rec));
       if(buffer == NULL) {
@@ -111,7 +122,7 @@ int main(int argc, char **argv)
    // Read data from the record in the buffer
    {
       // Create another template with the same set of fields (the set of fields MUST be the same, even if we don't need to work with all fields)
-      ur_template_t *tmplt = ur_create_template("FOO   ,  BAR\n,IP,STR1", NULL);
+      ur_template_t *tmplt = ur_create_template("FOO   ,  BAR\n,IP,STR1,   ARR ", NULL);
       if(tmplt == NULL){
          fprintf(stderr, "Error during creating template\n");
          return 1;
@@ -142,9 +153,17 @@ int main(int argc, char **argv)
       char str_cmp [] = STR_TEST_VALUE;
       if (strlen(str_cmp) != ur_get_var_len(tmplt, buffer, F_STR1) || memcmp(ur_get_ptr(tmplt, buffer, F_STR1), str_cmp, ur_get_var_len(tmplt, buffer, F_STR1)) != 0) {
          fprintf(stderr, "STR1 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer, F_STR1), ur_get_ptr(tmplt, buffer, F_STR1), STR_TEST_VALUE);
-         //return 1;
+         return 1;
       }
-
+/*
+      for (int i = 0;  i < 10; ++i) {
+         uint32_t val = ur_get_array(tmplt, buffer, F_ARR, i);
+         if (val != (uint32_t) (9 - i)) {
+            fprintf(stderr, "ARR value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) (9-i));
+            return 1;
+         }
+      }
+*/
       ur_free_template(tmplt);
    }
 
@@ -225,7 +244,7 @@ int main(int argc, char **argv)
    // Read data from the record in the second buffer
    {
       // Create template with the second set of fields (we can use different order of fields, it doesn't matter)
-      ur_template_t *tmplt = ur_create_template("BAR,NEW,STR2,STR1", NULL);
+      ur_template_t *tmplt = ur_create_template("BAR,NEW,STR2,STR1,ARR", NULL);
 
       // The NEW field is already defined (it is stored globally) but we don't know its ID here
       int new_id = ur_get_id_by_name("NEW");
@@ -244,7 +263,7 @@ int main(int argc, char **argv)
       char str_cmp [] = STR_TEST_VALUE;
       if (strlen(str_cmp) != ur_get_var_len(tmplt, buffer2, F_STR1) || memcmp(ur_get_ptr(tmplt, buffer2, F_STR1), str_cmp, ur_get_var_len(tmplt, buffer2, F_STR1)) != 0) {
          fprintf(stderr, "STR1 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer2, F_STR1), ur_get_ptr(tmplt, buffer2, F_STR1), STR_TEST_VALUE);
-         //return 1;
+         return 1;
       }
       char str_cmp2 [] = STR2_TEST_VALUE;
       if (strlen(str_cmp2) != ur_get_var_len(tmplt, buffer2, F_STR2) || memcmp(ur_get_ptr(tmplt, buffer2, F_STR2), str_cmp2, ur_get_var_len(tmplt, buffer2, F_STR2)) != 0) {
