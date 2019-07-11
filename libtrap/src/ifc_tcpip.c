@@ -963,7 +963,7 @@ static uint64_t mask[64] = {
         549755813888, 1099511627776, 2199023255552, 4398046511104, 8796093022208, 17592186044416, 35184372088832,
         70368744177664, 140737488355328, 281474976710656, 562949953421312, 1125899906842624, 2251799813685248,
         4503599627370496, 9007199254740992, 18014398509481984, 36028797018963968, 72057594037927936, 144115188075855872,
-        288230376151711744, 576460752303423488, 1152921504606846976, 2305843009213693952, 4611686018427387904, 9223372036854775808
+        288230376151711744, 576460752303423488, 1152921504606846976, 2305843009213693952, 4611686018427387904, 9223372036854775808ULL
 };
 
 static inline void set_index(uint64_t *bits, int i)
@@ -1307,14 +1307,22 @@ static void *sending_thread_func(void *priv)
 
       if (select(maxsd + 1, &disset, &set, NULL, NULL) < 0) {
          if (c->is_terminated == 0) {
-            VERBOSE(CL_ERROR, "Sending thread: unexpected error in select (errno: %i)", errno);
+            switch (errno) {
+               case EINTR:
+                  continue;
+               default:
+                  VERBOSE(CL_ERROR, "Sending thread: unexpected error in select (errno: %i)", errno);
+                  pthread_exit(NULL);
+            }
+         } else {
+            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: terminating...");
+            pthread_exit(NULL);
          }
-         pthread_exit(NULL);
       }
 
       if (FD_ISSET(c->term_pipe[0], &disset)) {
          /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
-         VERBOSE(CL_VERBOSE_ADVANCED, "Sending was interrupted by terminate()");
+         VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Sending was interrupted by terminate()");
          pthread_exit(NULL);
       }
 
@@ -1337,7 +1345,7 @@ static void *sending_thread_func(void *priv)
             res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
             if (res < 1) {
                disconnect_client(c, i);
-               VERBOSE(CL_VERBOSE_LIBRARY, "Client %u disconnected", cl->id);
+               VERBOSE(CL_VERBOSE_LIBRARY, "Sending thread: Client %u disconnected", cl->id);
                continue;
             }
          }
@@ -1353,7 +1361,7 @@ static void *sending_thread_func(void *priv)
             cl->timer_total += cl->timer_last;
 
             if (res != TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_OFF, "Disconnected client %d (ret val: %d)", cl->id, res);
+               VERBOSE(CL_VERBOSE_OFF, "Sending thread: Disconnected client %d (ret val: %d)", cl->id, res);
                disconnect_client(c, i);
             }
          }
@@ -1420,7 +1428,7 @@ repeat:
       clock_gettime(CLOCK_REALTIME, &ts);
 
       ts.tv_nsec = (ts.tv_nsec + timeout * 1000) % 1000000000;
-      if ((timeout * 1000) >= 1000000000) {
+      if (timeout >= 1000000) {
          ts.tv_sec += 1;
       }
 
