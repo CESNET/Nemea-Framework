@@ -61,6 +61,10 @@
 #define DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
 #define DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
 
+#define BUFFER_COUNT_PARAM_LENGTH    13     /**< Used for parsing ifc params */
+#define BUFFER_SIZE_PARAM_LENGTH     12     /**< Used for parsing ifc params */
+#define MAX_CLIENTS_PARAM_LENGTH     12     /**< Used for parsing ifc params */
+
 typedef struct buffer_s {
    uint32_t wr_index;                      /**< Pointer to first free byte in buffer */
    uint64_t clients_bit_arr;               /**< Bit array of clients that have not yet received the buffer */

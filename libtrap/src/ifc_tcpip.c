@@ -956,6 +956,11 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
  * \addtogroup tcpip_sender
  * @{
  */
+
+
+/**
+ * \brief Array containing constants used for operations with bit arrays.
+ */
 static uint64_t mask[64] = {
         1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288,
         1048576, 2097152, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824,
@@ -966,21 +971,47 @@ static uint64_t mask[64] = {
         288230376151711744, 576460752303423488, 1152921504606846976, 2305843009213693952, 4611686018427387904, 9223372036854775808ULL
 };
 
+/**
+ * \brief Set i-th element (one bit) of 'bits' to 1.
+ *
+ * \param[in] bits Pointer to the bit array.
+ * \param[in] i Target element's index in the 'bits' array.
+ */
 static inline void set_index(uint64_t *bits, int i)
 {
    *bits |= mask[i];
 }
 
+/**
+ * \brief Set i-th element (one bit) of 'bits' to 0.
+ *
+ * \param[in] bits Pointer to the bit array.
+ * \param[in] i Target element's index in the 'bits' array.
+ */
 static inline void del_index(uint64_t *bits, int i)
 {
    *bits &= (0xffffffffffffffff - mask[i]);
 }
 
+/**
+ * \brief Return value of i-th element (one bit) in the 'bits' array.
+ *
+ * \param[in] bits Pointer to the bit array.
+ * \param[in] i Target element's index in the 'bits' array.
+ *
+ * \return Value of i-th element (one bit) in the 'bits' array.
+ */
 static inline uint64_t check_index(uint64_t bits, int i)
 {
    return (bits & mask[i]);
 }
 
+/**
+ * \brief This function is called when a client was/is being disconnected.
+ *
+ * \param[in] priv Pointer to interface's private data structure.
+ * \param[in] cl_id Index of the client in 'clients' array.
+ */
 static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
 {
    int i;
@@ -1021,6 +1052,11 @@ void tcpip_server_disconnect_all_clients(void *priv)
    }
 }
 
+/**
+ * \brief This function runs in a separate thread and handles new client's connection requests.
+ *
+ * \param[in] arg Pointer to interface's private data structure.
+ */
 static void *accept_clients_thread(void *arg)
 {
    char remoteIP[INET6_ADDRSTRLEN];
@@ -1037,7 +1073,7 @@ static void *accept_clients_thread(void *arg)
    uint32_t client_id = 0;
 
    /* handle new connections */
-   addrlen = sizeof remoteaddr;
+   addrlen = sizeof(remoteaddr);
    while (1) {
       if (c->is_terminated != 0) {
          break;
@@ -1136,6 +1172,12 @@ refuse_client:
    pthread_exit(NULL);
 }
 
+/**
+ * \brief Write buffer size to its header and shift active index.
+ *
+ * \param[in] priv Pointer to output interface private structure.
+ * \param[in] buffer Pointer to the buffer.
+ */
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
    uint32_t header = htonl(buffer->wr_index);
@@ -1174,11 +1216,22 @@ void tcpip_sender_flush(void *priv)
    c->ctx->counter_autoflush[c->ifc_idx]++;
 }
 
+/**
+ * \brief Send data to client from his assigned buffer.
+ *
+ * \param[in] priv Pointer to iterface's private data structure.
+ * \param[in] c Pointer to the client's structure.
+ * \param[in] cl_id Client's index in the 'clients' array.
+ *
+ * \return TRAP_E_OK successfully sent.
+ * \return TRAP_E_TERMINATED TRAP was terminated.
+ * \return TRAP_E_IO_ERROR send failed although TRAP was not terminated.
+ */
 static inline int send_data(tcpip_sender_private_t *priv, client_t *c, uint32_t cl_id)
 {
    int sent;
    /* Pointer to client's assigned buffer */
-   buffer_t* buffer = &priv->buffers[c->assigned_buffer];
+   buffer_t *buffer = &priv->buffers[c->assigned_buffer];
 
 again:
    sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL);
@@ -1201,7 +1254,7 @@ again:
       }
    } else {
       c->pending_bytes -= sent;
-      c->sending_pointer = (uint8_t *)c->sending_pointer + sent;
+      c->sending_pointer = (uint8_t *) c->sending_pointer + sent;
 
       /* Client received whole buffer */
       if (c->pending_bytes <= 0) {
@@ -1221,8 +1274,9 @@ again:
 }
 
 /**
- * \brief This function runs in a separate thread. It handles accepting new clients and sending data
+ * \brief This function runs in a separate thread. It handles sending data
           to connected clients for TCPIP and UNIX interfaces.
+ * \param[in] priv pointer to interface private data
  */
 static void *sending_thread_func(void *priv)
 {
@@ -1293,7 +1347,7 @@ static void *sending_thread_func(void *priv)
 
          if (cl->pending_bytes <= 0) {
             cl->sending_pointer = assigned_buffer->header;
-            cl->pending_bytes = ntohl(*(uint32_t *)assigned_buffer->header) + sizeof(uint32_t);
+            cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
          }
 
          FD_SET(cl->sd, &set);
@@ -1369,6 +1423,13 @@ static void *sending_thread_func(void *priv)
    }
 }
 
+/**
+ * \brief Write data into buffer
+ *
+ * \param[in] buffer Pointer to the buffer.
+ * \param[in] data Pointer to data to write.
+ * \param[in] size Size of the data.
+ */
 static inline void insert_into_buffer(buffer_t *buffer, const void *data, uint16_t size)
 {
    uint16_t *msize = (uint16_t *)(buffer->data + buffer->wr_index);
@@ -1482,10 +1543,11 @@ repeat:
    }
 
 timeout:
-   /* Drop message */
-   for (i = 0; i < c->clients_arr_size; i++)
-      if (c->clients[i].sd > 0 && c->clients[i].assigned_buffer == c->active_buffer)
+   for (i = 0; i < c->clients_arr_size; i++) {
+      if (c->clients[i].sd > 0 && c->clients[i].assigned_buffer == c->active_buffer) {
          c->clients[i].timeouts++;
+      }
+   }
    return TRAP_E_TIMEOUT;
 }
 
@@ -1502,6 +1564,7 @@ void tcpip_sender_terminate(void *priv)
 
    if (c != NULL) {
       do {
+         usleep(1);
          sum = 0;
          for (i = 0; i < c->buffer_count; i++) {
             sum |= c->buffers[i].clients_bit_arr;
@@ -1730,18 +1793,18 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       param_iterator = trap_get_param_by_delimiter(param_iterator, &param_str, TRAP_IFC_PARAM_DELIMITER);
       if (param_str == NULL)
          continue;
-      if (strncmp(param_str, "buffer_count=x", 13) == 0) {
-         if (sscanf(param_str+13, "%u", &buffer_count) != 1) {
+      if (strncmp(param_str, "buffer_count=x", BUFFER_COUNT_PARAM_LENGTH) == 0) {
+         if (sscanf(param_str + BUFFER_COUNT_PARAM_LENGTH, "%u", &buffer_count) != 1) {
             VERBOSE(CL_ERROR, "Optional buffer count given, but it is probably in wrong format.");
             buffer_count = DEFAULT_BUFFER_COUNT;
          }
-      } else if (strncmp(param_str, "buffer_size=x", 12) == 0) {
-         if (sscanf(param_str+12, "%u", &buffer_size) != 1) {
+      } else if (strncmp(param_str, "buffer_size=x", BUFFER_SIZE_PARAM_LENGTH) == 0) {
+         if (sscanf(param_str + BUFFER_SIZE_PARAM_LENGTH, "%u", &buffer_size) != 1) {
             VERBOSE(CL_ERROR, "Optional buffer size  given, but it is probably in wrong format.");
             buffer_size = DEFAULT_BUFFER_SIZE;
          }
-      } else if (strncmp(param_str, "max_clients=x", 12) == 0) {
-         if (sscanf(param_str+12, "%u", &max_clients) != 1 || max_clients > 64) {
+      } else if (strncmp(param_str, "max_clients=x", MAX_CLIENTS_PARAM_LENGTH) == 0) {
+         if (sscanf(param_str + MAX_CLIENTS_PARAM_LENGTH, "%u", &max_clients) != 1 || max_clients > 64) {
             VERBOSE(CL_ERROR, "Optional max clients number given, but it is probably in wrong format.");
             max_clients = DEFAULT_MAX_CLIENTS;
          }
@@ -1761,6 +1824,12 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       buffer_t *b = &(priv->buffers[i]);
 
       b->header = malloc(buffer_size + sizeof(buffer_size));
+      if (b->header == NULL) {
+         /* if some memory could not have been allocated, we cannot continue */
+         result = TRAP_E_MEMORY;
+         goto failsafe_cleanup;
+      }
+
       b->data = b->header + sizeof(buffer_size);
       b->wr_index = 0;
       b->clients_bit_arr = 0;
@@ -1769,6 +1838,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->clients = calloc(max_clients, sizeof(client_t));
    if (priv->clients == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
+      result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
    }
    for (i=0; i<max_clients; ++i) {
