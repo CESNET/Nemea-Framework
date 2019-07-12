@@ -1691,10 +1691,9 @@ repeat:
    while (buffer->clients_bit_arr != 0) {
       clock_gettime(CLOCK_REALTIME, &ts);
 
-      ts.tv_nsec = (ts.tv_nsec + timeout * 1000) % 1000000000;
-      if ((timeout) >= 1000000) {
-         ts.tv_sec += 1;
-      }
+      ts.tv_nsec += (ts.tv_sec * 1000000000L) + (timeout * 1000L);
+      ts.tv_sec = (ts.tv_nsec / 1000000000L);
+      ts.tv_nsec %= 1000000000L;
 
       /* Wait until we obtain buffer lock or until timeout elapses */
       res = pthread_cond_timedwait(&c->cond, &c->client_lock, &ts);
