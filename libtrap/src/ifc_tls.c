@@ -75,6 +75,7 @@
 #include "trap_error.h"
 #include "ifc_tls.h"
 #include "ifc_tls_internal.h"
+#include "ifc_socket_common.h"
 
 /**
  * \addtogroup trap_ifc TRAP communication module interface
@@ -1129,54 +1130,6 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
  */
 
 /**
- * \brief Array containing constants used for operations with bit arrays.
- */
-static uint64_t mask[64] = {
-        1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288,
-        1048576, 2097152, 4194304, 8388608, 16777216, 33554432, 67108864, 134217728, 268435456, 536870912, 1073741824,
-        2147483648, 4294967296, 8589934592, 17179869184, 34359738368, 68719476736, 137438953472, 274877906944,
-        549755813888, 1099511627776, 2199023255552, 4398046511104, 8796093022208, 17592186044416, 35184372088832,
-        70368744177664, 140737488355328, 281474976710656, 562949953421312, 1125899906842624, 2251799813685248,
-        4503599627370496, 9007199254740992, 18014398509481984, 36028797018963968, 72057594037927936, 144115188075855872,
-        288230376151711744, 576460752303423488, 1152921504606846976, 2305843009213693952, 4611686018427387904, 9223372036854775808ULL
-};
-
-/**
- * \brief Set i-th element (one bit) of 'bits' to 1.
- *
- * \param[in] bits Pointer to the bit array.
- * \param[in] i Target element's index in the 'bits' array.
- */
-static inline void set_index(uint64_t *bits, int i)
-{
-   *bits |= mask[i];
-}
-
-/**
- * \brief Set i-th element (one bit) of 'bits' to 0.
- *
- * \param[in] bits Pointer to the bit array.
- * \param[in] i Target element's index in the 'bits' array.
- */
-static inline void del_index(uint64_t *bits, int i)
-{
-   *bits &= (0xffffffffffffffff - mask[i]);
-}
-
-/**
- * \brief Return value of i-th element (one bit) in the 'bits' array.
- *
- * \param[in] bits Pointer to the bit array.
- * \param[in] i Target element's index in the 'bits' array.
- *
- * \return Value of i-th element (one bit) in the 'bits' array.
- */
-static inline uint64_t check_index(uint64_t bits, int i)
-{
-   return (bits & mask[i]);
-}
-
-/**
  * \brief This function is called when a client was/is being disconnected.
  *
  * \param[in] priv Pointer to interface's private data structure.
@@ -1381,7 +1334,7 @@ refuse_client:
  * \param[in] priv Pointer to output interface private structure.
  * \param[in] buffer Pointer to the buffer.
  */
-static inline void finish_buffer(tls_sender_private_t *priv, tlsbuffer_t *buffer)
+static inline void finish_buffer(tls_sender_private_t *priv, buffer_t *buffer)
 {
    uint32_t header = htonl(buffer->wr_index);
    memcpy(buffer->header, &header, sizeof(header));
@@ -1404,7 +1357,7 @@ static inline void finish_buffer(tls_sender_private_t *priv, tlsbuffer_t *buffer
 void tls_sender_flush(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-   tlsbuffer_t *buffer = &c->buffers[c->active_buffer];
+   buffer_t *buffer = &c->buffers[c->active_buffer];
 
    pthread_mutex_lock(&c->flush_lock);
    pthread_mutex_lock(&c->client_lock);
@@ -1434,7 +1387,7 @@ static inline int send_data(tls_sender_private_t *priv, tlsclient_t *c, uint32_t
 {
    int sent;
    /* Pointer to client's assigned buffer */
-   tlsbuffer_t *buffer = &priv->buffers[c->assigned_buffer];
+   buffer_t *buffer = &priv->buffers[c->assigned_buffer];
 
 again:
    sent = SSL_write(c->ssl, c->sending_pointer, c->pending_bytes);
@@ -1488,7 +1441,7 @@ static void *sending_thread_func(void *priv)
    int maxsd = -1;
    fd_set set, disset;
    tlsclient_t *cl;
-   tlsbuffer_t *assigned_buffer;
+   buffer_t *assigned_buffer;
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    uint64_t send_entry_time;
    uint64_t send_exit_time;
@@ -1627,21 +1580,6 @@ static void *sending_thread_func(void *priv)
 }
 
 /**
- * \brief Write data into buffer
- *
- * \param[in] buffer Pointer to the buffer.
- * \param[in] data Pointer to data to write.
- * \param[in] size Size of the data.
- */
-static inline void insert_into_buffer(tlsbuffer_t *buffer, const void *data, uint16_t size)
-{
-   uint16_t *msize = (uint16_t *)(buffer->data + buffer->wr_index);
-   (*msize) = htons(size);
-   memcpy((void *)(msize + 1), data, size);
-   buffer->wr_index += (size + sizeof(size));
-}
-
-/**
  * \brief Store message into buffer.
  *
  * \param[in] priv      pointer to module private data
@@ -1660,7 +1598,7 @@ int tls_sender_send(void *priv, const void *data, uint16_t size, int timeout)
    struct timespec ts;
 
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-   tlsbuffer_t* buffer = &c->buffers[c->active_buffer];
+   buffer_t* buffer = &c->buffers[c->active_buffer];
    // race condition
    uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
 
@@ -2030,13 +1968,13 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    }
    /* Parsing params ended */
 
-   priv->buffers = calloc(buffer_count, sizeof(tlsbuffer_t));
+   priv->buffers = calloc(buffer_count, sizeof(buffer_t));
    if (priv->buffers == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
       goto failsafe_cleanup;
    }
    for (i=0; i<buffer_count; ++i) {
-      tlsbuffer_t *b = &(priv->buffers[i]);
+      buffer_t *b = &(priv->buffers[i]);
 
       b->header = malloc(buffer_size + sizeof(buffer_size));
       b->data = b->header + sizeof(buffer_size);
