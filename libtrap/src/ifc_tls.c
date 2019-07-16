@@ -1342,8 +1342,6 @@ static inline void finish_buffer(tls_sender_private_t *priv, buffer_t *buffer)
    priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   buffer->wr_index = 0;
-
    pthread_mutex_lock(&priv->client_lock);
    buffer->clients_bit_arr = priv->clients_bit_arr;
    pthread_mutex_unlock(&priv->client_lock);
@@ -1359,7 +1357,6 @@ void tls_sender_flush(void *priv)
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
    buffer_t *buffer = &c->buffers[c->active_buffer];
 
-   pthread_mutex_lock(&c->flush_lock);
    pthread_mutex_lock(&c->client_lock);
    if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
       pthread_mutex_unlock(&c->client_lock);
@@ -1367,7 +1364,6 @@ void tls_sender_flush(void *priv)
    } else {
       pthread_mutex_unlock(&c->client_lock);
    }
-   pthread_mutex_unlock(&c->flush_lock);
 
    c->ctx->counter_autoflush[c->ifc_idx]++;
 }
@@ -1417,6 +1413,7 @@ again:
          pthread_mutex_lock(&priv->client_lock);
          del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
+            buffer->wr_index = 0;
             priv->ctx->counter_send_buffer[priv->ifc_idx]++;
             pthread_cond_broadcast(&priv->cond);
          }
@@ -1658,7 +1655,6 @@ repeat:
    }
 
    pthread_mutex_unlock(&c->client_lock);
-   pthread_mutex_lock(&c->flush_lock);
 
    /* Check if there is enough space in buffer */
    free_bytes = c->buffer_size - buffer->wr_index;
@@ -1671,14 +1667,12 @@ repeat:
          finish_buffer(c, buffer);
       }
 
-      pthread_mutex_unlock(&c->flush_lock);
       return TRAP_E_OK;
    } else {
       /* Not enough space for message, finish current buffer and try to store message into next buffer */
       finish_buffer(c, buffer);
       buffer = &c->buffers[c->active_buffer];
 
-      pthread_mutex_unlock(&c->flush_lock);
       goto repeat;
    }
 
@@ -1761,7 +1755,6 @@ void tls_sender_destroy(void *priv)
          free(c->buffers);
       }
 
-      pthread_mutex_destroy(&c->flush_lock);
       pthread_mutex_destroy(&c->client_lock);
       pthread_cond_destroy(&c->cond);
       free(c);
@@ -1891,9 +1884,9 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    char *certfile = NULL;
    char *cafile = NULL;
    tls_sender_private_t *priv = NULL;
-   unsigned int max_clients = TLS_DEFAULT_MAX_CLIENTS;
-   unsigned int buffer_count = TLS_DEFAULT_BUFFER_COUNT;
-   unsigned int buffer_size = TLS_DEFAULT_BUFFER_SIZE;
+   unsigned int max_clients = DEFAULT_MAX_CLIENTS;
+   unsigned int buffer_count = DEFAULT_BUFFER_COUNT;
+   unsigned int buffer_size = DEFAULT_BUFFER_SIZE;
    uint32_t i;
 
 #define X(pointer) free(pointer); \
@@ -1949,17 +1942,17 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
       if (strncmp(param_str, "buffer_count=x", BUFFER_COUNT_PARAM_LENGTH) == 0) {
          if (sscanf(param_str + BUFFER_COUNT_PARAM_LENGTH, "%u", &buffer_count) != 1) {
             VERBOSE(CL_ERROR, "Optional buffer count given, but it is probably in wrong format.");
-            buffer_count = TLS_DEFAULT_BUFFER_COUNT;
+            buffer_count = DEFAULT_BUFFER_COUNT;
          }
       } else if (strncmp(param_str, "buffer_size=x", BUFFER_SIZE_PARAM_LENGTH) == 0) {
          if (sscanf(param_str + BUFFER_SIZE_PARAM_LENGTH, "%u", &buffer_size) != 1) {
             VERBOSE(CL_ERROR, "Optional buffer size  given, but it is probably in wrong format.");
-            buffer_size = TLS_DEFAULT_BUFFER_SIZE;
+            buffer_size = DEFAULT_BUFFER_SIZE;
          }
       } else if (strncmp(param_str, "max_clients=x", MAX_CLIENTS_PARAM_LENGTH) == 0) {
          if (sscanf(param_str + MAX_CLIENTS_PARAM_LENGTH, "%u", &max_clients) != 1) {
             VERBOSE(CL_ERROR, "Optional max clients number given, but it is probably in wrong format.");
-            max_clients = TLS_DEFAULT_MAX_CLIENTS;
+            max_clients = DEFAULT_MAX_CLIENTS;
          }
       } else {
          VERBOSE(CL_ERROR, "Unknown parameter \"%s\".", param_str);
@@ -2010,11 +2003,10 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    priv->connected_clients = 0;
    priv->is_terminated = 0;
    priv->active_buffer = 0;
-   priv->timeout_autoflush = TLS_DEFAULT_TIMEOUT_FLUSH;
+   priv->timeout_autoflush = DEFAULT_TIMEOUT_FLUSH;
    priv->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_init(&priv->client_lock, NULL);
-   pthread_mutex_init(&priv->flush_lock, NULL);
    pthread_cond_init(&priv->cond, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
@@ -2076,7 +2068,6 @@ failsafe_cleanup:
       if (priv->clients != NULL) {
          X(priv->clients);
       }
-      pthread_mutex_destroy(&priv->flush_lock);
       pthread_mutex_destroy(&priv->client_lock);
       pthread_cond_destroy(&priv->cond);
       X(priv);

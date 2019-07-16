@@ -61,12 +61,6 @@
  * @{
  */
 
-#define DEFAULT_MAX_DATA_LENGTH      (sizeof(trap_buffer_header_t) + 1024)
-#define TLS_DEFAULT_BUFFER_COUNT     20        /**< Default buffer count */
-#define TLS_DEFAULT_BUFFER_SIZE      100000    /**< Default buffer size [bytes] */
-#define TLS_DEFAULT_MAX_CLIENTS      20        /**< Default size of client array */
-#define TLS_DEFAULT_TIMEOUT_FLUSH    1000000   /**< Default timeout for autoflush [microseconds]*/
-
 /**
  * \brief Structure for TLS IFC client information.
  */
@@ -121,7 +115,6 @@ typedef struct tls_sender_private_s {
     pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
     pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
 
-    pthread_mutex_t flush_lock;             /**< Used to lock autoflush */
     pthread_mutex_t client_lock;            /**< Used to lock bit arrays of clients */
     pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
 } tls_sender_private_t;

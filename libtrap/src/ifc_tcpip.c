@@ -1138,8 +1138,6 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
    priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   buffer->wr_index = 0;
-
    pthread_mutex_lock(&priv->client_lock);
    buffer->clients_bit_arr = priv->clients_bit_arr;
    pthread_mutex_unlock(&priv->client_lock);
@@ -1155,7 +1153,6 @@ void tcpip_sender_flush(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
    buffer_t *buffer = &c->buffers[c->active_buffer];
 
-   pthread_mutex_lock(&c->flush_lock);
    pthread_mutex_lock(&c->client_lock);
    if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
       pthread_mutex_unlock(&c->client_lock);
@@ -1163,7 +1160,6 @@ void tcpip_sender_flush(void *priv)
    } else {
       pthread_mutex_unlock(&c->client_lock);
    }
-   pthread_mutex_unlock(&c->flush_lock);
 
    c->ctx->counter_autoflush[c->ifc_idx]++;
 }
@@ -1213,6 +1209,7 @@ again:
          pthread_mutex_lock(&priv->client_lock);
          del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
+            buffer->wr_index = 0;
             priv->ctx->counter_send_buffer[priv->ifc_idx]++;
             pthread_cond_broadcast(&priv->cond);
          }
@@ -1454,7 +1451,6 @@ repeat:
    }
 
    pthread_mutex_unlock(&c->client_lock);
-   pthread_mutex_lock(&c->flush_lock);
 
    /* Check if there is enough space in buffer */
    free_bytes = c->buffer_size - buffer->wr_index;
@@ -1467,14 +1463,12 @@ repeat:
          finish_buffer(c, buffer);
       }
 
-      pthread_mutex_unlock(&c->flush_lock);
       return TRAP_E_OK;
    } else {
       /* Not enough space for message, finish current buffer and try to store message into next buffer */
       finish_buffer(c, buffer);
       buffer = &c->buffers[c->active_buffer];
 
-      pthread_mutex_unlock(&c->flush_lock);
       goto repeat;
    }
 
@@ -1564,7 +1558,6 @@ void tcpip_sender_destroy(void *priv)
          X(c->buffers);
       }
 
-      pthread_mutex_destroy(&c->flush_lock);
       pthread_mutex_destroy(&c->client_lock);
       pthread_cond_destroy(&c->cond);
       X(c)
@@ -1802,7 +1795,6 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_init(&priv->client_lock, NULL);
-   pthread_mutex_init(&priv->flush_lock, NULL);
    pthread_cond_init(&priv->cond, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
@@ -1845,7 +1837,6 @@ failsafe_cleanup:
       if (priv->clients != NULL) {
          X(priv->clients);
       }
-      pthread_mutex_destroy(&priv->flush_lock);
       pthread_mutex_destroy(&priv->client_lock);
       pthread_cond_destroy(&priv->cond);
       X(priv);
