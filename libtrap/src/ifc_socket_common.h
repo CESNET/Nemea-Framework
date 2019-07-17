@@ -87,7 +87,7 @@ static uint64_t mask[64] = {
  */
 static inline void set_index(uint64_t *bits, int i)
 {
-   *bits |= mask[i];
+   *bits = __sync_or_and_fetch(bits, mask[i]);
 }
 
 /**
@@ -98,7 +98,7 @@ static inline void set_index(uint64_t *bits, int i)
  */
 static inline void del_index(uint64_t *bits, int i)
 {
-   *bits &= (0xffffffffffffffff - mask[i]);
+   *bits = __sync_and_and_fetch(bits, (0xffffffffffffffff - mask[i]));
 }
 
 /**

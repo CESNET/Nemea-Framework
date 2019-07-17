@@ -969,7 +969,6 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
    int i;
    client_t *c = &priv->clients[cl_id];
 
-   pthread_mutex_lock(&priv->client_lock);
    for (i = 0; i < priv->buffer_count; ++i) {
       del_index(&priv->buffers[i].clients_bit_arr, cl_id);
       if (priv->buffers[i].clients_bit_arr == 0) {
@@ -977,8 +976,7 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
       }
    }
    del_index(&priv->clients_bit_arr, cl_id);
-   priv->connected_clients--;
-   pthread_mutex_unlock(&priv->client_lock);
+   __sync_sub_and_fetch(&priv->connected_clients, 1);
 
    shutdown(c->sd, SHUT_RDWR);
    close(c->sd);
@@ -1108,10 +1106,8 @@ static void *accept_clients_thread(void *arg)
                }
 #endif
 
-               pthread_mutex_lock(&c->client_lock);
                set_index(&c->clients_bit_arr, i);
-               c->connected_clients++;
-               pthread_mutex_unlock(&c->client_lock);
+               __sync_add_and_fetch(&c->connected_clients, 1);
             } else {
 refuse_client:
                VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)", c->connected_clients, c->clients_arr_size);
@@ -1138,9 +1134,7 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
    priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   pthread_mutex_lock(&priv->client_lock);
    buffer->clients_bit_arr = priv->clients_bit_arr;
-   pthread_mutex_unlock(&priv->client_lock);
 }
 
 /**
@@ -1153,12 +1147,8 @@ void tcpip_sender_flush(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
    buffer_t *buffer = &c->buffers[c->active_buffer];
 
-   pthread_mutex_lock(&c->client_lock);
    if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
-      pthread_mutex_unlock(&c->client_lock);
       finish_buffer(c, buffer);
-   } else {
-      pthread_mutex_unlock(&c->client_lock);
    }
 
    c->ctx->counter_autoflush[c->ifc_idx]++;
@@ -1206,14 +1196,12 @@ again:
 
       /* Client received whole buffer */
       if (c->pending_bytes <= 0) {
-         pthread_mutex_lock(&priv->client_lock);
+         buffer->wr_index = 0;
          del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
-            buffer->wr_index = 0;
             priv->ctx->counter_send_buffer[priv->ifc_idx]++;
             pthread_cond_broadcast(&priv->cond);
          }
-         pthread_mutex_unlock(&priv->client_lock);
 
          /* Assign client the next buffer in sequence */
          c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
@@ -1417,8 +1405,6 @@ repeat:
       goto repeat;
    }
 
-   pthread_mutex_lock(&c->client_lock);
-
    while (buffer->clients_bit_arr != 0) {
       clock_gettime(CLOCK_REALTIME, &ts);
 
@@ -1436,21 +1422,16 @@ repeat:
             /* Desired buffer is still full after timeout */
             if (block) {
                /* Blocking send, wait until buffer is free to use */
-               pthread_mutex_unlock(&c->client_lock);
                goto repeat;
             } else {
                /* Non-blocking send, drop message or force buffer reset (not implemented) */
-               pthread_mutex_unlock(&c->client_lock);
                goto timeout;
             }
          default:
             VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-            pthread_mutex_unlock(&c->client_lock);
             goto timeout;
       }
    }
-
-   pthread_mutex_unlock(&c->client_lock);
 
    /* Check if there is enough space in buffer */
    free_bytes = c->buffer_size - buffer->wr_index;
