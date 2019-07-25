@@ -104,7 +104,7 @@ typedef struct tcpip_sender_private_s {
    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
 
-   pthread_mutex_t client_lock;            /**< Used to lock bit arrays of clients */
+   pthread_mutex_t dummy_mtx;              /**< Dummy mutex used in pthread_cond_timedwait() */
    pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
 } tcpip_sender_private_t;
 
