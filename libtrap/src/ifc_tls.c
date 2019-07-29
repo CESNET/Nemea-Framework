@@ -1442,7 +1442,7 @@ static void *sending_thread_func(void *priv)
          pthread_exit(NULL);
       }
       if (c->connected_clients == 0) {
-         usleep(10000);
+         usleep(100000);
          continue;
       }
 
@@ -1599,7 +1599,7 @@ repeat:
       return TRAP_E_TERMINATED;
    }
    if (block && c->connected_clients == 0) {
-      usleep(10000);
+      usleep(100000);
       goto repeat;
    }
 
@@ -1681,7 +1681,7 @@ void tls_sender_terminate(void *priv)
 
    if (c != NULL) {
       do {
-         usleep(1);
+         usleep(10000);
          sum = 0;
          for (i = 0; i < c->buffer_count; i++) {
             sum |= c->buffers[i].clients_bit_arr;
