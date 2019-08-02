@@ -1088,10 +1088,10 @@ void ur_print_template(ur_template_t *tmplt)
    }
 }
 
-void ur_var_change_size(const ur_template_t * tmplt, void *rec, int field_id, int new_val_len)
+void ur_var_change_size(const ur_template_t *tmplt, void *rec, int field_id, int new_val_len)
 {
    // pointer to field and size of a field
-   char * out_ptr = ur_get_ptr_by_id(tmplt, rec, field_id);
+   char *out_ptr = ur_get_ptr_by_id(tmplt, rec, field_id);
    int old_size_of_field = ur_get_len(tmplt, rec, field_id);
    //if the size is different, move following fields
    if (old_size_of_field != new_val_len) {
@@ -1114,7 +1114,7 @@ void ur_var_change_size(const ur_template_t * tmplt, void *rec, int field_id, in
    }
 }
 
-int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void *val_ptr, int val_len)
+int ur_set_var(const ur_template_t *tmplt, void *rec, int field_id, const void *val_ptr, int val_len)
 {
    if (tmplt->offset[field_id] == UR_INVALID_OFFSET) {
       return UR_E_INVALID_FIELD_ID;
@@ -1132,7 +1132,7 @@ int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void 
    return UR_OK;
 }
 
-int ur_resize_array(const ur_template_t * tmplt, void *rec, int field_id, int len)
+int ur_array_resize(const ur_template_t *tmplt, void *rec, int field_id, int len)
 {
    if (tmplt->offset[field_id] == UR_INVALID_OFFSET) {
       return UR_E_INVALID_FIELD_ID;
@@ -1266,6 +1266,162 @@ ur_iter_t ur_iter_fields_record_order(const ur_template_t *tmplt, int index)
    return tmplt->ids[index];
 }
 
+int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v)
+{
+   ip_addr_t addr;
+   mac_addr_t macaddr;
+   int rv = 0;
+   ur_time_t urtime = 0;
+   void *ptr = ur_get_ptr_by_id(tmpl, data, f_id);
+   int elems_parsed = 0;
+   int elems_allocated = UR_ARRAY_ALLOC;
+   const char *scan_format = NULL;
+   const int element_size = ur_array_get_elem_size(f_id);
+
+   if (ur_is_present(tmpl, f_id) == 0 || !ur_is_array(f_id)) {
+      return 1;
+   }
+   if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+      return 1;
+   }
+   switch (ur_get_type(f_id)) {
+   case UR_TYPE_A_UINT8:
+      scan_format = "%" SCNu8;
+      break;
+   case UR_TYPE_A_UINT16:
+      scan_format = "%" SCNu16;
+      break;
+   case UR_TYPE_A_UINT32:
+      scan_format = "%" SCNu32;
+      break;
+   case UR_TYPE_A_UINT64:
+      scan_format = "%" SCNu64;
+      break;
+   case UR_TYPE_A_INT8:
+      scan_format = "%" SCNi8;
+      break;
+   case UR_TYPE_A_INT16:
+      scan_format = "%" SCNi16;
+      break;
+   case UR_TYPE_A_INT32:
+      scan_format = "%" SCNi32;
+      break;
+   case UR_TYPE_A_INT64:
+      scan_format = "%" SCNi64;
+      break;
+   case UR_TYPE_A_CHAR:
+      scan_format = "%c";
+      break;
+   case UR_TYPE_A_FLOAT:
+      scan_format = "%f";
+      break;
+   case UR_TYPE_A_DOUBLE:
+      scan_format = "%lf";
+      break;
+   case UR_TYPE_A_IP:
+      // IP address - convert to human-readable format
+      while (v) {
+         char tmp[64];
+         const char *ip = tmp;
+         char *end;
+         while (*v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
+         end = strchr(v, UR_ARRAY_DELIMITER);
+         if (end == NULL) {
+            ip = v;
+         } else {
+            memcpy(tmp, v, end - v);
+            tmp[end - v] = 0;
+         }
+         v = end;
+         if (ip_from_str(ip, &addr) == 0) {
+            rv = 1;
+            break;
+         }
+         ((ip_addr_t *) ptr)[elems_parsed] = addr;
+         elems_parsed++;
+         if (elems_allocated >= elems_parsed) {
+            elems_allocated += UR_ARRAY_ALLOC;
+            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+               return 1;
+            }
+         }
+      }
+      break;
+   case UR_TYPE_A_MAC:
+      // MAC address - convert to human-readable format
+      while (v) {
+         if (mac_from_str(v, &macaddr) == 0) {
+            rv = 1;
+            break;
+         }
+         ((mac_addr_t *) ptr)[elems_parsed] = macaddr;
+         elems_parsed++;
+         while (*v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
+         if (elems_allocated >= elems_parsed) {
+            elems_allocated += UR_ARRAY_ALLOC;
+            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+               return 1;
+            }
+         }
+         v = strchr(v, UR_ARRAY_DELIMITER);
+      }
+      break;
+   case UR_TYPE_A_TIME:
+      // Timestamp - convert from human-readable format
+      while (v) {
+         if (ur_time_from_string(&urtime, v) != 0) {
+            rv =  1;
+            break;
+         }
+         ((ur_time_t *) ptr)[elems_parsed] = urtime;
+         elems_parsed++;
+         while (*v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
+         if (elems_allocated >= elems_parsed) {
+            elems_allocated += UR_ARRAY_ALLOC;
+            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+               return 1;
+            }
+         }
+         v = strchr(v, UR_ARRAY_DELIMITER);
+      }
+      break;
+   default:
+      fprintf(stderr, "Unsupported UniRec field type, skipping.\n");
+      ur_array_resize(tmpl, data, f_id, 0);
+      break;
+   }
+
+   if (scan_format != NULL) {
+      while (v) {
+         if (sscanf(v, scan_format, (void *) ptr + elems_parsed * element_size) != 1) {
+            rv = 1;
+            break;
+         }
+         elems_parsed++;
+         while (*v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
+         if (elems_allocated >= elems_parsed) {
+            elems_allocated += UR_ARRAY_ALLOC;
+            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+               return 1;
+            }
+         }
+         v = strchr(v, UR_ARRAY_DELIMITER);
+      }
+   }
+
+   if (elems_parsed > elems_allocated) {
+      ur_array_resize(tmpl, data, f_id, elems_parsed);
+   }
+   return rv;
+}
 int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v)
 {
    ip_addr_t *addr_p = NULL, addr;
@@ -1277,7 +1433,7 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
    if (ur_is_present(tmpl, f_id) == 0) {
       return 1;
    }
-   switch (ur_get_type(f_id)) { //TODO
+   switch (ur_get_type(f_id)) {
    case UR_TYPE_UINT8:
       if (sscanf(v, "%" SCNu8, (uint8_t *) ptr) != 1) {
          rv = 1;
@@ -1334,7 +1490,7 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
       }
       break;
    case UR_TYPE_IP:
-      // IP address - convert to human-readable format and print
+      // IP address - convert to human-readable format
       if (ip_from_str(v, &addr) == 0) {
          rv = 1;
          break;
@@ -1343,7 +1499,7 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
       (*addr_p) = addr;
       break;
    case UR_TYPE_MAC:
-      // IP address - convert to human-readable format and print
+      // MAC address - convert to human-readable format
       if (mac_from_str(v, &macaddr) == 0) {
          rv = 1;
          break;
@@ -1374,6 +1530,9 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
       }
       break;
    default:
+      if (ur_is_array(f_id)) {
+         return ur_set_array_from_string(tmpl, data, f_id, v);
+      }
       fprintf(stderr, "Unsupported UniRec field type, skipping.\n");
       break;
    }

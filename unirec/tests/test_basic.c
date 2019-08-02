@@ -95,16 +95,34 @@ int main(int argc, char **argv)
       ur_set(tmplt, rec, F_BAR, BAR_TEST_VALUE);
       ur_set(tmplt, rec, F_IP, ip_from_int(IP_TEST_VALUE));
       ur_set_string(tmplt, rec, F_STR1, STR_TEST_VALUE);
-/*
-      ur_preallocate_array(tmplt, rec, F_ARR, 5);
-      uint32_t *array = (uint32_t *)ur_get_ptr_by_id(tmplt, rec, F_ARR);
-      for (int i = 0;  i < 10; ++i) {
-         ur_set_array(tmplt, rec, F_ARR, 9-i, i);
+
+      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR) != 0) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 0, ur_array_get_elem_cnt(tmplt, rec, F_ARR));
+         return 1;
       }
-      for (int i = 0;  i < 10; ++i) {
-         printf("arr[%d] = %u\n", i, array[i]);
+
+      if (ur_array_get_elem_size(F_ARR) != sizeof(uint32_t)) {
+         fprintf(stderr, "Error, array element size should be %lu and is %d\n", sizeof(uint32_t), ur_array_get_elem_size(F_ARR));
+         return 1;
       }
-*/
+
+      ur_array_append(tmplt, rec, F_ARR, 9);
+
+      ur_array_allocate(tmplt, rec, F_ARR, 5);
+      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR) != 5) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 5, ur_array_get_elem_cnt(tmplt, rec, F_ARR));
+         return 1;
+      }
+
+      for (int i = 0;  i < 9; ++i) {
+         ur_array_set(tmplt, rec, F_ARR, 9-i, i);
+      }
+
+      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR) != 10) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 10, ur_array_get_elem_cnt(tmplt, rec, F_ARR));
+         return 1;
+      }
+
       // Store record into a buffer
       buffer = malloc(ur_rec_size(tmplt, rec));
       if(buffer == NULL) {
@@ -155,15 +173,35 @@ int main(int argc, char **argv)
          fprintf(stderr, "STR1 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer, F_STR1), ur_get_ptr(tmplt, buffer, F_STR1), STR_TEST_VALUE);
          return 1;
       }
-/*
       for (int i = 0;  i < 10; ++i) {
-         uint32_t val = ur_get_array(tmplt, buffer, F_ARR, i);
+         uint32_t val = ur_array_get(tmplt, buffer, F_ARR, i);
          if (val != (uint32_t) (9 - i)) {
             fprintf(stderr, "ARR value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) (9-i));
             return 1;
          }
       }
-*/
+
+      ur_array_clear(tmplt, buffer, F_ARR);
+      if (ur_array_get_elem_cnt(tmplt, buffer, F_ARR) != 0) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 5, ur_array_get_elem_cnt(tmplt, buffer, F_ARR));
+         return 1;
+      }
+
+      ur_array_allocate(tmplt, buffer, F_ARR, 10);
+      if (ur_set_array_from_string(tmplt, buffer, F_ARR, "0 1 2 3 4 5 6 7 8 9") != 0) {
+         fprintf(stderr, "Error set array from string failed\n");
+         return 1;
+      }
+
+      for (int i = 0;  i < 10; ++i) {
+         uint32_t val = ur_array_get(tmplt, buffer, F_ARR, i);
+         if (val != i) {
+            fprintf(stderr, "ARR value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) i);
+            return 1;
+         }
+      }
+
+
       ur_free_template(tmplt);
    }
 
@@ -210,7 +248,7 @@ int main(int argc, char **argv)
       }
       ur_field_id_t new_id = define_ret_val;
       // Create templates matching the old and the new record
-      ur_template_t *tmplt1 = ur_create_template("FOO,BAR,IP,STR1", NULL);
+      ur_template_t *tmplt1 = ur_create_template("FOO,BAR,IP,STR1,ARR", NULL);
       if (tmplt1 == NULL) {
          fprintf(stderr, "Error during creating template\n");
          return 1;
@@ -244,7 +282,7 @@ int main(int argc, char **argv)
    // Read data from the record in the second buffer
    {
       // Create template with the second set of fields (we can use different order of fields, it doesn't matter)
-      ur_template_t *tmplt = ur_create_template("BAR,NEW,STR2,STR1,ARR", NULL);
+      ur_template_t *tmplt = ur_create_template("BAR,NEW,STR2,STR1", NULL);
 
       // The NEW field is already defined (it is stored globally) but we don't know its ID here
       int new_id = ur_get_id_by_name("NEW");
