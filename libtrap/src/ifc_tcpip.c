@@ -1146,16 +1146,17 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 void tcpip_sender_flush(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
+   c->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
 
    buffer_t *buffer = &c->buffers[c->active_buffer];
    if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
       finish_buffer(c, buffer);
+      c->ctx->counter_autoflush[c->ifc_idx]++;
    }
 
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-   c->ctx->counter_autoflush[c->ifc_idx]++;
 }
 
 /**
