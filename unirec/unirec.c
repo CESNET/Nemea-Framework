@@ -1281,7 +1281,7 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
    if (ur_is_present(tmpl, f_id) == 0 || !ur_is_array(f_id)) {
       return 1;
    }
-   if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+   if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
       return 1;
    }
    switch (ur_get_type(f_id)) {
@@ -1341,9 +1341,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
          }
          ((ip_addr_t *) ptr)[elems_parsed] = addr;
          elems_parsed++;
-         if (elems_allocated >= elems_parsed) {
+         if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
-            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+            if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
                return 1;
             }
          }
@@ -1361,9 +1361,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
          while (*v == UR_ARRAY_DELIMITER) {
             v++; // Skip the delimiter, move to beginning of the next value
          }
-         if (elems_allocated >= elems_parsed) {
+         if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
-            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+            if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
                return 1;
             }
          }
@@ -1382,9 +1382,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
          while (*v == UR_ARRAY_DELIMITER) {
             v++; // Skip the delimiter, move to beginning of the next value
          }
-         if (elems_allocated >= elems_parsed) {
+         if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
-            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+            if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
                return 1;
             }
          }
@@ -1393,13 +1393,13 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
       break;
    default:
       fprintf(stderr, "Unsupported UniRec field type, skipping.\n");
-      ur_array_resize(tmpl, data, f_id, 0);
+      ur_array_allocate(tmpl, data, f_id, 0);
       break;
    }
 
    if (scan_format != NULL) {
       while (v) {
-         if (sscanf(v, scan_format, (void *) ptr + elems_parsed * element_size) != 1) {
+         if (sscanf(v, scan_format, (void *) ((char*) ptr + elems_parsed * element_size)) != 1) {
             rv = 1;
             break;
          }
@@ -1407,9 +1407,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
          while (*v == UR_ARRAY_DELIMITER) {
             v++; // Skip the delimiter, move to beginning of the next value
          }
-         if (elems_allocated >= elems_parsed) {
+         if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
-            if (ur_array_resize(tmpl, data, f_id, elems_allocated) != UR_OK) {
+            if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
                return 1;
             }
          }
@@ -1417,8 +1417,8 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
       }
    }
 
-   if (elems_parsed > elems_allocated) {
-      ur_array_resize(tmpl, data, f_id, elems_parsed);
+   if (elems_allocated > elems_parsed) {
+      ur_array_allocate(tmpl, data, f_id, elems_parsed);
    }
    return rv;
 }

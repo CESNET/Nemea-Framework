@@ -63,7 +63,10 @@ UR_FIELDS(
    ipaddr IP,
    string STR1,
    string STR2,
-   uint32* ARR
+   uint32* ARR1,
+   ipaddr* IPs,
+   macaddr* MACs
+   uint64* ARR2,
 )
 
 
@@ -74,7 +77,7 @@ int main(int argc, char **argv)
    // Create a record and store it to the buffer
    {
       // Create template
-      ur_template_t *tmplt = ur_create_template("STR1,FOO,BAR,IP,STR1,STR1,IP,ARR", NULL);
+      ur_template_t *tmplt = ur_create_template("STR1,FOO,BAR,IP,STR1,STR1,IP,ARR1,ARR2,IPs,MACs", NULL);
       if (tmplt == NULL) {
          fprintf(stderr, "Error during creating template\n");
          return 1;
@@ -96,30 +99,45 @@ int main(int argc, char **argv)
       ur_set(tmplt, rec, F_IP, ip_from_int(IP_TEST_VALUE));
       ur_set_string(tmplt, rec, F_STR1, STR_TEST_VALUE);
 
-      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR) != 0) {
-         fprintf(stderr, "Error, array element count should be %d and is %d\n", 0, ur_array_get_elem_cnt(tmplt, rec, F_ARR));
+      if (ur_set_array_from_string(tmplt, rec, F_ARR2, "             10   11 12 13  14 15 16 17         18 19") != 0) {
+         fprintf(stderr, "Error set uint array from string failed\n");
          return 1;
       }
 
-      if (ur_array_get_elem_size(F_ARR) != sizeof(uint32_t)) {
-         fprintf(stderr, "Error, array element size should be %lu and is %d\n", sizeof(uint32_t), ur_array_get_elem_size(F_ARR));
+      if (ur_set_from_string(tmplt, rec, F_IPs, "10.0.0.1 10.0.0.2 ::1 127.0.0.1") != 0) {
+         fprintf(stderr, "Error when setting IP adresses from string\n");
+         return 1;
+      }
+      ur_array_append(tmplt, rec, F_IPs, ip_from_int(IP_TEST_VALUE));
+
+      if (ur_set_from_string(tmplt, rec, F_MACs, "00:00:00:00:00:00 11:11:11:11:11:11 22:22:22:22:22:22") != 0) {
+         fprintf(stderr, "Error when setting MAC adresses from string\n");
          return 1;
       }
 
-      ur_array_append(tmplt, rec, F_ARR, 9);
+      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR1) != 0) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 0, ur_array_get_elem_cnt(tmplt, rec, F_ARR1));
+         return 1;
+      }
 
-      ur_array_allocate(tmplt, rec, F_ARR, 5);
-      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR) != 5) {
-         fprintf(stderr, "Error, array element count should be %d and is %d\n", 5, ur_array_get_elem_cnt(tmplt, rec, F_ARR));
+      ur_array_allocate(tmplt, rec, F_ARR1, 10);
+      ur_array_allocate(tmplt, rec, F_ARR1, 20);
+      ur_array_allocate(tmplt, rec, F_ARR1, 30);
+      ur_array_allocate(tmplt, rec, F_ARR1, 0);
+
+      ur_array_append(tmplt, rec, F_ARR1, 9);
+      ur_array_allocate(tmplt, rec, F_ARR1, 5);
+      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR1) != 5) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 5, ur_array_get_elem_cnt(tmplt, rec, F_ARR1));
          return 1;
       }
 
       for (int i = 0;  i < 9; ++i) {
-         ur_array_set(tmplt, rec, F_ARR, 9-i, i);
+         ur_array_set(tmplt, rec, F_ARR1, 9-i, i);
       }
 
-      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR) != 10) {
-         fprintf(stderr, "Error, array element count should be %d and is %d\n", 10, ur_array_get_elem_cnt(tmplt, rec, F_ARR));
+      if (ur_array_get_elem_cnt(tmplt, rec, F_ARR1) != 10) {
+         fprintf(stderr, "Error, array element count should be %d and is %d\n", 10, ur_array_get_elem_cnt(tmplt, rec, F_ARR1));
          return 1;
       }
 
@@ -140,7 +158,7 @@ int main(int argc, char **argv)
    // Read data from the record in the buffer
    {
       // Create another template with the same set of fields (the set of fields MUST be the same, even if we don't need to work with all fields)
-      ur_template_t *tmplt = ur_create_template("FOO   ,  BAR\n,IP,STR1,   ARR ", NULL);
+      ur_template_t *tmplt = ur_create_template("FOO   ,  BAR\n,IP,STR1,   ARR1, ARR2 ,MACs, IPs", NULL);
       if(tmplt == NULL){
          fprintf(stderr, "Error during creating template\n");
          return 1;
@@ -173,30 +191,49 @@ int main(int argc, char **argv)
          fprintf(stderr, "STR1 value does not match. It is %.*s and should be %s\n", ur_get_var_len(tmplt, buffer, F_STR1), ur_get_ptr(tmplt, buffer, F_STR1), STR_TEST_VALUE);
          return 1;
       }
+
+      if (ur_array_get_elem_cnt(tmplt, buffer, F_IPs) != 5) {
+         fprintf(stderr, "Error when setting IP addresses\n");
+         return 1;
+      }
+
+      if (ur_array_get_elem_cnt(tmplt, buffer, F_MACs) != 3) {
+         fprintf(stderr, "Error when setting MAC addresses\n");
+         return 1;
+      }
+
+      ip_addr_t ip_tmp;
+      ip_from_str("10.0.0.2", &ip_tmp);
+      if (ip_cmp(&ur_get(tmplt, buffer, F_IP), &ur_array_get(tmplt, buffer, F_IPs, 4)) != 0 || ip_cmp(&ip_tmp, &ur_array_get(tmplt, buffer, F_IPs, 1))) {
+         fprintf(stderr, "Error IP address mismatch\n");
+         return 1;
+      }
+
+      mac_addr_t mac_tmp;
+      mac_from_str("11:11:11:11:11:11", &mac_tmp);
+      if (mac_cmp(&mac_tmp, &ur_array_get(tmplt, buffer, F_MACs, 1))) {
+         fprintf(stderr, "Error MAC address mismatch\n");
+         return 1;
+      }
+
+
+      if (ur_array_get_elem_size(F_ARR1) != sizeof(uint32_t)) {
+         fprintf(stderr, "Error, array element size should be %lu and is %d\n", sizeof(uint32_t), ur_array_get_elem_size(F_ARR1));
+         return 1;
+      }
+
       for (int i = 0;  i < 10; ++i) {
-         uint32_t val = ur_array_get(tmplt, buffer, F_ARR, i);
+         uint32_t val = ur_array_get(tmplt, buffer, F_ARR1, i);
          if (val != (uint32_t) (9 - i)) {
-            fprintf(stderr, "ARR value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) (9-i));
+            fprintf(stderr, "1# ARR1 value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) (9-i));
             return 1;
          }
       }
 
-      ur_array_clear(tmplt, buffer, F_ARR);
-      if (ur_array_get_elem_cnt(tmplt, buffer, F_ARR) != 0) {
-         fprintf(stderr, "Error, array element count should be %d and is %d\n", 5, ur_array_get_elem_cnt(tmplt, buffer, F_ARR));
-         return 1;
-      }
-
-      ur_array_allocate(tmplt, buffer, F_ARR, 10);
-      if (ur_set_array_from_string(tmplt, buffer, F_ARR, "0 1 2 3 4 5 6 7 8 9") != 0) {
-         fprintf(stderr, "Error set array from string failed\n");
-         return 1;
-      }
-
       for (int i = 0;  i < 10; ++i) {
-         uint32_t val = ur_array_get(tmplt, buffer, F_ARR, i);
-         if (val != i) {
-            fprintf(stderr, "ARR value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) i);
+         uint32_t val = ur_array_get(tmplt, buffer, F_ARR2, i);
+         if (val != i + 10) {
+            fprintf(stderr, "2# ARR2 value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) (i + 10));
             return 1;
          }
       }
@@ -248,7 +285,7 @@ int main(int argc, char **argv)
       }
       ur_field_id_t new_id = define_ret_val;
       // Create templates matching the old and the new record
-      ur_template_t *tmplt1 = ur_create_template("FOO,BAR,IP,STR1,ARR", NULL);
+      ur_template_t *tmplt1 = ur_create_template("FOO,BAR,IP,STR1,ARR1,ARR2,MACs,IPs", NULL);
       if (tmplt1 == NULL) {
          fprintf(stderr, "Error during creating template\n");
          return 1;
