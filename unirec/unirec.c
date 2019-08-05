@@ -1284,6 +1284,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
    if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
       return 1;
    }
+   while (v && *v == UR_ARRAY_DELIMITER) {
+      v++; // Skip the delimiter, move to beginning of the next value
+   }
    switch (ur_get_type(f_id)) {
    case UR_TYPE_A_UINT8:
       scan_format = "%" SCNu8;
@@ -1320,16 +1323,16 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
       break;
    case UR_TYPE_A_IP:
       // IP address - convert to human-readable format
-      while (v) {
+      while (v && *v) {
          char tmp[64];
          const char *ip = tmp;
          char *end;
-         while (*v == UR_ARRAY_DELIMITER) {
-            v++; // Skip the delimiter, move to beginning of the next value
-         }
          end = strchr(v, UR_ARRAY_DELIMITER);
          if (end == NULL) {
             ip = v;
+            if (*v == 0) {
+               break;
+            }
          } else {
             memcpy(tmp, v, end - v);
             tmp[end - v] = 0;
@@ -1347,20 +1350,20 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
                return 1;
             }
          }
+         while (v && *v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
       }
       break;
    case UR_TYPE_A_MAC:
       // MAC address - convert to human-readable format
-      while (v) {
+      while (v && *v) {
          if (mac_from_str(v, &macaddr) == 0) {
             rv = 1;
             break;
          }
          ((mac_addr_t *) ptr)[elems_parsed] = macaddr;
          elems_parsed++;
-         while (*v == UR_ARRAY_DELIMITER) {
-            v++; // Skip the delimiter, move to beginning of the next value
-         }
          if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
             if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
@@ -1368,20 +1371,33 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
             }
          }
          v = strchr(v, UR_ARRAY_DELIMITER);
+         while (v && *v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
       }
       break;
    case UR_TYPE_A_TIME:
       // Timestamp - convert from human-readable format
-      while (v) {
-         if (ur_time_from_string(&urtime, v) != 0) {
+      while (v && *v) {
+         char tmp[64];
+         const char *time = tmp;
+         char *end;
+         end = strchr(v, UR_ARRAY_DELIMITER);
+         if (end == NULL) {
+            time = v;
+            if (*v == 0) {
+               break;
+            }
+         } else {
+            memcpy(tmp, v, end - v);
+            tmp[end - v] = 0;
+         }
+         if (ur_time_from_string(&urtime, time) != 0) {
             rv =  1;
             break;
          }
          ((ur_time_t *) ptr)[elems_parsed] = urtime;
          elems_parsed++;
-         while (*v == UR_ARRAY_DELIMITER) {
-            v++; // Skip the delimiter, move to beginning of the next value
-         }
          if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
             if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
@@ -1389,6 +1405,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
             }
          }
          v = strchr(v, UR_ARRAY_DELIMITER);
+         while (v && *v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
       }
       break;
    default:
@@ -1398,15 +1417,12 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
    }
 
    if (scan_format != NULL) {
-      while (v) {
+      while (v && *v) {
          if (sscanf(v, scan_format, (void *) ((char*) ptr + elems_parsed * element_size)) != 1) {
             rv = 1;
             break;
          }
          elems_parsed++;
-         while (*v == UR_ARRAY_DELIMITER) {
-            v++; // Skip the delimiter, move to beginning of the next value
-         }
          if (elems_parsed >= elems_allocated) {
             elems_allocated += UR_ARRAY_ALLOC;
             if (ur_array_allocate(tmpl, data, f_id, elems_allocated) != UR_OK) {
@@ -1414,6 +1430,9 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
             }
          }
          v = strchr(v, UR_ARRAY_DELIMITER);
+         while (v && *v == UR_ARRAY_DELIMITER) {
+            v++; // Skip the delimiter, move to beginning of the next value
+         }
       }
    }
 
