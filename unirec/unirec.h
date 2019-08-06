@@ -69,6 +69,8 @@ extern "C" {
 #define UR_INITIAL_SIZE_FIELDS_TABLE 5 ///< Initial size of free space in fields tables
 #define UR_FIELD_ID_MAX INT16_MAX       ///< Max ID of a field
 #define UR_FIELDS(...)        ///<  Definition of UniRec fields
+#define UR_ARRAY_DELIMITER ' ' ///< Delimiter of array elements in string
+#define UR_ARRAY_ALLOC 10 ///< Default alloc size increment for ur_set_array_from_string
 //Iteration constants
 #define UR_ITER_BEGIN (-1)  ///< First value in iterating through the fields
 #define UR_ITER_END INT16_MAX    ///< Last value in iterating through the fields
@@ -89,7 +91,7 @@ extern "C" {
 
 
 /** \brief Constants for all possible types of UniRec fields */
-#define UR_COUNT_OF_TYPES 16 ///< Count of types of UniRec fields
+#define UR_COUNT_OF_TYPES 30 ///< Count of types of UniRec fields
 typedef enum {
    UR_TYPE_STRING,   ///< var-len fields (string where only printable characters are expected; '\0' at the end should NOT be included)
    UR_TYPE_BYTES,    ///< var-len fields (generic string of bytes)
@@ -106,7 +108,23 @@ typedef enum {
    UR_TYPE_DOUBLE,   ///< double (64b)
    UR_TYPE_IP,    ///< IP address (128b)
    UR_TYPE_MAC,    ///< MAC address (48b)
-   UR_TYPE_TIME   ///< time (64b)
+   UR_TYPE_TIME,   ///< time (64b)
+
+   // Arrays
+   UR_TYPE_A_CHAR,  ///< char array
+   UR_TYPE_A_UINT8, ///< unsigned int (8b) array
+   UR_TYPE_A_INT8,  ///< int (8b) array
+   UR_TYPE_A_UINT16,   ///< unsigned int (16b) array
+   UR_TYPE_A_INT16, ///< int (8b) array
+   UR_TYPE_A_UINT32,   ///< unsigned int (32b) array
+   UR_TYPE_A_INT32, ///< int (32b) array
+   UR_TYPE_A_UINT64,   ///< unsigned int (64b) array
+   UR_TYPE_A_INT64, ///< int (64b) array
+   UR_TYPE_A_FLOAT, ///< float (32b) array
+   UR_TYPE_A_DOUBLE,   ///< double (64b) array
+   UR_TYPE_A_IP,    ///< IP address (128b) array
+   UR_TYPE_A_MAC,    ///< MAC address (48b) array
+   UR_TYPE_A_TIME   ///< time (64b) array
 } ur_field_type_t;
 
 typedef enum {
@@ -341,7 +359,7 @@ char *ur_template_string_delimiter(const ur_template_t *tmplt, int delimiter);
  ur_template_string_delimiter(tmplt, ',')
 
 /** \brief Get size of UniRec type
- * Get size of fixed-length UniRec type. For variable-length type return -1.
+ * Get size of fixed-length UniRec type. For variable-length type return value < 0.
  * \param[in] type Enum value of type.
  * \return Size of the field in bytes.
  */
@@ -374,7 +392,7 @@ int ur_get_field_type_from_str(const char *type);
 
 /** \brief Get size of UniRec field
  * Get size of a fixed-length UniRec field. When variable-length field is passed,
- * return -1. To get real length of a variable-length field use ur_get_var_len.
+ * return value < 0. To get real length of a variable-length field use ur_get_var_len.
  * \param[in] field_id ID of a field.
  * \return Size of the field in bytes or -1 if the field is variable-length.
  */
@@ -493,6 +511,99 @@ int ur_get_field_type_from_str(const char *type);
 #define ur_set_string(tmplt, rec, field_id, str) \
    ur_set_var(tmplt, rec, field_id, str, strlen(str))
 
+/**
+ * Check if field is an array.
+ *
+ * \param[in] field_id Identifier of a field.
+ * \return 1 if field is an array, 0 otherwise.
+ */
+#define ur_is_array(field_id) \
+   (ur_field_type_size[ur_get_type(field_id)] < 0 ? 1 : 0)
+
+/**
+ * \brief Get size of a single element of UniRec field.
+ *
+ * \param[in] field_id Identifier of a field.
+ * \return Size of a static field or size of a single element in an array field.
+ */
+#define ur_array_get_elem_size(field_id) \
+   (ur_field_type_size[ur_get_type(field_id)] < 0 ? -ur_field_type_size[ur_get_type(field_id)] : ur_field_type_size[ur_get_type(field_id)])
+
+/**
+ * \brief Get number of elements stored in an UniRec array.
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return Number of elements stored in an UniRec array field.
+ */
+#define ur_array_get_elem_cnt(tmplt, rec, field_id) \
+   (ur_get_var_len(tmplt, rec, field_id) / ur_array_get_elem_size(field_id))
+
+/**
+ * \brief Set element to array at given index. Automatically resizes array when index is out of array bounds.
+ * Set contents of a variable-length field in the record. Field has to be part of the record.
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] index Element index in array.
+ * \param[in] element Array element.
+ */
+#define ur_array_set(tmplt, rec, field_id, index, element) \
+   if ((index) * ur_array_get_elem_size(field_id) < ur_get_var_len(tmplt, rec, field_id) || ur_array_resize(tmplt, rec, field_id, (index + 1) * ur_array_get_elem_size(field_id)) == UR_OK) { \
+      (((field_id ## _T)((char *)(ur_get_ptr_by_id(tmplt, rec, field_id))))[index] = (element)); \
+   }
+
+/**
+ * \brief Set element to array at last position. Automatically resizes array.
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] element Array element.
+ */
+#define ur_array_append(tmplt, rec, field_id, element) \
+   if (ur_array_resize(tmplt, rec, field_id, (ur_array_get_elem_cnt(tmplt, rec, field_id) + 1) * ur_array_get_elem_size(field_id)) == UR_OK) { \
+      (((field_id ## _T)((char *)(ur_get_ptr_by_id(tmplt, rec, field_id))))[ur_array_get_elem_cnt(tmplt, rec, field_id) - 1] = (element)); \
+   }
+
+/**
+ * \brief Clear contents of an UniRec array. Array is resized to 0 elements.
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return UR_OK if there is no problem. UR_E_INVALID_FIELD_ID if the ID is not in the template.
+ */
+#define ur_array_clear(tmplt, rec, field_id) \
+   ur_array_resize(tmplt, rec, field_id, 0)
+
+/**
+ * \brief Get element of an array field at given index
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] index Element index in array.
+ * \param[in] element Array element.
+ * \return Specified field in an array.
+ */
+#define ur_array_get(tmplt, rec, field_id, index) \
+   ((field_id ## _T)((char *)(ur_get_ptr_by_id(tmplt, rec, field_id))))[index]
+
+/**
+ * \brief Preallocates UniRec array field to have requested number of elements.
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \param[in] elem_cnt Number of elements to be in resized array.
+ * \return UR_OK if there is no problem. UR_E_INVALID_FIELD_ID if the ID is not in the template.
+ */
+#define ur_array_allocate(tmplt, rec, field_id, elem_cnt) \
+   ur_array_resize(tmplt, rec, field_id, (elem_cnt) * ur_array_get_elem_size(field_id))
+
 /** \brief Is given field present in given template?
  * Return true (non-zero value) if given template contains field with given ID.
  * \param[in] tmplt Pointer to UniRec template
@@ -508,7 +619,7 @@ int ur_get_field_type_from_str(const char *type);
  * \return non-zero if field is variable-length, zero otherwise
  */
 #define ur_is_varlen(field_id) \
-   (ur_field_specs.ur_field_sizes[field_id] == -1)
+   (ur_field_specs.ur_field_sizes[field_id] < 0)
 
 /** \brief Alias for ur_is_varlen (for backwards compatibility only) */
 #define ur_is_dynamic(field_id) \
@@ -520,7 +631,7 @@ int ur_get_field_type_from_str(const char *type);
  * \return non-zero if field is fixed-length, zero otherwise
  */
 #define ur_is_fixlen(field_id) \
-   (ur_field_specs.ur_field_sizes[field_id] != -1)
+   (ur_field_specs.ur_field_sizes[field_id] >= 0)
 
 /** \brief Alias for ur_is_fixlen (for backwards compatibility only) */
 #define ur_is_static(field_id) \
@@ -829,7 +940,16 @@ void ur_print_template(ur_template_t *tmplt);
  * \param[in] val_len Length of the copied data in bytes.
  * \return UR_OK if there is no problem. UR_E_INVALID_FIELD_ID if the ID is not in the template.
  */
-int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void *val_ptr, int val_len);
+int ur_set_var(const ur_template_t *tmplt, void *rec, int field_id, const void *val_ptr, int val_len);
+
+/** \brief Change length of a array field.
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record.
+ * \param[in] field_id Identifier of a field.
+ * \param[in] len Length of the copied data in bytes.
+ * \return UR_OK if there is no problem. UR_E_INVALID_FIELD_ID if the ID is not in the template.
+ */
+int ur_array_resize(const ur_template_t *tmplt, void *rec, int field_id, int len);
 
 /** \brief Clear variable-length part of a record.
  * For better performance of setting content to variable-length fields, use this function
@@ -838,7 +958,7 @@ int ur_set_var(const ur_template_t * tmplt, void *rec, int field_id, const void 
  * \param[in] tmplt Pointer to UniRec template.
  * \param[in] rec Pointer to the beginning of a record.
  */
-void ur_clear_varlen(const ur_template_t * tmplt, void *rec);
+void ur_clear_varlen(const ur_template_t *tmplt, void *rec);
 
 /** \brief Get size of variable sized part of UniRec record
  * Get total size of all variable-length fields in an UniRec record
@@ -961,6 +1081,15 @@ ur_iter_t ur_iter_fields(const ur_template_t *tmplt, ur_iter_t id);
  */
 ur_iter_t ur_iter_fields_record_order(const ur_template_t *tmplt, int index);
 
+/** \brief Set value of a UniRec array field
+ * \param[in] tmpl Pointer to UniRec template
+ * \param[out] data Pointer to the beginning of a record
+ * \param[in] f_id Identifier of a field. It must be a constant beginning
+ *                     with UR_, not its numeric value.
+ * \param[in] v The value the field should be set to, array of fields with ' ' space delimiter.
+ * \return 0 on success, non-zero otherwise.
+ */
+int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id, const char *v);
 
 /** \brief Set value of a UniRec field
  * \param[in] tmpl Pointer to UniRec template
