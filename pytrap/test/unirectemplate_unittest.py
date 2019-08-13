@@ -394,6 +394,10 @@ class DataTypesArray(unittest.TestCase):
         a.ARR2 = f_arr2
         self.assertEqual(a.get(data, "ARR2"), f_arr2)
 
+        f_arr1 = -42
+        a.ARR1 = f_arr1
+        self.assertEqual(a.get(data, "ARR1"), [f_arr1])
+
 class DataAccessGetTest(unittest.TestCase):
     def runTest(self):
         import pytrap
