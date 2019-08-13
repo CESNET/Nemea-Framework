@@ -521,10 +521,18 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
         PyErr_SetString(TrapError, "Data was not set yet.");
         return NULL;
     }
+    int type = ur_get_type(field_id);
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
+    int array_len;
     int i;
+    PyObject *list;
 
-    switch (ur_get_type(field_id)) {
+    if (ur_is_varlen(field_id) && type != UR_TYPE_STRING && type != UR_TYPE_BYTES) {
+       list = PyList_New(0);
+       array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+    }
+
+    switch (type) {
     case UR_TYPE_UINT8:
         return Py_BuildValue("B", *(uint8_t *) value);
         break;
@@ -596,141 +604,76 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
         }
         break;
     case UR_TYPE_A_UINT8:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("B", ((uint8_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("B", ((uint8_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_INT8:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("c", ((int8_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("c", ((int8_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_UINT16:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("H", ((uint16_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("H", ((uint16_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_INT16:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("h", ((int16_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("h", ((int16_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_UINT32:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("I", ((uint32_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("I", ((uint32_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_INT32:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("i", ((int32_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("i", ((int32_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_UINT64:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("K", ((uint64_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("K", ((uint64_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_INT64:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("L", ((int64_t *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("L", ((int64_t *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_FLOAT:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("f", ((float *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("f", ((float *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_DOUBLE:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               PyList_Append(list, Py_BuildValue("d", ((double *) value)[i]));
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            PyList_Append(list, Py_BuildValue("d", ((double *) value)[i]));
          }
-         break;
+         return list;
     case UR_TYPE_A_IP:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               pytrap_unirecipaddr *new_ip = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
-               memcpy(&new_ip->ip, &((ip_addr_t *) value)[i], sizeof(ip_addr_t));
-               PyList_Append(list, (PyObject *) new_ip);
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            pytrap_unirecipaddr *new_ip = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
+            memcpy(&new_ip->ip, &((ip_addr_t *) value)[i], sizeof(ip_addr_t));
+            PyList_Append(list, (PyObject *) new_ip);
          }
-         break;
+         return list;
     case UR_TYPE_A_MAC:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
-               memcpy(&new_mac->mac, &((mac_addr_t *) value)[i], sizeof(mac_addr_t));
-               PyList_Append(list, (PyObject *) new_mac);
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
+            memcpy(&new_mac->mac, &((mac_addr_t *) value)[i], sizeof(mac_addr_t));
+            PyList_Append(list, (PyObject *) new_mac);
          }
-         break;
+         return list;
     case UR_TYPE_A_TIME:
-         {
-            PyObject *list = PyList_New(0);
-            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (i = 0; i < array_len; i++) {
-               pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
-               new_time->timestamp = ((ur_time_t *) value)[i];
-               PyList_Append(list, (PyObject *) new_time);
-            }
-            return list;
+         for (i = 0; i < array_len; i++) {
+            pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
+            new_time->timestamp = ((ur_time_t *) value)[i];
+            PyList_Append(list, (PyObject *) new_time);
          }
-         break;
+         return list;
     default:
         PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
         return NULL;
