@@ -594,6 +594,142 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             return PyByteArray_FromStringAndSize(value, value_size);
         }
         break;
+    case UR_TYPE_A_UINT8:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("B", ((uint8_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_INT8:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("c", ((int8_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_UINT16:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("H", ((uint16_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_INT16:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("h", ((int16_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_UINT32:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("I", ((uint32_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_INT32:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("i", ((int32_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_UINT64:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("K", ((uint64_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_INT64:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("L", ((int64_t *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_FLOAT:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("f", ((float *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_DOUBLE:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               PyList_Append(list, Py_BuildValue("d", ((double *) value)[i]));
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_IP:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               pytrap_unirecipaddr *new_ip = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
+               memcpy(&new_ip->ip, &((ip_addr_t *) value)[i], sizeof(ip_addr_t));
+               PyList_Append(list, (PyObject *) new_ip);
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_MAC:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
+               memcpy(&new_mac->mac, &((mac_addr_t *) value)[i], sizeof(mac_addr_t));
+               PyList_Append(list, (PyObject *) new_mac);
+            }
+            return list;
+         }
+         break;
+    case UR_TYPE_A_TIME:
+         {
+            PyObject *list = PyList_New(0);
+            int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
+            for (int i = 0; i < array_len; i++) {
+               pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
+               new_time->timestamp = ((ur_time_t *) value)[i];
+               PyList_Append(list, (PyObject *) new_time);
+            }
+            return list;
+         }
+         break;
     default:
         PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
         return NULL;
@@ -823,6 +959,321 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 /* TODO check return value */
                 ur_set_var(self->urtmplt, data, field_id, str, size);
             }
+        }
+        break;
+    case UR_TYPE_A_UINT8:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint8_t *) value)[0] = (uint8_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((uint8_t *) value)[i] = (uint8_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_INT8:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((int8_t *) value)[0] = (int8_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((int8_t *) value)[i] = (int8_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_UINT16:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint16_t *) value)[0] = (uint16_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((uint16_t *) value)[i] = (uint16_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_INT16:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((int16_t *) value)[0] = (int16_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((int16_t *) value)[i] = (int16_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_UINT32:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint32_t *) value)[0] = (uint32_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((uint32_t *) value)[i] = (uint32_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_INT32:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((int32_t *) value)[0] = (int32_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((int32_t *) value)[i] = (int32_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_UINT64:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint64_t *) value)[0] = (uint64_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((uint64_t *) value)[i] = (uint64_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_INT64:
+        {
+            if (PyLong_Check(valueObj)) {
+                longval = PyLong_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((int64_t *) value)[0] = (int64_t) longval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((int64_t *) value)[i] = (int64_t) longval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of long or list of longs.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_FLOAT:
+        {
+            if (PyFloat_Check(valueObj)) {
+                floatval = PyFloat_AsDouble(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((float *) value)[0] = (float) floatval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  floatval = PyFloat_AsDouble(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((float *) value)[i] = (float) floatval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of float or list of floats.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_DOUBLE:
+        {
+            if (PyFloat_Check(valueObj)) {
+                floatval = PyFloat_AsDouble(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((double *) value)[0] = (double) floatval;
+                }
+            } else if (PyList_Check(valueObj)) {
+               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+               for (int i = 0; i < PyList_Size(valueObj); i++) {
+                  floatval = PyFloat_AsDouble(PyList_GetItem(valueObj, i));
+                  if (PyErr_Occurred() == NULL) {
+                     ((double *) value)[i] = (double) floatval;
+                  } else {
+                     break;
+                  }
+               }
+            } else {
+               PyErr_SetString(PyExc_TypeError, "Argument data must be of float or list of floats.");
+               return NULL;
+            }
+        }
+        break;
+    case UR_TYPE_A_IP:
+        {
+           if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecIPAddr)) {
+              pytrap_unirecipaddr *src = ((pytrap_unirecipaddr *) valueObj);
+              ip_addr_t *dest = (ip_addr_t *) value;
+              dest->ui64[0] = src->ip.ui64[0];
+              dest->ui64[1] = src->ip.ui64[1];
+           } else if (PyList_Check(valueObj)) {
+              ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+              for (int i = 0; i < PyList_Size(valueObj); i++) {
+                 PyObject *tmp = PyList_GetItem(valueObj, i);
+                 if (PyObject_IsInstance(tmp, (PyObject *) &pytrap_UnirecIPAddr)) {
+                    pytrap_unirecipaddr *src = (pytrap_unirecipaddr *) tmp;
+                    ip_addr_t *dest = &((ip_addr_t *) value)[i];
+                    dest->ui64[0] = src->ip.ui64[0];
+                    dest->ui64[1] = src->ip.ui64[1];
+                 } else {
+                    PyErr_SetString(PyExc_TypeError, "Argument data must be of UnirecIPAddr or list of UnirecIPAddr.");
+                    return NULL;
+                 }
+              }
+           } else {
+              PyErr_SetString(PyExc_TypeError, "Argument data must be of UnirecIPAddr or list of UnirecIPAddr.");
+              return NULL;
+           }
+        }
+        break;
+    case UR_TYPE_A_MAC:
+        {
+           if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecMACAddr)) {
+              pytrap_unirecmacaddr *src = ((pytrap_unirecmacaddr *) valueObj);
+              mac_addr_t *dest = (mac_addr_t *) value;
+              memcpy(dest, &src->mac, sizeof(mac_addr_t));
+           } else if (PyList_Check(valueObj)) {
+              ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+              for (int i = 0; i < PyList_Size(valueObj); i++) {
+                 PyObject *tmp = PyList_GetItem(valueObj, i);
+                 if (PyObject_IsInstance(tmp, (PyObject *) &pytrap_UnirecMACAddr)) {
+                    pytrap_unirecmacaddr *src = (pytrap_unirecmacaddr *) tmp;
+                    mac_addr_t *dest = &((mac_addr_t *) value)[i];
+                    memcpy(dest, &src->mac, sizeof(mac_addr_t));
+                 } else {
+                    PyErr_SetString(PyExc_TypeError, "Argument data must be of UnirecMACAddr or list of UnirecMACAddr.");
+                    return NULL;
+                 }
+              }
+           } else {
+              PyErr_SetString(PyExc_TypeError, "Argument data must be of UnirecMACAddr or list of UnirecMACAddr.");
+              return NULL;
+           }
+        }
+        break;
+    case UR_TYPE_A_TIME:
+        {
+           if (PyObject_IsInstance(valueObj, (PyObject *) &pytrap_UnirecTime)) {
+              pytrap_unirectime *src = ((pytrap_unirectime *) valueObj);
+              *((ur_time_t *) value) = src->timestamp;
+           } else if (PyList_Check(valueObj)) {
+              ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
+              for (int i = 0; i < PyList_Size(valueObj); i++) {
+                 PyObject *tmp = PyList_GetItem(valueObj, i);
+                 if (PyObject_IsInstance(tmp, (PyObject *) &pytrap_UnirecTime)) {
+                    pytrap_unirectime *src = (pytrap_unirectime *) tmp;
+                    ((ur_time_t *) value)[i] = src->timestamp;
+                 } else {
+                    PyErr_SetString(PyExc_TypeError, "Argument data must be of UnirecTime or list of UnirecTime.");
+                    return NULL;
+                 }
+              }
+           } else {
+              PyErr_SetString(PyExc_TypeError, "Argument data must be of UnirecTime or list of UnirecTime.");
+              return NULL;
+           }
         }
         break;
     default:
@@ -1126,6 +1577,21 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     case UR_TYPE_BYTES:
         return (PyObject *) &PyByteArray_Type;
         break;
+    case UR_TYPE_A_UINT8:
+    case UR_TYPE_A_INT8:
+    case UR_TYPE_A_UINT16:
+    case UR_TYPE_A_INT16:
+    case UR_TYPE_A_UINT32:
+    case UR_TYPE_A_INT32:
+    case UR_TYPE_A_UINT64:
+    case UR_TYPE_A_INT64:
+    case UR_TYPE_A_FLOAT:
+    case UR_TYPE_A_DOUBLE:
+    case UR_TYPE_A_IP:
+    case UR_TYPE_A_MAC:
+    case UR_TYPE_A_TIME:
+      return (PyObject *) &PyList_Type;
+      break;
     default:
         PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
         return NULL;

@@ -321,6 +321,78 @@ class DataTypesTime(unittest.TestCase):
         now = pytrap.UnirecTime.fromDatetime(now2)
         self.assertTrue(abs(now.getSeconds() - int(now2.strftime("%s")) <= 1))
 
+class DataTypesArray(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("uint32 FOO, uint32 BAR, ipaddr IP, string STR, int32* ARR1, ipaddr* IPs, macaddr* MACs, uint64* ARR2, time* TIMEs")
+        data = bytearray(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\xbc\x61\x4e\xff\xff\xff\xff\x31\xd4\x00\x00\x39\x30\x00\x00\x00\x00\x0c\x00\x0c\x00\x28\x00\x34\x00\x12\x00\x46\x00\x50\x00\x96\x00\x18\x00\xae\x00\x50\x00\x48\x65\x6c\x6c\x6f\x20\x57\x6f\x72\x6c\x64\x21\xf7\xff\xff\xff\xf8\xff\xff\xff\xf9\xff\xff\xff\xfa\xff\xff\xff\xfb\xff\xff\xff\xfc\xff\xff\xff\xfd\xff\xff\xff\xfe\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11\x11\x11\x11\x11\x11\x22\x22\x22\x22\x22\x22\x0a\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x00\x00\x0c\x00\x00\x00\x00\x00\x00\x00\x0d\x00\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x0f\x00\x00\x00\x00\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00\x00\x11\x00\x00\x00\x00\x00\x00\x00\x12\x00\x00\x00\x00\x00\x00\x00\x13\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe6\xc0\x33\x5b\x00\x00\x00\x80\xe6\xc0\x33\x5b\x00\x00\x00\x00\xe6\xc0\x33\x5b\x00\x00\x00\x00\x00\x00\x00\x00\x0a\x00\x00\x01\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x0a\x00\x00\x02\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x7f\x00\x00\x01\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\xbc\x61\x4e\xff\xff\xff\xff')
+        a.setData(data)
+        self.assertEqual(len(a), 9, "Number of fields differs, 9 expected.")
+        self.assertEqual(str(a), "(ipaddr IP,uint32 BAR,uint32 FOO,string STR,int32* ARR1,macaddr* MACs,uint64* ARR2,time* TIMEs,ipaddr* IPs)")
+        d = a.getFieldsDict()
+        self.assertEqual(type(d), dict)
+        self.assertEqual(d, {'IP': 8, 'BAR': 7, 'FOO': 6, 'STR': 9, 'ARR1': 10, 'MACs': 12, 'ARR2': 13, 'TIMEs': 14, 'IPs': 11})
+
+        self.assertEqual(a.get(data, "FOO"), 12345)
+        self.assertEqual(a.get(data, "FOO"), a.getByID(data, 6))
+        self.assertEqual(a.get(data, "FOO"), a.FOO)
+
+        self.assertEqual(a.get(data, "BAR"), 54321)
+        self.assertEqual(a.get(data, "BAR"), a.getByID(data, 7))
+        self.assertEqual(a.get(data, "BAR"), a.BAR)
+
+        self.assertEqual(a.get(data, "IP"), pytrap.UnirecIPAddr("0.188.97.78"))
+        self.assertEqual(a.get(data, "IP"), a.getByID(data, 8))
+        self.assertEqual(a.get(data, "IP"), a.IP)
+
+        self.assertEqual(a.get(data, "STR"), "Hello World!")
+        self.assertEqual(a.get(data, "STR"), a.getByID(data, 9))
+        self.assertEqual(a.get(data, "STR"), a.STR)
+
+        self.assertEqual(a.get(data, "ARR1"), [-9, -8, -7, -6, -5, -4, -3, -2, -1, 0])
+        self.assertEqual(a.get(data, "ARR1"), a.getByID(data, 10))
+        self.assertEqual(a.get(data, "ARR1"), a.ARR1)
+
+        self.assertEqual(a.get(data, "IPs"), [pytrap.UnirecIPAddr("10.0.0.1"), pytrap.UnirecIPAddr("10.0.0.2"), pytrap.UnirecIPAddr("::1"), pytrap.UnirecIPAddr("127.0.0.1"), pytrap.UnirecIPAddr("0.188.97.78")])
+        self.assertEqual(a.get(data, "IPs"), a.getByID(data, 11))
+        self.assertEqual(a.get(data, "IPs"), a.IPs)
+
+        self.assertEqual(a.get(data, "MACs"), [pytrap.UnirecMACAddr("0:0:0:0:0:0"), pytrap.UnirecMACAddr("11:11:11:11:11:11"), pytrap.UnirecMACAddr("22:22:22:22:22:22")])
+        self.assertEqual(a.get(data, "MACs"), a.getByID(data, 12))
+        self.assertEqual(a.get(data, "MACs"), a.MACs)
+
+        self.assertEqual(a.get(data, "ARR2"), [10, 11, 12, 13, 14, 15, 16, 17, 18, 19])
+        self.assertEqual(a.get(data, "ARR2"), a.getByID(data, 13))
+        self.assertEqual(a.get(data, "ARR2"), a.ARR2)
+
+        self.assertEqual(a.get(data, "TIMEs"), [pytrap.UnirecTime("2018-06-27T16:52:54"), pytrap.UnirecTime("2018-06-27T16:52:54.500"), pytrap.UnirecTime("2018-06-27T16:52:54Z"),])
+        self.assertEqual(a.get(data, "TIMEs"), a.getByID(data, 14))
+        self.assertEqual(a.get(data, "TIMEs"), a.TIMEs)
+
+        f_str = "Hello Unirec!"
+        f_arr1 = [-42, 7,11, 13, -17, 19]
+        f_ips = [pytrap.UnirecIPAddr("10.200.4.1"), pytrap.UnirecIPAddr("192.168.0.200"), pytrap.UnirecIPAddr("2000::1")]
+        f_macs = [pytrap.UnirecMACAddr("6:5:4:3:2:1"), pytrap.UnirecMACAddr("FF:FF:FF:FF:FF:FF"), pytrap.UnirecMACAddr("1:1:1:1:1:1"), pytrap.UnirecMACAddr("1:2:3:4:5:6")]
+        f_arr2 = [123467890, 987654321]
+        f_times = [pytrap.UnirecTime(1466706915, 999), pytrap.UnirecTime(146324234, 999), pytrap.UnirecTime(0, 1), pytrap.UnirecTime(1466700000, 0)]
+
+        a.set(data, "STR", f_str)
+        a.set(data, "ARR1", f_arr1)
+        a.set(data, "IPs", f_ips)
+        a.MACs = f_macs
+        a.ARR2 = f_arr2
+        a.set(data, "TIMEs", f_times)
+
+        self.assertEqual(a.get(data, "STR"), f_str)
+        self.assertEqual(a.get(data, "ARR1"), f_arr1)
+        self.assertEqual(a.get(data, "IPs"), f_ips)
+        self.assertEqual(a.get(data, "MACs"), f_macs)
+        self.assertEqual(a.get(data, "ARR2"), f_arr2)
+        self.assertEqual(a.get(data, "TIMEs"), f_times)
+
+        f_arr2 = []
+        a.ARR2 = f_arr2
+        self.assertEqual(a.get(data, "ARR2"), f_arr2)
 
 class DataAccessGetTest(unittest.TestCase):
     def runTest(self):
@@ -438,7 +510,7 @@ class Template2Test(unittest.TestCase):
         for i in range(100):
             self.assertEqual(tc, a.strRecord())
         a = pytrap.UnirecTemplate("ipaddr DST_IP,time TIME_FIRST,uint32 BCD,string TEXT2,bytes STREAMBYTES")
-        self.assertEqual(a.getFieldsDict(), {'BCD': 3, 'DST_IP': 6, 'TIME_FIRST': 1, 'STREAMBYTES': 5, 'TEXT2': 7})
+        self.assertEqual(a.getFieldsDict(), {'DST_IP': 15, 'TIME_FIRST': 1, 'BCD': 3, 'STREAMBYTES': 5, 'TEXT2': 16})
 
         # Data was not set, this should raise exception.
         with self.assertRaises(pytrap.TrapError):
