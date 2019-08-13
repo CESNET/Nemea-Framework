@@ -171,7 +171,6 @@ c_types["ipaddr"] = "ip_addr_t";
 c_types["macaddr"] = "mac_addr_t";
 c_types["time"] = "ur_time_t";
 
-c_types["char*"] = "char*";
 c_types["uint8*"] = "uint8_t*";
 c_types["int8*"] = "int8_t*";
 c_types["uint16*"] = "uint16_t*";
@@ -204,7 +203,6 @@ type_table["ipaddr"]="UR_TYPE_IP";
 type_table["macaddr"]="UR_TYPE_MAC";
 type_table["time"]="UR_TYPE_TIME";
 
-type_table["char*"]="UR_TYPE_A_CHAR";
 type_table["uint8*"]="UR_TYPE_A_UINT8";
 type_table["int8*"]="UR_TYPE_A_INT8";
 type_table["uint16*"]="UR_TYPE_A_UINT16";

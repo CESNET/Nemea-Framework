@@ -111,7 +111,6 @@ typedef enum {
    UR_TYPE_TIME,   ///< time (64b)
 
    // Arrays
-   UR_TYPE_A_CHAR,  ///< char array
    UR_TYPE_A_UINT8, ///< unsigned int (8b) array
    UR_TYPE_A_INT8,  ///< int (8b) array
    UR_TYPE_A_UINT16,   ///< unsigned int (16b) array
