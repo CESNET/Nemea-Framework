@@ -522,6 +522,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
         return NULL;
     }
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
+    int i;
 
     switch (ur_get_type(field_id)) {
     case UR_TYPE_UINT8:
@@ -598,7 +599,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("B", ((uint8_t *) value)[i]));
             }
             return list;
@@ -608,7 +609,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("c", ((int8_t *) value)[i]));
             }
             return list;
@@ -618,7 +619,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("H", ((uint16_t *) value)[i]));
             }
             return list;
@@ -628,7 +629,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("h", ((int16_t *) value)[i]));
             }
             return list;
@@ -638,7 +639,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("I", ((uint32_t *) value)[i]));
             }
             return list;
@@ -648,7 +649,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("i", ((int32_t *) value)[i]));
             }
             return list;
@@ -658,7 +659,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("K", ((uint64_t *) value)[i]));
             }
             return list;
@@ -668,7 +669,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("L", ((int64_t *) value)[i]));
             }
             return list;
@@ -678,7 +679,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("f", ((float *) value)[i]));
             }
             return list;
@@ -688,7 +689,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                PyList_Append(list, Py_BuildValue("d", ((double *) value)[i]));
             }
             return list;
@@ -698,7 +699,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                pytrap_unirecipaddr *new_ip = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
                memcpy(&new_ip->ip, &((ip_addr_t *) value)[i], sizeof(ip_addr_t));
                PyList_Append(list, (PyObject *) new_ip);
@@ -710,7 +711,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
                memcpy(&new_mac->mac, &((mac_addr_t *) value)[i], sizeof(mac_addr_t));
                PyList_Append(list, (PyObject *) new_mac);
@@ -722,7 +723,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          {
             PyObject *list = PyList_New(0);
             int array_len = ur_array_get_elem_cnt(self->urtmplt, data, field_id);
-            for (int i = 0; i < array_len; i++) {
+            for (i = 0; i < array_len; i++) {
                pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
                new_time->timestamp = ((ur_time_t *) value)[i];
                PyList_Append(list, (PyObject *) new_time);
@@ -828,6 +829,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
     PY_LONG_LONG longval;
     double floatval;
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
+    int i;
 
     switch (ur_get_type(field_id)) {
     case UR_TYPE_UINT8:
@@ -971,7 +973,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((uint8_t *) value)[i] = (uint8_t) longval;
@@ -995,7 +997,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((int8_t *) value)[i] = (int8_t) longval;
@@ -1019,7 +1021,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((uint16_t *) value)[i] = (uint16_t) longval;
@@ -1043,7 +1045,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((int16_t *) value)[i] = (int16_t) longval;
@@ -1067,7 +1069,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((uint32_t *) value)[i] = (uint32_t) longval;
@@ -1091,7 +1093,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((int32_t *) value)[i] = (int32_t) longval;
@@ -1115,7 +1117,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((uint64_t *) value)[i] = (uint64_t) longval;
@@ -1139,7 +1141,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   longval = PyLong_AsLong(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((int64_t *) value)[i] = (int64_t) longval;
@@ -1163,7 +1165,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   floatval = PyFloat_AsDouble(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((float *) value)[i] = (float) floatval;
@@ -1187,7 +1189,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                 }
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-               for (int i = 0; i < PyList_Size(valueObj); i++) {
+               for (i = 0; i < PyList_Size(valueObj); i++) {
                   floatval = PyFloat_AsDouble(PyList_GetItem(valueObj, i));
                   if (PyErr_Occurred() == NULL) {
                      ((double *) value)[i] = (double) floatval;
@@ -1210,7 +1212,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
               dest->ui64[1] = src->ip.ui64[1];
            } else if (PyList_Check(valueObj)) {
               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-              for (int i = 0; i < PyList_Size(valueObj); i++) {
+              for (i = 0; i < PyList_Size(valueObj); i++) {
                  PyObject *tmp = PyList_GetItem(valueObj, i);
                  if (PyObject_IsInstance(tmp, (PyObject *) &pytrap_UnirecIPAddr)) {
                     pytrap_unirecipaddr *src = (pytrap_unirecipaddr *) tmp;
@@ -1236,7 +1238,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
               memcpy(dest, &src->mac, sizeof(mac_addr_t));
            } else if (PyList_Check(valueObj)) {
               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-              for (int i = 0; i < PyList_Size(valueObj); i++) {
+              for (i = 0; i < PyList_Size(valueObj); i++) {
                  PyObject *tmp = PyList_GetItem(valueObj, i);
                  if (PyObject_IsInstance(tmp, (PyObject *) &pytrap_UnirecMACAddr)) {
                     pytrap_unirecmacaddr *src = (pytrap_unirecmacaddr *) tmp;
@@ -1260,7 +1262,7 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
               *((ur_time_t *) value) = src->timestamp;
            } else if (PyList_Check(valueObj)) {
               ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
-              for (int i = 0; i < PyList_Size(valueObj); i++) {
+              for (i = 0; i < PyList_Size(valueObj); i++) {
                  PyObject *tmp = PyList_GetItem(valueObj, i);
                  if (PyObject_IsInstance(tmp, (PyObject *) &pytrap_UnirecTime)) {
                     pytrap_unirectime *src = (pytrap_unirectime *) tmp;
