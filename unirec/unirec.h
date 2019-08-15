@@ -322,6 +322,13 @@ extern const int ur_field_type_size[];
 extern const char *ur_field_type_str[];
 
 /**
+ * \brief UniRec array element types.
+ *
+ * Used to get type of an array element. Can be indexed using UR_TYPE_*.
+ */
+extern int ur_field_array_elem_type[];
+
+/**
  * \brief Structure that lists UniRec field specifications such as names, types, id.
  */
 extern ur_field_specs_t ur_field_specs;
@@ -539,6 +546,15 @@ int ur_get_field_type_from_str(const char *type);
  */
 #define ur_array_get_elem_cnt(tmplt, rec, field_id) \
    (ur_get_var_len(tmplt, rec, field_id) / ur_array_get_elem_size(field_id))
+
+/**
+ * \brief Get type of an element stored in an UniRec array.
+ *
+ * \param[in] field_id Identifier of a field.
+ * \return UR_TYPE_* value.
+ */
+#define ur_array_get_elem_type(field_id) \
+   ur_field_array_elem_type[ur_get_type(field_id)]
 
 /**
  * \brief Set element to array at given index. Automatically resizes array when index is out of array bounds.
