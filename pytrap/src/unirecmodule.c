@@ -914,6 +914,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((uint8_t *) value)[0] = (uint8_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint8_t *) value)[0] = (uint8_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -938,6 +946,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((int8_t *) value)[0] = (int8_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint8_t *) value)[0] = (uint8_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -962,6 +978,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((uint16_t *) value)[0] = (uint16_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint16_t *) value)[0] = (uint16_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -986,6 +1010,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((int16_t *) value)[0] = (int16_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint16_t *) value)[0] = (uint16_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -1010,6 +1042,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((uint32_t *) value)[0] = (uint32_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint32_t *) value)[0] = (uint32_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -1034,6 +1074,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((int32_t *) value)[0] = (int32_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint32_t *) value)[0] = (uint32_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -1058,6 +1106,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((uint64_t *) value)[0] = (uint64_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint64_t *) value)[0] = (uint64_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
@@ -1082,6 +1138,14 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
                    ur_array_allocate(self->urtmplt, data, field_id, 1);
                    ((int64_t *) value)[0] = (int64_t) longval;
                 }
+#if PY_MAJOR_VERSION < 3
+            } else if (PyInt_Check(valueObj)) {
+                longval = PyInt_AsLong(valueObj);
+                if (PyErr_Occurred() == NULL) {
+                   ur_array_allocate(self->urtmplt, data, field_id, 1);
+                   ((uint64_t *) value)[0] = (uint64_t) longval;
+                }
+#endif
             } else if (PyList_Check(valueObj)) {
                ur_array_allocate(self->urtmplt, data, field_id, PyList_Size(valueObj));
                for (i = 0; i < PyList_Size(valueObj); i++) {
