@@ -765,3 +765,13 @@ class DataTypesIPAddrRange(unittest.TestCase):
         self.assertEqual(s, 3)
 
 
+class CopyTemplateTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+        astr = str(a)
+        b = a.copy()
+        bstr = str(b)
+        self.assertEqual(astr, bstr)
+        self.assertEqual(astr, '(ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,bytes STREAMBYTES,string TEXT)')
+

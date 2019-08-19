@@ -1490,14 +1490,26 @@ UnirecTemplate_copy(pytrap_unirectemplate *self)
     pytrap_unirectemplate *n;
     n = (pytrap_unirectemplate *) pytrap_UnirecTemplate.tp_alloc(&pytrap_UnirecTemplate, 0);
 
-    char *s = ur_template_string_delimiter(self->urtmplt, ',');
-    n->urtmplt = ur_create_template_from_ifc_spec(s);
-    free(s);
-    if (n->urtmplt == NULL) {
-        PyErr_SetString(TrapError, "Creation of UniRec template failed.");
-        Py_DECREF(n);
+    char *errmsg;
+    char *spec = ur_template_string_delimiter(self->urtmplt, ',');
+    if (spec == NULL) {
+        PyErr_SetString(TrapError, "Creation of UniRec template failed. Could not get list of fields.");
         return NULL;
     }
+    char *field_names = ur_ifc_data_fmt_to_field_names(spec);
+    if (field_names == NULL) {
+        PyErr_SetString(TrapError, "Creation of UniRec template failed. Could not get list of fields.");
+        return NULL;
+    }
+    n->urtmplt = ur_create_template(field_names, &errmsg);
+
+    if (n->urtmplt == NULL) {
+        PyErr_Format(TrapError, "Creation of UniRec template failed. %s (%s)", errmsg, field_names);
+        Py_DECREF(n);
+        free(field_names);
+        return NULL;
+    }
+    free(field_names);
 
     n = UnirecTemplate_init(n);
 
@@ -1817,8 +1829,7 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     pytrap_unirectemplate *self;
     const char *spec;
-    // TODO return error string of failure during unirec template init
-    //char *errstring;
+    char *errmsg;
 
     self = (pytrap_unirectemplate *) type->tp_alloc(type, 0);
     if (self != NULL) {
@@ -1834,16 +1845,19 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
         }
-        /* XXX errstring */
-        //self->urtmplt = ur_create_template(spec, &errstring);
-        self->urtmplt = ur_create_template_from_ifc_spec(spec);
+        char *field_names = ur_ifc_data_fmt_to_field_names(spec);
+        if (field_names == NULL) {
+            PyErr_SetString(TrapError, "Creation of UniRec template failed. Could not get list of fields.");
+            return NULL;
+        }
+        self->urtmplt = ur_create_template(field_names, &errmsg);
+        free(field_names);
         if (self->urtmplt == NULL) {
-            //PyErr_SetString(TrapError, errstring);
-            PyErr_SetString(TrapError, "Creation of UniRec template failed.");
-            //free(errstring);
+            PyErr_Format(TrapError, "Creation of UniRec template failed. %s", errmsg);
             Py_DECREF(self);
             return NULL;
         }
+
         self = UnirecTemplate_init(self);
     }
 
