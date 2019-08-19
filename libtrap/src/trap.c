@@ -1443,9 +1443,9 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
    ret_val = ifc_ptr->send(ifc_ptr->priv, data, size, ifc_ptr->datatimeout);
 
    if (ret_val == TRAP_E_OK) {
-      c->counter_send_message[ifc]++;
+      __sync_add_and_fetch(&c->counter_send_message[ifc], 1);
    } else {
-      c->counter_dropped_message[ifc]++;
+      __sync_add_and_fetch(&c->counter_dropped_message[ifc], 1);
    }
    return trap_error(ctx, ret_val);
 }

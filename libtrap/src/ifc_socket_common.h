@@ -55,6 +55,8 @@
 #define DEFAULT_MAX_CLIENTS      20       /**< Default size of client array */
 #define DEFAULT_TIMEOUT_FLUSH    1000000  /**< Default timeout for autoflush [microseconds]*/
 
+#define NO_CLIENTS_SLEEP         100000   /**< Value used in usleep() when waiting for a client to connect */
+
 /**
  * \brief Output buffer structure.
  */

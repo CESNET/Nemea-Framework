@@ -653,11 +653,13 @@ void file_flush(void *priv)
    result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), 0);
 
    if (result == TRAP_E_OK) {
-      c->ctx->counter_send_buffer[c->ifc_idx]++;
+      __sync_add_and_fetch(&c->ctx->counter_send_buffer[c->ifc_idx], 1);
 
       /* Reset buffer and insert the message if it was not inserted. */
       buffer->wr_index = 0;
       buffer->finished = 0;
+   } else {
+      VERBOSE(CL_ERROR, "File IFC flush failed (file_write_buffer returned %i)", result);
    }
 }
 
@@ -709,7 +711,7 @@ static inline int file_send(void *priv, const void *data, uint16_t size, int tim
       result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), timeout);
 
       if (result == TRAP_E_OK) {
-         c->ctx->counter_send_buffer[c->ifc_idx]++;
+         __sync_add_and_fetch(&c->ctx->counter_send_buffer[c->ifc_idx], 1);
 
          /* Reset buffer and insert the message if it was not inserted. */
          buffer->wr_index = 0;
@@ -774,6 +776,11 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    priv->ifc_idx = idx;
    priv->buffer_size = buffer_size;
    priv->buffer.header = malloc(buffer_size + sizeof(buffer_size));
+   if (priv->buffer.header == NULL) {
+      VERBOSE(CL_ERROR, "Memory allocation failed, terminating...");
+      free(priv);
+      return TRAP_E_MEMORY;
+   }
    priv->buffer.data = priv->buffer.header + sizeof(buffer_size);
    priv->buffer.wr_index = 0;
    priv->buffer.finished = 0;

@@ -1153,7 +1153,7 @@ void tcpip_sender_flush(void *priv)
    buffer_t *buffer = &c->buffers[c->active_buffer];
    if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
       finish_buffer(c, buffer);
-      c->ctx->counter_autoflush[c->ifc_idx]++;
+      __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
    }
 
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
@@ -1203,7 +1203,7 @@ again:
       if (c->pending_bytes <= 0) {
          del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
-            priv->ctx->counter_send_buffer[priv->ifc_idx]++;
+            __sync_add_and_fetch(&priv->ctx->counter_send_buffer[priv->ifc_idx], 1);
             pthread_cond_broadcast(&priv->cond);
          }
 
@@ -1239,7 +1239,7 @@ static void *sending_thread_func(void *priv)
          pthread_exit(NULL);
       }
       if (c->connected_clients == 0) {
-         usleep(100000);
+         usleep(NO_CLIENTS_SLEEP);
          continue;
       }
 
@@ -1396,7 +1396,7 @@ repeat:
       return TRAP_E_TERMINATED;
    }
    if (block && c->connected_clients == 0) {
-      usleep(100000);
+      usleep(NO_CLIENTS_SLEEP);
       goto repeat;
    }
 
@@ -1476,9 +1476,10 @@ void tcpip_sender_terminate(void *priv)
    uint32_t i;
    uint64_t sum;
 
+   /* Wait for connected clients to receive all finished buffers before terminating */
    if (c != NULL) {
       do {
-         usleep(10000);
+         usleep(10000); //prevents busy waiting
          sum = 0;
          for (i = 0; i < c->buffer_count; i++) {
             sum |= c->buffers[i].clients_bit_arr;
@@ -1732,7 +1733,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       /* if some memory could not have been allocated, we cannot continue */
       goto failsafe_cleanup;
    }
-   for (i=0; i<buffer_count; ++i) {
+   for (i = 0; i < buffer_count; ++i) {
       buffer_t *b = &(priv->buffers[i]);
 
       b->header = malloc(buffer_size + sizeof(buffer_size));
@@ -1753,7 +1754,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       result = TRAP_E_MEMORY;
       goto failsafe_cleanup;
    }
-   for (i=0; i<max_clients; ++i) {
+   for (i = 0; i < max_clients; ++i) {
       client_t *client = &(priv->clients[i]);
 
       client->assigned_buffer = 0;

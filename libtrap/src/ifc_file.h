@@ -80,8 +80,6 @@ typedef struct file_private_s {
    uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
 
    file_buffer_t buffer;
-
-   pthread_mutex_t lock;
 } file_private_t;
 
 /** Create file receive interface (input ifc).
