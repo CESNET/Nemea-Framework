@@ -91,7 +91,7 @@ extern "C" {
 
 
 /** \brief Constants for all possible types of UniRec fields */
-#define UR_COUNT_OF_TYPES 30 ///< Count of types of UniRec fields
+#define UR_COUNT_OF_TYPES 29 ///< Count of types of UniRec fields
 typedef enum {
    UR_TYPE_STRING,   ///< var-len fields (string where only printable characters are expected; '\0' at the end should NOT be included)
    UR_TYPE_BYTES,    ///< var-len fields (generic string of bytes)
@@ -111,7 +111,6 @@ typedef enum {
    UR_TYPE_TIME,   ///< time (64b)
 
    // Arrays
-   UR_TYPE_A_CHAR,  ///< char array
    UR_TYPE_A_UINT8, ///< unsigned int (8b) array
    UR_TYPE_A_INT8,  ///< int (8b) array
    UR_TYPE_A_UINT16,   ///< unsigned int (16b) array
