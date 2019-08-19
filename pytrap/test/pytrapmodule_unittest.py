@@ -133,3 +133,33 @@ class TrapCtxGetVersion(unittest.TestCase):
         c = pytrap.getTrapVersion()
         print(c)
 
+class StoreAndLoadMessage(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import os
+
+        urtempl = "ipaddr IP,uint16 PORT"
+        c = pytrap.TrapCtx()
+        c.init(["-i", "f:/tmp/pytrap_test"], 0, 1)
+        c.setDataFmt(0, pytrap.FMT_UNIREC, urtempl)
+
+        t = pytrap.UnirecTemplate("ipaddr IP,uint16 PORT")
+        t.createMessage()
+        t.IP = pytrap.UnirecIPAddr("192.168.0.1")
+        t.PORT = 123
+        c.send(t.getData())
+        c.sendFlush()
+        c.finalize()
+
+        c = pytrap.TrapCtx()
+        c.init(["-i", "f:/tmp/pytrap_test"], 1)
+        c.setRequiredFmt(0, pytrap.FMT_UNIREC, urtempl)
+        data = c.recv()
+        t = pytrap.UnirecTemplate(urtempl)
+        t.setData(data)
+        self.assertEqual(t.IP, pytrap.UnirecIPAddr("192.168.0.1"))
+        self.assertEqual(t.PORT, 123)
+        c.finalize()
+
+        os.unlink("/tmp/pytrap_test")
+

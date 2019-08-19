@@ -65,7 +65,7 @@ UR_FIELDS(
    string STR2,
    uint32* ARR1,
    ipaddr* IPs,
-   macaddr* MACs
+   macaddr* MACs,
    uint64* ARR2,
    time *TIMEs
 )
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
       ur_array_allocate(tmplt, rec, F_ARR1, 30);
       ur_array_allocate(tmplt, rec, F_ARR1, 0);
 
-      ur_array_append(tmplt, rec, F_ARR1, 9);
+      ur_array_append(tmplt, rec, F_ARR1, -9);
       ur_array_allocate(tmplt, rec, F_ARR1, 5);
       if (ur_array_get_elem_cnt(tmplt, rec, F_ARR1) != 5) {
          fprintf(stderr, "Error, array element count should be %d and is %d\n", 5, ur_array_get_elem_cnt(tmplt, rec, F_ARR1));
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
       }
 
       for (int i = 0;  i < 9; ++i) {
-         ur_array_set(tmplt, rec, F_ARR1, 9-i, i);
+         ur_array_set(tmplt, rec, F_ARR1, 9-i, -i);
       }
 
       if (ur_array_get_elem_cnt(tmplt, rec, F_ARR1) != 10) {
@@ -233,17 +233,17 @@ int main(int argc, char **argv)
       }
 
       for (int i = 0;  i < 10; ++i) {
-         uint32_t val = ur_array_get(tmplt, buffer, F_ARR1, i);
-         if (val != (uint32_t) (9 - i)) {
-            fprintf(stderr, "1# ARR1 value mismatch at %d index, read %u, expected %u\n", i, val, (uint32_t) (9-i));
+         int32_t val = ur_array_get(tmplt, buffer, F_ARR1, i);
+         if (val != i - 9) {
+            fprintf(stderr, "1# ARR1 value mismatch at %d index, read %d, expected %d\n", i, val, i - 9);
             return 1;
          }
       }
 
-      for (int i = 0;  i < 10; ++i) {
+      for (uint64_t i = 0;  i < 10; ++i) {
          uint64_t val = ur_array_get(tmplt, buffer, F_ARR2, i);
          if (val != i + 10) {
-            fprintf(stderr, "2# ARR2 value mismatch at %d index, read %lu, expected %lu\n", i, val, (uint64_t)i + 10);
+            fprintf(stderr, "2# ARR2 value mismatch at %lu index, read %lu, expected %lu\n", i, val, i + 10);
             return 1;
          }
       }
