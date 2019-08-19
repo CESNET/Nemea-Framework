@@ -333,6 +333,11 @@ class DataTypesArray(unittest.TestCase):
         self.assertEqual(type(d), dict)
         self.assertEqual(d, {'IP': 8, 'BAR': 7, 'FOO': 6, 'STR': 9, 'ARR1': 10, 'MACs': 12, 'ARR2': 13, 'TIMEs': 14, 'IPs': 11})
 
+        self.assertEqual(a.getFieldType("ARR1"), list)
+        self.assertEqual(a.getFieldType("ARR2"), list)
+        self.assertEqual(a.getFieldType("IPs"), list)
+        self.assertEqual(a.getFieldType("TIMEs"), list)
+
         self.assertEqual(a.get(data, "FOO"), 12345)
         self.assertEqual(a.get(data, "FOO"), a.getByID(data, 6))
         self.assertEqual(a.get(data, "FOO"), a.FOO)
