@@ -771,6 +771,12 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
     }
     PY_LONG_LONG longval;
     double floatval;
+
+    if (ur_is_present(self->urtmplt, field_id) == 0) {
+        PyErr_SetString(TrapError, "Field is not in the UniRec template");
+        return NULL;
+    }
+
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
     int i;
 
@@ -880,7 +886,6 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
             }
 #endif
             if (str != NULL) {
-                /* TODO check return value */
                 ur_set_var(self->urtmplt, data, field_id, str, size);
             }
         }
@@ -901,7 +906,6 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
             }
 
             if (str != NULL) {
-                /* TODO check return value */
                 ur_set_var(self->urtmplt, data, field_id, str, size);
             }
         }
