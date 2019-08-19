@@ -91,7 +91,7 @@ extern "C" {
 
 
 /** \brief Constants for all possible types of UniRec fields */
-#define UR_COUNT_OF_TYPES 30 ///< Count of types of UniRec fields
+#define UR_COUNT_OF_TYPES 29 ///< Count of types of UniRec fields
 typedef enum {
    UR_TYPE_STRING,   ///< var-len fields (string where only printable characters are expected; '\0' at the end should NOT be included)
    UR_TYPE_BYTES,    ///< var-len fields (generic string of bytes)
@@ -111,7 +111,6 @@ typedef enum {
    UR_TYPE_TIME,   ///< time (64b)
 
    // Arrays
-   UR_TYPE_A_CHAR,  ///< char array
    UR_TYPE_A_UINT8, ///< unsigned int (8b) array
    UR_TYPE_A_INT8,  ///< int (8b) array
    UR_TYPE_A_UINT16,   ///< unsigned int (16b) array
@@ -320,6 +319,13 @@ extern const int ur_field_type_size[];
  * Sizes of data types are defined in the #ur_field_type_size array.
  */
 extern const char *ur_field_type_str[];
+
+/**
+ * \brief UniRec array element types.
+ *
+ * Used to get type of an array element. Can be indexed using UR_TYPE_*.
+ */
+extern int ur_field_array_elem_type[];
 
 /**
  * \brief Structure that lists UniRec field specifications such as names, types, id.
@@ -539,6 +545,15 @@ int ur_get_field_type_from_str(const char *type);
  */
 #define ur_array_get_elem_cnt(tmplt, rec, field_id) \
    (ur_get_var_len(tmplt, rec, field_id) / ur_array_get_elem_size(field_id))
+
+/**
+ * \brief Get type of an element stored in an UniRec array.
+ *
+ * \param[in] field_id Identifier of a field.
+ * \return UR_TYPE_* value.
+ */
+#define ur_array_get_elem_type(field_id) \
+   ur_field_array_elem_type[ur_get_type(field_id)]
 
 /**
  * \brief Set element to array at given index. Automatically resizes array when index is out of array bounds.

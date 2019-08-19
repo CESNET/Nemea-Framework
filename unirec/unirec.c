@@ -109,7 +109,6 @@ const int ur_field_type_size[] = {
    8, /*UR_TYPE_TIME*/
 
    // arrays
-   -1, /*UR_TYPE_A_CHAR*/
    -1, /*UR_TYPE_A_UINT8*/
    -1, /*UR_TYPE_A_INT8*/
    -2, /*UR_TYPE_A_UINT16*/
@@ -147,7 +146,6 @@ const char *ur_field_type_str[] = {
    "ipaddr", /*UR_TYPE_IP*/
    "macaddr", /*UR_TYPE_MAC*/
    "time", /*UR_TYPE_TIME*/
-   "char*", /*UR_TYPE_A_CHAR*/
    "uint8*", /*UR_TYPE_A_UINT8*/
    "int8*", /*UR_TYPE_A_INT8*/
    "uint16*", /*UR_TYPE_A_UINT16*/
@@ -162,6 +160,42 @@ const char *ur_field_type_str[] = {
    "macaddr*", /*UR_TYPE_A_MAC*/
    "time*", /*UR_TYPE_A_TIME*/
 };
+
+/**
+ * \brief UniRec array element data types.
+ */
+int ur_field_array_elem_type[] = {
+   UR_TYPE_STRING, /* UR_TYPE_STRING */
+   UR_TYPE_BYTES, /* UR_TYPE_BYTES */
+   UR_TYPE_CHAR, /* UR_TYPE_CHAR */
+   UR_TYPE_UINT8, /* UR_TYPE_UINT8 */
+   UR_TYPE_INT8, /* UR_TYPE_INT8 */
+   UR_TYPE_UINT16, /* UR_TYPE_UINT16 */
+   UR_TYPE_INT16, /* UR_TYPE_INT16 */
+   UR_TYPE_UINT32, /* UR_TYPE_UINT32 */
+   UR_TYPE_INT32, /* UR_TYPE_INT32 */
+   UR_TYPE_UINT64, /* UR_TYPE_UINT64 */
+   UR_TYPE_INT64, /* UR_TYPE_INT64 */
+   UR_TYPE_FLOAT, /* UR_TYPE_FLOAT */
+   UR_TYPE_DOUBLE, /* UR_TYPE_DOUBLE */
+   UR_TYPE_IP, /* UR_TYPE_IP */
+   UR_TYPE_MAC, /* UR_TYPE_MAC */
+   UR_TYPE_TIME, /* UR_TYPE_TIME */
+   UR_TYPE_UINT8, /* UR_TYPE_A_UINT8 */
+   UR_TYPE_INT8, /* UR_TYPE_A_INT8 */
+   UR_TYPE_UINT16, /* UR_TYPE_A_UINT16 */
+   UR_TYPE_INT16, /* UR_TYPE_A_INT16 */
+   UR_TYPE_UINT32, /* UR_TYPE_A_UINT32 */
+   UR_TYPE_INT32, /* UR_TYPE_A_INT32 */
+   UR_TYPE_UINT64, /* UR_TYPE_A_UINT64 */
+   UR_TYPE_INT64, /* UR_TYPE_A_INT64 */
+   UR_TYPE_FLOAT, /* UR_TYPE_A_FLOAT */
+   UR_TYPE_DOUBLE, /* UR_TYPE_A_DOUBLE */
+   UR_TYPE_IP, /* UR_TYPE_A_IP */
+   UR_TYPE_MAC, /* UR_TYPE_A_MAC */
+   UR_TYPE_TIME, /* UR_TYPE_A_TIME */
+};
+
 
 ur_field_specs_t ur_field_specs;
 ur_static_field_specs_t UR_FIELD_SPECS_STATIC;
@@ -1311,9 +1345,6 @@ int ur_set_array_from_string(const ur_template_t *tmpl, void *data, ur_field_id_
       break;
    case UR_TYPE_A_INT64:
       scan_format = "%" SCNi64;
-      break;
-   case UR_TYPE_A_CHAR:
-      scan_format = "%c";
       break;
    case UR_TYPE_A_FLOAT:
       scan_format = "%f";
