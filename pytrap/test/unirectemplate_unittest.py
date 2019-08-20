@@ -448,7 +448,9 @@ class DataAccessSetTest(unittest.TestCase):
         a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
         data = a.createMessage(100)
         for i in range(100):
-            self.assertEqual(data, a.getData())
+            getdata = a.getData()
+            # size of created (allocated) message and retrieved message differs (due to non-filled variable fields)
+            self.assertEqual(data[:len(getdata)], getdata)
 
         a.ABC = 666
         self.assertEqual(a.ABC, 666)
@@ -779,4 +781,11 @@ class CopyTemplateTest(unittest.TestCase):
         bstr = str(b)
         self.assertEqual(astr, bstr)
         self.assertEqual(astr, '(ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,bytes STREAMBYTES,string TEXT)')
+
+class AllocateBigMessage(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+        with self.assertRaises(pytrap.TrapError):
+            a.createMessage(100000)
 
