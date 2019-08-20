@@ -50,7 +50,7 @@
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
 
-#define DEFAULT_BUFFER_COUNT     20       /**< Default buffer count */
+#define DEFAULT_BUFFER_COUNT     50       /**< Default buffer count */
 #define DEFAULT_BUFFER_SIZE      100000   /**< Default buffer size [bytes] */
 #define DEFAULT_MAX_CLIENTS      20       /**< Default size of client array */
 #define DEFAULT_TIMEOUT_FLUSH    1000000  /**< Default timeout for autoflush [microseconds]*/
