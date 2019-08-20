@@ -1447,7 +1447,7 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
         return NULL;
     }
     data_size += ur_rec_fixlen_size(self->urtmplt);
-    if (data_size >= UR_MAX_SIZE) {
+    if (data_size > UR_MAX_SIZE) {
         PyErr_Format(TrapError, "Size of message is %d B, which is more than maximum %d bytes.",
                      data_size, UR_MAX_SIZE);
         return NULL;
