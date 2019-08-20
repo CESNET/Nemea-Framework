@@ -1443,12 +1443,13 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     uint32_t data_size = 0;
 
     static char *kwlist[] = {"dyn_size", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|H", kwlist, &data_size)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|I", kwlist, &data_size)) {
         return NULL;
     }
     data_size += ur_rec_fixlen_size(self->urtmplt);
     if (data_size >= UR_MAX_SIZE) {
-        PyErr_SetString(TrapError, "Max size of message is 65535 bytes.");
+        PyErr_Format(TrapError, "Size of message is %d B, which is more than maximum %d bytes.",
+                     data_size, UR_MAX_SIZE);
         return NULL;
     }
     data = ur_create_record(self->urtmplt, (uint16_t) data_size);

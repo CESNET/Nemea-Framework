@@ -782,3 +782,10 @@ class CopyTemplateTest(unittest.TestCase):
         self.assertEqual(astr, bstr)
         self.assertEqual(astr, '(ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,bytes STREAMBYTES,string TEXT)')
 
+class AllocateBigMessage(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
+        with self.assertRaises(pytrap.TrapError):
+            a.createMessage(100000)
+
