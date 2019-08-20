@@ -1987,7 +1987,6 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    priv->connected_clients = 0;
    priv->is_terminated = 0;
    priv->active_buffer = 0;
-   priv->timeout_autoflush = DEFAULT_TIMEOUT_FLUSH;
    priv->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_init(&priv->dummy_mtx, NULL);

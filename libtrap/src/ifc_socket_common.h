@@ -50,10 +50,17 @@
 
 #define DEFAULT_MAX_DATA_LENGTH  (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
 
+#ifndef DEFAULT_BUFFER_COUNT
 #define DEFAULT_BUFFER_COUNT     50       /**< Default buffer count */
+#endif
+
+#ifndef DEFAULT_BUFFER_SIZE
 #define DEFAULT_BUFFER_SIZE      100000   /**< Default buffer size [bytes] */
-#define DEFAULT_MAX_CLIENTS      20       /**< Default size of client array */
-#define DEFAULT_TIMEOUT_FLUSH    1000000  /**< Default timeout for autoflush [microseconds]*/
+#endif
+
+#ifndef DEFAULT_MAX_CLIENTS
+#define DEFAULT_MAX_CLIENTS      64       /**< Default size of client array */
+#endif
 
 #define NO_CLIENTS_SLEEP         100000   /**< Value used in usleep() when waiting for a client to connect */
 

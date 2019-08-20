@@ -82,7 +82,6 @@ typedef struct tcpip_sender_private_s {
 
    int term_pipe[2];                       /**< File descriptor pair for select() termination */
    int server_sd;                          /**< Server socket descriptor */
-   int timeout_autoflush;                  /**< Timeout used for autoflush [microseconds] */
 
    char *server_port;                      /**< TCPIP port number / UNIX socket path */
    char is_terminated;                     /**< Termination flag */
