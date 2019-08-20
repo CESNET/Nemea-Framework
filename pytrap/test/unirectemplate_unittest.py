@@ -448,7 +448,9 @@ class DataAccessSetTest(unittest.TestCase):
         a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
         data = a.createMessage(100)
         for i in range(100):
-            self.assertEqual(data, a.getData())
+            getdata = a.getData()
+            # size of created (allocated) message and retrieved message differs (due to non-filled variable fields)
+            self.assertEqual(data[:len(getdata)], getdata)
 
         a.ABC = 666
         self.assertEqual(a.ABC, 666)

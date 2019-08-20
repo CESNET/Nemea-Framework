@@ -1307,8 +1307,7 @@ UnirecTemplate_getData(pytrap_unirectemplate *self)
         return NULL;
     }
 
-    Py_INCREF(self->data_obj);
-    return self->data_obj;
+    return PyByteArray_FromStringAndSize(self->data, ur_rec_size(self->urtmplt, self->data));
 }
 
 static PyObject *
@@ -1453,7 +1452,7 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
         return NULL;
     }
     data = ur_create_record(self->urtmplt, (uint16_t) data_size);
-    PyObject *res = PyByteArray_FromStringAndSize(data, (uint16_t) data_size);
+    PyObject *res = PyByteArray_FromStringAndSize(data, data_size);
 
     if (self->data != NULL) {
         /* decrease refCount of the previously stored data */
