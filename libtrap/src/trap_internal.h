@@ -278,16 +278,6 @@ struct trap_ctx_priv_s {
    pthread_mutex_t error_mtx;
 
    /**
-    * Thread to handle timeouts on output interfaces.
-    */
-   pthread_t timeout_thread;
-
-   /**
-    * Indicator of initialized autoflush thread
-    */
-   int timeout_thread_initialized;
-
-   /**
     * Timeouts for autoflush thread.
     */
    ifc_autoflush_t *ifc_autoflush_timeout;

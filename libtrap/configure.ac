@@ -175,26 +175,37 @@ AC_CONFIG_FILES([Makefile
                  devel-doxyfile
                  ])
 
+AC_ARG_WITH([ifcbuffercount],
+	AC_HELP_STRING([--with-ifcbuffercount=NUMBER],[Set number of buffers used for sending, default is 50.]),
+	[
+	DEFAULT_BUFFER_COUNT=$withval
+	],
+	[
+	DEFAULT_BUFFER_COUNT=50
+	]
+)
 AC_ARG_WITH([ifcbuffersize],
 	AC_HELP_STRING([--with-ifcbuffersize=NUMBER],[Set size (in bytes) of libtrap buffer for messages, default is 100000.]),
 	[
 	TRAP_IFC_MESSAGEQ_SIZE=$withval
+	DEFAULT_BUFFER_SIZE=$withval
 	],
 	[
 	TRAP_IFC_MESSAGEQ_SIZE=100000
+	DEFAULT_BUFFER_SIZE=100000
 	]
 )
 AC_ARG_WITH([ifcmaxclients],
 	AC_HELP_STRING([--with-ifcmaxclients=NUMBER],[Set number of clients that can connect to output interface, default is 64.]),
 	[
-	TRAP_IFC_DEFAULT_MAX_CLIENTS=$withval
+	DEFAULT_MAX_CLIENTS=$withval
 	],
 	[
-	TRAP_IFC_DEFAULT_MAX_CLIENTS=64
+	DEFAULT_MAX_CLIENTS=64
 	]
 )
 
-CPPFLAGS="$CPPFLAGS -DTRAP_IFC_MESSAGEQ_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" -DTRAP_IFC_DEFAULT_MAX_CLIENTS="$TRAP_IFC_DEFAULT_MAX_CLIENTS" "
+CPPFLAGS="$CPPFLAGS -DDEFAULT_BUFFER_COUNT="$DEFAULT_BUFFER_COUNT" -DDEFAULT_BUFFER_SIZE="$DEFAULT_BUFFER_SIZE" -DDEFAULT_MAX_CLIENTS="$DEFAULT_MAX_CLIENTS" -DTRAP_IFC_MESSAGEQ_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" "
 
 
 

@@ -55,21 +55,31 @@
 #define FILE_SIZE_SUFFIX_LEN   6
 #define FILENAME_TEMPLATE_LEN  PATH_MAX + 256
 
+typedef struct file_buffer_s {
+    uint32_t wr_index;                      /**< Pointer to first free byte in buffer payload */
+    uint8_t *header;                        /**< Pointer to first byte in buffer */
+    uint8_t *data;                          /**< Pointer to first byte of buffer payload */
+    uint8_t finished;                       /**< Flag indicating whether buffer is full and ready to be sent */
+} file_buffer_t;
+
 typedef struct file_private_s {
    trap_ctx_priv_t *ctx;
    FILE *fd;
+   time_t create_time;
    char **files;
    char filename_tmplt[FILENAME_TEMPLATE_LEN];
    char filename[PATH_MAX];
    char mode[3];
    char is_terminated;
    uint8_t neg_initialized;
-   time_t create_time;
    uint16_t file_index;
    uint16_t file_cnt;
-   uint32_t ifc_idx;
    uint32_t file_change_size;
    uint32_t file_change_time;
+   uint32_t buffer_size;                   /**< Buffer size [bytes] */
+   uint32_t ifc_idx;                       /**< Index of interface in 'ctx->out_ifc_list' array */
+
+   file_buffer_t buffer;
 } file_private_t;
 
 /** Create file receive interface (input ifc).

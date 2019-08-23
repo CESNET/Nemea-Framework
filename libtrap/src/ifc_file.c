@@ -89,6 +89,10 @@ void file_destroy(void *priv)
          fclose(config->fd);
       }
 
+      if (config->buffer.header) {
+         free(config->buffer.header);
+      }
+
       free(config);
    } else {
       VERBOSE(CL_ERROR, "FILE IFC: attempt to destroy IFC that is probably not initialized.");
@@ -545,9 +549,9 @@ void switch_file_wrapper(void *priv)
  * \param[in] data   pointer to data to write
  * \param[in] size   size of data to write - NOT USED IN THIS INTERFACE
  * \param[in] timeout   NOT USED IN THIS INTERFACE
- * \return 0 on success (TRAP_E_OK), TTRAP_E_IO_ERROR if error occurs during writing, TRAP_E_TERMINATED if interface was terminated.
+ * \return 0 on success (TRAP_E_OK), TRAP_E_IO_ERROR if error occurs during writing, TRAP_E_TERMINATED if interface was terminated.
  */
-int file_send(void *priv, const void *data, uint32_t size, int timeout)
+int file_write_buffer(void *priv, const void *data, uint32_t size, int timeout)
 {
    int ret_val = 0;
    file_private_t *config = (file_private_t*) priv;
@@ -623,6 +627,104 @@ int file_send(void *priv, const void *data, uint32_t size, int timeout)
    return TRAP_E_OK;
 }
 
+static inline void finish_buffer(file_buffer_t *buffer)
+{
+   uint32_t header = htonl(buffer->wr_index);
+   memcpy(buffer->header, &header, sizeof(header));
+   buffer->finished = 1;
+}
+
+static inline void insert_into_buffer(file_buffer_t *buffer, const void *data, uint16_t size)
+{
+   uint16_t *msize = (uint16_t *)(buffer->data + buffer->wr_index);
+   (*msize) = htons(size);
+   memcpy((void *)(msize + 1), data, size);
+   buffer->wr_index += (size + sizeof(size));
+}
+
+void file_flush(void *priv)
+{
+   int result;
+   file_private_t *c = (file_private_t *) priv;
+   file_buffer_t *buffer = &c->buffer;
+
+   finish_buffer(buffer);
+
+   result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), 0);
+
+   if (result == TRAP_E_OK) {
+      __sync_add_and_fetch(&c->ctx->counter_send_buffer[c->ifc_idx], 1);
+
+      /* Reset buffer and insert the message if it was not inserted. */
+      buffer->wr_index = 0;
+      buffer->finished = 0;
+   } else {
+      VERBOSE(CL_ERROR, "File IFC flush failed (file_write_buffer returned %i)", result);
+   }
+}
+
+/**
+ * \brief Store message into buffer. Write buffer into file if full. If buffering is disabled, the message is sent to the output interface immediately.
+ *
+ * \param[in] priv      pointer to module private data
+ * \param[in] data      pointer to data to write
+ * \param[in] size      size of data to write
+ * \param[in] timeout   NOT USED IN THIS INTERFACE
+ *
+ * \return TRAP_E_OK         Success.
+ * \return TRAP_E_TIMEOUT    Message was not stored into buffer and the attempt should be repeated.
+ * \return TRAP_E_TERMINATED Libtrap was terminated during the process.
+ */
+static inline int file_send(void *priv, const void *data, uint16_t size, int timeout)
+{
+   int result = TRAP_E_OK;
+   file_private_t *c = (file_private_t *) priv;
+   file_buffer_t *buffer = &c->buffer;
+   uint32_t needed_size = size + sizeof(size);
+   uint32_t free_bytes = c->buffer_size - c->buffer.wr_index;
+   uint8_t reinsert = 0;
+
+   /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
+   if (needed_size > c->buffer_size) {
+      return trap_errorf(c->ctx, TRAP_E_MEMORY, "Buffer is too small for this message. Skipping...");
+   }
+
+   /* Check whether the message can be stored into buffer. */
+   if (buffer->finished == 0) {
+      if (free_bytes >= needed_size) {
+         insert_into_buffer(buffer, data, size);
+
+         /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
+         if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
+            finish_buffer(buffer);
+         }
+      } else {
+         /* Need to send buffer first. */
+         finish_buffer(buffer);
+         reinsert = 1;
+      }
+   }
+
+   /* Buffer ready to be sent. */
+   if (buffer->finished == 1) {
+
+      result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), timeout);
+
+      if (result == TRAP_E_OK) {
+         __sync_add_and_fetch(&c->ctx->counter_send_buffer[c->ifc_idx], 1);
+
+         /* Reset buffer and insert the message if it was not inserted. */
+         buffer->wr_index = 0;
+         buffer->finished = 0;
+         if (reinsert) {
+            insert_into_buffer(buffer, data, size);
+         }
+      }
+   }
+
+   return result;
+}
+
 int32_t file_get_client_count(void *priv)
 {
    return 1;
@@ -658,6 +760,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    wordexp_t exp_result;
    size_t length;
 
+   uint32_t buffer_size = TRAP_IFC_MESSAGEQ_SIZE;
+
    if (params == NULL) {
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Parameter is null pointer.", idx);
    }
@@ -670,6 +774,16 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
    priv->ctx = ctx;
    priv->ifc_idx = idx;
+   priv->buffer_size = buffer_size;
+   priv->buffer.header = malloc(buffer_size + sizeof(buffer_size));
+   if (priv->buffer.header == NULL) {
+      VERBOSE(CL_ERROR, "Memory allocation failed, terminating...");
+      free(priv);
+      return TRAP_E_MEMORY;
+   }
+   priv->buffer.data = priv->buffer.header + sizeof(buffer_size);
+   priv->buffer.wr_index = 0;
+   priv->buffer.finished = 0;
    /* Set default mode */
    strcpy(priv->mode, "wb");
 
@@ -767,6 +881,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 
    /* Fills interface structure */
    ifc->send = file_send;
+   ifc->flush = file_flush;
    ifc->disconn_clients = switch_file_wrapper;
    ifc->terminate = file_terminate;
    ifc->destroy = file_destroy;

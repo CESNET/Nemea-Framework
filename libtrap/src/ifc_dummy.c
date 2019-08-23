@@ -185,9 +185,14 @@ failure:
 /***** Blackhole *****/
 // Everything sent to blackhole is dropped
 
-int blackhole_send(void *priv, const void *data, uint32_t size, int timeout)
+int blackhole_send(void *priv, const void *data, uint16_t size, int timeout)
 {
    return TRAP_E_OK;
+}
+
+void blackhole_flush(void *priv)
+{
+   return;
 }
 
 void blackhole_terminate(void *priv)
@@ -222,6 +227,7 @@ char *blackhole_ifc_get_id(void *priv)
 int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *ifc)
 {
    ifc->send = blackhole_send;
+   ifc->flush = blackhole_flush;
    ifc->terminate = blackhole_terminate;
    ifc->destroy = blackhole_destroy;
    ifc->get_client_count = blackhole_get_client_count;
