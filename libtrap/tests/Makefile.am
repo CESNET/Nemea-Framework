@@ -6,8 +6,6 @@ normal_tests_progs=test_badparams test_finalize test_blackhole test_fileifc
 normal_tests=$(normal_tests_progs) $(normal_tests_scripts)
 long_tests=$(long_tests_scripts)
 
-cmockadep_tests_progs=trap_buffer
-
 tlscertfiles=tls-certificates/ca.crt tls-certificates/ca.key tls-certificates/client.crt tls-certificates/client.key tls-certificates/server.crt tls-certificates/server.key tls-certificates/unver.crt tls-certificates/unver.key
 
 disabled_tests=libtrap_multiclient.test
@@ -25,11 +23,6 @@ endif
 EXTRA_DIST = generate-report.sh test_reconnection.sh test_tcpip.sh test_tls.sh $(normal_tests_scripts) $(long_tests_scripts) $(tlscertfiles) $(disabled_tests)
 
 check_PROGRAMS = basic_test $(normal_tests_progs)
-
-if HAVE_CMOCKA
-TESTS += $(cmockadep_tests_progs)
-check_PROGRAMS += $(cmockadep_tests_progs)
-endif
 
 if HAVE_OPENSSL
 TESTS += test_tls.sh
@@ -92,12 +85,6 @@ valid_buffer_SOURCES=valid_buffer.c
 
 test_badparams_SOURCES=test_badparams.c
 test_badparams_CPPFLAGS=$(COM_CPPFLAGS)
-
-trap_buffer_SOURCES=$(top_builddir)/src/trap_buffer.c $(top_builddir)/src/trap_buffer.h test_trap_buffer.c
-trap_buffer_CPPFLAGS=-DUNIT_TESTING
-trap_buffer_CFLAGS=--coverage -g -O0
-trap_buffer_LDADD=-lcmocka
-trap_buffer_LDFLAGS=--coverage -Wl,--wrap=_test_malloc
 
 test_buffering$(EXEEXT):
 	$(CC) -I../src -DTESTBUFFERING -o $@ -pthread -lrt ../src/trap.c ../src/trap_error.c ../src/trap_internal.c ../src/trap_ifc_dummy.c ../src/trap_ifc_tcpip.c test_buffering.c
