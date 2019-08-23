@@ -299,7 +299,6 @@ Files: ./configure.ac
 	./doc/develop-interface.txt
 	./doc/index-devel.txt
 	./doc/history.txt
-	./tests/basic_test_timeouts.test
 	./tests/libtrap_multiclient.test
 	./tests/libtrap_ctxapi.test
 	./tests/basic_test_arg.test

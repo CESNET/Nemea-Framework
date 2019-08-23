@@ -1,4 +1,4 @@
-normal_tests_scripts=basic_test_arg.test basic_test_timeouts.test libtrap_disbuffer.test test_service_ifc_fail.test
+normal_tests_scripts=basic_test_arg.test libtrap_disbuffer.test test_service_ifc_fail.test
 long_tests_scripts=libtrap_simpleapi.test libtrap_ctxapi.test libtrap_simpleapi_t.test libtrap_ctxapi_t.test
 
 normal_tests_progs=test_badparams test_finalize test_blackhole test_fileifc
@@ -28,7 +28,7 @@ if HAVE_OPENSSL
 TESTS += test_tls.sh
 endif
 
-noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params test_timeouts valid_buffer test_rxtx
+noinst_PROGRAMS = test_tcpip_wclient test_tcpip_wserver test_tcpip_nb5client test_tcpip_nb5server test_tcpip_client test_tcpip_server test_echo test_echo_reply test_echo_ctx test_echo_reply_ctx test_parse_params valid_buffer test_rxtx
 
 AM_LDFLAGS=-static ../src/libtrap.la
 COM_CPPFLAGS=-I../src -I../include -I${top_srcdir}/include -I${top_srcdir}/src
@@ -71,9 +71,6 @@ test_parse_params_CPPFLAGS=$(COM_CPPFLAGS)
 
 basic_test_SOURCES=basic_test.c
 basic_test_CPPFLAGS=$(COM_CPPFLAGS)
-
-test_timeouts_SOURCES=test_timeout_ctx.c
-test_timeouts_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_finalize_SOURCES=test_finalize.c
 test_finalize_CPPFLAGS=$(COM_CPPFLAGS)
