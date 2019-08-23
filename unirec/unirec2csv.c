@@ -42,16 +42,13 @@ char *urcsv_header(urcsv_t *urcsv)
    return ur_template_string_delimiter(urcsv->tmplt, urcsv->delimiter);
 }
 
-int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, ur_template_t *tmplt)
+int urcsv_value(char *dst, uint32_t size, void *ptr, int type, int field_len)
 {
    int written = 0;
    char *p = dst;
 
-   // Get pointer to the field (valid for static fields only)
-   void *ptr = ur_get_ptr_by_id(tmplt, rec, id);
-
    // Static field - check what type is it and use appropriate format
-   switch (ur_get_type(id)) {
+   switch (type) {
    case UR_TYPE_UINT8:
       written = snprintf(p, size, "%" PRIu8, *(uint8_t*) ptr);
       break;
@@ -111,16 +108,42 @@ int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, u
          written = snprintf(p, size, "%s.%03i", str, msec);
       }
       break;
-   case UR_TYPE_STRING:
+   default:
       {
-         // Printable string - print it as it is
-         int fs = ur_get_var_len(tmplt, rec, id);
-         char *data = ur_get_ptr_by_id(tmplt, rec, id);
-         *(p++) = '"';
-         written++;
+         // Unknown type - print the value in hex
+         strncpy(p, "0x", size);
+         written += 2;
+         p += 2;
+         for (int i = 0; i < field_len && written < size; i++) {
+            int w = snprintf(p, size - written, "%02x", ((unsigned char *) ptr)[i]);
+            written += w;
+            p += w;
+         }
+      }
+      break;
+   } // case (field type)
 
-         while (fs-- && (written < size)) {
-            switch (*data) {
+   return written;
+}
+
+int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, ur_template_t *tmplt)
+{
+   int written = 0;
+   char *p = dst;
+
+   // Get pointer to the field (valid for static fields only)
+   void *ptr = ur_get_ptr_by_id(tmplt, rec, id);
+   int type = ur_get_type(id);
+
+   if (type == UR_TYPE_STRING) {
+      // Printable string - print it as it is
+      int fs = ur_get_var_len(tmplt, rec, id);
+      char *data = ur_get_ptr_by_id(tmplt, rec, id);
+      *(p++) = '"';
+      written++;
+
+      while (fs-- && (written < size)) {
+         switch (*data) {
             case '\n': // Replace newline with space
                /* TODO / FIXME possible bug - info lost */
                *(p++) = ' ';
@@ -137,40 +160,47 @@ int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, u
                   *(p++) = *data;
                   written++;
                }
-            }
-            data++;
          }
-         *(p++) = '"';
-         written++;
+         data++;
       }
-      break;
-   case UR_TYPE_BYTES:
-      {
-         // Generic string of bytes - print each byte as two hex digits
-         int fs = ur_get_var_len(tmplt, rec, id);
-         unsigned char *data = ur_get_ptr_by_id(tmplt, rec, id);
-         while (fs-- && (written < size)) {
-            int w = snprintf(p, size, "%02x", *data++);
-            written += w;
-            p += w;
-         }
+      *(p++) = '"';
+      written++;
+   } else if (type == UR_TYPE_BYTES) {
+      // Generic string of bytes - print each byte as two hex digits
+      int fs = ur_get_var_len(tmplt, rec, id);
+      unsigned char *data = ur_get_ptr_by_id(tmplt, rec, id);
+      while (fs-- && (written < size)) {
+         int w = snprintf(p, size, "%02x", *data++);
+         written += w;
+         p += w;
       }
-      break;
-   default:
-      {
-         // Unknown type - print the value in hex
-         int fs = ur_get_len(tmplt, rec, id);
-         strncpy(p, "0x", size);
+   } else if (ur_is_varlen(id)) {
+      int elem_type = ur_array_get_elem_type(id);
+      int elem_size = ur_array_get_elem_size(id);
+      int elem_cnt = ur_array_get_elem_cnt(tmplt, rec, id);
+      int array_len = ur_get_len(tmplt, rec, id);
+      int i;
+
+      if (written + 2 < size) {
          written += 2;
-         p += 2;
-         for (int i = 0; i < fs && written < size; i++) {
-            int w = snprintf(p, size - written, "%02x", ((unsigned char *) ptr)[i]);
+         *(p++) = '[';
+         for (i = 0; i < elem_cnt; i++) {
+            int w = urcsv_value(p, size - written, ((char *) ptr) + i * elem_size, elem_type, array_len);
             written += w;
             p += w;
+            if (written + 1 >= size) {
+               break;
+            }
+            if (i + 1 != elem_cnt) {
+               *(p++) = '|';
+               written++;
+            }
          }
+         *(p++) = ']';
       }
-      break;
-   } // case (field type)
+   } else  {
+      return urcsv_value(p, size, ptr, type, ur_get_len(tmplt, rec, id));
+   }
 
    return written;
 }
