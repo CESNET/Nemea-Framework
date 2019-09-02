@@ -1,3 +1,13 @@
+2019-08-20 (Jiri Havranek): ur2csv: added support for array unirec types
+2019-08-19 (Jiri Havranek): unirec: removed unused CHAR* type
+2019-08-15 (Jiri Havranek): unirec: added macro for getting array element type
+2019-08-13 (Jiri Havranek): unirec: modified basic test to test negative integers
+2019-08-13 (Jiri Havranek): unirec: removed support of char*
+2019-08-05 (Jiri Havranek): unirec: extended unirec array tests
+2019-08-04 (Jiri Havranek): unirec: bug fixes
+2019-08-02 (Jiri Havranek): unirec: improved unirec array api, added few tests
+2019-07-11 (Jiri Havranek): unirec: added unirec array basic functions
+
 2019-05-14 (Tomas Cejka): unirec: hotfix: parsing timestamps failed on Turris Omnia
 2019-04-28 (Tomas Cejka): unirec: csv: decomposition of urcsv_record(), added urcsv_field()
 2019-04-22 (Tomas Cejka): unirec: define default PRIx8, SCNx8 if missing

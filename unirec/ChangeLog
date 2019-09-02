@@ -1,3 +1,7 @@
+2019-09-02 unirec-2.7.0
+	* Add array type in UniRec
+	* Add conversion of array in ur2csv API
+
 2019-05-18 unirec-2.6.0
 	* Bugfixes for openwrt - timestamps, undefined constants
 	* csv - improved API to convert any field value to string

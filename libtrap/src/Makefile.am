@@ -17,7 +17,7 @@ libtrap_la_SOURCES = trap.c trap_error.c ifc_dummy.c ifc_tcpip.c trap_internal.c
    third-party/libjansson/utf.c \
    third-party/libjansson/utf.h \
    third-party/libjansson/value.c
-EXTRA_libtrap_la_SOURCES = ifc_dummy.h trap_ifc.h ifc_tcpip.h trap_internal.h trap_error.h ifc_tls.c ifc_tls.h ifc_tls_internal.h
+EXTRA_libtrap_la_SOURCES = ifc_dummy.h trap_ifc.h ifc_tcpip.h trap_internal.h trap_error.h ifc_tls.c ifc_tls.h ifc_tls_internal.h ifc_socket_common.h
 
 if HAVE_OPENSSL
 libtrap_la_SOURCES += ifc_tls.c ifc_tls.h ifc_tls_internal.h
