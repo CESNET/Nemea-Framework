@@ -1180,6 +1180,17 @@ int ur_array_resize(const ur_template_t *tmplt, void *rec, int field_id, int len
    return UR_OK;
 }
 
+char *ur_array_append_get_ptr(const ur_template_t *tmplt, void *rec, int field_id)
+{
+   int elem_cnt = ur_array_get_elem_cnt(tmplt, rec, field_id);
+   int elem_size = ur_array_get_elem_size(field_id);
+   if (ur_array_resize(tmplt, rec, field_id, (elem_cnt + 1) * elem_size) == UR_OK) {
+      return (char *) ur_get_ptr_by_id(tmplt, rec, field_id) + elem_cnt * elem_size;
+   } else {
+      return NULL;
+   }
+}
+
 void ur_clear_varlen(const ur_template_t * tmplt, void *rec)
 {
    //set null offset and length for all dynamic fields

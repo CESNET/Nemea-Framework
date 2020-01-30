@@ -584,6 +584,16 @@ int ur_get_field_type_from_str(const char *type);
    }
 
 /**
+ * \brief Allocate new element at the end of array and return its pointer.
+ *
+ * \param[in] tmplt Pointer to UniRec template
+ * \param[in] rec Pointer to the beginning of a record
+ * \param[in] field_id Identifier of a field.
+ * \return Pointer to allocated element at the end or NULL if allocation failed.
+ */
+char *ur_array_append_get_ptr(const ur_template_t *tmplt, void *rec, int field_id);
+
+/**
  * \brief Clear contents of an UniRec array. Array is resized to 0 elements.
  *
  * \param[in] tmplt Pointer to UniRec template

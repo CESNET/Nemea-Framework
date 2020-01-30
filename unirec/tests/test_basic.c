@@ -63,7 +63,7 @@ UR_FIELDS(
    ipaddr IP,
    string STR1,
    string STR2,
-   uint32* ARR1,
+   int32* ARR1,
    ipaddr* IPs,
    macaddr* MACs,
    uint64* ARR2,
@@ -135,9 +135,12 @@ int main(int argc, char **argv)
          return 1;
       }
 
-      for (int i = 0;  i < 9; ++i) {
+      // Fill the array (indexes 1-9) with values from -8 to 0
+      for (int i = 2;  i < 9; ++i) {
          ur_array_set(tmplt, rec, F_ARR1, 9-i, -i);
       }
+      *(int32_t *) ur_array_append_get_ptr(tmplt, rec, F_ARR1) = -1;
+      *(int32_t *) ur_array_append_get_ptr(tmplt, rec, F_ARR1) = 0;
 
       if (ur_array_get_elem_cnt(tmplt, rec, F_ARR1) != 10) {
          fprintf(stderr, "Error, array element count should be %d and is %d\n", 10, ur_array_get_elem_cnt(tmplt, rec, F_ARR1));
