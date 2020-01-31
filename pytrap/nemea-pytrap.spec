@@ -11,7 +11,7 @@
 %endif
 
 Name:           %{pypi_name}
-Version:        0.11.0
+Version:        0.12.0
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
@@ -74,7 +74,7 @@ TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test
 
 %files -n python2-%{pypi_name}
 %doc README
-%{python_sitearch}/*
+%{python2_sitearch}/*
 
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README
