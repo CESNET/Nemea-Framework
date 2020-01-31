@@ -32,7 +32,7 @@ class RCReporterTest(unittest.TestCase):
         output = re.sub(idre, "", output.decode("utf-8")).split("\n")
         expect = re.sub(idre, "", EXPSTRING).split("\n")
 
-        output = filter(lambda l: l != "", output)
+        output = list(filter(lambda l: l != "", output))
         self.assertEqual(len(output), 18)
 
         for i in range(len(expect)):
