@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.5.0
+%global pypi_version 1.5.1
 
 
 %if 0%{?el6}
@@ -98,7 +98,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp reporter_config/
 
 %files -n python2-%{pypi_name}
 %doc README
-%{python_sitelib}
+%{python2_sitelib}
 %config(noreplace) %{_sysconfdir}/nemea/email-templates/default.html
 
 %files -n python%{python3_pkgversion}-%{pypi_name}
