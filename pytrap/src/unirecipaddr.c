@@ -473,7 +473,12 @@ static int
 UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject *kwds)
 {
     PyObject *start = NULL, *end = NULL;
-    char *argstr = NULL, *str = NULL, *netmask = NULL;
+#if PY_MAJOR_VERSION >= 3
+    const char *argstr = NULL;
+#else
+    char *argstr = NULL;
+#endif
+    char *str = NULL, *netmask = NULL;
     Py_ssize_t size;
     ip_addr_t tmp_ip;
     unsigned char mask = 0;
@@ -569,8 +574,10 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
         memcpy(&self->end->ip, &(((pytrap_unirecipaddr *) end)->ip), sizeof(ip_addr_t));
     } else {
         /* string is supported */
-        CHECK_STR_CONV(end, str, size);
+        CHECK_STR_CONV(end, argstr, size);
+        str = strdup(argstr);
         COPY_IPADD(str, self->end->ip, tmp_ip);
+        FREE_CLEAR(str);
     }
 exit_success:
     return 0;

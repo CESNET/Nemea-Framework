@@ -240,8 +240,12 @@ UnirecTime_init(pytrap_unirectime *s, PyObject *args, PyObject *kwds)
     PyObject *arg1;
     uint32_t secs = 0, msecs = 0;
     double fl_time;
-    char *cstr = NULL;
     Py_ssize_t csize;
+#if PY_MAJOR_VERSION >= 3
+    const char *cstr = NULL;
+#else
+    char *cstr = NULL;
+#endif
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "O|I", &arg1, &msecs)) {
@@ -523,9 +527,9 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
     }
     int type = ur_get_type(field_id);
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
-    int array_len;
+    int array_len = 0;
     int i;
-    PyObject *list;
+    PyObject *list = NULL;
 
     if (ur_is_varlen(field_id) && type != UR_TYPE_STRING && type != UR_TYPE_BYTES) {
        list = PyList_New(0);
@@ -869,14 +873,15 @@ UnirecTemplate_set_local(pytrap_unirectemplate *self, char *data, int32_t field_
     case UR_TYPE_STRING:
         {
             Py_ssize_t size;
-            char *str;
 #if PY_MAJOR_VERSION >= 3
+            const char *str = NULL;
             if (!PyUnicode_Check(valueObj)) {
                 PyErr_SetString(PyExc_TypeError, "String object expected.");
                 return NULL;
             }
             str = PyUnicode_AsUTF8AndSize(valueObj, &size);
 #else
+            char *str = NULL;
             if (!PyString_Check(valueObj)) {
                 PyErr_SetString(PyExc_TypeError, "String object expected.");
                 return NULL;
