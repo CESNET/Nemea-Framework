@@ -40,8 +40,13 @@ typedef struct {
 static PyObject *
 pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
-    char *arg, *module_name = "nemea-python-module", *module_desc = "",
-         *service_ifcname = NULL, *ifc_spec = NULL;
+#if PY_MAJOR_VERSION >= 3
+    const char *arg = NULL, *ifc_spec = NULL;
+#else
+    char *arg = NULL, *ifc_spec = NULL;
+#endif
+    char *module_name = "nemea-python-module", *module_desc = "",
+         *service_ifcname = NULL;
     char service_name[20], found = 0, print_help = 0;
     PyObject *argvlist, *strObj;
     int argc = 0, i, ifcin = 1, ifcout = 0, result;
@@ -54,11 +59,11 @@ pytrap_init(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
     }
 
     argc = PyList_Size(argvlist);
-    if (argc ==0) {
+    if (argc == 0) {
         PyErr_SetString(TrapError, "argv list must not be empty.");
         return NULL;
     }
-    for (i=0; i<argc; i++) {
+    for (i = 0; i < argc; i++) {
         strObj = PyList_GetItem(argvlist, i);
 #if PY_MAJOR_VERSION >= 3
         result = PyUnicode_Check(strObj);
@@ -720,4 +725,3 @@ initpytrap(void)
     return m;
 #endif
 }
-
