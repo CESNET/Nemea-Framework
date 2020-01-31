@@ -1,3 +1,8 @@
+2020-01-31 unirec-2.8.0
+	* unirec:
+		- added ur_array_append_get_ptr(), which allocates new element
+		and returns pointer to it
+
 2019-09-02 unirec-2.7.0
 	* Add array type in UniRec
 	* Add conversion of array in ur2csv API

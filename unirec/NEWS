@@ -1,3 +1,5 @@
+2020-01-30 (Jiri Havranek): unirec: added ur_array_append_get_ptr() function to allocate element and return its pointer
+
 2019-08-20 (Jiri Havranek): ur2csv: added support for array unirec types
 2019-08-19 (Jiri Havranek): unirec: removed unused CHAR* type
 2019-08-15 (Jiri Havranek): unirec: added macro for getting array element type
