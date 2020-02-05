@@ -45,8 +45,8 @@ PROG_ECHO_REPLY="test_echo_reply"
 test -z "$srcdir" && export srcdir=.
 
 #kill leftover tests
-pkill $PROG_ECHO &> /dev/null && sleep 1
-pkill $PROG_ECHO_REPLY &> /dev/null && sleep 1
+pkill "^$PROG_ECHO" &> /dev/null && sleep 1
+pkill "^$PROG_ECHO_REPLY" &> /dev/null && sleep 1
 
 INTERFACE_SENDER="T:12345:${srcdir}/tls-certificates/server.key:${srcdir}/tls-certificates/server.crt:${srcdir}/tls-certificates/ca.crt"
 INTERFACE_RECEIVER="T:12345:${srcdir}/tls-certificates/unver.key:${srcdir}/tls-certificates/unver.crt:${srcdir}/tls-certificates/ca.crt"
