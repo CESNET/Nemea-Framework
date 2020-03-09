@@ -230,7 +230,7 @@ typedef struct {
  * \param[in] tmplt pointer to input template
  * \return return value of trap_ctx_recv
  */
-#define TRAP_CTX_RECEIVE(ctx, ifc_num, data, data_size, tmplt) \
+#define TRAP_CTX_RECEIVE(ctx, ifc_num, data, data_size, tmplt) __extension__ \
 ({\
    int ret = trap_ctx_recv(ctx, ifc_num, &data, &data_size);\
    if (ret == TRAP_E_FORMAT_CHANGED) {\
@@ -268,7 +268,7 @@ typedef struct {
  * \param[in] tmplt pointer to input template
  * \return return value of trap_ctx_recv
  */
-/*#define UNIREC_CTX_CHECK_TEMPLATE (ctx, ret, ifc_num, tmplt, fmt_changed_cmd, fmt_not_compatabile_cmd) \
+/*#define UNIREC_CTX_CHECK_TEMPLATE (ctx, ret, ifc_num, tmplt, fmt_changed_cmd, fmt_not_compatabile_cmd) __extension__ \
 ({\
    if (ret == TRAP_E_OK_FORMAT_CHANGED && trap_ctx_get_in_ifc_state(ctx, ifc_num) == FMT_SUBSET) {\
       const char *spec = NULL;\
