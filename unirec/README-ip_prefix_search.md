@@ -68,42 +68,12 @@ Recommended control flow is:
  * \brief Init and find prefix EXAMPLE
  * \author Erik Sabik <xsabik02@stud.fit.vutbr.cz>
  * \author Ondrej Ploteny <xplote01@stud.fit.vutbr.cz>
- * \date 2016
+ * \date 2016-2020
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2020 CESNET
  *
- * LICENSE TERMS
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- * 3. Neither the name of the Company nor the names of its contributors
- *    may be used to endorse or promote products derived from this
- *    software without specific prior written permission.
- *
- * ALTERNATIVELY, provided that this notice is retained in full, this
- * product may be distributed under the terms of the GNU General Public
- * License (GPL) version 2 or later, in which case the provisions
- * of the GPL apply INSTEAD OF those given above.
- *
- * This software is provided ``as is'', and any express or implied
- * warranties, including, but not limited to, the implied warranties of
- * merchantability and fitness for a particular purpose are disclaimed.
- * In no event shall the company or contributors be liable for any
- * direct, indirect, incidental, special, exemplary, or consequential
- * damages (including, but not limited to, procurement of substitute
- * goods or services; loss of use, data, or profits; or business
- * interruption) however caused and on any theory of liability, whether
- * in contract, strict liability, or tort (including negligence or
- * otherwise) arising in any way out of the use of this software, even
- * if advised of the possibility of such damage.
+ * SPDX-License-Identifier: BSD-3-Clause
  *
  */
 /**
@@ -136,15 +106,13 @@ Recommended control flow is:
  * initialized prefix context (ipps_context_t struct).
  * Function ipps_search() return number of match blacklists and return their data as parameter 'data',
  * if ipps_search() return 0, no match in blacklist and ip is not found in any blacklist.
- *
- *
- * 
- *
  */
 
-#include<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <sys/time.h>
-#include <nemea-common/ip_prefix_search.h>
+#include <unirec/ip_prefix_search.h>
 
 
 /* Length of loaded data in bytes */
@@ -260,7 +228,7 @@ int str_to_network(char *str, ipps_network_t *network)
  * @param[in] file Pointer to string containing file name.
  * @return Pointer to networks list structure if success else return NULL.
  */
-ipps_network_list_t * load_networks(FILE *file)
+ipps_network_list_t *load_networks(FILE *file)
 {
     if(!file)
         return NULL;
@@ -287,7 +255,7 @@ ipps_network_list_t * load_networks(FILE *file)
     }
 
     // Read file by line, convert string to struct
-    while (fgets(line,64,file) != NULL) {
+    while (fgets(line, 64, file) != NULL) {
         if (str_to_network(line, &networks[i]) == 1) {
             i++;
 
@@ -320,7 +288,7 @@ ipps_network_list_t * load_networks(FILE *file)
  * @param[in] network_list Pointer to network_list structure
  * @return void
  */
-void destroy_networks(ipps_network_list_t * network_list) {
+void destroy_networks(ipps_network_list_t *network_list) {
     int index;
     for (index = 0; index < network_list->net_count; index++) {
         free(network_list->networks[index].data);
@@ -339,8 +307,9 @@ int main()
     /* Blacklist dataset file */
     FILE * dataset;
 
-    dataset = fopen ("blacklist6.txt","r");
+    dataset = fopen("blacklist6.txt", "r");
     if (dataset == NULL) {
+        printf("blacklist6.txt not found\n");
         return 1;
     }
 
@@ -348,7 +317,7 @@ int main()
     ipps_network_list_t * network_list = load_networks(dataset);
     fclose(dataset);
 
-    if(network_list->net_count == 0)
+    if (network_list->net_count == 0)
     {
         printf("Empty tree, nothing to do");
         return 0;
@@ -359,12 +328,12 @@ int main()
      * overlapping intervals are divided with relevant data, data are copied from 'ipps_network_list_t'
      * ipps_context_t store sorted array of IPv4 intervals and IPv6 intervals and their counters separately
      */
-    ipps_context_t * prefix_context;
+    ipps_context_t *prefix_context;
 
     prefix_context = ipps_init(network_list);
 
 
-    if(prefix_context == NULL)
+    if (prefix_context == NULL)
     {
         destroy_networks(network_list);
         return 1;
@@ -383,7 +352,7 @@ int main()
     printf("\t%-16s \t%-16s\t%s\n", "Low IP", "High IP", "Data");
 
     /* Check print IPv4 */
-    for(index = 0; index < prefix_context->v4_count; ++index)
+    for (index = 0; index < prefix_context->v4_count; ++index)
     {
         ip_to_str(&prefix_context->v4_prefix_intervals[index].low_ip, &ip_string[0]);
         printf("\t%-16s", ip_string);
