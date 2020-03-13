@@ -2,14 +2,16 @@ BUILT_SOURCES=fields.h fields.c
 
 EXTRA_DIST=fields.c fields.h
 
+AM_CFLAGS=-std=c99
+
 fields.h: fields.c
 
 fields.c:
 	${top_srcdir}/ur_processor.sh -i ${top_srcdir} -o ./
 
-check_PROGRAMS=test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
+check_PROGRAMS=test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp ip_prefix_search_test
 
-TESTS = test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp
+TESTS = test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp ip_prefix_search_test
 
 if HAVE_CMOCKA
 check_PROGRAMS += test_ur2csv
@@ -54,6 +56,10 @@ test_speed_uro_CPPFLAGS=$(COM_CPPFLAGS)
 test_template_cmp_SOURCES=test_template_cmp.c fields.c
 test_template_cmp_CFLAGS=-DUNIREC
 test_template_cmp_CPPFLAGS=$(COM_CPPFLAGS)
+
+ip_prefix_search_test_SOURCES=ip_prefix_search_test.c
+ip_prefix_search_test_LDFLAGS=-static ../libunirec.la
+ip_prefix_search_test_CPPFLAGS=-I../../
 
 if HAVE_CMOCKA
 test_ur2csv_SOURCES=test_ur2csv.c fields.c
