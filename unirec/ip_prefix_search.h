@@ -47,10 +47,7 @@
 #ifndef IP_PREFIX_SEARCH_H
 #define IP_PREFIX_SEARCH_H
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <unirec/ipaddr.h>
+#include "ipaddr.h"
 
 /* Default size of data pointer array */
 #define DATASLOTS 8

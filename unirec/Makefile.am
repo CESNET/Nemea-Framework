@@ -22,7 +22,7 @@ ur_values.py: ur_values.h
 lib_LTLIBRARIES=libunirec.la
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h macaddr.h links.h ur_time.h unirec2csv.h unirec2csv.c
+libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h macaddr.h links.h ur_time.h unirec2csv.h unirec2csv.c ip_prefix_search.c ipps_internal.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
@@ -35,11 +35,16 @@ unirecinclude_HEADERS=unirec.h \
 		     links.h  \
 		     ur_time.h \
 		     unirec2csv.h \
+		     ip_prefix_search.h \
 		     ur_values.h
 
 bin_SCRIPTS=ur_values.sh ur_processor.sh
 
-EXTRA_DIST=values ur_values.sh ur_processor.sh debian/changelog debian/control debian/copyright debian/compat debian/patches debian/patches/series debian/README.Debian debian/rules debian/source debian/source/format debian/source/local-options
+EXTRA_DIST=values ur_values.sh ur_processor.sh \
+		debian/changelog debian/control debian/copyright debian/compat debian/patches debian/patches/series \
+		debian/README.Debian debian/rules debian/source debian/source/format debian/source/local-options \
+		README.md \
+		README-ip_prefix_search.md
 
 include doxygen.am
 
