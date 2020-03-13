@@ -57,9 +57,6 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - pyenv versions
-  - pyenv global 2.7 3.6
-  - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
     (cd pytrap && make coverage; sudo python setup.py install; sudo python3 setup.py install;)
   - make check || { find . \( -name '*.sh.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1;}
