@@ -24,7 +24,6 @@ libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
 			   b_plus_tree/b_plus_tree_internal.h \
 			   prefix_tree/prefix_tree.c \
                           super_fast_hash/super_fast_hash.c \
-			   ip_prefix_search/ip_prefix_search.c \
 			   ${xmlsources}
 
 libnemea_common_la_LDFLAGS = -version-info 3:0:0
@@ -40,7 +39,6 @@ EXTRA_DIST= README \
 	    cuckoo_hash_v2/README \
 	    b_plus_tree/README \
 	    cuckoo_hash/README \
-	    ip_prefix_search/README
 	    debian/source/local-options \
 	    debian/source/format \
 	    debian/nemea-common.install \
