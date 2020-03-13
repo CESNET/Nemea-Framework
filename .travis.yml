@@ -1,12 +1,9 @@
 language: c
-dist: trusty
+dist: xenial
 compiler:
   - gcc
 os:
   - linux
-python:
-  - "2.7"
-  - "3.6"
 
 env:
   global:
@@ -14,7 +11,6 @@ env:
    #   via the "travis encrypt" command using the project repo's public key
    - secure: "i5wXM5UGRLxlcO+4Q+l3UjTka7mDE6wCD0gyU9LXVzMD5yACHKRQ2XQFVviMvBp5oXL3aBxnbZh1TdkzkI4+XIvMIPCwNQf0vpEclQ/zCdJtVZAA2G2dC/DL4RbPGN0ad5vLJCgmuOP5BqOpoIeC0+GLnmpRwcqNf9yeeaDqxLiGt24SFplPvwNnEDDUn2X8TiSfTh962utqO5UIgonWvTX1RVN4jLUl+G98inSZYuG0+oRmvb26PBqhkSRFVK1spbxoFQi15ySgmNKFTo9Miqq3VPxKLnVhEIrSY2pUW8swu+9d7+YYJUxO9w4WL4xLQqXiX/SXLr4jpaK0FS1otlT8zjlasTLGBfIYTZoE9pUz4h2R2vFPkiGkQGKHZHlPwqshy33w7IjwYJV41qvgpo0LYUj23rQ1LE24wbVpt1Nz+TQJaX7307nWrSaXYw9oYh2e32M1NPGZNFrEWvtmTZlyC6TFCwXtwFyzdLWhFfXO4U/bFcqKL00grtIzotSq+pdFVI2VFeDpepDAettYKYWEOv17GdlreQ53xtFCjmbH+IBkxH1JuFkk+uXYMR4Y7ramCA2aTppcteu7GB6dePfiHQDc2lrYyFUp58pQB3StDBUrAndbj3AwQRiF+6WKo7Z93aE1IWcmUESMxC4wFl76Tq4ESJR+a8Xq+aNZ+NE="
    - LD_LIBRARY_PATH=/tmp/nemea/lib
-   - PYTHONPATH=/usr/lib/python2.7/site-packages
 
 branches:
   except:
@@ -61,15 +57,12 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - pyenv versions
-  - pyenv global 2.7 3.6
-  - export PATH=$(pyenv prefix)/bin:$PATH
   - ./bootstrap.sh && ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr && make clean && sudo make install &&
-    (cd pytrap && make coverage; $(pyenv which python) setup.py install; $(pyenv which python3) setup.py install;)
+    (cd pytrap && make coverage; sudo python setup.py install; sudo python3 setup.py install;)
   - make check || { find . \( -name '*.sh.log' -o -name '*.trs' \) -print -exec cat {} \;; exit 1;}
   - mkdir dist-pkgs &&
     for d in libtrap unirec common; do make -C "$d" dist; done &&
-    for d in pycommon pytrap; do (cd "$d" && $(pyenv which python) setup.py sdist && mv dist/*.tar.gz .;) done &&
+    for d in pycommon pytrap; do (cd "$d" && sudo python setup.py sdist && sudo mv dist/*.tar.gz .;) done &&
     for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar --strip-components=1 -xf *.tar.gz;) done
 
 deploy:
