@@ -106,6 +106,10 @@ char *generator_ifc_get_id(void *priv)
    return NULL;
 }
 
+uint8_t generator_ifc_is_conn(void *priv) {
+   return 1;
+}
+
 int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *ifc)
 {
    generator_private_t *priv = NULL;
@@ -165,6 +169,7 @@ int create_generator_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc_t *i
    ifc->create_dump = create_dump;
    ifc->priv = priv;
    ifc->get_id = generator_ifc_get_id;
+   ifc->is_conn = generator_ifc_is_conn;
 
    return TRAP_E_OK;
 failure:
@@ -180,9 +185,14 @@ failure:
 /***** Blackhole *****/
 // Everything sent to blackhole is dropped
 
-int blackhole_send(void *priv, const void *data, uint32_t size, int timeout)
+int blackhole_send(void *priv, const void *data, uint16_t size, int timeout)
 {
    return TRAP_E_OK;
+}
+
+void blackhole_flush(void *priv)
+{
+   return;
 }
 
 void blackhole_terminate(void *priv)
@@ -202,6 +212,13 @@ int32_t blackhole_get_client_count(void *priv)
    return 1;
 }
 
+int8_t blackhole_get_client_stats_json(void *priv, json_t *client_stats_arr)
+{
+   /* do not collect client statistics for this interface */
+   return 1;
+}
+
+
 char *blackhole_ifc_get_id(void *priv)
 {
    return NULL;
@@ -210,9 +227,11 @@ char *blackhole_ifc_get_id(void *priv)
 int create_blackhole_ifc(trap_ctx_priv_t *ctx, char *params, trap_output_ifc_t *ifc)
 {
    ifc->send = blackhole_send;
+   ifc->flush = blackhole_flush;
    ifc->terminate = blackhole_terminate;
    ifc->destroy = blackhole_destroy;
    ifc->get_client_count = blackhole_get_client_count;
+   ifc->get_client_stats_json = blackhole_get_client_stats_json;
    ifc->create_dump = create_dump;
    ifc->priv = NULL;
    ifc->get_id = blackhole_ifc_get_id;

@@ -1,0 +1,14 @@
+nemea-common (1.5.3) stable; urgency=low
+
+  * BUGFIX inline functions
+  * maintenance
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Tue, 20 Mar 2018 19:42:59 +0000
+
+nemea-common (1.5.0) stable; urgency=high
+
+  * change of b+ tree API
+  * bugfixes:
+  	- prefix tree: number of children
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Thu, 24 Mar 2016 15:56:30 +0200

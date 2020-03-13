@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([unirec], [2.2.3], [traffic-analysis@cesnet.cz])
+AC_INIT([unirec], [2.8.0], [nemea@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.h])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules])
 AM_SILENT_RULES([yes])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -24,8 +24,8 @@ AC_ARG_ENABLE([debug],
                 CFLAGS="-Wall -g -O0 $CFLAGS"
                 CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
         fi],
-        [CFLAGS="-Wall -O3 $CFLAGS"
-        CXXFLAGS="-Wall -O3 $CXXFLAGS"])
+        [CFLAGS="-Wall -g -O3 $CFLAGS"
+        CXXFLAGS="-Wall -g -O3 $CXXFLAGS"])
 LT_INIT()
 # Checks for programs.
 AM_PROG_CC_C_O
@@ -34,6 +34,7 @@ AC_PROG_CXX
 AC_PROG_LIBTOOL
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 
 AC_C_INLINE
 
@@ -65,7 +66,15 @@ RPM_RELEASE=1
 AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
-if test "${repobuild}" = "false" -a -z "$TRAPLIB"; then
+AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
+
+PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
+AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
+
+if test -z "${top_srcdir}"; then
+top_srcdir="."
+fi
+if test -z "$TRAPLIB"; then
         PKG_CHECK_MODULES([LIBTRAP],[libtrap], [TRAPLIB="yes"], [AC_MSG_WARN([Libtrap was not found by pkg-config])])
         LDFLAGS="$LIBTRAP_LDFLAGS $LDFLAGS"
         LIBS="$LIBTRAP_LIBS $LIBS"
@@ -74,9 +83,9 @@ if test "${repobuild}" = "false" -a -z "$TRAPLIB"; then
 fi
 if test -z "$TRAPLIB"; then
         # Check for TRAP toolkit as a superproject.
-        if test -d "$srcdir/../libtrap"; then
-        TRAPINC='$(top_srcdir)/../libtrap/include'
-        TRAPLIB='$(top_builddir)/../libtrap/src/.libs'
+        if test -d "${top_srcdir}/../libtrap"; then
+        TRAPINC='${top_srcdir}/../libtrap/include'
+        TRAPLIB='${top_builddir}/../libtrap/src/.libs'
         fi
         # AC_SUBST command line variables from TRAPLIB and TRAPINC.
         if test -n "$TRAPLIB"; then
@@ -94,7 +103,7 @@ AC_CONFIG_FILES([Makefile
 		 Doxyfile
                  tests/Makefile])
 
-AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile with testing modules]),
+AC_ARG_ENABLE([tests], AC_HELP_STRING([--disable-tests],[Compile without testing modules]),
         [AM_CONDITIONAL([ENABLE_TESTS], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_TESTS], [true])])
 

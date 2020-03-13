@@ -3,14 +3,15 @@ Name: libtrap
 Version: @PACKAGE_VERSION@
 Release: @RELEASE@
 URL: http://www.liberouter.org/
-Source: https://www.liberouter.org/repo/SOURCES/%{name}-%{version}-%{release}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/libtrap/%{name}-%{version}.tar.gz
 Group: Liberouter
 License: BSD
 Vendor: CESNET, z.s.p.o.
 Packager: @USERNAME@ <@USERMAIL@>
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 
-BuildRequires: gcc make doxygen pkgconfig 
+Requires: openssl
+BuildRequires: gcc make doxygen pkgconfig openssl-devel
 Provides: libtrap
 
 %description
@@ -19,6 +20,7 @@ Provides: libtrap
 Summary: Libtrap development package
 Group: Liberouter
 Requires: libtrap = %{version}-%{release}
+Requires: openssl-devel
 Provides: libtrap-devel
 
 %description devel
@@ -29,7 +31,7 @@ if you want to develop your own TRAP module.
 %setup
 
 %build
-./configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --docdir=%{_docdir}/librap --disable-doxygen-pdf --disable-doxygen-ps --disable-tests -q;
+./configure --prefix=%{_prefix} --sysconfdir=%{_sysconfdir} --libdir=%{_libdir} --bindir=%{_bindir}/nemea --docdir=%{_docdir}/libtrap --with-defaultsocketdir=%{_localstatedir}/run/libtrap --disable-doxygen-pdf --disable-doxygen-ps --disable-tests -q;
 make -j5
 make doc
 
@@ -41,7 +43,11 @@ ldconfig
 
 %files
 %{_bindir}/nemea/trap_stats
+%{_bindir}/nemea/trap2man.sh
 %{_libdir}/libtrap.so.*
+%{_sysconfdir}/tmpfiles.d/libtrap-varrun.conf
+%defattr(-,-,-,1777)
+%dir %{_localstatedir}/run/libtrap
 
 %files devel
 %{_libdir}/pkgconfig/libtrap.pc

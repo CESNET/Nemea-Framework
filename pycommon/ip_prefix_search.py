@@ -99,7 +99,7 @@ class IPPSNetwork(object):
         self.data = data    # any data
 
     def __str__(self):
-        return "'{}', '{}'".format(self.addr, self.data)
+        return "'{0}', '{1}'".format(self.addr, self.data)
 
     def __repr__(self):
         return "IPPSNetwork(" + str(self) + ")"
@@ -116,7 +116,7 @@ class IPPSInterval(pytrap.UnirecIPAddrRange):
     e.g.    IPPSInterval("192.168.1.0/24", data="xyz")
             IPPSInterval("192.168.1.0", "192.168.1.255", "xyz")
             IPPSInterval(pytrap.UnirecIPAddr("192.168.1.0"), pytrap.UnirecIPAddr("192.168.1.255"), "xyz")
-    
+
     Attributes:
         start: low IP address of interval
         end  : high IP address of Interval
@@ -139,7 +139,7 @@ class IPPSInterval(pytrap.UnirecIPAddrRange):
             self.add_data(data)
 
     def __str__(self):
-        return '{} - {}, {}'.format(self.start, self.end, self._data)
+        return '{0} - {1}, {2}'.format(self.start, self.end, self._data)
 
     def __repr__(self):
         return "IPPSInterval("+str(self)+")"
@@ -184,42 +184,42 @@ class IPPSContext(object):
     Represent context of networks (overlaps intervals), processed for prefix search
 
     Args:
-        networks: list of IPPSNetwork objects
+        val: list of IPPSNetwork objects
     """
 
-    def __init__(self, networks):
+    def __init__(self, val):
         self.interval_list_v4 = []
         self.interval_list_v6 = []
         self.list_len_v4 = 0
         self.list_len_v6 = 0
 
-        self.list_init(networks)
+        self.list_init(val)
 
     def __repr__(self):
         return "IPPSContext(" + str(self) + ")"
 
     def __str__(self):
-        return 'IPv4{}\nIPv6{}'.format([str(item) for item in self.interval_list_v4],
+        return 'IPv4{0}\nIPv6{1}'.format([str(item) for item in self.interval_list_v4],
                                        [str(item) for item in self.interval_list_v6])
 
     def __len__(self):
         return len(self.interval_list_v4) + len(self.interval_list_v6)
 
     @classmethod
-    def fromFile(cls, filename):
-        """ Initialize IPPSContext from blacklist data file. Function parse source file 
-        and create IPPSNetwork structs from each line. 
+    def fromFile(cls, path):
+        """ Initialize IPPSContext from blacklist data file. Function parse source file
+        and create IPPSNetwork structs from each line.
         Blacklist file must be in format:
 	<ip address>/<mask>,<data>\n
-        
-        Args: 
-            filename: path to source file
-        Return: 
-            new IPPSContext or None if val isn't string 
+
+        Args:
+            path: path to source file
+        Return:
+            new IPPSContext or None if path isn't string
         """
-        if isinstance(filename, str):
+        if isinstance(path, str):
             network_list = []
-            with open(filename, "r") as f:
+            with open(path, "r") as f:
                 for line in f:
                     if line.isspace():
                         continue
@@ -242,11 +242,11 @@ class IPPSContext(object):
 
     @staticmethod
     def split_overlaps_intervals(sort_intvl_list):
-        """ Function split intervals and appropriate merge assoc data, if 2 intervals are overlap 
+        """ Function split intervals and appropriate merge assoc data, if 2 intervals are overlap
 
         Args:
             sort_intvl_list: list of IPPSIntervals sorted by low IP address and IP mask
-        Return: 
+        Return:
             new list of nonoverlaping IPPSIntervals, ready to search
         Raises:
             TypeError: if sort_intvl_list is poorly sorted

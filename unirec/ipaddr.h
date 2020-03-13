@@ -5,7 +5,7 @@
  * \date 2013
  * \date 2014
  *
- * \defgroup ur_ipaddr IP addresses API
+ * \defgroup uripaddr IP addresses API
  * @{
  *
  * \page ipaddr
@@ -13,7 +13,9 @@
  * Structure and functions to handle generic IP addresses (IPv4 or IPv6).
  * IP addresses are stored on 128 bits. IPv6 addresses are stored directly.
  * IPv4 addresses are converted to 128 bit is this way:
+ * \code
  * 0000:0000:0000:0000:<ipv4_addr>:ffff:ffff
+ * \endcode
  * No valid IPv6 address should look like this so it's possible to determine
  * IP address version without explicitly storing any flag.
  *
@@ -91,41 +93,93 @@ extern "C" {
 #define htonl(x) ntohl(x)
 #endif
 
+/**
+ * IP address data type.
+ *
+ * It is 128b data type.  User can access to parts of the IP address in several ways.
+ */
 typedef union ip_addr_u {
+   /**
+    * 16x 8b numbers
+    */
    uint8_t  bytes[16];
+   /**
+    * same as bytes
+    */
    uint8_t  ui8[16];
+   /**
+    * 8x 16b numbers
+    */
    uint16_t ui16[8];
+   /**
+    * 4x 32b numbers
+    */
    uint32_t ui32[4];
+   /**
+    * 2x 64b numbers
+    */
    uint64_t ui64[2];
 } ip_addr_t;
 
 
-// Return 1 if the address is IPv4, 0 otherwise.
+/**
+ * Check if the address is IPv4.
+ *
+ * \param[in] addr   IP address that is checked.
+ * \returns 1 if the address is IPv4, 0 otherwise.
+ */
 INLINE int ip_is4(const ip_addr_t *addr)
 {
    return (addr->ui64[0] == 0 && addr->ui32[3] == 0xffffffff);
 }
 
-// Return 1 if the address is IPv4, 0 otherwise.
+/**
+ * Check if the address is IPv6.
+ *
+ * \param[in] addr   IP address that is checked.
+ * \returns 1 if the address is IPv6, 0 otherwise.
+ * \note It is a negation of ip_is4().
+ */
 INLINE int ip_is6(const ip_addr_t *addr)
 {
    return !ip_is4(addr);
 }
 
-// Return integer value of an IPv4 address
+/**
+ * Get IPv4 address as one 32b number.
+ *
+ * The function takes the appropriate 32b part of ip_addr_t and converts it
+ * into host byte order.
+ *
+ * \param[in] addr   IP address for conversion.
+ * \returns IP address as one 32b number in host byte order.
+ */
 INLINE uint32_t ip_get_v4_as_int(ip_addr_t *addr)
 {
    return ntohl(addr->ui32[2]);
 }
 
-// Return a pointer to bytes of IPv4 address in big endian (network order)
+/**
+ * Get pointer to byte array of IPv4 address.
+ *
+ * The function returns pointer to the first byte of IP address data structure.
+ * Data is in network byte order.
+ *
+ * \param[in] addr   IP address for conversion.
+ * \returns Pointer to the first byte of IPv4 address.
+ */
 INLINE char *ip_get_v4_as_bytes(const ip_addr_t *addr)
 {
    return (char *) &addr->bytes[8];
 }
 
 
-// Create ip_addr_t from an IPv4 address stored as a 32bit integer (in machine's native endianness)
+/**
+ * Convert 32b number into IPv4 address encoded as ip_addr_t.
+ *
+ * \param[in] i   32b number in host byte order for conversion.
+ * \returns IPv4 address stored as ip_addr_t.
+ */
 INLINE ip_addr_t ip_from_int(uint32_t i)
 {
    ip_addr_t a;
@@ -135,7 +189,13 @@ INLINE ip_addr_t ip_from_int(uint32_t i)
    return a;
 }
 
-// Create ip_addr_t from an IPv4 address stored as 4 bytes in big endian
+/**
+ * Convert 4B array (in network byte order) into IPv4 address encoded as ip_addr_t.
+ *
+ * \param[in] b   4 bytes array in network byte order for conversion.
+ * \returns IPv4 address stored as ip_addr_t.
+ * \see ip_from_int()
+ */
 INLINE ip_addr_t ip_from_4_bytes_be(char b[4])
 {
    ip_addr_t a;
@@ -148,7 +208,13 @@ INLINE ip_addr_t ip_from_4_bytes_be(char b[4])
    return a;
 }
 
-// Create ip_addr_t from an IPv4 address stored as 4 bytes in little endian
+/**
+ * Convert 4B array (in little-endian byte order) into IPv4 address encoded as ip_addr_t.
+ *
+ * \param[in] b   4 bytes array in little-endian byte order for conversion.
+ * \returns IPv4 address stored as ip_addr_t.
+ * \see ip_from_int()
+ */
 INLINE ip_addr_t ip_from_4_bytes_le(char b[4])
 {
    ip_addr_t a;
@@ -161,8 +227,12 @@ INLINE ip_addr_t ip_from_4_bytes_le(char b[4])
    return a;
 }
 
-
-// Create ip_addr_t from an IPv6 address stored as 16 bytes in big endian
+/**
+ * Convert 16B array (in network byte order) into IPv6 address encoded as ip_addr_t.
+ *
+ * \param[in] b   16 bytes array in network byte order for conversion.
+ * \returns IPv6 address stored as ip_addr_t.
+ */
 INLINE ip_addr_t ip_from_16_bytes_be(char b[16])
 {
    ip_addr_t a;
@@ -170,7 +240,12 @@ INLINE ip_addr_t ip_from_16_bytes_be(char b[16])
    return a;
 }
 
-// Create ip_addr_t from an IPv6 address stored as 16 bytes in little endian
+/**
+ * Convert 16B array (in little-endian byte order) into IPv6 address encoded as ip_addr_t.
+ *
+ * \param[in] b   16 bytes array in little-endian byte order for conversion.
+ * \returns IPv6 address stored as ip_addr_t.
+ */
 INLINE ip_addr_t ip_from_16_bytes_le(char b[16])
 {
    ip_addr_t a;
@@ -181,19 +256,30 @@ INLINE ip_addr_t ip_from_16_bytes_le(char b[16])
    return a;
 }
 
-// Compare two IP addresses.
-// Return >0 if addr1 > addr2, <0 if addr1 < addr2 and 0 if addr1 = addr2.
+/**
+ * Compare two IP addresses.
+ *
+ * \param[in] addr1  IP address as ip_addr_t
+ * \param[in] addr2  IP address as ip_addr_t
+ * \returns Positive number (>0) if addr1 > addr2, negative number (<0) if addr1 < addr2, and zero (=0) if addr1 == addr2.
+ */
 INLINE int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2)
 {
    return memcmp((const char *)addr1, (const char *)addr2, 16);
 }
 
-// Is IP address NULL/invalid/unspecified?
-// There are two variants being used as invalid/unspecified address:
-//   00000000 00000000 00000000 ffffffff (i.e. "0.0.0.0", zero IPv4)
-//   00000000 00000000 00000000 00000000 (i.e. "::", zero IPv6)
-// This function returns 1 if given address matches any of the ones above.
-// Otherwise returns 0.
+/**
+ * Check if IP address is NULL/invalid/unspecified?
+ *
+ * There are two variants being used as invalid/unspecified address:
+ * \code
+ *   00000000 00000000 00000000 ffffffff (i.e. "0.0.0.0", zero IPv4)
+ *   00000000 00000000 00000000 00000000 (i.e. "::", zero IPv6)
+ * \endcode
+ *
+ * \param[in] addr   IP address to check.
+ * \returns 1 if given address matches any of the ones above, otherwise returns 0.
+ */
 INLINE int ip_is_null(const ip_addr_t *addr)
 {
    if (addr->ui64[0] == 0) {
@@ -205,8 +291,13 @@ INLINE int ip_is_null(const ip_addr_t *addr)
 }
 
 #ifndef __WIN32
-// Convert IP address in a string into ip_addr_t. Return 1 on success,
-// 0 on error (i.e. string doesn't contain a valid IP address).
+/**
+ * Convert string into ip_addr_t.
+ *
+ * \param[in] str    String for conversion.
+ * \param[out] addr  Pointer to memory where to store converted IP address.
+ * \returns 1 on success, 0 on error i.e. string is not a valid IP address.
+ */
 INLINE int ip_from_str(const char *str, ip_addr_t *addr)
 {
    char tmp[16];
@@ -225,8 +316,12 @@ INLINE int ip_from_str(const char *str, ip_addr_t *addr)
    }
 }
 
-// Convert ip_addr_t to a string representing the address in common notation.
-// str must be allocated to at least INET6_ADDRSTRLEN (usually 46) bytes!
+/**
+ * Convert ip_addr_t into string.
+ *
+ * \param[in] addr   Pointer to IP address.
+ * \param[out] str   Pointer to memory where to store converted IP address.  It must be of at least INET6_ADDRSTRLEN size.
+ */
 INLINE void ip_to_str(const ip_addr_t *addr, char *str)
 {
    if (ip_is4(addr)) { // IPv4

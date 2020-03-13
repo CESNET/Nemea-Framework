@@ -3,11 +3,11 @@
  * \brief Interface of TRAP library.
  * \author Vaclav Bartos <ibartosv@fit.vutbr.cz>
  * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2013
- * \date 2014
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2013 - 2018
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2013 - 2018 CESNET
  *
  * LICENSE TERMS
  *
@@ -76,6 +76,12 @@ extern const char trap_version[];
 extern const char trap_git_version[];
 
 /**
+ * Text string with default path format to sockets (UNIX IFC and service IFC).
+ * Assigned in ifc_tcpip.h
+ */
+extern char *trap_default_socket_path_format;
+
+/**
  * \defgroup errorcodes Error codes
  * @{*/
 #define TRAP_E_OK 0 ///< Success, no error
@@ -87,6 +93,7 @@ extern const char trap_git_version[];
 #define TRAP_E_IO_ERROR 14 ///< IO Error
 #define TRAP_E_TERMINATED 15 ///< Interface was terminated during reading/writing
 #define TRAP_E_NOT_SELECTED 16 ///< Interface was not selected reading/writing
+#define TRAP_E_BAD_CERT 17 ///< Wrong certificate given to TLS interface
 #define TRAP_E_HELP 20 ///< Returned by parse_parameters when help is requested
 #define TRAP_E_FIELDS_MISMATCH 21 ///< Returned when receiver fields are not subset of sender fields
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
@@ -95,11 +102,6 @@ extern const char trap_git_version[];
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
 /**@}*/
-
-/**
- * All 'ones' constant for binary operations...
- */
-#define TRAP_MASK_ALL 0xffffffff
 
 /**
  * \defgroup trap_timeout TRAP Timeout
@@ -168,6 +170,7 @@ extern const char trap_git_version[];
 #define TRAP_IFC_TYPE_GENERATOR 'g' ///< trap_ifc_dummy generator (input)
 #define TRAP_IFC_TYPE_BLACKHOLE 'b' ///< trap_ifc_dummy blackhole (output)
 #define TRAP_IFC_TYPE_TCPIP     't' ///< trap_ifc_tcpip (input&output part)
+#define TRAP_IFC_TYPE_TLS       'T' ///< trap_ifc_tls (input&output part)
 #define TRAP_IFC_TYPE_UNIX      'u' ///< trap_ifc_tcpip via UNIX socket(input&output part)
 #define TRAP_IFC_TYPE_SERVICE   's' ///< service ifc
 #define TRAP_IFC_TYPE_FILE      'f' ///< trap_ifc_file (input&output part)
@@ -202,15 +205,6 @@ enum trap_ifcctl_request {
 #define TRAP_IFC_MESSAGEQ_SIZE 100000 ///< size of message queue used for buffering
 #endif
 
-/**
- * Record with message of multi-result #trap_get_data
- */
-typedef struct trap_multi_result {
-   uint16_t message_size;   ///< Size of incoming message
-   void *message;           ///< Data of incoming message
-   int result_code;         ///< TRAP_OK if record is valid (message was received successfuly)
-} trap_multi_result_t;
-
 /** Structure with specification of interface types and their parameters.
  *  This can be filled by command-line parameters using trap_parse_params
  *  function.
@@ -241,6 +235,9 @@ typedef enum {
    TRAP_FMT_JSON = 3
 } trap_data_format_t;
 
+/**
+ * Possible states of an IFC during data format negotiation.
+ */
 typedef enum {
    /** Negotiation is not completed */
    FMT_WAITING = 0,
@@ -284,14 +281,16 @@ int trap_set_required_fmt(uint32_t in_ifc_idx, uint8_t data_type, ...);
  *
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
  * \param[in] ifc_idx   index of IFC
- * \param[in] data_type     format of messages defined by #trap_data_format_t
- * \param[in] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
- * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
+ * \param[out] data_type     format of messages defined by #trap_data_format_t
+ * \param[out] spec   Template specifier - UniRec specifier in case of TRAP_FMT_UNIREC data_type, otherwise, it can be any string.
+ * \return TRAP_E_OK on success, on error see trap_ctx_get_data_fmt().
  */
 int trap_get_data_fmt(uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
 
 /**
  * Set format of messages on output IFC.
+ *
+ * This function is thread safe.
  *
  * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] out_ifc_idx   Index of output IFC.
@@ -304,6 +303,8 @@ void trap_ctx_set_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_t
 /**
  * Set format of messages on output IFC.
  *
+ * This function is thread safe.
+ *
  * \param[in,out] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] out_ifc_idx   Index of output IFC.
  * \param[in] data_type     Format of messages defined by #trap_data_format_t.
@@ -315,10 +316,11 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
 /**
  * Returns current state of an input interface on specified index.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_idx   Index of the input interface
- * \return An item from trap_in_ifc_state enum on success, else
- * TRAP_E_NOT_INITIALIZED (uninitiliazed context) or
+ * \return Value of #trap_in_ifc_state_t on success, otherwise TRAP_E_NOT_INITIALIZED when libtrap context is not initialized or
  * TRAP_E_BAD_IFC_INDEX (ifc_idx >= number of input ifcs).
  */
 int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
@@ -326,24 +328,28 @@ int trap_ctx_get_in_ifc_state(trap_ctx_t *ctx, uint32_t ifc_idx);
 /**
  * Set format of messages expected on input IFC.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] in_ifc_idx   Index of input IFC.
  * \param[in] data_type     Format of messages defined by #trap_data_format_t.
  * \param[in] ...   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
  * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success.
+ * \return TRAP_E_OK on success, on error see #trap_ctx_vset_required_fmt().
  */
 int trap_ctx_set_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, ...);
 
 /**
  * Set format of messages expected on input IFC.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] in_ifc_idx   Index of input IFC.
  * \param[in] data_type     Format of messages defined by #trap_data_format_t.
  * \param[in] ap   If data_type is TRAP_FMT_UNIREC or TRAP_FMT_JSON, additional parameter
  * that specifies template (char *) is expected.
- * \return TRAP_E_OK on success.
+ * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED when libtrap context is not initialized, TRAP_E_BAD_IFC_INDEX or TRAP_E_BADPARAMS on error.
  */
 int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t data_type, va_list ap);
 
@@ -352,13 +358,14 @@ int trap_ctx_vset_required_fmt(trap_ctx_t *ctx, uint32_t in_ifc_idx, uint8_t dat
  *
  * On output IFC it should return the values that were set.  On input IFC
  * it should return format and template that was received.
+ * This function is thread safe.
  *
  * \param[in] ctx   Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc_dir     #trap_ifc_type direction of interface
  * \param[in] ifc_idx     Index of IFC.
  * \param[out] data_type   Format of messages defined by #trap_data_format_t.
  * \param[out] spec   Specifier of data format specifies the template (char *) is expected.
- * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if negotiation is not successful yet for input IFC
+ * \return TRAP_E_OK on success, TRAP_E_NOT_INITIALIZED if libtrap context is not initialized or negotiation is not successful yet for input IFC, TRAP_E_BAD_IFC_INDEX or TRAP_E_BADPARAMS on error.
  */
 int trap_ctx_get_data_fmt(trap_ctx_t *ctx, uint8_t ifc_dir, uint32_t ifc_idx, uint8_t *data_type, const char **spec);
 
@@ -402,16 +409,17 @@ void *trap_get_global_ctx();
  * Returns current state of an input interface on specified index.
  *
  * \param[in] ifc_idx   Index of the input interface
- * \return An item from trap_in_ifc_state enum on success (right index and initialized context),
- *  else TRAP_E_NOT_INITIALIZED.
+ * \return See #trap_ctx_get_in_ifc_state().
  */
 int trap_get_in_ifc_state(uint32_t ifc_idx);
 
 /** Parse command-line arguments.
- * Extract agruments needed by TRAP to set up interfaces (-i params) and return
- * the rest (argc and argv are modified). Extracted information is stored into
- * ifc_spec. These variables should be passed to trap_init.
- * Data in ifc_spec must be freed by trap_free_ifc_spec.
+ * Extract arguments needed by TRAP to set up interfaces (-i params), verbosity
+ * level (-v/-vv/-vvv) and return the rest (argc and argv are modified, i.e.
+ * processed parameter is removed). Extracted information is stored into
+ * ifc_spec. These variables should be passed to trap_init. Data in ifc_spec
+ * must be freed by trap_free_ifc_spec. If help is requested (-h/--help)
+ * TRAP_E_HELP is returned (argc and argv are modified also).
  * @param[in,out] argc Pointer to number of command-line arguments.
  * @param[in,out] argv Command-line arguments.
  * @param[out] ifc_spec Structure with specification of interface types and
@@ -471,9 +479,9 @@ int trap_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /** Function to terminate module's operation.
  * This function stops all read/write operations on all interfaces.
- * Any waiting in trap_get_data and trap_send_data is interrupted and these
+ * Any waiting in trap_recv() and trap_send()_data is interrupted and these
  * functions return immediately with TRAP_E_TERMINATED.
- * Any call of trap_get_data or trap_send_data after call of this function
+ * Any call of trap_recv() or trap_send() after call of this function
  * returns TRAP_E_TERMINATED.
  *
  * This function is used to terminate module's operation (asynchronously), e.g.
@@ -487,22 +495,6 @@ int trap_terminate();
  * @return Error code
  */
 int trap_finalize();
-
-/** Read data from input interface.
- * Read a record from one of interfaces specified by `ifc_mask` and store
- * pointer to it into `data`. If data are not available on any of specified
- * interfaces, wait until data are available or `timeout` microseconds elapses.
- * If `timeout` < 0, wait indefinitely.
- * When function returns due to timeout, contents of `data` and `size` are undefined.
- * @param[in] ifc_mask Mask of interfaces to listen on (if *i*-th bit is set, interface *i* is enabled).
- * @param[out] data Pointer to received data. When only one IFC is selected by ifc_mask, data contains the payload of message. When ifc_mask contains more than one IFC, array of #trap_multi_result_t is returned. The array size is equal to number of input IFCs. \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_get_data() call.
- * @param[out] size Number of bytes of data. When only one IFC is selected by ifc_mask, size contains the size of incoming message. Otherwise, (when more than one IFC are selected) size contains the size of #trap_multi_result_t array in bytes.
- * @param[in] timeout Timeout in microseconds for non-blocking mode; timeout
- * can be also: TRAP_WAIT, TRAP_HALFWAIT, or TRAP_NO_WAIT.
- * @return Error code - 0 on success, TRAP_E_TIMEOUT if timeout elapses.
- * \deprecated This function should be replaced by trap_recv().
- */
-int trap_get_data(uint32_t ifc_mask, const void **data, uint16_t *size, int timeout);
 
 /** Send data to output interface.
  * Write data of size `size` given by `data` pointer into interface `ifc`.
@@ -531,7 +523,7 @@ int trap_send_data(unsigned int ifcidx, const void *data, uint16_t size, int tim
  * @param[out] size     Size of received data in bytes of data.
  * @return Error code - #TRAP_E_OK on success, #TRAP_E_TIMEOUT if timeout elapses.
  *
- * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_get_data() call.
+ * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_recv() call.
  * \see trap_ifcctl() to set timeout (#TRAPCTL_SETTIMEOUT)
  */
 int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size);
@@ -547,7 +539,6 @@ int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size);
  * @param[out] size     Size of message in bytes.
  * @return Error code - #TRAP_E_OK on success, #TRAP_E_TIMEOUT if timeout elapses.
  *
- * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_get_data() call.
  * \see trap_ifcctl() to set timeout (#TRAPCTL_SETTIMEOUT)
  */
 int trap_send(uint32_t ifcidx, const void *data, uint16_t size);
@@ -643,15 +634,48 @@ void trap_send_flush(uint32_t ifc);
 /**
  * \brief Initialize and return the context of libtrap.
  *
+ * This function is thread safe.
+ *
  * \param[in] module_info     Pointer to struct containing info about the module.
  * \param[in] ifc_spec        Structure with specification of interface types and
  *                      their parameters.
- * \return Pointer to the allocated private libtrap context data.
+ * \return Pointer to context (context needs to be checked for error value by trap_ctx_get_last_error() function), NULL on memory error.
  */
 trap_ctx_t *trap_ctx_init(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec);
 
 /**
+ * \brief Initialize and return the context of libtrap.
+ *
+ * This function is thread safe.
+ *
+ * \param[in] module_info      Pointer to struct containing info about the module.
+ * \param[in] ifc_spec         Structure with specification of interface types and their parameters.
+ * \param[in] service_ifcname  Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
+ *
+ * \return Pointer to context (context needs to be checked for error value by trap_ctx_get_last_error() function), NULL on memory error.
+ */
+trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_spec, const char *service_ifcname);
+
+/**
+ * \brief Initialize and return the context of libtrap.
+ *
+ * This function is thread safe.
+ *
+ * \param[in] name   Name of the NEMEA module (libtrap context).
+ * \param[in] description - Detailed description of the module, can be NULL ("" will be used in such case)
+ * \param[in] i_ifcs Number of input IFCs, it can be -1 if o_ifcs > -1 (-1 means variable number of IFCs, it is then computed from ifc_spec).
+ * \param[in] o_ifcs Number of output IFCs, it can be -1 if i_ifcs > -1 (-1 means variable number of IFCs, it is then computed from ifc_spec).
+ * \param[in] ifc_spec  IFC_SPEC stringdescribed in README.ifcspec.md
+ * \param[in] service_ifcname Identifier of the service IFC (used as a part of path to the UNIX socket). When NULL is used, no service IFC will be opened.
+ *
+ * \return Pointer to context (context needs to be checked for error value by trap_ctx_get_last_error() function), NULL on memory error.
+ */
+trap_ctx_t *trap_ctx_init3(const char *name, const char *description, int8_t i_ifcs, int8_t o_ifcs, const char *ifc_spec, const char *service_ifcname);
+
+/**
  * \brief Terminate libtrap context and free resources.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (trap_ctx_init()).
  * \return TRAP_E_OK on success.
@@ -661,12 +685,17 @@ int trap_ctx_finalize(trap_ctx_t **ctx);
 /**
  * \brief Terminate libtrap context.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \return TRAP_E_OK on success.
  */
 int trap_ctx_terminate(trap_ctx_t *ctx);
 
-/** Read data from input interface.
+/**
+ * \brief Read data from input interface.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc    Index of input interface (counted from 0).
@@ -679,34 +708,13 @@ int trap_ctx_terminate(trap_ctx_t *ctx);
 int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifc, const void **data, uint16_t *size);
 
 /**
- * \brief Read data from input interfaces according to ifc_mask.
- *
- * Read a record from one of interfaces specified by `ifc_mask` and store
- * pointer to it into `data`. If data are not available on any of specified
- * interfaces, wait until data are available or `timeout` elapses.
- * If `timeout` < 0, wait indefinitely.
- * When function returns due to timeout, contents of `data` and `size` are undefined.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (trap_ctx_init()).
- * \param[in] ifc_mask  Mask of interfaces to listen on (if *i*-th bit is set, interface *i* is enabled).
- * \param[out] data  Pointer to received data. The result is an array of #trap_multi_result_t.
- * The size of array is equal to the number of input IFCs.
- * \param[out] size  Size of data in bytes containing the size of #trap_multi_result_t array in bytes.
- * \return Error code - 0 on success, TRAP_E_TIMEOUT if timeout elapses.
- *
- * \note Data must not be freed! Library stores
- * incomming data into static array and rewrites it during every trap_get_data() call.
- * \see #trap_ctx_ifcctl, #trap_multi_result_t
- */
-int trap_ctx_multi_recv(trap_ctx_t *ctx, uint32_t ifc_mask, const void **data, uint16_t *size);
-
-/**
  * \brief Send data via output interface.
  *
  * Write data of size `size` given by `data` pointer into interface `ifc`.
  * If data cannot be written immediately (e.g. because of full buffer or
  * lost connection), wait until write is possible or `timeout` microseconds
  * elapses. If `timeout` < 0, wait indefinitely.
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc    Index of interface to write into.
@@ -744,31 +752,9 @@ void trap_ctx_set_verbose_level(trap_ctx_t *ctx, int level);
 int trap_ctx_get_verbose_level(trap_ctx_t *ctx);
 
 /**
- * \brief Print common TRAP help message.
- *
- * The help message contains information from module_info and describes common
- * TRAP command-line parameters.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- * \param[in] module_info Pointer to struct containing info about the module.
- */
-void trap_ctx_print_help(trap_ctx_t *ctx, const trap_module_info_t *module_info);
-
-/**
- * \brief Print help about interface specifier.
- *
- * Prints help message about format of interface specifier and description of
- * all available interface types.
- * This message is normally a part of help printed by #trap_ctx_print_help(), this
- * function is useful when you don't use standard TRAP command-line parameters
- * but you still use the same format of interface specifier.
- *
- * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
- */
-void trap_ctx_print_ifc_spec_help(trap_ctx_t *ctx);
-
-/**
  * \brief Control TRAP interface.
+ *
+ * This function is thread safe.
  *
  * \note Type and request types were changed from enum because of python wrapper.
  *
@@ -795,6 +781,8 @@ int trap_ctx_ifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t reque
 /**
  * \brief Control TRAP interface.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param [in] type     #trap_ifc_type direction of interface
  * \param [in] ifcidx   index of TRAP interface
@@ -809,6 +797,8 @@ int trap_ctx_vifcctl(trap_ctx_t *ctx, int8_t type, uint32_t ifcidx, int32_t requ
 /**
  * \brief Get last result code from libtrap context.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \return \ref errorcodes
  */
@@ -817,6 +807,8 @@ int trap_ctx_get_last_error(trap_ctx_t *ctx);
 /**
  * \brief Get last (error) message from libtrap context.
  *
+ * This function is thread safe.
+ *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \return Text string with last (error) message from libtrap context.
  */
@@ -824,6 +816,8 @@ const char *trap_ctx_get_last_error_msg(trap_ctx_t *ctx);
 
 /**
  * \brief Force flush of buffer.
+ *
+ * This function is thread safe.
  *
  * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
  * \param[in] ifc    IFC Index of interface to write into.
@@ -959,8 +953,8 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
 #define TRAP_DEFAULT_FINALIZATION() \
    trap_finalize();
 
-/** \brief Handle possible errors after call to trap_get_data.
- * \param[in] ret_code Return code of trap_get_data.
+/** \brief Handle possible errors after call to trap_recv().
+ * \param[in] ret_code Return code of trap_recv().
  * \param timeout_cmd Command to run when a timeout has occured, e.g. "continue".
  * \param error_cmd Command to run when an error has occured or interface was
  *                  terminated, e.g. "break".
@@ -974,12 +968,12 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
          error_cmd;\
       } else if (ret_code == TRAP_E_FORMAT_CHANGED) { \
          /* Nothing to do here, TRAP_E_FORMAT_CHANGED has to be skipped by this macro */ \
-         /* (module can perform some special operations with templates after trap_get_data() signals format change) */ \
+         /* (module can perform some special operations with templates after trap_recv() signals format change) */ \
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
-         fprintf(stderr, "trap_get_data() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
+         fprintf(stderr, "trap_recv() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
          error_cmd; \
       } else {\
-         fprintf(stderr, "Error: trap_get_data() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
+         fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
          error_cmd;\
       }\
    }
@@ -1059,13 +1053,13 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
  *
  * \param[in] ifc_priv_data  Pointer to output interface private structure.
  * \param[in] ifc_type  Type of IFC, e.g. TRAP_IFC_TYPE_FILE, TRAP_IFC_TYPE_TCPIP, or TRAP_IFC_TYPE_UNIX.
- * \param[in] sock_d  Socket descriptor of the connection with the new input interface.
+ * \param[in] client_idx  Index of new connected client.
  *
  * \return NEG_RES_FAILED if sending the data to input interface fails,
  *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
  *             NEG_RES_OK signaling success (hello message successfully sent to input interface).
  */
-int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sock_d);
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_idx);
 
 
 /**

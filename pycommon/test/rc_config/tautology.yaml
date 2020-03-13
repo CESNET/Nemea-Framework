@@ -1,0 +1,49 @@
+# Simple Reporter Configuration File
+# Only one Mark Custom action is defined which is used in one simple rule
+# One address group with one IPv4 address (no subnet)
+# JPath is used in rule condition (Source.IP4) which is handled by pynspect
+# No elseaction is specified
+custom_actions:
+- id: basic_mark
+  mark:
+    path: 'Test'
+    value: True
+
+addressgroups:
+- id: whitelist
+  list:
+  - 1.2.3.4
+
+rules:
+- id: 1
+  condition: Null
+  actions:
+  - basic_mark
+- id: 2
+  condition: None
+  actions:
+  - basic_mark
+- id: 3
+  condition: true
+  actions:
+  - basic_mark
+- id: 4
+  condition: True
+  actions:
+  - basic_mark
+- id: 5
+  condition: TRUE
+  actions:
+  - basic_mark
+- id: 6
+  condition: false
+  actions:
+  - basic_mark
+- id: 7
+  condition: False
+  actions:
+  - basic_mark
+- id: 8
+  condition: FALSE
+  actions:
+  - basic_mark

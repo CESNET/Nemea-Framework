@@ -61,7 +61,7 @@ UR_FIELDS(
 int main(int argc, char **argv)
 {
    // Create a template
-   ur_template_t *tmplt = ur_create_template("SRC_IP,DST_IP,SRC_PORT,DST_PORT,PROTOCOL,PACKETS,BYTES,URL", NULL);
+   ur_template_t *tmplt = ur_create_template("SRC_IP, DST_IP ,SRC_PORT,DST_PORT,PROTOCOL,PACKETS,BYTES,URL", NULL);
    if (tmplt == NULL) {
       fprintf(stderr, "Error when creating UniRec template.\n");
       return 1;
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
       if (i & 1) {
          ur_set_string(tmplt, rec, F_URL,url1);
       } else {
-          ur_set_string(tmplt, rec, F_URL,url2);
+         ur_set_string(tmplt, rec, F_URL,url2);
       }
    }
 

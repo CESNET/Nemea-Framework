@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-framework], [2.0.2], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-framework], [2.1.1], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -78,7 +78,7 @@ AC_ARG_ENABLE([pytrap], AC_HELP_STRING([--disable-pytrap], [Disable pytrap exten
         [AM_CONDITIONAL([ENABLE_PYTRAP], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_PYTRAP], [true])])
 
-AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-example], [Disable examples.]),
+AC_ARG_ENABLE([examples], AC_HELP_STRING([--disable-examples], [Disable examples.]),
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enableval" = xyes])],
         [AM_CONDITIONAL([ENABLE_EXAMPLES], [true])])
 

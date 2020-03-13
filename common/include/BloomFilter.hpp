@@ -26,6 +26,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <inttypes.h>
 
 
 static const std::size_t bits_per_char = 0x08;    // 8 bits in 1 char(unsigned)
@@ -46,7 +47,7 @@ public:
 
    bloom_parameters()
    : minimum_size(1),
-     maximum_size(std::numeric_limits<unsigned long long int>::max()),
+     maximum_size(std::numeric_limits<uint64_t>::max()),
      minimum_number_of_hashes(1),
      maximum_number_of_hashes(std::numeric_limits<unsigned int>::max()),
      projected_element_count(10000),
@@ -71,8 +72,8 @@ public:
    }
 
    //Allowed min/max size of the bloom filter in bits
-   unsigned long long int minimum_size;
-   unsigned long long int maximum_size;
+   uint64_t minimum_size;
+   uint64_t maximum_size;
 
    //Allowed min/max number of hash functions
    unsigned int minimum_number_of_hashes;
@@ -81,14 +82,14 @@ public:
    //The approximate number of elements to be inserted
    //into the bloom filter, should be within one order
    //of magnitude. The default is 10000.
-   unsigned long long int projected_element_count;
+   uint64_t projected_element_count;
 
    //The approximate false positive probability expected
    //from the bloom filter. The default is the reciprocal
    //of the projected_element_count.
    double false_positive_probability;
 
-   unsigned long long int random_seed;
+   uint64_t random_seed;
 
    struct optimal_parameters_t
    {
@@ -98,7 +99,7 @@ public:
       {}
 
       unsigned int number_of_hashes;
-      unsigned long long int table_size;
+      uint64_t table_size;
    };
 
    optimal_parameters_t optimal_parameters;
@@ -137,7 +138,7 @@ public:
       optimal_parameters_t& optp = optimal_parameters;
 
       optp.number_of_hashes = static_cast<unsigned int>(min_k);
-      optp.table_size = static_cast<unsigned long long int>(min_m);
+      optp.table_size = static_cast<uint64_t>(min_m);
       optp.table_size += (((optp.table_size % bits_per_char) != 0) ? (bits_per_char - (optp.table_size % bits_per_char)) : 0);
 
       if (optp.number_of_hashes < minimum_number_of_hashes)
@@ -378,7 +379,7 @@ public:
       return end;
    }
 
-   inline virtual unsigned long long int size() const
+   inline virtual uint64_t size() const
    {
       return table_size_;
    }
@@ -590,11 +591,11 @@ protected:
    std::vector<bloom_type> salt_;
    unsigned char*          bit_table_;
    unsigned int            salt_count_;
-   unsigned long long int  table_size_;
-   unsigned long long int  raw_table_size_;
-   unsigned long long int  projected_element_count_;
+   uint64_t  table_size_;
+   uint64_t  raw_table_size_;
+   uint64_t  projected_element_count_;
    unsigned int            inserted_element_count_;
-   unsigned long long int  random_seed_;
+   uint64_t  random_seed_;
    double                  desired_false_positive_probability_;
 };
 
@@ -629,7 +630,7 @@ public:
       size_list.push_back(table_size_);
    }
 
-   inline virtual unsigned long long int size() const
+   inline virtual uint64_t size() const
    {
       return size_list.back();
    }
@@ -641,8 +642,8 @@ public:
          return false;
       }
 
-      unsigned long long int original_table_size = size_list.back();
-      unsigned long long int new_table_size = static_cast<unsigned long long int>((size_list.back() * (1.0 - (percentage / 100.0))));
+      uint64_t original_table_size = size_list.back();
+      uint64_t new_table_size = static_cast<uint64_t>((size_list.back() * (1.0 - (percentage / 100.0))));
       new_table_size -= (((new_table_size % bits_per_char) != 0) ? (new_table_size % bits_per_char) : 0);
 
       if ((bits_per_char > new_table_size) || (new_table_size >= original_table_size))
@@ -681,7 +682,7 @@ private:
       bit = bit_index % bits_per_char;
    }
 
-   std::vector<unsigned long long int> size_list;
+   std::vector<uint64_t> size_list;
 };
 
 #endif

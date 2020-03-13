@@ -119,7 +119,6 @@ int main(int argc, char **argv)
    //trap_ifcctl(TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, 2000);
    trap_ifcctl(TRAPIFC_INPUT, 0, TRAPCTL_SETTIMEOUT, TRAP_WAIT);
    while (!stop) {
-      //ret = trap_get_data(TRAP_MASK_ALL, (const void **) &cur_value, &read_size, TRAP_WAIT);
       ret = trap_recv(0, (const void **) &cur_value, &read_size);
       if (duration == 0) {
 	      duration = time(NULL);
@@ -138,6 +137,8 @@ int main(int argc, char **argv)
             last_size = read_size;
          }
          last_value = (*cur_value);
+      } else {
+         stop = 1;
       }
       iteration++;
       //usleep(1000);

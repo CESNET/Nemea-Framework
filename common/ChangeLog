@@ -1,18 +1,23 @@
-2016-07-21 (Tomas Cejka): common: add missing libxml2-devel dependency
-2016-06-24 (Zdenek Rosa): common:b_plus_tree: bugfix, wrong name of function in header file
-2016-06-22 (Zdenek Rosa): common:b_plus_tree: created public API
-2016-06-15 (Zdenek Rosa): prefix_tree: bugfix, number of pointers to children increased.
-2016-03-20  nemea-common-1.4.3
-        * bugfix in prefix tree
+2019-05-18 nemea-common-1.6.1
+	* update doc
+	* maintenance
+	* bugfix implicit conversion
 
-2016-03-20 (Zdenek Rosa): common,prefix_tree: Bugfix - wrong string representatin if there were unreadable characters
+2018-07-16 nemea-common-1.6.0
+	* Added Counting Sort implementation
 
-2016-03-10  nemea-common-1.4.2
-        * modules now can use nemea-common written in C
+2017-08-21 nemea-common-1.5.3
+	* fixed rpm target - bad file name
+	* BUGFIX inline functions
+	* update source0 in specs and .travis.yml to contain sources
+	* substituted unsigned long long int with uint64_t
+	* removed commas in enumerations lists (fast_hash_filter, fast_hash_table)
+	* removed executable rights on some files
 
-2016-03-10 (Tomas Cejka): common: add extern "C" into header file
+2016-03-20 nemea-common-1.5.2
+	* fixed debian package generation
 
-2016-02-28 nemea-common-1.4.1
-	* bugfixes of b+ tree
-
-2016-02-09 (Tomas Jansky): b_plus_tree: fixed warning regarding void* in arithmetic
+2016-07-26 nemea-common-1.5.0
+	* change of b+ tree API
+	* bugfixes:
+		- prefix tree: number of children

@@ -1,0 +1,21 @@
+Source: unirec
+Section: unknown
+Priority: extra
+Maintainer: CESNET <nemea@cesnet.cz>
+Build-Depends: autotools-dev,
+	debhelper (>=9), libtrap-dev
+Standards-Version: 3.9.5
+Homepage: https://github.com/CESNET/Nemea-Framework
+Vcs-Git: https://github.com/CESNET/Nemea-Framework
+Vcs-Browser: https://github.com/CESNET/Nemea-Framework/tree/master/unirec
+
+Package: unirec
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends} libtrap-dev
+Description: UniRec is a data format for storage and transfer of simple unstructured records,
+ i.e. sets of key-value pairs with a fixed set of keys. A record in UniRec format
+ is similar to a C structure but it can be defined at run-time. It thus brings
+ possibility to dynamically create structures in a statically typed language.
+

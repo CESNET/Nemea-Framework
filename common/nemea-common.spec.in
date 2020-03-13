@@ -3,14 +3,14 @@ Name: nemea-common
 Version: @PACKAGE_VERSION@
 Release: @RELEASE@
 URL: http://www.liberouter.org/
-Source: https://www.liberouter.org/repo/SOURCES/%{name}-%{version}-%{release}.tar.gz
+Source0: https://github.com/CESNET/Nemea-Framework/raw/dist-packages/common/%{name}-%{version}.tar.gz
 Group: Liberouter
 License: BSD
 Vendor: CESNET, z.s.p.o.
 Packager: @USERNAME@ <@USERMAIL@>
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 
-BuildRequires: gcc make doxygen pkgconfig libxml2-devel
+BuildRequires: gcc gcc-c++ make doxygen pkgconfig libxml2-devel
 Provides: nemea-common
 Requires: libxml2
 

@@ -1,3 +1,16 @@
+libtrap (0.11.0-1) stable; urgency=low
+
+  * added TLS communication IFC
+  * extended API - new functions trap_ctx_init2() and trap_ctx_init3()
+  * changed name and path to sockets (/var/run/libtrap/)
+  * path to sockets can be specified in run-time (TRAP_SOCKET_DIR env variable)
+  * max clients of IFCs is configurable in compile-time
+  * many bugfixes
+  * added tests
+  * doc improved
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 18 Mar 2018 15:56:35 +0100
+
 libtrap (0.8.0-1) stable; urgency=high
 
   * extended internal IFC API

@@ -15,6 +15,7 @@ libnemea_common_la_SOURCES=cuckoo_hash/cuckoo_hash.c \
 			   cuckoo_hash_v2/cuckoo_hash_v2.c \
 			   cuckoo_hash_v2/hashes_v2.c \
 			   cuckoo_hash_v2/hashes_v2.h \
+			   counting_sort/counting_sort.c \
 			   fast_hash_table/fast_hash_table.c \
 			   fast_hash_table/hashes.h \
 			   fast_hash_filter/fast_hash_filter.c \
@@ -40,14 +41,25 @@ EXTRA_DIST= README \
 	    b_plus_tree/README \
 	    cuckoo_hash/README \
 	    ip_prefix_search/README
+	    debian/source/local-options \
+	    debian/source/format \
+	    debian/nemea-common.install \
+	    debian/nemea-common-dev.install \
+	    debian/patches \
+	    debian/patches/series \
+	    debian/watch \
+	    debian/copyright \
+	    debian/changelog \
+	    debian/control \
+	    debian/rules \
+	    debian/compat \
+	    debian/README.Debian
 
 ACLOCAL_AMFLAGS=-I m4
 
 include aminclude.am
 
 if DX_COND_doc
-clean-local: doxygen-clean
-	rm -rf doc
 
 doc: doxygen-doc
 
@@ -62,10 +74,24 @@ rpm:
 	rm -rf "$(RPMDIR)/SOURCES/$(RPMFILENAME)"
 	mkdir -p $(RPMDIR)/BUILD/ $(RPMDIR)/SRPMS/ $(RPMDIR)/RPMS/ $(RPMDIR)/SOURCES
 	make ${AM_MAKEFLAGS} distdir='$(RPMDIR)/SOURCES/$(RPMFILENAME)' distdir
-	( cd "$(RPMDIR)/SOURCES/"; tar -z -c -f $(RPMFILENAME)-$(RELEASE).tar.gz $(RPMFILENAME); rm -rf $(RPMFILENAME); )
+	( cd "$(RPMDIR)/SOURCES/"; tar -z -c -f $(RPMFILENAME).tar.gz $(RPMFILENAME); rm -rf $(RPMFILENAME); )
 	$(RPMBUILD) -ba $(PACKAGE_NAME).spec --define "_topdir `pwd`/$(RPMDIR)";
+else
+endif
 
 rpm-clean:
 	rm -rf $(RPMDIR)
+
+if MAKE_DEB
+.PHONY: deb
+deb:
+	make distdir && cd nemea-common-@VERSION@ && debuild -i -us -uc -b
 else
 endif
+
+deb-clean:
+	rm -rf nemea-common*.build nemea-common*.changes nemea-common*.deb nemea-common-dev_*.deb nemea-common*.orig.tar.gz nemea-common-*.tar.gz nemea-common-@VERSION@
+
+clean-local: deb-clean rpm-clean
+	rm -rf doc
+

@@ -91,7 +91,7 @@ module_info_test_t *module_info = NULL;
 
 int main()
 {
-   uint x = 0;
+   uint32_t x = 0;
 
    // Allocate and initialize module_info structure and all its members
    // according to the MODULE_BASIC_INFO and MODULE_PARAMS definitions
@@ -149,11 +149,10 @@ typedef struct trap_module_info_parameter_s {
  */
 typedef struct trap_module_info_s {
    char *name;           ///< Name of the module (short string)
-   char *description;    /**< Detialed description of the module, can be a long
+   char *description;    /**< Detailed description of the module, can be a long
                               string with several lines or even paragraphs. */
    int num_ifc_in;  ///< Number of input interfaces
    int num_ifc_out; ///< Number of output interfaces
-   // TODO more ... (e.g. UniRec specifiers)
    trap_module_info_parameter_t **params;
 } trap_module_info_t;
 
@@ -340,7 +339,7 @@ typedef struct trap_module_info_s {
  * \param [in] param_count  number of parameters
  * \return pointer to module_info with allocated parameters, NULL otherwise.
  */
-trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int i_ifcs, int o_ifcs, uint16_t param_count);
+trap_module_info_t *trap_create_module_info(const char *mname, const char *mdesc, int8_t i_ifcs, int8_t o_ifcs, uint16_t param_count);
 
 /**
  * Set module's parameter in the allocated module_info structure.

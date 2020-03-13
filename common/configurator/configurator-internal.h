@@ -86,9 +86,9 @@ static const char varTypeSize[] = {
     sizeof(int64_t),
     sizeof(float),
     sizeof(double),
-    -1, // String, size is computed based on specified max size.
-    -1, // Struct, size is computed based on specified elements.
-    -1  // Array, size is computed based on specified elements.
+    (char) -1, // String, size is computed based on specified max size.
+    (char) -1, // Struct, size is computed based on specified elements.
+    (char) -1  // Array, size is computed based on specified elements.
 };
 
 /**

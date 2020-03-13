@@ -44,7 +44,7 @@ Structure of the data in the buffer is described below.
 
 First two pairs (keys *in_cnt* and *out_cnt*) define number of input and output interfaces of the module.
 After these two pairs there are two objects *in* and *out* describing input and output interfaces, each of them followed by array of records.
-A record of the object (*in* or *out*) contains interface type, interface ID and interface counters. Interface type can be one of {t, u, f, g, b} values which corresponds to {tcpip, unixsocket, file, generator, blackhole}. Character values are sent as integers (t = 116, u = 117 etc.). Interface ID has a string value and corresponds to port number (tcpip), name of socket (unixsocket), name of file (file) or "none" value (blackhole, generator). Names of the attributes are shown in the example below. It shows JSON data for a module with 1 input interface and 2 output interfaces.
+A record of the object (*in* or *out*) contains interface type, interface ID and interface counters mentioned at the beginning. Moreover, an object describing input interface also contains flag whether the interface is connected and an object describing output interface contains number of connected clients. Interface type can be one of {t, u, f, g, b} values which corresponds to {tcpip, unixsocket, file, generator, blackhole}. Character values are sent as integers (t = 116, u = 117 etc.). Interface ID has a string value and corresponds to port number (tcpip), name of socket (unixsocket), name of file (file) or "none" value (blackhole, generator). Names of the attributes are shown in the example below. It shows JSON data for a module with 1 input interface and 2 output interfaces.
 Note: all counters are set to 0.
 
 ```json
@@ -53,6 +53,7 @@ Note: all counters are set to 0.
    "out_cnt":2,
    "in":[
       {
+         "ifc_state":0,
          "ifc_id":"flow_data_source",
          "ifc_type":117,
          "messages":0,
@@ -61,6 +62,7 @@ Note: all counters are set to 0.
    ],
    "out":[
       {
+         "num_clients":1,
          "sent-messages":0,
          "ifc_id":"12001",
          "dropped-messages":0,
@@ -69,6 +71,7 @@ Note: all counters are set to 0.
          "buffers":0
       },
       {
+         "num_clients":2,
          "sent-messages":0,
          "ifc_id":"12002",
          "dropped-messages":0,

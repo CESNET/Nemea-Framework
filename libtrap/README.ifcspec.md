@@ -22,15 +22,53 @@ TCP interface ('t')
 Communicates through a TCP socket. Output interface listens on a given port, input interface connects to it. There may be more than one input interfaces connected to one output interface, every input interface will get the same data.
 
 Parameters when used as INPUT interface:
+
 ```
-<hostname or ip>:<port>
+t:<hostname or ip>:<port>
 ```
 
+or
+
+```
+t:<port>
+```
+
+If you skip `<hostname or ip>:`, IFC assumes you want to use localhost as the hostname.
+
 Parameters when used as OUTPUT interface:
+
 ```
 <port>:<max_num_of_clients>
 ```
+
 Maximal number of connected clients (input interfaces) is optional (64 by default).
+
+TLS interface ('T')
+-------------------
+
+Communicates through a TCP socket after establishing encrypted connection. You have to provide certificate, key and CA chain file with trusted CAs. Otherwise same as in TCP: Output interface listens on a given port, input interface connects to it. There may be more than one input interfaces connected to one output interface, every input interface will get the same data.
+
+Parameters when used as INPUT interface:
+
+```
+T:<hostname or ip>:<port>:<keyfile>:<certfile>:<CAfile>
+```
+
+or
+
+```
+T:<port>:<keyfile>:<certfile>:<CAfile>
+```
+
+If you skip `<hostname or ip>:`, IFC assumes you want to use localhost as a hostname.
+
+Parameters when used as OUTPUT interface:
+```
+<port>:<max_num_of_clients>:<keyfile>:<certfile>:<CAfile>
+```
+Maximal number of connected clients (input interfaces) is optional (64 by default).
+
+Parameters keyfile, certfile, CAfile expect a path to apropriate files in PEM format.
 
 UNIX domain socket ('u')
 ------------------------
@@ -79,7 +117,7 @@ Output interface:
 ```
 Name of file (path to the file) must be specified.
 
-Mode is optional. There are two types of mode: `a` - append (default), `w` - write.
+Mode is optional. There are two types of mode: `a` - append, `w` - write (default).
 If the specified file exists, mode write overwrites it, mode append creates a new file with an integer suffix, e.g. `data.trapcap.0` (or `data.trapcap.1` if the former exists, and so on, it simply finds the first unused number).
 
 If parameter `time=` is set, the output interface will split captured data to individual files as often, as value of this parameter indicates.
@@ -96,10 +134,10 @@ If both `time=` and `size=` are specified, the data are split primarily by time,
 
 Example:
 ```
--i "f:~/nemea/data.trapcap:w"					// stores all captured data to one file (overwrites current file if it exists)
--i "f:~/nemea/data.trapcap:w:time=30"			// creates individual files each 30 minutes, e.g. "data.trapcap.201604180930", "data.trapcap.201604181000" etc.
--i "f:~/nemea/data.trapcap:w:size=100"			// creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.0", then "data.trapcap.1" etc.
--i "f:~/nemea/data.trapcap:w:time=30:size=100"	// creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.0" etc. and after 30 minutes, "data.trapcap.201604181000"
+-i "f:~/nemea/data.trapcap:w"                  // stores all captured data to one file (overwrites current file if it exists)
+-i "f:~/nemea/data.trapcap:w:time=30"          // creates individual files each 30 minutes, e.g. "data.trapcap.201604180930", "data.trapcap.201604181000" etc.
+-i "f:~/nemea/data.trapcap:w:size=100"         // creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.0", then "data.trapcap.1" etc.
+-i "f:~/nemea/data.trapcap:w:time=30:size=100" // creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.0" etc. and after 30 minutes, "data.trapcap.201604181000"
 ```
 Output file interface and negotiation:
 Whenever new format of data is created, output interface creates new file with numeric suffix.
@@ -130,7 +168,7 @@ The following parameters can be used with any type of IFC. There are parameters 
    * default: on
 * autoflush - normally data are not sent until the buffer is full. When autoflush is enabled, even non-full buffers are sent every X microseconds.
    * possible values: off, number of microseconds
-   * default: 500000 (0.5s)
+   * default: 2000000 (2s)
 
 Example: `-i u:inputsocket:timeout=WAIT,u:outputsocket:timeout=500000:buffer=off:autoflush=off`
 

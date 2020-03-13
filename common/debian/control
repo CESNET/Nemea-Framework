@@ -1,0 +1,24 @@
+Source: nemea-common
+Section: unknown
+Priority: extra
+Maintainer: CESNET <nemea@cesnet.cz> 
+Build-Depends: autotools-dev,
+    debhelper (>=9)
+Standards-Version: 3.9.5
+Homepage: https://github.com/CESNET/Nemea-Framework
+Vcs-Git: https://github.com/CESNET/Nemea-Framework
+Vcs-Browser: https://github.com/CESNET/Nemea-Framework/tree/master/common
+
+Package: nemea-common
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: TODO
+
+Package: nemea-common-dev
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: TODO 

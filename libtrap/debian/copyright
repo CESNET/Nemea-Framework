@@ -1,9 +1,5 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: libtrap
-Source: <url://example.com>
-
 #----------------------------------------------------------------------------
-Copyright: 2013-2015 CESNET
+Copyright: 2013-2016 CESNET
 Files: ./tests/test_tcpip.sh
 # licensecheck(1): ./tests/test_tcpip.sh: UNKNOWN
 License:
@@ -43,7 +39,7 @@ License:
  number of lines that client receives before exit
 
 #----------------------------------------------------------------------------
-Copyright: 2006-2015 CESNET
+Copyright: 2006-2016 CESNET
 Files: ./mdconvert.sh
 	./tools/trap_stats.c
 	./src/ifc_tcpip.h
@@ -303,7 +299,6 @@ Files: ./configure.ac
 	./doc/develop-interface.txt
 	./doc/index-devel.txt
 	./doc/history.txt
-	./tests/basic_test_timeouts.test
 	./tests/libtrap_multiclient.test
 	./tests/libtrap_ctxapi.test
 	./tests/basic_test_arg.test
@@ -373,3 +368,6 @@ License: NO_LICENSE_TEXT_FOUND
  otherwise) arising in any way out of the use of this software, even if
  advised of the possibility of such damage.
 
+-----------------------------------------------------------------------------------
+|Copyright(C) 2012-2016 CESNET, z.s.p.o.|<nemea@cesnet.cz>|github.com/CESNET/Nemea|
+----------------------------------------------------------------------------------- 

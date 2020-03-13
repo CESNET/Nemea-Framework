@@ -42,6 +42,9 @@
  */
 
 #include <libtrap/trap.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 trap_module_info_t module_info = {
   "test module", // Module name
@@ -54,14 +57,87 @@ trap_module_info_t module_info = {
   0, // Number of output interfaces
 };
 
+int check_socket(const char *socketident)
+{
+   char filepath[255];
+   struct stat buf;
+   int result = 1;
+
+   snprintf(filepath, 255, trap_default_socket_path_format, socketident);
+   if (stat(filepath, &buf) == -1) {
+      fprintf(stderr, "Socket file does not exist (%s).\n", filepath);
+      result = 0;
+   }
+   /* success */
+   return result;
+}
+
 int main(int argc, char **argv)
 {
   // ***** TRAP initialization *****
 
   trap_ifc_spec_t ifc_spec;
+
+  fprintf(stderr, "Test 01:\n");
   trap_parse_params(&argc, argv, &ifc_spec);
   trap_ctx_t *ctx = trap_ctx_init(&module_info, ifc_spec);
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  trap_ctx_finalize(&ctx);
 
+  fprintf(stderr, "Test 02:\n");
+  ctx = trap_ctx_init2(&module_info, ifc_spec, "abcdef");
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  sleep(1);
+  if (check_socket("abcdef") == 0) {
+     trap_ctx_finalize(&ctx);
+     return 1;
+  }
+  trap_ctx_finalize(&ctx);
+
+  fprintf(stderr, "Test 03:\n");
+  ctx = trap_ctx_init3("testmodule", "test description", 1, 1, "u:test-input-ifc,u:test-output-ifc", "test-service-ifc");
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  sleep(1);
+  if (check_socket("test-output-ifc") == 0) {
+     trap_ctx_finalize(&ctx);
+     return 1;
+  }
+  if (check_socket("test-service-ifc") == 0) {
+     trap_ctx_finalize(&ctx);
+     return 1;
+  }
+
+  trap_ctx_finalize(&ctx);
+
+  fprintf(stderr, "Test 04: (illegal character in service IFC name))\n");
+  ctx = trap_ctx_init2(&module_info, ifc_spec, "a/b");
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  sleep(1);
+  if (check_socket("a/b") == 1) {
+     trap_ctx_finalize(&ctx);
+     return 1;
+  }
+  trap_ctx_finalize(&ctx);
+
+  fprintf(stderr, "Test 05: (disabled service IFC))\n");
+  ctx = trap_ctx_init2(&module_info, ifc_spec, NULL);
+  if (ctx == NULL || trap_ctx_get_last_error(ctx) != TRAP_E_OK) {
+     fprintf(stderr, "Failed trap_ctx_init.\n");
+     return 1;
+  }
+  sleep(1);
   trap_ctx_finalize(&ctx);
 
   return 0;

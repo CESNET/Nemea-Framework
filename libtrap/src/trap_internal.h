@@ -7,12 +7,10 @@
  * \author Vojtech Krmicek <xkrmicek@fi.muni.cz>
  * \author Juraj Blaho <xblaho00@stud.fit.vutbr.cz>
  * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2006-2011
- * \date 2013
- * \date 2014
- * \date 2015
+ * \author Tomas Jansky <janskto1@fit.cvut.cz>
+ * \date 2006-2018
  *
- * Copyright (C) 2006-2015 CESNET
+ * Copyright (C) 2006-2018 CESNET
  *
  *
  * LICENSE TERMS
@@ -127,11 +125,11 @@ typedef enum trap_verbose_level {
 /**
  * \name Timeouts handling
  * @{*/
-#define TRAP_NO_IFC_SLEEP 2 ///< seconds to sleep, when autoflushing is not active
-#define TRAP_IFC_TIMEOUT 500000 ///< size of default timeout on output interfaces in microseconds
+#define TRAP_NO_IFC_SLEEP 4 ///< seconds to sleep, when autoflushing is not active
+#define TRAP_IFC_TIMEOUT 2000000 ///< size of default timeout on output interfaces in microseconds
 /**@}*/
 
-#ifdef DEBUG
+#ifndef NDEBUG
    /*! \brief Debug message macro if DEBUG macro is defined
     *
     * now 3 known DEBUG LEVELS
@@ -168,7 +166,7 @@ static inline int __attribute__ ((format (printf, 2, 3))) MSG(int l, const char 
 
 void trap_verbose_msg(int level, char *string);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 /*! Macro for verbose message */
 #define VERBOSE(level,format,args...) if (trap_verbose>=level) { \
    snprintf(trap_err_msg,4095,"%s:%d "format,__FILE__, __LINE__, ##args); \
@@ -205,15 +203,13 @@ struct reader_threads_s {
 };
 
 /**
- * List of all output interfaces and their timeouts.
- *
- * It is used by automatic flush buffer thread to send buffer after
- * a timeout on one of the output interfaces has elapsed.
+ * \brief List of autoflush timeouts of output interfaces.
  */
-struct out_ifc_timeout_s {
-   int idx;            /**< index of output interface */
-   int64_t tm;        /**< timeout to be elapsed */
-};
+typedef struct autoflush_timeouts {
+   int idx;            /**< Index of output interface. */
+   int64_t tm;         /**< Autoflush timeout to be elapsed. */
+   int64_t tm_backup;  /**< Backup value of the autoflush timeout. */
+} ifc_autoflush_t;
 
 /**
  * Libtrap context structure.
@@ -229,12 +225,12 @@ struct trap_ctx_priv_s {
    /**
     * Is libtrap terminated? (0 ~ false, should run)
     */
-   int terminated;
+   volatile int terminated;
 
    /**
-    * Is output interface parameter changed? (0 ~ false, should run)
+    * Number of interface changes waiting to be applied.
     */
-   int ifc_change;
+   volatile int ifc_change;
 
    /**
     * Code of last error (one of the codes above)
@@ -272,58 +268,29 @@ struct trap_ctx_priv_s {
    uint32_t num_ifc_out;
 
    /**
-    * Array of results for multiread feature
-    */
-   trap_multi_result_t *in_ifc_results;
-
-   /**
     * Timeout common to all readers for multiread feature
     */
    int get_data_timeout;
 
    /**
-    * Reader threads for multiread feature
+    * Lock setting last error code and last error message.
     */
-   struct reader_threads_s *reader_threads;
+   pthread_mutex_t error_mtx;
 
    /**
-    * Semaphore used when collector (main thread, caller of ifc's recv)
-    * waits for incoming data from all threads.
+    * Timeouts for autoflush thread.
     */
-   sem_t sem_collector;
-
-   /**
-    * Mutex for manipulation with readers_count.
-    */
-   pthread_mutex_t mut_sem_collector;
-
-   /**
-    * Number of reader threads that will read messages during multiread (set
-    * by collector thread).  Every client decreases this value and the last
-    * reader (readers_count equals 0 after decrementation) wakes the collector
-    * thread.
-    */
-   int32_t readers_count;
-
-   /**
-    * Thread to handle timeouts on output interfaces.
-    */
-   pthread_t timeout_thread;
-
-   /**
-    * Indicator of initialized autoflush thread
-    */
-   int timeout_thread_initialized;
-
-   /**
-    * Timeouts for autoflush
-    */
-   struct out_ifc_timeout_s *ifc_autoflush_timeout;
+   ifc_autoflush_t *ifc_autoflush_timeout;
 
    /**
     * Service thread that enables communication with module
     */
    pthread_t service_thread;
+
+   /**
+    * Name of the service IFC socket, it is disabled when NULL.
+    */
+   char *service_ifc_name;
 
    /**
     * Indicator of initialized service thread
@@ -363,11 +330,6 @@ struct trap_ctx_priv_s {
    /**
     * @}
     */
-
-   /**
-    * Lock context (this structure)
-    */
-   pthread_rwlock_t context_lock;
 };
 
 /**
@@ -389,6 +351,13 @@ struct trap_buffer_header_s {
    uint8_t data[0];
 } __attribute__ ((__packed__));
 typedef struct trap_buffer_header_s trap_buffer_header_t;
+
+#ifndef ATOMICOPS
+_Bool __sync_bool_compare_and_swap_8(int64_t *ptr, int64_t oldvar, int64_t newval);
+
+uint64_t __sync_fetch_and_add_8(uint64_t *ptr, uint64_t value);
+
+#endif
 
 #endif
 

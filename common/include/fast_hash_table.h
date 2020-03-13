@@ -81,7 +81,7 @@ enum fht_table
     FHT_INSERT_STASH_OK = 2,
     FHT_INSERT_STASH_LOST = 3,
     FHT_INSERT_FAILED = -1,
-    FHT_INSERT_FULL = -2,
+    FHT_INSERT_FULL = -2
 };
 
 /**
@@ -93,7 +93,7 @@ enum fht_iter
     FHT_ITER_RET_END =  1,
     FHT_ITER_START   = -1,
     FHT_ITER_STASH   = -2,
-    FHT_ITER_END     = -3,
+    FHT_ITER_END     = -3
 };
 
 /**
@@ -274,8 +274,8 @@ int fht_insert_with_stash_wr(fht_table_t *table, const void *key, const void *da
  */
 static inline void *fht_get_data(fht_table_t *table, const void *key)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
 
    //lock row
    while (__sync_lock_test_and_set(&table->lock_table[table_row], 1))
@@ -343,8 +343,8 @@ static inline void *fht_get_data(fht_table_t *table, const void *key)
  */
 static inline void *fht_get_data_locked(fht_table_t *table, const void *key, int8_t **lock)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
 
    //lock row
    while (__sync_lock_test_and_set(&table->lock_table[table_row], 1))
@@ -405,8 +405,8 @@ static inline void *fht_get_data_locked(fht_table_t *table, const void *key, int
  */
 static inline void *fht_get_data_with_stash(fht_table_t *table, const void *key)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    unsigned int i;
 
    //lock row
@@ -493,8 +493,8 @@ static inline void *fht_get_data_with_stash(fht_table_t *table, const void *key)
  */
 static inline void *fht_get_data_with_stash_locked(fht_table_t *table, const void *key, int8_t **lock)
 {
-   unsigned long long table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
-   unsigned long long table_col_row = table_row * FHT_TABLE_COLS;
+   uint64_t table_row = (table->table_rows - 1) & (table->hash_function)(key, table->key_size);
+   uint64_t table_col_row = table_row * FHT_TABLE_COLS;
    unsigned int i;
 
    //lock row

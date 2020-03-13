@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([libtrap], [0.8.0], [traffic-analysis@cesnet.cz])
+AC_INIT([libtrap], [1.13.1], [nemea@cesnet.cz])
 #for debug purposes:
 #AM_INIT_AUTOMAKE([-Wall -Werror])
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes]]))
 AC_CONFIG_SRCDIR([libtrap.spec.in])
 AC_CONFIG_HEADERS([config.h])
-RELEASE=2
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -23,11 +23,19 @@ AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
-                CFLAGS="-Wall -g -O0 $CFLAGS"
-        fi], [CFLAGS="-Wall -O3 $CFLAGS"
+                CFLAGS="-Wall -Wno-format-truncation -g -O0 $CFLAGS"
+        fi], [CFLAGS="-Wall -Wno-format-truncation -g -O3 $CFLAGS"
               CPPFLAGS="-DNDEBUG=1"])
 
 LT_INIT()
+
+AC_ARG_WITH([defaultsocketdir],
+	[AS_HELP_STRING([--with-defaultsocketdir=DIR], [Directory for UNIX&service IFCs [/tmp], for production set it to e.g. /var/run/libtrap.])],
+	[],
+	[with_defaultsocketdir=/tmp])
+
+AC_SUBST([defaultsocketdir], [$with_defaultsocketdir])
+AC_DEFINE_DIR([DEFAULTSOCKETDIR], [defaultsocketdir], [Default path to socket directory])
 
 # Checks for programs.
 AC_PROG_CC
@@ -42,6 +50,8 @@ AM_CONDITIONAL([GCC], [test x$GCC = xyes])
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 AC_CHECK_PROG(GIT, git, git, [""])
+AC_CHECK_PROG(HAVE_DOT, dot, ["YES"], ["NO"])
+AC_SUBST([HAVE_DOT])
 
 if test -n "$GIT"; then
 	GIT_VERSION=$($GIT log --format="%h" HEAD^..HEAD | head -1)
@@ -56,6 +66,29 @@ AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS"
 	    CC="$PTHREAD_CC"],
 	    [AC_MSG_ERROR([pthread not found])]
 	   )
+
+PKG_CHECK_MODULES([cmocka], [cmocka], [have_cmocka="yes"], [have_cmocka="no"])
+AM_CONDITIONAL([HAVE_CMOCKA], [test x$have_cmocka = xyes])
+
+AC_ARG_WITH([openssl],
+	[AS_HELP_STRING([--without-openssl], [Force to disable openssl])],
+	[if test x$withval = xyes; then
+        PKG_CHECK_MODULES([openssl], [openssl], [have_openssl="yes"], [have_openssl="no"])
+        fi],
+	[PKG_CHECK_MODULES([openssl], [openssl], [have_openssl="yes"], [have_openssl="no"])])
+
+AM_CONDITIONAL([HAVE_OPENSSL], [test x$have_openssl = xyes])
+
+if test x$have_openssl = xyes; then
+  AC_DEFINE([HAVE_OPENSSL], [1], [Define to 1 if the openssl is available])
+  LDFLAGS="$openssl_LDFLAGS $LDFLAGS"
+  LIBS="$openssl_LIBS $LIBS"
+  CFLAGS="$openssl_CFLAGS $CFLAGS"
+  CXXFLAGS="$openssl_CFLAGS $CXXFLAGS"
+else
+  AC_DEFINE([HAVE_OPENSSL], [0], [Define to 1 if the openssl is available])
+  AC_MSG_WARN([OpenSSL not found. You will not be able to use secure TLS interface.])
+fi
 
 # Checks for header files.
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdint.h stdlib.h stdarg.h string.h sys/socket.h sys/time.h unistd.h pthread.h endian.h locale.h sched.h sys/param.h sys/stat.h sys/types.h getopt.h])
@@ -128,6 +161,8 @@ AC_FUNC_FORK
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([clock_gettime memset munmap select socket strchr strdup strerror dup2 mkdir])
 
+AX_ATOMIC8()
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  include/Makefile
@@ -135,21 +170,42 @@ AC_CONFIG_FILES([Makefile
                  tools/Makefile
                  libtrap.pc
                  libtrap.spec
+                 libtrap-varrun.conf
                  Doxyfile
                  devel-doxyfile
                  ])
 
+AC_ARG_WITH([ifcbuffercount],
+	AC_HELP_STRING([--with-ifcbuffercount=NUMBER],[Set number of buffers used for sending, default is 50.]),
+	[
+	DEFAULT_BUFFER_COUNT=$withval
+	],
+	[
+	DEFAULT_BUFFER_COUNT=50
+	]
+)
 AC_ARG_WITH([ifcbuffersize],
 	AC_HELP_STRING([--with-ifcbuffersize=NUMBER],[Set size (in bytes) of libtrap buffer for messages, default is 100000.]),
 	[
 	TRAP_IFC_MESSAGEQ_SIZE=$withval
+	DEFAULT_BUFFER_SIZE=$withval
 	],
 	[
 	TRAP_IFC_MESSAGEQ_SIZE=100000
+	DEFAULT_BUFFER_SIZE=100000
+	]
+)
+AC_ARG_WITH([ifcmaxclients],
+	AC_HELP_STRING([--with-ifcmaxclients=NUMBER],[Set number of clients that can connect to output interface, default is 64.]),
+	[
+	DEFAULT_MAX_CLIENTS=$withval
+	],
+	[
+	DEFAULT_MAX_CLIENTS=64
 	]
 )
 
-CPPFLAGS="$CPPFLAGS -DTRAP_IFC_MESSAGEQ_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" "
+CPPFLAGS="$CPPFLAGS -DDEFAULT_BUFFER_COUNT="$DEFAULT_BUFFER_COUNT" -DDEFAULT_BUFFER_SIZE="$DEFAULT_BUFFER_SIZE" -DDEFAULT_MAX_CLIENTS="$DEFAULT_MAX_CLIENTS" -DTRAP_IFC_MESSAGEQ_SIZE="$TRAP_IFC_MESSAGEQ_SIZE" "
 
 
 
@@ -166,13 +222,13 @@ AC_ARG_ENABLE([debugifc], AC_HELP_STRING([--enable-debugifc],
       [AC_DEFINE(TRAP_DEBUG_IFC, [1], [Enable debug messages in IFC.])], [AC_DEFINE([TRAP_DEBUG_IFC], [0])])
 
 AC_ARG_ENABLE([debugbuffering], AC_HELP_STRING([--enable-debugbuffering],
-      [Compile IFC with debug messages]),
+      [Compile buffering with debug messages]),
       [AC_DEFINE(TRAP_DEBUG_BUFFERING, [1], [Enable debug messages in buffering.])], [AC_DEFINE([TRAP_DEBUG_BUFFERING], [0])])
 
 AC_ARG_ENABLE([negotiation], AC_HELP_STRING([--disable-negotiation],
-      [Compile interfaces with negotiation]),
+      [Compile interfaces without negotiation]),
       [if test "$enableval" = "yes"; then
-        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Disable negotiation between interfaces.])
+        AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])
       fi],
       [AC_DEFINE(ENABLE_NEGOTIATION, [1], [Enable negotiation between interfaces.])])
 
@@ -235,6 +291,7 @@ echo "  CPPFLAGS.............: $CPPFLAGS"
 echo "  CFLAGS...............: $CFLAGS"
 echo "  CXXFLAGS.............: $CXXFLAGS"
 echo "  LDFLAGS..............: $LDFLAGS"
+echo "  LIBS.................: $LIBS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"
