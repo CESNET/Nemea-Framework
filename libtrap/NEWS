@@ -1,3 +1,57 @@
+2020-02-05 (barnama1): libtrap - bugfix tls_test.sh
+2020-02-05 (barnama1): libtrap - bugfix tls_test.sh
+2020-02-05 (barnama1): libtrap - bugfix tls_test.sh
+2020-02-05 (barnama1): libtrap - bugfix in test_echo_reply
+2019-09-02 (Tomas Cejka): unirec: increased version, updated ChangeLog, released RPM package
+2019-08-23 (Tomas Cejka): libtrap: cleanup - useless test
+2019-08-23 (Tomas Cejka): libtrap: remove unused trap_buffer implementation
+2019-08-20 (barnama1): libtrap - configurable defaults bugfix
+2019-08-20 (barnama1): libtrap - configurable defaults
+2019-08-20 (barnama1): libtrap - default buffer count adjusted
+2019-08-19 (barnama1): libtrap - changes addressing code review by @janskto1
+2019-08-03 (barnama1): libtrap - autoflush bugfix
+2019-07-29 (barnama1): libtrap - adjusted usleep constants
+2019-07-26 (barnama1): libtrap - thread safe output interfaces
+2019-07-17 (barnama1): libtrap - remove client mutex
+2019-07-17 (barnama1): libtrap - remove flush mutex, move default constants from tcp-ip/tls to common
+2019-07-12 (barnama1): libtrap - added new file for common functions used in socket based interfaces
+2019-07-12 (barnama1): libtrap - removed trap_buffer.c and trap_buffer.h (unused)
+2019-07-12 (barnama1): libtrap - fixed timeout timestamp computation
+2019-07-12 (barnama1): libtrap - fixed missing doc and coding style.
+2019-07-11 (barnama1): libtrap - fixed error handling in select
+2019-07-06 (barnama1): libtrap - TLS ifc buffering unified with TCP/IP
+2019-05-08 (barnama1): libtrap - added autoflush, bugfixes in tests
+2019-05-07 (barnama1): libtrap - bugfix
+2019-05-04 (barnama1): libtrap - removed useless 'free_buffers' counter
+2019-05-03 (barnama1): libtrap - removed autoflush thread
+2019-05-03 (barnama1): libtrap - accept/sending thread synchronization bugfix
+2019-05-01 (barnama1): libtrap - buffer assignment mechanism changed
+2019-04-30 (barnama1): libtrap - buffer locking changed to cond var
+2019-04-21 (barnama1): libtrap - small changes improving efficiency
+2019-04-20 (barnama1): libtrap - default buffer count changed for testing purposes
+2019-04-17 (barnama1): libtrap - accepting clients is now handled in separate thread rather than part of sending thread
+2019-04-05 (barnama1): libtrap - bugfix
+2019-04-04 (barnama1): libtrap - changed tcpip/tls send behaviour when no clients are connected
+2019-04-04 (barnama1): libtrap - changed tcpip/tls send behaviour when no clients are connected
+2019-04-03 (barnama1): libtrap - added flush to file ifc
+2019-04-03 (barnama1): libtrap - added bufferswitch option to file ifc
+2019-04-03 (barnama1): libtrap - moved statistic counters from ifc to trap, blackhole bugfix
+2019-04-02 (barnama1): trap_stats - bugfix
+2019-04-02 (barnama1): libtrap - small changes in tcpip/tls interfaces
+2019-03-24 (barnama1): libtrap, trap_stats - added client timeout counters
+2019-03-24 (barnama1): libtrap - added flush and bufferswitch to interfaces. Changed *_send() size parameter to uint16_t.
+2019-03-18 (barnama1): libtrap - server side buffering changes completed
+2019-03-16 (barnama1): libtrap - autoflush is now handled by interface
+2019-03-12 (barnama1): libtrap - buffering moved to interface layer
+2019-03-10 (barnama1): libtrap - fixed unhandled errors in tcpip interface
+2019-03-09 (barnama1): libtrap - comments and small changes
+2019-02-26 (barnama1): libtrap - bugfix
+2019-02-26 (barnama1): libtrap - buffering changes
+2019-02-16 (barnama1): libtrap - buffering changes
+2019-02-14 (barnama1): libtrap - buffering changes
+2019-02-11 (barnama1): libtrap - buffering overhaul for tcpip interface
+2019-01-29 (barnama1): libtrap - preparations for buffering overhaul
+
 2019-05-18 (Tomas Cejka): libtrap: add test_tls.sh to dist package (fixed make distcheck)
 2019-05-12 (Tomas Jansky): libtrap: file ifc: code refactoring
 2019-05-02 (Tomas Cejka): libtrap: file: extend suffix to 4 digits for better ordering (#127)

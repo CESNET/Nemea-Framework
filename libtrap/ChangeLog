@@ -1,3 +1,6 @@
+2020-04-01 libtrap-1.14.0
+	* libtrap:
+		New enhanced version of buffering that uses ring buffer.
 2019-05-18 libtrap-1.13.1
 	* Replace 8B atomics on platforms that do not support it (turris)
 	* File IFC file numbers are aligned to 5 digits with leading zeros
