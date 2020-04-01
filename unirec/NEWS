@@ -1,3 +1,6 @@
+2020-03-13 (Tomáš Čejka): unirec: ip_prefix_search minor changes in readme
+2020-03-13 (Tomáš Čejka): unirec: moved ip_prefix_search from common, fixed linking
+
 2020-01-30 (Jiri Havranek): unirec: added ur_array_append_get_ptr() function to allocate element and return its pointer
 
 2019-08-20 (Jiri Havranek): ur2csv: added support for array unirec types

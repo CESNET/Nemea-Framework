@@ -1,3 +1,6 @@
+2020-04-01 unirec-2.9.0
+	* Added ip_prefix_search feature to search in IP subnets (by @plotenyondra)
+
 2020-01-31 unirec-2.8.0
 	* unirec:
 		- added ur_array_append_get_ptr(), which allocates new element
