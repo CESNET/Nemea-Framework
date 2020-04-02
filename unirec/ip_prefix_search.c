@@ -577,6 +577,7 @@ int add_data(ipps_interval_t *interval, void *data, size_t data_len)
       tmp = realloc (interval->data_array, interval->array_len * sizeof(void *));
       if (tmp  == NULL) {
          fprintf(stderr, "ERROR allocating memory for network mask array\n");
+         free(new_data);
          return 1;
       }
       interval->data_array = tmp;
