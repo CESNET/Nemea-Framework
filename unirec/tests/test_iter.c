@@ -172,7 +172,7 @@ int main(int argc, char **argv)
    // Iterate through all the fields. Order has to be same like in record
    i = 0;
    while ((id_iter = ur_iter_fields_record_order(tmplt_half, i++)) != UR_ITER_END) {
-      for (j = 0; j < FIELDS_COUNT; j++) {
+      for (j = 0; j < FIELDS_COUNT_HALF; j++) {
          if (id_half[j] == id_iter) {
             break;
          }
