@@ -231,6 +231,7 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
    new_node->interval = malloc(sizeof(ipps_interval_t));
    if (new_node->interval == NULL) {
       fprintf(stderr, "ERROR allocating memory for network interval\n");
+      free(new_node);
       return NULL;
    }
    new_node->next = NULL;
@@ -243,6 +244,8 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
    new_node->interval->data_array =  malloc(DATASLOTS * sizeof(void *));
    if (new_node->interval->data_array == NULL) {
       fprintf(stderr, "ERROR allocating memory for data pointers\n");
+      free(new_node->interval);
+      free(new_node);
       return NULL;
    }
 
