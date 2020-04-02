@@ -343,7 +343,7 @@ int ipps_destroy(ipps_context_t *prefix_context)
    uint32_t data_collector_cnt = 0;       // Number of pointers in 'data_collector'
 
    data_collector = malloc(COLLECTORSLOTS * sizeof(void *));
-   if (prefix_context == NULL) {
+   if (data_collector == NULL) {
       fprintf(stderr, "ERROR allocating memory for freed data collector\n");
       return 1;
    }
