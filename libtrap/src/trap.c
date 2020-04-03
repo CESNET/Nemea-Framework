@@ -1279,6 +1279,10 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
    c->counter_recv_buffer = NULL;
    free(c->counter_dropped_message);
    c->counter_dropped_message = NULL;
+   free(c->counter_recv_delay_last);
+   c->counter_recv_delay_last = NULL;
+   free(c->counter_recv_delay_total);
+   c->counter_recv_delay_total = NULL;
 
    pthread_mutex_destroy(&c->error_mtx);
 
@@ -1359,6 +1363,15 @@ int trap_ctx_terminate(trap_ctx_t *ctx)
    return trap_error(ctx, TRAP_E_OK);
 }
 
+static inline uint64_t get_cur_timestamp()
+{
+   struct timespec spec_time;
+
+   clock_gettime(CLOCK_MONOTONIC, &spec_time);
+   /* time in microseconds seconds -> secs * microsends + nanoseconds */
+   return spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
+}
+
 int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t *size)
 {
    int ret_val = 0;
@@ -1366,6 +1379,10 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
    if (c == NULL || c->initialized == 0) {
       return TRAP_E_NOT_INITIALIZED;
    }
+
+   uint64_t delay = get_cur_timestamp() - c->recv_delay_timestamp[ifcidx];
+   c->counter_recv_delay_last[ifcidx] = delay;
+   c->counter_recv_delay_total[ifcidx] += delay;
 
    if (c->terminated) {
       return trap_error(c, TRAP_E_TERMINATED);
@@ -1376,6 +1393,8 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
    }
 
    ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout);
+
+   c->recv_delay_timestamp[ifcidx] = get_cur_timestamp();
    return trap_error(ctx, ret_val);
 }
 
@@ -1824,6 +1843,9 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
    ctx->counter_autoflush = (uint64_t *) calloc(ctx->num_ifc_out, sizeof(uint64_t));
    ctx->counter_recv_buffer = (uint64_t *) calloc(ctx->num_ifc_in, sizeof(uint64_t));
    ctx->counter_dropped_message = (uint64_t *) calloc(ctx->num_ifc_out, sizeof(uint64_t));
+   ctx->counter_recv_delay_last = (uint64_t *) calloc(ctx->num_ifc_in, sizeof(uint64_t));
+   ctx->counter_recv_delay_total = (uint64_t *) calloc(ctx->num_ifc_in, sizeof(uint64_t));
+   ctx->recv_delay_timestamp = (uint64_t *) calloc(ctx->num_ifc_in, sizeof(uint64_t));
 
    ctx->terminated = 0;
 
@@ -1854,6 +1876,7 @@ trap_ctx_t *trap_ctx_init2(trap_module_info_t *module_info, trap_ifc_spec_t ifc_
          ctx->in_ifc_list[i].buffer_unread_bytes = 0;
          ctx->in_ifc_list[i].buffer_pointer = ctx->in_ifc_list[i].buffer;
          ctx->in_ifc_list[i].ifc_type = ifc_spec.types[i];
+         ctx->recv_delay_timestamp[i] = get_cur_timestamp();
 
          /* call input IFC constructor */
          if (trapifc_in_construct(ctx, &ifc_spec, i) == EXIT_FAILURE) {
@@ -1971,6 +1994,18 @@ alloc_counter_failed:
    if (ctx->counter_dropped_message) {
       free(ctx->counter_dropped_message);
       ctx->counter_dropped_message = NULL;
+   }
+   if (ctx->counter_recv_delay_last) {
+      free(ctx->counter_recv_delay_last);
+      ctx->counter_recv_delay_last = NULL;
+   }
+   if (ctx->counter_recv_delay_total) {
+      free(ctx->counter_recv_delay_total);
+      ctx->counter_recv_delay_total = NULL;
+   }
+   if (ctx->recv_delay_timestamp) {
+      free(ctx->recv_delay_timestamp);
+      ctx->recv_delay_timestamp = NULL;
    }
 
    trap_free_global_vars();
@@ -2182,7 +2217,13 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
       if (ifc_id == NULL) {
          ifc_id = none_ifc_id;
       }
-      in_ifc_cnts = json_pack("{sisssisIsI}", "ifc_state", ctx->in_ifc_list[x].is_conn(ctx->in_ifc_list[x].priv), "ifc_id", ifc_id, "ifc_type", (int) (ctx->in_ifc_list[x].ifc_type), "messages", __sync_fetch_and_add(&ctx->counter_recv_message[x], 0), "buffers", __sync_fetch_and_add(&ctx->counter_recv_buffer[x], 0));
+      in_ifc_cnts = json_pack("{sisssisIsIsIsI}",
+              "ifc_state", ctx->in_ifc_list[x].is_conn(ctx->in_ifc_list[x].priv),
+              "ifc_id", ifc_id, "ifc_type", (int) (ctx->in_ifc_list[x].ifc_type),
+              "messages", __sync_fetch_and_add(&ctx->counter_recv_message[x], 0),
+              "buffers", __sync_fetch_and_add(&ctx->counter_recv_buffer[x], 0),
+              "delay_last", __sync_fetch_and_add(&ctx->counter_recv_delay_last[x], 0),
+              "delay_total", (long)(__sync_fetch_and_add(&ctx->counter_recv_delay_total[x], 0)) / 1000000); // round to whole seconds
       if (json_array_append_new(in_ifces_arr, in_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;
@@ -2206,7 +2247,14 @@ int encode_cnts_to_json(char **data, trap_ctx_priv_t *ctx)
          goto clean_up;
       }
 
-      out_ifc_cnts = json_pack("{sosisssisIsIsIsI}", "client_stats_arr", client_stats_arr, "num_clients", ctx->out_ifc_list[x].get_client_count(ctx->out_ifc_list[x].priv), "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type), "sent-messages", __sync_fetch_and_add(&ctx->counter_send_message[x], 0), "dropped-messages", __sync_fetch_and_add(&ctx->counter_dropped_message[x], 0), "buffers", __sync_fetch_and_add(&ctx->counter_send_buffer[x], 0), "autoflushes", __sync_fetch_and_add(&ctx->counter_autoflush[x],0));
+      out_ifc_cnts = json_pack("{sosisssisIsIsIsI}",
+              "client_stats_arr", client_stats_arr,
+              "num_clients", ctx->out_ifc_list[x].get_client_count(ctx->out_ifc_list[x].priv),
+              "ifc_id", ifc_id, "ifc_type", (int) (ctx->out_ifc_list[x].ifc_type),
+              "sent-messages", __sync_fetch_and_add(&ctx->counter_send_message[x], 0),
+              "dropped-messages", __sync_fetch_and_add(&ctx->counter_dropped_message[x], 0),
+              "buffers", __sync_fetch_and_add(&ctx->counter_send_buffer[x], 0),
+              "autoflushes", __sync_fetch_and_add(&ctx->counter_autoflush[x],0));
       if (json_array_append_new(out_ifces_arr, out_ifc_cnts) == -1) {
          VERBOSE(CL_ERROR, "Service thread - could not append new item to out_ifces_arr while creating json string with counters..\n");
          goto clean_up;

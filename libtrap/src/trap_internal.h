@@ -328,6 +328,18 @@ struct trap_ctx_priv_s {
     */
    uint64_t *counter_recv_buffer;
    /**
+    * counter_recv_delay_last represents time interval between last two recv() calls (in microseconds).
+    */
+   uint64_t *counter_recv_delay_last;
+   /**
+    * counter_recv_delay_total represents total time spent outside of recv() function (in microseconds).
+    */
+   uint64_t *counter_recv_delay_total;
+   /**
+    * recv_delay_timestamp is used to determine the time that has elapsed between last two recv() calls
+    */
+   uint64_t *recv_delay_timestamp;
+   /**
     * @}
     */
 };
