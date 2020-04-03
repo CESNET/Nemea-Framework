@@ -453,6 +453,12 @@ int create_file_recv_ifc(trap_ctx_priv_t *ctx, const char *params, trap_input_if
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE INPUT IFC[%"PRIu32"]: Unable to perform shell-like expansion.", idx);
    }
 
+   if (files_exp.we_wordc == 0) {
+      VERBOSE(CL_ERROR, "FILE INPUT IFC[%"PRIu32"]: No files found for parameter: '%s'", idx, params);
+      free(priv);
+      return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE INPUT IFC[%"PRIu32"]: Unable to perform shell-like expansion.", idx);
+   }
+
    priv->file_cnt = files_exp.we_wordc;
    priv->files = (char**) calloc(priv->file_cnt, sizeof(char*));
    if (!priv->files) {
