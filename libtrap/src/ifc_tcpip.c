@@ -1304,6 +1304,7 @@ static void *sending_thread_func(void *priv)
             pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
          }
          pthread_mutex_unlock(&c->mtx_no_data);
+         continue;
       }
 
       res = select(maxsd + 1, &disset, &set, NULL, &select_timeout);
