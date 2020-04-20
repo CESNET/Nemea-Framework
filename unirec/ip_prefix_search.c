@@ -231,6 +231,7 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
    new_node->interval = malloc(sizeof(ipps_interval_t));
    if (new_node->interval == NULL) {
       fprintf(stderr, "ERROR allocating memory for network interval\n");
+      free(new_node);
       return NULL;
    }
    new_node->next = NULL;
@@ -243,6 +244,8 @@ void fill_interval_by_network(const ipps_network_t *net, ipps_interval_t *inter,
    new_node->interval->data_array =  malloc(DATASLOTS * sizeof(void *));
    if (new_node->interval->data_array == NULL) {
       fprintf(stderr, "ERROR allocating memory for data pointers\n");
+      free(new_node->interval);
+      free(new_node);
       return NULL;
    }
 
@@ -339,8 +342,13 @@ int ipps_destroy(ipps_context_t *prefix_context)
    void **data_collector;                // Array with freed memory pointers
    uint32_t data_collector_cnt = 0;       // Number of pointers in 'data_collector'
 
-   data_collector = malloc(COLLECTORSLOTS * sizeof(void *));
    if (prefix_context == NULL) {
+      fprintf(stderr, "ERROR NULL pointer passed to ipps_destroy\n");
+      return 1;
+   }
+
+   data_collector = malloc(COLLECTORSLOTS * sizeof(void *));
+   if (data_collector == NULL) {
       fprintf(stderr, "ERROR allocating memory for freed data collector\n");
       return 1;
    }
@@ -574,6 +582,7 @@ int add_data(ipps_interval_t *interval, void *data, size_t data_len)
       tmp = realloc (interval->data_array, interval->array_len * sizeof(void *));
       if (tmp  == NULL) {
          fprintf(stderr, "ERROR allocating memory for network mask array\n");
+         free(new_data);
          return 1;
       }
       interval->data_array = tmp;
