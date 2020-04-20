@@ -972,7 +972,7 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
    for (i = 0; i < priv->buffer_count; ++i) {
       del_index(&priv->buffers[i].clients_bit_arr, cl_id);
       if (priv->buffers[i].clients_bit_arr == 0) {
-         pthread_cond_broadcast(&priv->cond);
+         pthread_cond_broadcast(&priv->cond_full_buffer);
       }
    }
    del_index(&priv->clients_bit_arr, cl_id);
@@ -1128,14 +1128,21 @@ refuse_client:
  */
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
-   uint32_t header = htonl(buffer->wr_index);
-   memcpy(buffer->header, &header, sizeof(header));
-
-   priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   buffer->clients_bit_arr = priv->clients_bit_arr;
-   buffer->wr_index = 0;
+   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
+      uint32_t header = htonl(buffer->wr_index);
+      memcpy(buffer->header, &header, sizeof(header));
+
+      priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
+
+      buffer->clients_bit_arr = priv->clients_bit_arr;
+      buffer->wr_index = 0;
+   }
+
+   pthread_mutex_lock(&priv->mtx_no_data);
+   pthread_cond_broadcast(&priv->cond_no_data);
+   pthread_mutex_unlock(&priv->mtx_no_data);
 }
 
 /**
@@ -1146,17 +1153,12 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 void tcpip_sender_flush(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   c->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-
-   buffer_t *buffer = &c->buffers[c->active_buffer];
-   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
-      finish_buffer(c, buffer);
-      __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
-   }
-
+   finish_buffer(c, &c->buffers[c->active_buffer]);
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+
+   __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
 }
 
 /**
@@ -1204,7 +1206,7 @@ again:
          del_index(&buffer->clients_bit_arr, cl_id);
          if (buffer->clients_bit_arr == 0) {
             __sync_add_and_fetch(&priv->ctx->counter_send_buffer[priv->ifc_idx], 1);
-            pthread_cond_broadcast(&priv->cond);
+            pthread_cond_broadcast(&priv->cond_full_buffer);
          }
 
          /* Assign client the next buffer in sequence */
@@ -1230,7 +1232,8 @@ static void *sending_thread_func(void *priv)
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    uint64_t send_entry_time;
    uint64_t send_exit_time;
-   uint8_t client_ready;
+   uint8_t waiting_clients;
+   struct timeval select_timeout;
 
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
@@ -1249,7 +1252,9 @@ static void *sending_thread_func(void *priv)
 
       FD_ZERO(&disset);
       FD_ZERO(&set);
-      client_ready = 0;
+      waiting_clients = 0;
+      select_timeout.tv_sec = 1;
+      select_timeout.tv_usec = 0;
 
       /* Add term_pipe for reading into the disconnect client set */
       FD_SET(c->term_pipe[0], &disset);
@@ -1278,6 +1283,7 @@ static void *sending_thread_func(void *priv)
          }
 
          if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
+            ++waiting_clients;
             continue;
          }
 
@@ -1287,15 +1293,18 @@ static void *sending_thread_func(void *priv)
          }
 
          FD_SET(cl->sd, &set);
-         ++client_ready;
       }
 
-      if (client_ready == 0) {
-         /* No client will be receiving, do not call select */
+      if (waiting_clients == c->connected_clients) {
+         pthread_mutex_lock(&c->mtx_no_data);
+         pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
+         pthread_mutex_unlock(&c->mtx_no_data);
          continue;
       }
 
-      if (select(maxsd + 1, &disset, &set, NULL, NULL) < 0) {
+      res = select(maxsd + 1, &disset, &set, NULL, &select_timeout);
+      if (res < 0) {
+         /* Select returned with an error */
          if (c->is_terminated == 0) {
             switch (errno) {
                case EINTR:
@@ -1308,6 +1317,9 @@ static void *sending_thread_func(void *priv)
             VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: terminating...");
             pthread_exit(NULL);
          }
+      } else if (res == 0) {
+         /* Select timed out - no client will be receiving */
+         continue;
       }
 
       if (FD_ISSET(c->term_pipe[0], &disset)) {
@@ -1410,9 +1422,7 @@ repeat:
       ts.tv_nsec %= 1000000000L;
 
       /* Wait until woken up by sending thread or until timeout elapses */
-      pthread_mutex_lock(&c->dummy_mtx);
-      res = pthread_cond_timedwait(&c->cond, &c->dummy_mtx, &ts);
-      pthread_mutex_unlock(&c->dummy_mtx);
+      res = pthread_cond_timedwait(&c->cond_full_buffer, &c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx, &ts);
       switch (res) {
          case 0:
             /* Succesfully locked, buffer can be used */
@@ -1543,8 +1553,9 @@ void tcpip_sender_destroy(void *priv)
          X(c->buffers);
       }
 
-      pthread_mutex_destroy(&c->dummy_mtx);
-      pthread_cond_destroy(&c->cond);
+      pthread_mutex_destroy(&c->mtx_no_data);
+      pthread_cond_destroy(&c->cond_no_data);
+      pthread_cond_destroy(&c->cond_full_buffer);
       X(c)
    }
 #undef X
@@ -1777,8 +1788,9 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    priv->active_buffer = 0;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   pthread_mutex_init(&priv->dummy_mtx, NULL);
-   pthread_cond_init(&priv->cond, NULL);
+   pthread_mutex_init(&priv->mtx_no_data, NULL);
+   pthread_cond_init(&priv->cond_no_data, NULL);
+   pthread_cond_init(&priv->cond_full_buffer, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
                                 priv->server_port, priv->clients_arr_size, priv->buffer_count, priv->buffer_size);
@@ -1820,8 +1832,9 @@ failsafe_cleanup:
       if (priv->clients != NULL) {
          X(priv->clients);
       }
-      pthread_mutex_destroy(&priv->dummy_mtx);
-      pthread_cond_destroy(&priv->cond);
+      pthread_mutex_destroy(&priv->mtx_no_data);
+      pthread_cond_destroy(&priv->cond_no_data);
+      pthread_cond_destroy(&priv->cond_full_buffer);
       X(priv);
    }
 #undef X

@@ -103,8 +103,9 @@ typedef struct tcpip_sender_private_s {
    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
 
-   pthread_mutex_t dummy_mtx;              /**< Dummy mutex used in pthread_cond_timedwait() */
-   pthread_cond_t cond;                    /**< Condition struct for pthread_cond_timedwait() */
+   pthread_mutex_t mtx_no_data;            /**< Mutex for cond_no_data */
+   pthread_cond_t cond_no_data;            /**< Condition struct used when waiting for new data */
+   pthread_cond_t cond_full_buffer;        /**< Condition struct used when waiting for free buffer */
 } tcpip_sender_private_t;
 
 /**

@@ -108,7 +108,7 @@ int decode_cnts_from_json(char **data)
 
    uint64_t ifc_cnts[4];
    memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
-   uint8_t msg_idx = 0, buffers_idx = 1, dropped_msg_idx = 2, af_idx = 3;
+   uint8_t msg_idx = 0, buffers_idx = 1, dropped_msg_idx = 2, af_idx = 3, delay_last_idx = 2, delay_total_idx = 3;
 
    json_error_t error;
    json_t *json_struct = NULL;
@@ -225,8 +225,24 @@ int decode_cnts_from_json(char **data)
       }
       ifc_state = (uint8_t)(json_integer_value(cnt));
 
-      printf("\tID: %s, TYPE: %c, IS_CONN: %d, RM: %" PRIu64 ", RB: %" PRIu64 "\n", ifc_id, ifc_type, ifc_state, ifc_cnts[msg_idx], ifc_cnts[buffers_idx]);
-      memset(ifc_cnts, 0, 2 * sizeof(uint64_t));
+      cnt = json_object_get(in_ifc_cnts, "delay_last");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an input interface json object.\n", "delay_last");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_cnts[delay_last_idx] = json_integer_value(cnt);
+
+      cnt = json_object_get(in_ifc_cnts, "delay_total");
+      if (cnt == NULL) {
+         printf("[ERROR] Could not get key \"%s\" from an input interface json object.\n", "delay_total");
+         json_decref(json_struct);
+         return -1;
+      }
+      ifc_cnts[delay_total_idx] = json_integer_value(cnt);
+
+      printf("\tID: %s, TYPE: %c, IS_CONN: %d, RM: %" PRIu64 ", RB: %" PRIu64 ", DELAY_LAST [us]: %" PRIu64 ", DELAY_TOTAL [s]: %" PRIu64 "\n", ifc_id, ifc_type, ifc_state, ifc_cnts[msg_idx], ifc_cnts[buffers_idx], ifc_cnts[delay_last_idx], ifc_cnts[delay_total_idx]);
+      memset(ifc_cnts, 0, 4 * sizeof(uint64_t));
    }
 
 
