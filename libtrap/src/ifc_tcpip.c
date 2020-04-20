@@ -1128,14 +1128,17 @@ refuse_client:
  */
 static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 {
-   uint32_t header = htonl(buffer->wr_index);
-   memcpy(buffer->header, &header, sizeof(header));
-
-   priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   buffer->clients_bit_arr = priv->clients_bit_arr;
-   buffer->wr_index = 0;
+   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
+      uint32_t header = htonl(buffer->wr_index);
+      memcpy(buffer->header, &header, sizeof(header));
+
+      priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
+
+      buffer->clients_bit_arr = priv->clients_bit_arr;
+      buffer->wr_index = 0;
+   }
 
    pthread_mutex_lock(&priv->mtx_no_data);
    pthread_cond_broadcast(&priv->cond_no_data);
@@ -1150,17 +1153,12 @@ static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
 void tcpip_sender_flush(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   c->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-
-   buffer_t *buffer = &c->buffers[c->active_buffer];
-   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
-      finish_buffer(c, buffer);
-      __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
-   }
-
+   finish_buffer(c, &c->buffers[c->active_buffer]);
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+
+   __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
 }
 
 /**
@@ -1299,10 +1297,7 @@ static void *sending_thread_func(void *priv)
 
       if (waiting_clients == c->connected_clients) {
          pthread_mutex_lock(&c->mtx_no_data);
-         while (c->buffers[c->active_buffer].clients_bit_arr == 0) {
-            /* All data was received by all clients - wait for new buffer to be finished */
-            pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
-         }
+         pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
          pthread_mutex_unlock(&c->mtx_no_data);
          continue;
       }
