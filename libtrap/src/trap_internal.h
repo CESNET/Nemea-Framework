@@ -369,6 +369,12 @@ _Bool __sync_bool_compare_and_swap_8(int64_t *ptr, int64_t oldvar, int64_t newva
 
 uint64_t __sync_fetch_and_add_8(uint64_t *ptr, uint64_t value);
 
+uint64_t __sync_add_and_fetch_8(uint64_t *ptr, uint64_t value);
+
+uint64_t __sync_or_and_fetch_8(uint64_t *ptr, uint64_t value);
+
+uint64_t __sync_and_and_fetch_8(uint64_t *ptr, uint64_t value);
+
 #endif
 
 #endif

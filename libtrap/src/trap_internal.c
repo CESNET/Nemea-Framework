@@ -132,5 +132,33 @@ uint64_t __sync_fetch_and_add_8(uint64_t *ptr, uint64_t value)
    pthread_mutex_unlock(&atomic_mutex);
    return tmp;
 }
+
+uint64_t __sync_add_and_fetch_8(uint64_t *ptr, uint64_t value)
+{
+   pthread_mutex_lock(&atomic_mutex);
+   uint64_t tmp = *ptr;
+   *ptr += value;
+   pthread_mutex_unlock(&atomic_mutex);
+   return tmp;
+}
+
+uint64_t __sync_and_and_fetch_8(uint64_t *ptr, uint64_t value);
+{
+   pthread_mutex_lock(&atomic_mutex);
+   uint64_t tmp = *ptr;
+   *ptr &= value;
+   pthread_mutex_unlock(&atomic_mutex);
+   return tmp;
+}
+
+uint64_t __sync_or_and_fetch_8(uint64_t *ptr, uint64_t value);
+{
+   pthread_mutex_lock(&atomic_mutex);
+   uint64_t tmp = *ptr;
+   *ptr |= value;
+   pthread_mutex_unlock(&atomic_mutex);
+   return tmp;
+}
+
 #endif
 
