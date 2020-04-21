@@ -1,3 +1,11 @@
+2020-04-20 (Tomas Cejka): libtrap: add missing atomic_ops for turris
+2020-04-20 (barnama1): libtrap - cpu usage fix for TLS interface
+2020-04-20 (barnama1): libtrap - fixed issue with terminate in tcpip interface
+2020-04-10 (barnama1): libtrap - fixed issue with slow sending thread
+2020-04-09 (barnama1): libtrap - fix busy waiting in sending_thread_func
+2020-04-03 (barnama1): libtrap - added input ifc "delay" counters, measuring time between recv() calls
+2020-04-03 (Tomáš Čejka): libtrap: bugfix - when no file is expanded, libtrap segfaults
+
 2020-02-05 (barnama1): libtrap - bugfix tls_test.sh
 2020-02-05 (barnama1): libtrap - bugfix tls_test.sh
 2020-02-05 (barnama1): libtrap - bugfix tls_test.sh

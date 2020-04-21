@@ -1,3 +1,9 @@
+2020-04-21 libtrap-1.15.0
+	* fixed CPU exhausting issue
+	* fixed missing atomicops on turris
+	* fixed segfault on bad params of file IFC
+	* add delay statistics for input IFC
+
 2020-04-01 libtrap-1.14.0
 	* libtrap:
 		New enhanced version of buffering that uses ring buffer.
