@@ -1,3 +1,6 @@
+2020-04-21 unirec-2.9.1
+	* bugfixes and maintenance of ip_prefix_search
+
 2020-04-01 unirec-2.9.0
 	* Added ip_prefix_search feature to search in IP subnets (by @plotenyondra)
 

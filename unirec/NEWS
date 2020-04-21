@@ -1,3 +1,10 @@
+2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Fix out of bound array access in half test
+2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Add check for NULL ptr to ipps_destroy()
+2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Fix success checking condition in ipps_destroy()
+2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Fix memory leak in add_data()
+2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Fix memory leaks in new_interval()
+2020-03-09 (Radko Krkos): unirec: Mark usage of statement expressions as such
+
 2020-03-13 (Tomáš Čejka): unirec: ip_prefix_search minor changes in readme
 2020-03-13 (Tomáš Čejka): unirec: moved ip_prefix_search from common, fixed linking
 
