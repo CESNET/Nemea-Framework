@@ -189,7 +189,8 @@ int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, u
             written += w;
             p += w;
             if (written + 1 >= size) {
-               break;
+               /* not enough space */
+               return 0;
             }
             if (i + 1 != elem_cnt) {
                *(p++) = '|';
@@ -226,6 +227,7 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
       }
 
       delim = 1;
+reallocated:
       if (ur_is_present(urcsv->tmplt, id)) {
          // Static field - check what type is it and use appropriate format
          written = urcsv_field(urcsv->curpos, urcsv->free_space, rec, id, urcsv->tmplt);
@@ -236,7 +238,7 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
          continue;
       }
 
-      if (urcsv->free_space < 100) {
+      if (urcsv->free_space < 100 || written == 0) {
          urcsv->free_space += urcsv->buffer_size / 2;
          urcsv->buffer_size += urcsv->buffer_size / 2;
          uint32_t offset = urcsv->curpos - urcsv->buffer;
@@ -246,6 +248,9 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
             urcsv->curpos = urcsv->buffer + offset;
          } else {
             /* TODO handle allocation failure */
+         }
+         if (written == 0) {
+            goto reallocated;
          }
       }
    } // loop over fields
