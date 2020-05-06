@@ -247,7 +247,7 @@ reallocated:
             urcsv->buffer = temp;
             urcsv->curpos = urcsv->buffer + offset;
          } else {
-            /* TODO handle allocation failure */
+            return NULL;
          }
          if (written == 0) {
             goto reallocated;
