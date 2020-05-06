@@ -123,7 +123,7 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec);
  * \param[in] id     UniRec field id
  * \param[in] tmplt  UniRec template
  *
- * \return Number of written bytes.
+ * \return Number of written bytes. If 0, there was not enough space and caller must increase the memory size.
  */
 int urcsv_field(char *dst, uint32_t size, const void *rec, ur_field_type_t id, ur_template_t *tmplt);
 
