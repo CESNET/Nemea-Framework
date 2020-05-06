@@ -238,7 +238,7 @@ reallocated:
          continue;
       }
 
-      if (urcsv->free_space < 100 || written == 0) {
+      if (urcsv->free_space < 100 || (written == 0 && ur_get_var_len(urcsv->tmplt, rec, id) != 0)) {
          urcsv->free_space += urcsv->buffer_size / 2;
          urcsv->buffer_size += urcsv->buffer_size / 2;
          uint32_t offset = urcsv->curpos - urcsv->buffer;
