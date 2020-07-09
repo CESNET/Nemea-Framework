@@ -1,3 +1,6 @@
+2020-07-09 unirec-2.9.2
+	* unirec: bugfixes when converting to CSV format
+
 2020-04-21 unirec-2.9.1
 	* bugfixes and maintenance of ip_prefix_search
 

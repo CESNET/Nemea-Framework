@@ -1,3 +1,7 @@
+2020-05-06 (Jiri Havranek): unirec: csv: fixed case when UR_BYTES field has zero length
+2020-05-06 (Jiri Havranek): unirec: csv: fixed allocation failure
+2020-05-05 (Tomáš Čejka): unirec: csv: recover from not-enough-memory for array
+
 2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Fix out of bound array access in half test
 2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Add check for NULL ptr to ipps_destroy()
 2020-04-02 (Radko Krkos): unirec/ip_prefix_search: Fix success checking condition in ipps_destroy()
