@@ -1,3 +1,8 @@
+2020-03-13 (Tomáš Čejka): common: fixed build, removed ip_prefix_search that was moved into unirec
+2020-03-13 (Tomáš Čejka): unirec: moved ip_prefix_search from common, fixed linking
+2016-10-18 (Nadia Eghbal): Convert README to Markdown
+2016-10-10 (Ondřej Plotěný): ip_prefix_search: first version, bug fixes and improvements
+
 2018-12-08 (Dominik Soukup): libtrap: BUGFIX Explicit conversion from int to char (#111)
 2018-09-18 (Ulrik Haugen): Document that items inserted into bplustree are zeroed
 2018-07-30 (Tomas Cejka): common: updated format of ChangeLog and NEWS

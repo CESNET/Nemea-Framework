@@ -1,3 +1,7 @@
+2020-07-16 nemea-common-1.6.2
+	* common: changes related to moving ip_prefix_search
+	* ip_prefix_search: was moved into unirec
+
 2019-05-18 nemea-common-1.6.1
 	* update doc
 	* maintenance
