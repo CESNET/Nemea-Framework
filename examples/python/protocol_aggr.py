@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 import pytrap
@@ -49,8 +49,8 @@ while True:
 trap.finalize()
 
 import operator
-s = sorted(protoDict.items(), key=operator.itemgetter(1))
+s = sorted(list(protoDict.items()), key=operator.itemgetter(1))
 for proto, val in s:
-    print("%s %s" % (proto, val))
+    print(("%s %s" % (proto, val)))
  
 
