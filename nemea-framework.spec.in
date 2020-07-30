@@ -10,7 +10,7 @@ Packager: @USERNAME@ <@USERMAIL@>
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 BuildArch: noarch
 Provides: nemea-framework
-Requires: libtrap nemea-common python-nemea-pytrap python-nemea-pycommon
+Requires: libtrap nemea-common python3-nemea-pytrap python3-nemea-pycommon
 
 %prep
 %setup
@@ -29,7 +29,7 @@ Package that simplifies installation of libtrap, nemea-common and examples.
 %package devel
 Summary: NEMEA Framework development package
 Group: Liberouter
-Requires: libtrap-devel nemea-common-devel unirec python-nemea-pytrap python-nemea-pycommon
+Requires: libtrap-devel nemea-common-devel unirec python3-nemea-pytrap python3-nemea-pycommon
 Provides: nemea-framework-devel
 
 %description devel
