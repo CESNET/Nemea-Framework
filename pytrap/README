@@ -5,7 +5,7 @@ is to allow native calls of base TRAP functionality (used by NEMEA modules).
 
 # Installation
 
-Development package of Python is required (python-devel, python3-devel etc.
+Development package of Python is required (python3-devel etc.
 according to your OS distribution).  It contains needed header files.
 
 Since this module uses libtrap and libunirec, https:/github.com/CESNET/Nemea-framework
