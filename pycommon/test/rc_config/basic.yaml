@@ -3,6 +3,7 @@
 # One address group with one IPv4 address (no subnet)
 # JPath is used in rule condition (Source.IP4) which is handled by pynspect
 # No elseaction is specified
+namespace: com.example.collectornemea
 custom_actions:
 - id: basic_mark
   mark:
