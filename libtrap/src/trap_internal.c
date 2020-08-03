@@ -142,7 +142,7 @@ uint64_t __sync_add_and_fetch_8(uint64_t *ptr, uint64_t value)
    return tmp;
 }
 
-uint64_t __sync_and_and_fetch_8(uint64_t *ptr, uint64_t value);
+uint64_t __sync_and_and_fetch_8(uint64_t *ptr, uint64_t value)
 {
    pthread_mutex_lock(&atomic_mutex);
    uint64_t tmp = *ptr;
@@ -151,7 +151,7 @@ uint64_t __sync_and_and_fetch_8(uint64_t *ptr, uint64_t value);
    return tmp;
 }
 
-uint64_t __sync_or_and_fetch_8(uint64_t *ptr, uint64_t value);
+uint64_t __sync_or_and_fetch_8(uint64_t *ptr, uint64_t value)
 {
    pthread_mutex_lock(&atomic_mutex);
    uint64_t tmp = *ptr;
