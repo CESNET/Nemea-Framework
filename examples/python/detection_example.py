@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import pytrap
 import sys
@@ -28,7 +28,7 @@ def do_detection(rec):
 
     # TODO and send an alert
     if rec.DST_PORT == 6666 or rec.SRC_IP == pytrap.UnirecIPAddr("192.168.1.1"):
-        print(rec.strRecord())
+        print((rec.strRecord()))
         # fill-in alert:
         alert.SRC_IP = rec.SRC_IP
         alert.DST_IP = rec.DST_IP

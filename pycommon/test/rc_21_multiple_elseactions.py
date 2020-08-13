@@ -10,7 +10,7 @@ except:
 
 import logging
 
-from reporter_config.Config import Config
+from reporter_config.Config import Config, Parser
 
 class RCMultipleActionsTest(unittest.TestCase):
 
@@ -45,7 +45,9 @@ class RCMultipleActionsTest(unittest.TestCase):
         This shouldn't rise any exceptions, if action is performed, which it shouldn't,
         it raises the DropMsg exception (uncaught here)
         """
-        self.config = Config(os.path.dirname(__file__) + '/rc_config/multiple_elseactions.yaml');
+	
+        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/multiple_elseactions.yaml');
+        self.config = Config(self.parser);
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

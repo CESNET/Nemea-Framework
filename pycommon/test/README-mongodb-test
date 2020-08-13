@@ -1,0 +1,14 @@
+
+# The procedure describes how to set up a mongo database so that unit tests using mongod can be run:
+
+# Centos7
+
+yum install python36-pymongo
+yum install mongodb-server
+mkdir ~/mongodb_data
+mongod --smallfiles --noauth --dbpath ~/mongodb &
+python3 setup.py test
+
+# Then turn off by
+kill %1
+

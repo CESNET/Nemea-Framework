@@ -1,3 +1,4 @@
+namespace: com.example.nemea
 custom_actions:
 - id: save
   file:
