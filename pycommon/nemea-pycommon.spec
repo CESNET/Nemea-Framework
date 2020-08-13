@@ -2,12 +2,6 @@
 %global pypi_name nemea-pycommon
 %global pypi_version 1.5.2
 
-
-%if 0%{?el6}
-%global python3_pkgversion 33
-%global py3_build CFLAGS="-O3 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -mtune=generic" python3 setup.py build
-%endif
-
 %if x%{?python3_pkgversion} == x
 %global python3_pkgversion 3
 %endif
@@ -38,17 +32,10 @@ Requires:	python%{python3_pkgversion}-typedcols
 Requires:	python%{python3_pkgversion}-ipranges
 Requires:	python%{python3_pkgversion}-pynspect
 Requires:	python%{python3_pkgversion}-jinja2
-%if 0%{?el7}
-Requires:	python36-ply
-Requires:	python36-PyYAML
-BuildRequires:	python36-ply
-BuildRequires:	python36-PyYAML
-%else
 Requires:	python%{python3_pkgversion}-ply
 Requires:	python%{python3_pkgversion}-yaml
 BuildRequires:	python%{python3_pkgversion}-ply
 BuildRequires:	python%{python3_pkgversion}-yaml
-%endif
 BuildRequires:	python%{python3_pkgversion}-setuptools
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
