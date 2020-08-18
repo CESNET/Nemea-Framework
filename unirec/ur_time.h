@@ -198,6 +198,7 @@ static inline uint64_t ur_timediff_ns(ur_time_t a, ur_time_t b)
  * str) and ur is set to 0, 2 on bad parameter (NULL was passed).
  */
 uint8_t ur_time_from_string(ur_time_t *ur, const char *str);
+// hint: implementation is in unirec.c
 
 /**
  * @}
