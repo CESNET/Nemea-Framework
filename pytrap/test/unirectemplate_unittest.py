@@ -771,6 +771,30 @@ class DataTypesIPAddrRange(unittest.TestCase):
             s += rangemap[key]
         self.assertEqual(s, 3)
 
+class SignedUnsignedArrayFieldTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("int64* ARRF1,int32* ARRF2,int16* ARRF3,int8* ARRF4,uint64* ARRF5,uint32* ARRF6,uint16* ARRF7,uint8* ARRF8")
+        a.createMessage(10000)
+        a.ARRF1 = [-1, -1]
+        a.ARRF2 = [-1, -1]
+        a.ARRF3 = [-1, -1]
+        a.ARRF4 = [-1, -1]
+        a.ARRF5 = [-1, -1]
+        a.ARRF6 = [-1, -1]
+        a.ARRF7 = [-1, -1]
+        a.ARRF8 = [-1, -1]
+
+        self.assertEqual(a.ARRF1, [-1, -1])
+        self.assertEqual(a.ARRF2, [-1, -1])
+        self.assertEqual(a.ARRF3, [-1, -1])
+        self.assertEqual(a.ARRF4, [-1, -1])
+        self.assertEqual(a.ARRF5, [18446744073709551615, 18446744073709551615])
+        self.assertEqual(a.ARRF6, [4294967295, 4294967295])
+        self.assertEqual(a.ARRF7, [65535, 65535])
+        self.assertEqual(a.ARRF8, [255, 255])
+
+
 
 class CopyTemplateTest(unittest.TestCase):
     def runTest(self):
