@@ -331,7 +331,7 @@ class DataTypesArray(unittest.TestCase):
         self.assertEqual(str(a), "(ipaddr IP,uint32 BAR,uint32 FOO,string STR,int32* ARR1,macaddr* MACs,uint64* ARR2,time* TIMEs,ipaddr* IPs)")
         d = a.getFieldsDict()
         self.assertEqual(type(d), dict)
-        self.assertEqual(d, {'IP': 8, 'BAR': 7, 'FOO': 6, 'STR': 9, 'ARR1': 10, 'MACs': 12, 'ARR2': 13, 'TIMEs': 14, 'IPs': 11})
+        self.assertEqual(set(d.keys()), set(['IP', 'BAR', 'FOO', 'STR', 'ARR1', 'MACs', 'ARR2', 'TIMEs', 'IPs']))
 
         self.assertEqual(a.getFieldType("ARR1"), list)
         self.assertEqual(a.getFieldType("ARR2"), list)
@@ -413,7 +413,7 @@ class DataAccessGetTest(unittest.TestCase):
         self.assertEqual(str(a), "(ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,bytes STREAMBYTES,string TEXT)")
         d = a.getFieldsDict()
         self.assertEqual(type(d), dict)
-        self.assertEqual(d, {'TIME_FIRST': 1, 'ABC': 2, 'BCD': 3, 'TEXT': 4, 'STREAMBYTES': 5, 'SRC_IP': 0})
+        self.assertEqual(set(d.keys()), set(['TIME_FIRST', 'ABC', 'BCD', 'TEXT', 'STREAMBYTES', 'SRC_IP']))
 
         self.assertEqual(a.get(data, "SRC_IP"), pytrap.UnirecIPAddr("10.0.0.1"))
         self.assertEqual(a.get(data, "SRC_IP"), a.getByID(data, 0))
@@ -510,7 +510,7 @@ class Template2Test(unittest.TestCase):
         import pytrap
         a = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,string TEXT,bytes STREAMBYTES")
         a.createMessage(100)
-        self.assertEqual(a.getFieldsDict(), {'SRC_IP': 0, 'STREAMBYTES': 5, 'TEXT': 4, 'TIME_FIRST': 1, 'ABC': 2, 'BCD': 3})
+        self.assertEqual(set(a.getFieldsDict().keys()), set(['SRC_IP', 'STREAMBYTES', 'TEXT', 'TIME_FIRST', 'ABC', 'BCD']))
         a.SRC_IP = pytrap.UnirecIPAddr("1.2.3.4")
         a.TIME_FIRST = pytrap.UnirecTime(123456)
         a.ABC = 1234
@@ -521,7 +521,7 @@ class Template2Test(unittest.TestCase):
         for i in range(100):
             self.assertEqual(tc, a.strRecord())
         a = pytrap.UnirecTemplate("ipaddr DST_IP,time TIME_FIRST,uint32 BCD,string TEXT2,bytes STREAMBYTES")
-        self.assertEqual(a.getFieldsDict(), {'DST_IP': 15, 'TIME_FIRST': 1, 'BCD': 3, 'STREAMBYTES': 5, 'TEXT2': 16})
+        self.assertEqual(set(a.getFieldsDict().keys()), set(['DST_IP', 'TIME_FIRST', 'BCD', 'STREAMBYTES', 'TEXT2']))
 
         # Data was not set, this should raise exception.
         with self.assertRaises(pytrap.TrapError):
