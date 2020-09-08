@@ -614,7 +614,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
          return list;
     case UR_TYPE_A_INT8:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("c", ((int8_t *) value)[i]));
+            PyList_Append(list, Py_BuildValue("b", ((int8_t *) value)[i]));
          }
          return list;
     case UR_TYPE_A_UINT16:
