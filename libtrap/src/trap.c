@@ -1283,6 +1283,8 @@ void trap_free_ctx_t(trap_ctx_priv_t **ctx)
    c->counter_recv_delay_last = NULL;
    free(c->counter_recv_delay_total);
    c->counter_recv_delay_total = NULL;
+   free(c->recv_delay_timestamp);
+   c->recv_delay_timestamp = NULL;
 
    pthread_mutex_destroy(&c->error_mtx);
 
