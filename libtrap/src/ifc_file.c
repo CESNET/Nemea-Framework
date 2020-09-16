@@ -375,7 +375,7 @@ neg_start:
             return TRAP_E_OK;
          }
 
-         strncpy(config->filename, config->files[config->file_index], strlen(config->files[config->file_index]));
+         strncpy(config->filename, config->files[config->file_index], strlen(config->files[config->file_index]) + 1);
          if (switch_file(config) == TRAP_E_OK) {
 #ifdef ENABLE_NEGOTIATION
             goto neg_start;
