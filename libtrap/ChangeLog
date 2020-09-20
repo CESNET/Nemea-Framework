@@ -1,3 +1,8 @@
+2020-09-20 libtrap-1.15.1
+	* bugfix: strncpy in file IFC
+	* bugfix: compilation on openwrt
+	* bugfix: compilation on new gcc10 (-fcommon)
+
 2020-04-21 libtrap-1.15.0
 	* fixed CPU exhausting issue
 	* fixed missing atomicops on turris
