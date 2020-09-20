@@ -1,17 +1,12 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pytrap
 
-%if 0%{?el6}
-%global python3_pkgversion 33
-%global py3_build CFLAGS="-O3 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions --param=ssp-buffer-size=4 -mtune=generic" python3 setup.py build
-%endif
-
 %if x%{?python3_pkgversion} == x
 %global python3_pkgversion 3
 %endif
 
 Name:           %{pypi_name}
-Version:        0.12.1
+Version:        0.12.2
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
