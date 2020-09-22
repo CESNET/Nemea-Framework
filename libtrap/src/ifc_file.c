@@ -828,22 +828,6 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    strncpy(priv->filename_tmplt, exp_result.we_wordv[0], sizeof(priv->filename_tmplt) - 1);
    wordfree(&exp_result);
 
-   /* Parse mode */
-   if (params_next) {
-      length = strcspn(params_next, ":");
-      if (length == 1) {
-         if (params_next[0] == 'a') {
-            priv->mode[0] = 'a';
-         }
-
-         if (params_next[1] == ':') {
-            params_next = params_next + 2;
-         } else {
-            params_next = NULL;
-         }
-      }
-   }
-
    /* Set special behavior for /dev/stdout */
    if (strncmp(priv->filename_tmplt, "/dev/stdout", 11) == 0) {
       priv->mode[0] = 'w';
@@ -865,6 +849,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             strcat(priv->filename_tmplt, TIME_FORMAT_STRING);
          } else if (length > SIZE_PARAM_LEN && strncmp(params_next, SIZE_PARAM, SIZE_PARAM_LEN) == 0) {
             priv->file_change_size = atoi(params_next + SIZE_PARAM_LEN);
+         } else if (length == 1 && params_next[0] == 'a') {
+            priv->mode[0] = 'a';
          }
 
          if (params_next[length] == '\0') {
