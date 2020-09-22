@@ -230,6 +230,7 @@ int create_next_filename(file_private_t *config)
          }
 
          memcpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+         buf[len + FILE_SIZE_SUFFIX_LEN] = 0;
          config->file_index++;
 
          /* Detected overflow */
@@ -255,6 +256,7 @@ int create_next_filename(file_private_t *config)
 
       memcpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
       len += FILE_SIZE_SUFFIX_LEN;
+      buf[len] = 0;
       config->file_index++;
    }
 
