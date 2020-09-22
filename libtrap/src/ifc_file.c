@@ -229,7 +229,7 @@ int create_next_filename(file_private_t *config)
             return TRAP_E_IO_ERROR;
          }
 
-         strncpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+         memcpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
          config->file_index++;
 
          /* Detected overflow */
@@ -253,7 +253,7 @@ int create_next_filename(file_private_t *config)
          return TRAP_E_IO_ERROR;
       }
 
-      strncpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+      memcpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
       len += FILE_SIZE_SUFFIX_LEN;
       config->file_index++;
    }
@@ -375,7 +375,7 @@ neg_start:
             return TRAP_E_OK;
          }
 
-         strncpy(config->filename, config->files[config->file_index], strlen(config->files[config->file_index]) + 1);
+         strncpy(config->filename, config->files[config->file_index], sizeof(config->filename) - 1);
          if (switch_file(config) == TRAP_E_OK) {
 #ifdef ENABLE_NEGOTIATION
             goto neg_start;
@@ -825,7 +825,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    }
 
    free(dest);
-   strncpy(priv->filename_tmplt, exp_result.we_wordv[0], sizeof(priv->filename_tmplt));
+   strncpy(priv->filename_tmplt, exp_result.we_wordv[0], sizeof(priv->filename_tmplt) - 1);
    wordfree(&exp_result);
 
    /* Parse mode */
