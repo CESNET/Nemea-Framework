@@ -1319,6 +1319,21 @@ static void *sending_thread_func(void *priv)
          }
       } else if (res == 0) {
          /* Select timed out - no client will be receiving */
+         for (i = 0; i < c->clients_arr_size; ++i) {
+            if (check_index(c->clients_bit_arr, i) == 0) {
+               continue;
+            }
+
+            cl = &(c->clients[i]);
+            assigned_buffer = &c->buffers[cl->assigned_buffer];
+            if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
+               continue;
+            }
+
+            /* Disconnect clients that are unable to receive data fast enough and are blocking the whole module. */
+            disconnect_client(c, i);
+            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", i);
+         }
          continue;
       }
 
