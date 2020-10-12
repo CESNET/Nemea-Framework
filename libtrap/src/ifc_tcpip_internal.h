@@ -100,6 +100,8 @@ typedef struct tcpip_sender_private_s {
    buffer_t *buffers;                      /**< Array of buffer structures */
    client_t *clients;                      /**< Array of client structures */
 
+   struct pollfd *clients_pfds;            /**< Array of clients pfds for poll */
+
    pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
 
