@@ -60,6 +60,7 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <assert.h>
+#include <poll.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_internal.h"
@@ -179,7 +180,13 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
    tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
    ssize_t numbytes = *size;
    int recvb, retval;
-   fd_set set;
+   struct pollfd pfds;
+   struct timespec ts, *tempts = NULL;
+   if (tm != NULL) {
+      ts.tv_sec = tm->tv_sec;
+      ts.tv_nsec = tm->tv_usec * 1000l;
+      tempts = &ts;
+   }
 
    assert(data_p != NULL);
 
@@ -187,14 +194,13 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
       DEBUG_IFC(if (tm) {VERBOSE(CL_VERBOSE_LIBRARY, "Try to receive data in timeout %" PRIu64
                         "s%"PRIu64"us", tm->tv_sec, tm->tv_usec)});
 
-      FD_ZERO(&set);
-      FD_SET(config->sd, &set);
       /*
        * Blocking or with timeout?
        * With timeout 0,0 - non-blocking
        */
-      retval = select(config->sd + 1, &set, NULL, NULL, tm);
-      if (retval > 0) {
+      pfds = (struct pollfd) {.fd = config->sd, .events = POLLIN};
+      retval = ppoll(&pfds, 1, tempts, NULL);
+      if (retval > 0 && pfds.revents & POLLIN) {
          do {
             recvb = recv(config->sd, data_p, numbytes, 0);
             if (recvb < 1) {
@@ -234,7 +240,7 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
          (*size) = numbytes;
          return TRAP_E_TIMEOUT;
       } else { // some error has occured
-         VERBOSE(CL_VERBOSE_OFF, "select() returned %i (%s)", retval, strerror(errno));
+         VERBOSE(CL_VERBOSE_OFF, "ppoll() returned %i (%s)", retval, strerror(errno));
          client_socket_disconnect(priv);
          return TRAP_E_IO_ERROR;
       }
@@ -760,13 +766,16 @@ static void client_socket_disconnect(void *priv)
 static int wait_for_connection(int sock, struct timeval *tv)
 {
    int rv;
-   fd_set fdset;
-   FD_ZERO(&fdset);
-   FD_SET(sock, &fdset);
+   struct pollfd pfds = {.fd = sock, .events = POLLOUT};
+   struct timespec ts, *tempts = NULL;
+   if (tv != NULL) {
+      ts.tv_sec = tv->tv_sec;
+      ts.tv_nsec = tv->tv_usec * 1000l;
+      tempts = &ts;
+   }
    VERBOSE(CL_VERBOSE_LIBRARY, "wait for connection");
-
-   rv = select(sock + 1, NULL, &fdset, NULL, tv);
-   if (rv == 1) {
+   rv = ppoll(&pfds, 1, tempts, NULL);
+   if (rv == 1 && pfds.revents & POLLOUT) {
       int so_error;
       socklen_t len = sizeof so_error;
 
@@ -795,7 +804,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    int sockfd = -1, options;
    union tcpip_socket_addr addr;
    struct addrinfo *servinfo, *p = NULL;
-   int rv, addr_count = 0;
+   int rv = 0, addr_count = 0;
    char s[INET6_ADDRSTRLEN];
 
    if ((config == NULL) || (dest_addr == NULL) || (dest_port == NULL) || (socket_descriptor == NULL)) {
@@ -1013,14 +1022,14 @@ static void *accept_clients_thread(void *arg)
    struct sockaddr_storage remoteaddr; // client address
    struct client_s *cl;
    socklen_t addrlen;
-   int newclient, fdmax;
-   fd_set scset;
+   int newclient;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) arg;
    int i;
    struct sockaddr *tmpaddr;
    struct ucred ucred;
    uint32_t ucredlen = sizeof(struct ucred);
    uint32_t client_id = 0;
+   struct pollfd pfds;
 
    /* handle new connections */
    addrlen = sizeof(remoteaddr);
@@ -1028,11 +1037,9 @@ static void *accept_clients_thread(void *arg)
       if (c->is_terminated != 0) {
          break;
       }
-      FD_ZERO(&scset);
-      FD_SET(c->server_sd, &scset);
-      fdmax = c->server_sd;
+      pfds = (struct pollfd) {.fd = c->server_sd, .events = POLLIN};
 
-      if (select(fdmax + 1, &scset, NULL, NULL, NULL) == -1) {
+      if (poll(&pfds, 1, -1) == -1) {
          if (errno == EINTR) {
             if (c->is_terminated != 0) {
                break;
@@ -1043,7 +1050,7 @@ static void *accept_clients_thread(void *arg)
          }
       }
 
-      if (FD_ISSET(c->server_sd, &scset)) {
+      if (pfds.revents & POLLIN) {
          newclient = accept(c->server_sd, (struct sockaddr *) &remoteaddr, &addrlen);
          if (newclient == -1) {
             VERBOSE(CL_ERROR, "Accepting new client failed.");
@@ -1225,15 +1232,15 @@ static void *sending_thread_func(void *priv)
 {
    uint32_t i, j;
    int res;
-   int maxsd = -1;
-   fd_set set, disset;
    client_t *cl;
    buffer_t *assigned_buffer;
    uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
    uint64_t send_entry_time;
    uint64_t send_exit_time;
    uint8_t waiting_clients;
-   struct timeval select_timeout;
+   int poll_timeout;
+   int clients_pfds_size;
+   struct pollfd *pfds;
 
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
@@ -1250,17 +1257,12 @@ static void *sending_thread_func(void *priv)
          tcpip_sender_flush(c);
       }
 
-      FD_ZERO(&disset);
-      FD_ZERO(&set);
+      clients_pfds_size = 0;
       waiting_clients = 0;
-      select_timeout.tv_sec = 1;
-      select_timeout.tv_usec = 0;
+      poll_timeout = 1;
 
       /* Add term_pipe for reading into the disconnect client set */
-      FD_SET(c->term_pipe[0], &disset);
-      if (maxsd < c->term_pipe[0]) {
-         maxsd = c->term_pipe[0];
-      }
+      c->clients_pfds[clients_pfds_size++] = (struct pollfd) {.fd = c->term_pipe[0], .events = POLLIN};
 
       /* Check whether clients are connected and there is data for them to receive. */
       for (i = j = 0; i < c->clients_arr_size; ++i) {
@@ -1277,10 +1279,9 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         FD_SET(cl->sd, &disset);
-         if (maxsd < cl->sd) {
-            maxsd = cl->sd;
-         }
+         pfds = c->clients_pfds + clients_pfds_size;
+         ++clients_pfds_size;
+         *pfds = (struct pollfd) {.fd = cl->sd, .events = POLLIN};
 
          if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
             ++waiting_clients;
@@ -1292,7 +1293,8 @@ static void *sending_thread_func(void *priv)
             cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
          }
 
-         FD_SET(cl->sd, &set);
+         c->clients_pfds[clients_pfds_size++] = (struct pollfd) {.fd = cl->sd, .events = POLLOUT};
+         pfds->events = pfds->events | POLLOUT;
       }
 
       if (waiting_clients == c->connected_clients) {
@@ -1302,7 +1304,7 @@ static void *sending_thread_func(void *priv)
          continue;
       }
 
-      res = select(maxsd + 1, &disset, &set, NULL, &select_timeout);
+      res = poll(c->clients_pfds, clients_pfds_size, poll_timeout);
       if (res < 0) {
          /* Select returned with an error */
          if (c->is_terminated == 0) {
@@ -1322,7 +1324,7 @@ static void *sending_thread_func(void *priv)
          continue;
       }
 
-      if (FD_ISSET(c->term_pipe[0], &disset)) {
+      if (c->clients_pfds[0].revents & POLLIN) {
          /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
          VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Sending was interrupted by terminate()");
          pthread_exit(NULL);
@@ -1341,8 +1343,11 @@ static void *sending_thread_func(void *priv)
 
          ++j;
 
+         pfds = c->clients_pfds + j;
+         assert(pfds->fd == cl->sd);
+
          /* Check if client is still connected */
-         if (FD_ISSET(cl->sd, &disset)) {
+         if (pfds->revents & POLLIN) {
             res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
             if (res < 1) {
                disconnect_client(c, i);
@@ -1352,7 +1357,7 @@ static void *sending_thread_func(void *priv)
          }
 
          /* Check if client is ready for data */
-         if (FD_ISSET(cl->sd, &set)) {
+         if (pfds->revents & POLLOUT) {
             send_entry_time = get_cur_timestamp();
             res = send_data(c, cl, i);
             send_exit_time = get_cur_timestamp();
@@ -1498,7 +1503,7 @@ void tcpip_sender_terminate(void *priv)
 
       c->is_terminated = 1;
       close(c->term_pipe[1]);
-      VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break select()");
+      VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break poll()");
    } else {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
    }
@@ -1540,6 +1545,9 @@ void tcpip_sender_destroy(void *priv)
       /* close server socket */
       close(c->server_sd);
 
+      if (c->clients_pfds != NULL) {
+         X(c->clients_pfds);
+      }
       /* disconnect all clients */
       if (c->clients != NULL) {
          tcpip_server_disconnect_all_clients(priv);
@@ -1758,7 +1766,12 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
       b->wr_index = 0;
       b->clients_bit_arr = 0;
    }
-
+   priv->clients_pfds = calloc(max_clients + 1, sizeof(*priv->clients_pfds));
+   if (priv->clients_pfds == NULL) {
+      /* if some memory could not have been allocated, we cannot continue */
+      result = TRAP_E_MEMORY;
+      goto failsafe_cleanup;
+   }
    priv->clients = calloc(max_clients, sizeof(client_t));
    if (priv->clients == NULL) {
       /* if some memory could not have been allocated, we cannot continue */
@@ -1828,6 +1841,9 @@ failsafe_cleanup:
             X(priv->buffers[i].header);
          }
          X(priv->buffers)
+      }
+      if (priv->clients_pfds != NULL) {
+         X(priv->clients_pfds);
       }
       if (priv->clients != NULL) {
          X(priv->clients);

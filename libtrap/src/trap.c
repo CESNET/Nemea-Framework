@@ -45,6 +45,7 @@
  * if advised of the possibility of such damage.
  *
  */
+#define _GNU_SOURCE
 #include <config.h>
 #include <ctype.h>
 #include <stdint.h>
@@ -63,6 +64,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <assert.h>
+#include <poll.h>
 
 #include "../include/libtrap/trap.h"
 #include "trap_internal.h"
@@ -663,7 +665,7 @@ int trap_get_verbose_level()
    return trap_verbose;
 }
 
-extern char *environ[];
+extern char **environ;
 
 void trap_json_print_string(char *str)
 {
@@ -2292,18 +2294,16 @@ clean_up:
  */
 void *service_thread_routine(void *arg)
 {
-   struct timeval tv;
+   struct timespec ts = {.tv_sec = 0, .tv_nsec = 100000000};
    msg_header_t *header = (msg_header_t *) calloc(1, sizeof(msg_header_t));
    char *json_data = NULL;
    int ret_val, supervisor_sd;
    trap_output_ifc_t *service_ifc = NULL;
    tcpip_sender_private_t *priv;
-   int i; /* loop var */
+   int i, j; /* loop vars */
    struct client_s *cl;
-
-   /* set of file descriptors for the main loop with select: */
-   fd_set fds;
-   int maxfd;
+   struct pollfd *pfds = NULL;
+   int pfds_size;
 
    trap_ctx_priv_t *g_ctx = (trap_ctx_priv_t *) arg;
 
@@ -2327,29 +2327,28 @@ void *service_thread_routine(void *arg)
    }
 
    priv = (tcpip_sender_private_t *) service_ifc->priv;
+   pfds = calloc(priv->clients_arr_size + 1, sizeof(*pfds));
+   if (pfds == NULL) {
+      VERBOSE(CL_ERROR, "Error: allocation of pfds failed.");
+      goto exit_service_thread;
+   }
    while (1) {
       if (g_ctx->terminated) {
          break;
       }
 
       /* prepare file descriptor set */
-      maxfd = priv->server_sd + 1;
-      FD_ZERO(&fds);
-      FD_SET(priv->server_sd, &fds);
+      pfds_size = 0;
+      pfds[pfds_size++] = (struct pollfd) {.fd = priv->server_sd, .events = POLLIN};
       for (i=0; i<priv->clients_arr_size; ++i) {
          cl = &priv->clients[i];
          if (cl->sd > 0) {
-            FD_SET(cl->sd, &fds);
-            if (maxfd <= cl->sd) {
-               maxfd = cl->sd + 1;
-            }
+            pfds[pfds_size++] = (struct pollfd) {.fd = cl->sd, .events = POLLIN};
          }
       }
       fflush(stdout);
-      tv.tv_sec = 0;
-      tv.tv_usec = 100000;
 
-      ret_val = select(maxfd, &fds, NULL, NULL, &tv);
+      ret_val = ppoll(pfds, pfds_size, &ts, NULL);
       if (ret_val == -1) {
          if (errno == EINTR) {
             /* received interrupt, go to next terminated condition */
@@ -2362,9 +2361,9 @@ void *service_thread_routine(void *arg)
          continue;
       } else {
          /* handle all read events - requests / new client */
-         for (i=0; i<priv->clients_arr_size; ++i) {
+         for (i = j = 0; i < priv->clients_arr_size; ++i) {
             cl = &priv->clients[i];
-            if (cl->sd > -1 && FD_ISSET(cl->sd, &fds)) {
+            if (cl->sd > -1 && pfds[++j].revents & POLLIN) {
                supervisor_sd = cl->sd;
                ret_val = service_get_data(supervisor_sd, sizeof(msg_header_t), (void **) &header);
 
@@ -2414,7 +2413,7 @@ void *service_thread_routine(void *arg)
                }
             }
          }
-         if (FD_ISSET(priv->server_sd, &fds)) {
+         if (pfds[0].revents & POLL_IN) {
             /* accept new client */
             for (i=0; i<priv->clients_arr_size; ++i) {
                cl = &priv->clients[i];
@@ -2450,6 +2449,9 @@ exit_service_thread:
       service_ifc->terminate(service_ifc->priv);
       service_ifc->destroy(service_ifc->priv);
       free(service_ifc);
+   }
+   if (pfds != NULL) {
+      free(pfds);
    }
    pthread_exit(NULL);
 }
