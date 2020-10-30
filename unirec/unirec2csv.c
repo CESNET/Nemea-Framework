@@ -101,11 +101,11 @@ int urcsv_value(char *dst, uint32_t size, void *ptr, int type, int field_len)
    case UR_TYPE_TIME:
       {
          // Timestamp - convert to human-readable format and print
-         time_t sec = ur_time_get_sec(*(ur_time_t*)ptr);
-         int msec = ur_time_get_msec(*(ur_time_t*)ptr);
-         char str[32];
-         strftime(str, 31, "%FT%T", gmtime(&sec));
-         written = snprintf(p, size, "%s.%03i", str, msec);
+         time_t sec = ur_time_get_sec(*(ur_time_t*) ptr);
+         int usec = ur_time_get_usec(*(ur_time_t*) ptr);
+         char str[40];
+         strftime(str, 39, "%FT%T", gmtime(&sec));
+         written = snprintf(p, size, "%s.%06i", str, usec);
       }
       break;
    default:
