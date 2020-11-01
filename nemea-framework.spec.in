@@ -1,3 +1,7 @@
+%if x%{?python3_pkgversion} == x
+%global python3_pkgversion 3
+%endif
+
 Name:	nemea-framework
 Version:	@VERSION@
 Release:	@RPM_RELEASE@
@@ -10,7 +14,7 @@ Packager: @USERNAME@ <@USERMAIL@>
 BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 BuildArch: noarch
 Provides: nemea-framework
-Requires: libtrap nemea-common python3-nemea-pytrap python3-nemea-pycommon
+Requires: libtrap nemea-common python%{python3_pkgversion}-nemea-pytrap python%{python3_pkgversion}-nemea-pycommon
 
 %prep
 %setup
