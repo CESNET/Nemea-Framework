@@ -1332,7 +1332,7 @@ static void *sending_thread_func(void *priv)
 
             /* Disconnect clients that are unable to receive data fast enough and are blocking the whole module. */
             disconnect_client(c, i);
-            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", i);
+            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", cl->id);
          }
          continue;
       }
@@ -1361,7 +1361,7 @@ static void *sending_thread_func(void *priv)
             res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
             if (res < 1) {
                disconnect_client(c, i);
-               VERBOSE(CL_VERBOSE_LIBRARY, "Sending thread: Client %u disconnected", cl->id);
+               VERBOSE(CL_VERBOSE_LIBRARY, "Sending thread: Client %" PRIu32 " disconnected", cl->id);
                continue;
             }
          }
@@ -1377,7 +1377,7 @@ static void *sending_thread_func(void *priv)
             cl->timer_total += cl->timer_last;
 
             if (res != TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_OFF, "Sending thread: Disconnected client %d (ret val: %d)", cl->id, res);
+               VERBOSE(CL_VERBOSE_OFF, "Sending thread: Disconnected client %" PRIu32 " (ret val: %d)", cl->id, res);
                disconnect_client(c, i);
             }
          }
