@@ -1234,6 +1234,7 @@ static void *sending_thread_func(void *priv)
    uint64_t send_exit_time;
    uint8_t waiting_clients;
    struct timeval select_timeout;
+   int64_t time_since_flush;
 
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
@@ -1246,7 +1247,8 @@ static void *sending_thread_func(void *priv)
          continue;
       }
 
-      if ((get_cur_timestamp() - c->autoflush_timestamp) > c->ctx->out_ifc_list[c->ifc_idx].timeout) {
+      time_since_flush = get_cur_timestamp() - c->autoflush_timestamp;
+      if (time_since_flush > c->ctx->out_ifc_list[c->ifc_idx].timeout) {
          tcpip_sender_flush(c);
       }
 
@@ -1296,8 +1298,16 @@ static void *sending_thread_func(void *priv)
       }
 
       if (waiting_clients == c->connected_clients) {
+         int timeout = c->ctx->out_ifc_list[c->ifc_idx].timeout - time_since_flush;
+         struct timespec ts;
+         clock_gettime(CLOCK_REALTIME, &ts);
+
+         ts.tv_nsec += (ts.tv_sec * 1000000000L) + (timeout * 1000L);
+         ts.tv_sec = (ts.tv_nsec / 1000000000L);
+         ts.tv_nsec %= 1000000000L;
+
          pthread_mutex_lock(&c->mtx_no_data);
-         pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
+         pthread_cond_timedwait(&c->cond_no_data, &c->mtx_no_data, &ts);
          pthread_mutex_unlock(&c->mtx_no_data);
          continue;
       }
