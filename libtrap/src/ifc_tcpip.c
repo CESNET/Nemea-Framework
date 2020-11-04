@@ -420,6 +420,9 @@ conn_wait:
          if (retval == TRAP_E_FIELDS_MISMATCH) {
             config->connected = 1;
             return TRAP_E_FORMAT_MISMATCH;
+         } else if (retval == TRAP_E_NEGOTIATION_FAILED) {
+            config->connected = 1;
+            return TRAP_E_NEGOTIATION_FAILED;
          } else if (retval == TRAP_E_OK) {
             config->connected = 1;
             /* ok, wait for header as we planned */
@@ -909,7 +912,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
-   switch(input_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP)) {
+   switch (input_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP)) {
    case NEG_RES_FMT_UNKNOWN:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
       close(sockfd);
@@ -933,7 +936,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    case NEG_RES_FAILED:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
-      return TRAP_E_FIELDS_MISMATCH;
+      return TRAP_E_NEGOTIATION_FAILED;
 
    case NEG_RES_FMT_MISMATCH:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");

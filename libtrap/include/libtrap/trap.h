@@ -99,6 +99,7 @@ extern char *trap_default_socket_path_format;
 #define TRAP_E_FIELDS_SUBSET 22 ///< Returned when receivers fields are subset of senders fields and both sets are not identical
 #define TRAP_E_FORMAT_CHANGED 23 ///< Returned by trap_recv when format or format spec of the receivers interface has been changed
 #define TRAP_E_FORMAT_MISMATCH 24 ///< Returned by trap_recv when data format or data specifier of the output and input interfaces doesn't match
+#define TRAP_E_NEGOTIATION_FAILED 25 ///< Returned by trap_recv when negotiation of the output and input interfaces failed
 #define TRAP_E_NOT_INITIALIZED 254 ///< TRAP library not initilized
 #define TRAP_E_MEMORY 255 ///< Memory allocation error
 /**@}*/
@@ -972,6 +973,9 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
          fprintf(stderr, "trap_recv() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
          error_cmd; \
+      } else if (ret_code == TRAP_E_NEGOTIATION_FAILED) { \
+         fprintf(stderr, "trap_recv() error: interface negotiation failed (caused by invalid reply from a remote module, corrupted file or an unknown error).\n"); \
+         error_cmd; \
       } else {\
          fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\
          error_cmd;\
@@ -995,6 +999,9 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
          /* (module can perform some special operations with templates after trap_recv() signals format change) */ \
       } else if (ret_code == TRAP_E_FORMAT_MISMATCH) { \
          fprintf(stderr, "trap_recv() error: output and input interfaces data formats or data specifiers mismatch.\n"); \
+         error_cmd; \
+      } else if (ret_code == TRAP_E_NEGOTIATION_FAILED) { \
+         fprintf(stderr, "trap_recv() error: interface negotiation failed (caused by invalid reply from a remote module, corrupted file or an unknown error).\n"); \
          error_cmd; \
       } else {\
          fprintf(stderr, "Error: trap_recv() returned %i (%s)\n", (ret_code), trap_last_error_msg);\

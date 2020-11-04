@@ -328,7 +328,7 @@ neg_start:
       switch(input_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE)) {
       case NEG_RES_FMT_UNKNOWN:
          VERBOSE(CL_VERBOSE_LIBRARY, "FILE INPUT IFC[%"PRIu32"] negotiation result: failed (unknown data format of the output interface).", config->ifc_idx);
-         return TRAP_E_FORMAT_MISMATCH;
+         return TRAP_E_NEGOTIATION_FAILED;
 
       case NEG_RES_CONT:
          VERBOSE(CL_VERBOSE_LIBRARY, "FILE INPUT IFC[%"PRIu32"] negotiation result: success.", config->ifc_idx);
@@ -347,7 +347,7 @@ neg_start:
 
       case NEG_RES_FAILED:
          VERBOSE(CL_VERBOSE_LIBRARY, "FILE INPUT IFC[%"PRIu32"] negotiation result: failed (error while receiving hello message from output interface).", config->ifc_idx);
-         return TRAP_E_FORMAT_MISMATCH;
+         return TRAP_E_NEGOTIATION_FAILED;
 
       case NEG_RES_FMT_MISMATCH:
          VERBOSE(CL_VERBOSE_LIBRARY, "FILE INPUT IFC[%"PRIu32"] negotiation result: failed (data format or data specifier mismatch).", config->ifc_idx);
