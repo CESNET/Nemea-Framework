@@ -19,7 +19,7 @@ AC_PROG_CC
 
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
-AC_CHECK_PROG(PYTHON, python, python, [""])
+AC_CHECK_PROG(PYTHON, python3, python3, [""])
 AC_SUBST(PYTHON)
 
 # Checks for header files.
