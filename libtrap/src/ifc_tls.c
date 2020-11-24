@@ -1487,7 +1487,10 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         FD_SET(cl->sd, &disset);
+         if (cl->sd >= 0) {
+            FD_SET(cl->sd, &disset);
+         }
+
          if (maxsd < cl->sd) {
             maxsd = cl->sd;
          }
@@ -1502,7 +1505,9 @@ static void *sending_thread_func(void *priv)
             cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
          }
 
-         FD_SET(cl->sd, &set);
+         if (cl->sd >= 0) {
+            FD_SET(cl->sd, &set);
+         }
       }
 
       if (waiting_clients == c->connected_clients) {
