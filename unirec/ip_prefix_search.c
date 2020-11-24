@@ -80,6 +80,9 @@ uint32_t **create_ip_v6_net_mask_array()
    for (i = 0; i < 129; i++) {
       net_mask_array[i] = malloc(4 * sizeof(uint32_t));
       if (net_mask_array[i] == NULL) {
+         for(int k = 0; k < i; k++) {
+            free(net_mask_array[i]);
+         }
          return NULL;
       }
       // Fill every word of IPv6 address
@@ -434,8 +437,8 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
    ipps_network_t *current_net;             // Currently precessed network
    void *tmp;
 
-   ipps_network_t  **networks_v6;           // Pointers to ipv6 networks
-   ipps_network_t  **networks_v4;           // Pointers to ipv4 networks
+   ipps_network_t  **networks_v6 = NULL;           // Pointers to ipv6 networks
+   ipps_network_t  **networks_v4 = NULL;           // Pointers to ipv4 networks
 
 
    uint32_t i_v6 = 0;         // Number of ipv6 networks
@@ -447,6 +450,10 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
    // Allocate memory for network array
    if ((networks_v4 = malloc(i_v4_alloc * sizeof(ipps_network_t *))) == NULL ||
        (networks_v6 = malloc(i_v6_alloc * sizeof(ipps_network_t *))) == NULL) {
+      free(networks_v4);
+      free(networks_v6);
+      ipps_destroy(prefix_context);
+      destroy_ip_v6_net_mask_array(net_mask_array);
       fprintf(stderr, "ERROR allocating sorted network structures\n");
       return NULL;
    }
@@ -465,6 +472,10 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
             tmp = realloc(networks_v6, i_v6_alloc * sizeof(ipps_network_t *));
             if (tmp  == NULL) {
                fprintf(stderr, "ERROR allocating memory for ipv6 network collector\n");
+               ipps_destroy(prefix_context);
+               destroy_ip_v6_net_mask_array(net_mask_array);
+               free(networks_v4);
+               free(networks_v6);
                return NULL;
             }
             networks_v6 = tmp;
@@ -481,6 +492,10 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
             tmp = realloc(networks_v4, i_v4_alloc * sizeof(ipps_network_t *));
             if (tmp == NULL) {
                fprintf(stderr, "ERROR allocating memory for ipv6 network collector\n");
+               ipps_destroy(prefix_context);
+               destroy_ip_v6_net_mask_array(net_mask_array);
+               free(networks_v4);
+               free(networks_v6);
                return NULL;
             }
             networks_v4 = tmp;
@@ -497,7 +512,9 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
                                                          &prefix_context->v4_count, net_mask_array);
       if (prefix_context->v4_prefix_intervals == NULL) {
          destroy_ip_v6_net_mask_array(net_mask_array);
-         free(prefix_context);
+         ipps_destroy(prefix_context);
+         free(networks_v4);
+         free(networks_v6);
          return NULL;
       }
       /************************/
@@ -513,6 +530,7 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
       if (prefix_context->v6_prefix_intervals == NULL) {
          destroy_ip_v6_net_mask_array(net_mask_array);
          ipps_destroy(prefix_context);
+         free(networks_v6);
          return NULL;
       }
 
@@ -861,6 +879,7 @@ ipps_interval_t *init_context( ipps_network_t **networks, uint32_t network_count
    ipps_interval_t *prefix_context = (ipps_interval_t *)malloc(interval_counter * sizeof(ipps_interval_t));
    if (prefix_context == NULL) {
       fprintf(stderr, "ERROR allocating memory for prefix interval_search_context\n");
+      destroy_list(interval_list);
       return NULL;
    }
 
