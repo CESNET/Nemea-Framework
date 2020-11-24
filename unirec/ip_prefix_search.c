@@ -513,7 +513,6 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
       if (prefix_context->v6_prefix_intervals == NULL) {
          destroy_ip_v6_net_mask_array(net_mask_array);
          ipps_destroy(prefix_context);
-         free(prefix_context);
          return NULL;
       }
 
