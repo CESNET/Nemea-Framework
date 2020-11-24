@@ -844,7 +844,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             if (strlen(priv->filename_tmplt) + TIME_FORMAT_STRING_LEN > sizeof(priv->filename_tmplt) - 1) {
                free(priv->buffer.header);
                free(priv);
-               return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", idx, sizeof(priv->filename_tmplt) - 1);
+               return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %zu.", idx, sizeof(priv->filename_tmplt) - 1);
             }
 
             /* Append timestamp formate to the current template */
