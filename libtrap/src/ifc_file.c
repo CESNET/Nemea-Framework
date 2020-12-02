@@ -540,7 +540,9 @@ void switch_file_wrapper(void *priv)
 {
    file_private_t *c = (file_private_t *) priv;
    if (c && !c->is_terminated && (create_next_filename(c) == TRAP_E_OK)) {
-      switch_file(c);
+      if(switch_file(c) != TRAP_E_OK) {
+         VERBOSE(CL_WARNING, "disconnect_clients sub function switch_file failed.");
+      }
    }
 }
 /**

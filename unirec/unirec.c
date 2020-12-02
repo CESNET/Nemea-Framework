@@ -1587,7 +1587,9 @@ int ur_set_from_string(const ur_template_t *tmpl, void *data, ur_field_id_t f_id
          ur_var_change_size(tmpl, data, f_id, size);
          unsigned char *data_ptr = ur_get_ptr_by_id(tmpl, data, f_id);
          for ( ; size > 0; --size, v += 2, ++data_ptr) {
-            sscanf(v, "%2hhx", data_ptr);
+            if (sscanf(v, "%2hhx", data_ptr) != 1) {
+               rv = 1;
+            }
          }
       }
       break;

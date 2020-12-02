@@ -820,7 +820,10 @@ ipps_interval_t *init_context( ipps_network_t **networks, uint32_t network_count
                      end_of_list = conductor->next;
                   }
                   memcpy(&conductor->interval->high_ip,  &current_interval.high_ip, 16);
-                  add_data(conductor->interval, networks[index]->data, networks[index]->data_len);
+                  if (add_data(conductor->interval, networks[index]->data, networks[index]->data_len)) {
+                     destroy_list(interval_list);
+                     return  NULL;
+                  }
 
                   break;
                } else if (ip_cmp_result < 0) {
