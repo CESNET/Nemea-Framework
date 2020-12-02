@@ -86,10 +86,10 @@ uint32_t **create_ip_v6_net_mask_array()
          return NULL;
       }
       // Fill every word of IPv6 address
-      net_mask_array[i][0] = 0xFFFFFFFF >> (i == 0  || i >= 32 ? 0 : 32  - i);
-      net_mask_array[i][1] = 0xFFFFFFFF >> (i <= 32 || i >= 64 ? 0 : 64  - i);
-      net_mask_array[i][2] = 0xFFFFFFFF >> (i <= 64 || i >= 96 ? 0 : 96  - i);
-      net_mask_array[i][3] = 0xFFFFFFFF >> (i <= 96            ? 0 : 128 - i);
+      net_mask_array[i][0] = 0xFFFFFFFF >> (i == 0 || i >= 32 ? 0 : 32  - i);
+      net_mask_array[i][1] = i <= 32 ? 0 : 0xFFFFFFFF >> (i >= 64 ? 0 : 64  - i);
+      net_mask_array[i][2] = i <= 64 ? 0 : 0xFFFFFFFF >> (i >= 96 ? 0 : 96  - i);
+      net_mask_array[i][3] = i <= 96 ? 0 : 0xFFFFFFFF >> (128 - i);
 
       // Swap bits in every byte for compatibility with ip_addr_t stucture
       for (j = 0; j < 4; ++j) {
