@@ -2423,7 +2423,7 @@ void *service_thread_routine(void *arg)
             }
             /* not enough space, go away */
             int accept_retval = accept(priv->server_sd, NULL, NULL);
-            if(accept_retval > 0)
+            if(accept_retval >= 0)
                close(accept_retval);
 accept_success:
             continue;
