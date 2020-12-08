@@ -1,3 +1,7 @@
+2020-12-08 libtrap-1.16.0
+	* replaced select() with poll() - thanks to Flowmon Networks
+	* bugfixes of deadlocks, negotiation failure, memory leaks - Jiri Havranek
+
 2020-09-20 libtrap-1.15.1
 	* bugfix: strncpy in file IFC
 	* bugfix: compilation on openwrt
