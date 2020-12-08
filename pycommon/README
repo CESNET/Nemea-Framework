@@ -8,7 +8,7 @@ Currently, it is used by reporter modules.
 Run as root:
 
 ```
-python setup.py install
+python3 setup.py install
 ```
 
 Note: for different versions of python, it is needed to perform this command

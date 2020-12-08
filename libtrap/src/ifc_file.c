@@ -229,7 +229,8 @@ int create_next_filename(file_private_t *config)
             return TRAP_E_IO_ERROR;
          }
 
-         strncpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+         memcpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+         buf[len + FILE_SIZE_SUFFIX_LEN] = 0;
          config->file_index++;
 
          /* Detected overflow */
@@ -253,8 +254,9 @@ int create_next_filename(file_private_t *config)
          return TRAP_E_IO_ERROR;
       }
 
-      strncpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
+      memcpy(buf + len, suffix, FILE_SIZE_SUFFIX_LEN);
       len += FILE_SIZE_SUFFIX_LEN;
+      buf[len] = 0;
       config->file_index++;
    }
 
@@ -375,7 +377,7 @@ neg_start:
             return TRAP_E_OK;
          }
 
-         strncpy(config->filename, config->files[config->file_index], strlen(config->files[config->file_index]) + 1);
+         strncpy(config->filename, config->files[config->file_index], sizeof(config->filename) - 1);
          if (switch_file(config) == TRAP_E_OK) {
 #ifdef ENABLE_NEGOTIATION
             goto neg_start;
@@ -802,12 +804,14 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    if (length) {
       dest = (char*) calloc(length + 1, sizeof(char));
       if (!dest) {
+         free(priv->buffer.header);
          free(priv);
          return trap_error(ctx, TRAP_E_MEMORY);
       }
 
       strncpy(dest, params, length);
    } else {
+      free(priv->buffer.header);
       free(priv);
       return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Filename not specified.", idx);
    }
@@ -815,6 +819,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    /* Perform shell-like expansion of ~ */
    if (wordexp(dest, &exp_result, 0) != 0) {
       VERBOSE(CL_ERROR, "FILE OUTPUT IFC[%"PRIu32"]: Unable to perform shell-like expansion of: %s", idx, dest);
+      free(priv->buffer.header);
       free(priv);
       free(dest);
       wordfree(&exp_result);
@@ -822,24 +827,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    }
 
    free(dest);
-   strncpy(priv->filename_tmplt, exp_result.we_wordv[0], sizeof(priv->filename_tmplt));
+   strncpy(priv->filename_tmplt, exp_result.we_wordv[0], sizeof(priv->filename_tmplt) - 1);
    wordfree(&exp_result);
-
-   /* Parse mode */
-   if (params_next) {
-      length = strcspn(params_next, ":");
-      if (length == 1) {
-         if (params_next[0] == 'a') {
-            priv->mode[0] = 'a';
-         }
-
-         if (params_next[1] == ':') {
-            params_next = params_next + 2;
-         } else {
-            params_next = NULL;
-         }
-      }
-   }
 
    /* Set special behavior for /dev/stdout */
    if (strncmp(priv->filename_tmplt, "/dev/stdout", 11) == 0) {
@@ -853,6 +842,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
          if (length > TIME_PARAM_LEN && strncmp(params_next, TIME_PARAM, TIME_PARAM_LEN) == 0) {
             priv->file_change_time = atoi(params_next + TIME_PARAM_LEN);
             if (strlen(priv->filename_tmplt) + TIME_FORMAT_STRING_LEN > sizeof(priv->filename_tmplt) - 1) {
+               free(priv->buffer.header);
                free(priv);
                return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", idx, sizeof(priv->filename_tmplt) - 1);
             }
@@ -861,6 +851,8 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             strcat(priv->filename_tmplt, TIME_FORMAT_STRING);
          } else if (length > SIZE_PARAM_LEN && strncmp(params_next, SIZE_PARAM, SIZE_PARAM_LEN) == 0) {
             priv->file_change_size = atoi(params_next + SIZE_PARAM_LEN);
+         } else if (length == 1 && params_next[0] == 'a') {
+            priv->mode[0] = 'a';
          }
 
          if (params_next[length] == '\0') {
@@ -874,6 +866,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    /* Create first filename from the prepared template */
    int status = create_next_filename(priv);
    if (status != TRAP_E_OK) {
+      free(priv->buffer.header);
       free(priv);
       return trap_errorf(ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file creation.", idx);
    }
@@ -881,6 +874,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
    /* Open first file */
    status = switch_file(priv);
    if (status != TRAP_E_OK) {
+      free(priv->buffer.header);
       free(priv);
       return trap_errorf(ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file opening.", idx);
    }

@@ -118,7 +118,7 @@ Output interface:
 Name of file (path to the file) must be specified.
 
 Mode is optional. There are two types of mode: `a` - append, `w` - write (default).
-If the specified file exists, mode write overwrites it, mode append creates a new file with an integer suffix, e.g. `data.trapcap.0` (or `data.trapcap.1` if the former exists, and so on, it simply finds the first unused number).
+If the specified file exists, mode write overwrites it, mode append creates a new file with an integer suffix, e.g. `data.trapcap.00000` (or `data.trapcap.00001` if the former exists, and so on, it simply finds the first unused number).
 
 If parameter `time=` is set, the output interface will split captured data to individual files as often, as value of this parameter indicates.
 Output interface assumes the value of parameter `time=` is in minutes.
@@ -127,29 +127,29 @@ Parameter `time=` is optional and is not set by default.
 
 If parameter `size=` is set, the output interface will split captured data to individual files after size of current file exceeds given threshold.
 Output interface assumes the value of parameter `size=` is in MB.
-If parameter `size=` is set, numeric suffix as added to original file name for each file in ascending order starting with 0.
+If parameter `size=` is set, numeric suffix as added to original file name for each file in ascending order starting with 00000.
 Parameter `size=` is optional and is not set by default.
 
-If both `time=` and `size=` are specified, the data are split primarily by time, and only if a file of one time interval exceeds the size limit, it is further splitted. The index of size-splitted file is appended after the time, e.g. `data.trapcap.201604181000.0`.
+If both `time=` and `size=` are specified, the data are split primarily by time, and only if a file of one time interval exceeds the size limit, it is further splitted. The index of size-splitted file is appended after the time, e.g. `data.trapcap.201604181000.00000`.
 
 Example:
 ```
 -i "f:~/nemea/data.trapcap:w"                  // stores all captured data to one file (overwrites current file if it exists)
 -i "f:~/nemea/data.trapcap:w:time=30"          // creates individual files each 30 minutes, e.g. "data.trapcap.201604180930", "data.trapcap.201604181000" etc.
--i "f:~/nemea/data.trapcap:w:size=100"         // creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.0", then "data.trapcap.1" etc.
--i "f:~/nemea/data.trapcap:w:time=30:size=100" // creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.0" etc. and after 30 minutes, "data.trapcap.201604181000"
+-i "f:~/nemea/data.trapcap:w:size=100"         // creates file "data.trapcap" and when its size reaches 100 MB, a new file named "data.trapcap.00000", then "data.trapcap.00001" etc.
+-i "f:~/nemea/data.trapcap:w:time=30:size=100" // creates set of files "data.trapcap.201604180930", "data.trapcap.201604180930.00000" etc. and after 30 minutes, "data.trapcap.201604181000"
 ```
 Output file interface and negotiation:
 Whenever new format of data is created, output interface creates new file with numeric suffix.
-Example: `-i "f:~/nemea/data.trapcap:w"` following sequence of files will be created if data format changes: data.trapcap, data.trapcap.0, data.trapcap.1 etc.
+Example: `-i "f:~/nemea/data.trapcap:w"` following sequence of files will be created if data format changes: data.trapcap, data.trapcap.00000, data.trapcap.00001 etc.
 
 When mode `a` is specified, the interface finds first non-existing file in which it writes data.
 Example: 
-Assume we have already files "data.trapcap" and "data.trapcap.0", the following command:
+Assume we have already files "data.trapcap" and "data.trapcap.00000", the following command:
 ```
 -i "f:~/nemea/data.trapcap:a"
 ```
-checks for existing files and first captured data will be stored to file "data.trapcap.1".
+checks for existing files and first captured data will be stored to file "data.trapcap.00001".
 
 Output file interface can also write data to /dev/stdout and /dev/null, however mode `w` must be specified.
 

@@ -13,6 +13,14 @@ The framework consists of:
  * [pytrap](./pytrap) -- python wrapper for libtrap and UniRec that allows development of nemea modules in python
  * [pycommon](./pycommon) -- python common modules and methods, there is currently a support of alerts creation in the [IDEA](https://idea.cesnet.cz/en/index) format that can be stored into MongoDB or sent to the [Warden](https://wardenw.cesnet.cz/) incident sharing system
 
+Dependencies
+============
+
+To be able to compile Nemea Framework on GNU/Linux distributions, you will need to have installed on your system the following depencies which were needed on Ubuntu 20.04 LTS:
+
+```
+make autoreconf libtool libxml2-dev
+```
 
 Installation
 ============
@@ -36,11 +44,11 @@ Python parts must be installed separately when needed.
 It can be done using:
 
 ```
-cd pytrap; sudo python setup.py install
+cd pytrap; sudo python3 setup.py install
 ```
 and
 ```
-cd pycommon; sudo python setup.py install
+cd pycommon; sudo python3 setup.py install
 ```
 
 Project status:
