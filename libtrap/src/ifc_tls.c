@@ -1104,7 +1104,7 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
 
       case NEG_RES_FAILED:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
-         return TRAP_E_FIELDS_MISMATCH;
+         return TRAP_E_NEGOTIATION_FAILED;
 
       case NEG_RES_FMT_MISMATCH:
          VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");

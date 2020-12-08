@@ -426,6 +426,9 @@ conn_wait:
          if (retval == TRAP_E_FIELDS_MISMATCH) {
             config->connected = 1;
             return TRAP_E_FORMAT_MISMATCH;
+         } else if (retval == TRAP_E_NEGOTIATION_FAILED) {
+            config->connected = 1;
+            return TRAP_E_NEGOTIATION_FAILED;
          } else if (retval == TRAP_E_OK) {
             config->connected = 1;
             /* ok, wait for header as we planned */
@@ -918,7 +921,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    /** Input interface negotiation */
 #ifdef ENABLE_NEGOTIATION
-   switch(input_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP)) {
+   switch (input_ifc_negotiation(priv, TRAP_IFC_TYPE_TCPIP)) {
    case NEG_RES_FMT_UNKNOWN:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (unknown data format of the output interface).");
       close(sockfd);
@@ -942,7 +945,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
 
    case NEG_RES_FAILED:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (error while receiving hello message from output interface).");
-      return TRAP_E_FIELDS_MISMATCH;
+      return TRAP_E_NEGOTIATION_FAILED;
 
    case NEG_RES_FMT_MISMATCH:
       VERBOSE(CL_VERBOSE_LIBRARY, "Input_ifc_negotiation result: failed (data type or data format specifier mismatch).");
@@ -1241,6 +1244,7 @@ static void *sending_thread_func(void *priv)
    int poll_timeout;
    int clients_pfds_size;
    struct pollfd *pfds;
+   int64_t time_since_flush;
 
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
@@ -1253,7 +1257,8 @@ static void *sending_thread_func(void *priv)
          continue;
       }
 
-      if ((get_cur_timestamp() - c->autoflush_timestamp) > c->ctx->out_ifc_list[c->ifc_idx].timeout) {
+      time_since_flush = get_cur_timestamp() - c->autoflush_timestamp;
+      if (time_since_flush > c->ctx->out_ifc_list[c->ifc_idx].timeout) {
          tcpip_sender_flush(c);
       }
 
@@ -1298,8 +1303,16 @@ static void *sending_thread_func(void *priv)
       }
 
       if (waiting_clients == c->connected_clients) {
+         int timeout = c->ctx->out_ifc_list[c->ifc_idx].timeout - time_since_flush;
+         struct timespec ts;
+         clock_gettime(CLOCK_REALTIME, &ts);
+
+         ts.tv_nsec += (ts.tv_sec * 1000000000L) + (timeout * 1000L);
+         ts.tv_sec = (ts.tv_nsec / 1000000000L);
+         ts.tv_nsec %= 1000000000L;
+
          pthread_mutex_lock(&c->mtx_no_data);
-         pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
+         pthread_cond_timedwait(&c->cond_no_data, &c->mtx_no_data, &ts);
          pthread_mutex_unlock(&c->mtx_no_data);
          continue;
       }
@@ -1321,6 +1334,21 @@ static void *sending_thread_func(void *priv)
          }
       } else if (res == 0) {
          /* Select timed out - no client will be receiving */
+         for (i = 0; i < c->clients_arr_size; ++i) {
+            if (check_index(c->clients_bit_arr, i) == 0) {
+               continue;
+            }
+
+            cl = &(c->clients[i]);
+            assigned_buffer = &c->buffers[cl->assigned_buffer];
+            if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
+               continue;
+            }
+
+            /* Disconnect clients that are unable to receive data fast enough and are blocking the whole module. */
+            disconnect_client(c, i);
+            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", cl->id);
+         }
          continue;
       }
 
@@ -1351,7 +1379,7 @@ static void *sending_thread_func(void *priv)
             res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
             if (res < 1) {
                disconnect_client(c, i);
-               VERBOSE(CL_VERBOSE_LIBRARY, "Sending thread: Client %u disconnected", cl->id);
+               VERBOSE(CL_VERBOSE_LIBRARY, "Sending thread: Client %" PRIu32 " disconnected", cl->id);
                continue;
             }
          }
@@ -1367,7 +1395,7 @@ static void *sending_thread_func(void *priv)
             cl->timer_total += cl->timer_last;
 
             if (res != TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_OFF, "Sending thread: Disconnected client %d (ret val: %d)", cl->id, res);
+               VERBOSE(CL_VERBOSE_OFF, "Sending thread: Disconnected client %" PRIu32 " (ret val: %d)", cl->id, res);
                disconnect_client(c, i);
             }
          }
