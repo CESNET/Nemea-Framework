@@ -61,6 +61,7 @@
  */
 typedef struct client_s {
    int sd;                                 /**< Client socket descriptor */
+   int pfds_index;                         /**< Client pfds struct array index. */
    void *sending_pointer;                  /**< Pointer to data in client's assigned buffer */
 
    uint64_t timer_total;                   /**< Total time spent sending (microseconds) since client connection */

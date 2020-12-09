@@ -993,6 +993,7 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
    shutdown(c->sd, SHUT_RDWR);
    close(c->sd);
    c->sd = -1;
+   c->pfds_index = -1;
    c->pending_bytes = 0;
    c->sending_pointer = NULL;
 }
@@ -1094,6 +1095,7 @@ static void *accept_clients_thread(void *arg)
                }
 
                cl->sd = newclient;
+               cl->pfds_index = -1;
                cl->sending_pointer = NULL;
                cl->pending_bytes = 0;
                cl->timer_total = 0;
@@ -1284,7 +1286,8 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         pfds = c->clients_pfds + clients_pfds_size;
+         cl->pfds_index = j;
+         pfds = c->clients_pfds + j;
          ++clients_pfds_size;
          *pfds = (struct pollfd) {.fd = cl->sd, .events = POLLIN};
 
@@ -1298,7 +1301,6 @@ static void *sending_thread_func(void *priv)
             cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
          }
 
-         c->clients_pfds[clients_pfds_size++] = (struct pollfd) {.fd = cl->sd, .events = POLLOUT};
          pfds->events = pfds->events | POLLOUT;
       }
 
@@ -1370,8 +1372,11 @@ static void *sending_thread_func(void *priv)
          }
 
          ++j;
+         if (cl->pfds_index < 0) {
+            continue;
+         }
 
-         pfds = c->clients_pfds + j;
+         pfds = c->clients_pfds + cl->pfds_index;
          assert(pfds->fd == cl->sd);
 
          /* Check if client is still connected */
@@ -1811,6 +1816,7 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
 
       client->assigned_buffer = 0;
       client->sd = -1;
+      client->pfds_index = -1;
       client->timer_total = 0;
       client->pending_bytes = 0;
       client->sending_pointer = NULL;
