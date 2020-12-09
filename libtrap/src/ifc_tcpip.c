@@ -1247,6 +1247,7 @@ static void *sending_thread_func(void *priv)
    int clients_pfds_size;
    struct pollfd *pfds;
    int64_t time_since_flush;
+   int receiving_clients_array[DEFAULT_MAX_CLIENTS] = {0}; // Array of clients for whom we have data for
 
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
@@ -1282,6 +1283,7 @@ static void *sending_thread_func(void *priv)
          }
 
          ++j;
+         receiving_clients_array[i] = 0;
 
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
@@ -1302,6 +1304,7 @@ static void *sending_thread_func(void *priv)
          }
 
          pfds->events = pfds->events | POLLOUT;
+         receiving_clients_array[i] = 1;
       }
 
       if (waiting_clients == c->connected_clients) {
@@ -1336,20 +1339,22 @@ static void *sending_thread_func(void *priv)
          }
       } else if (res == 0) {
          /* Select timed out - no client will be receiving */
-         for (i = 0; i < c->clients_arr_size; ++i) {
+         for (i = j = 0; i < c->clients_arr_size; ++i) {
+            if (j == c->connected_clients) {
+               break;
+            }
             if (check_index(c->clients_bit_arr, i) == 0) {
                continue;
             }
-
+            j++;
             cl = &(c->clients[i]);
             assigned_buffer = &c->buffers[cl->assigned_buffer];
-            if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
-               continue;
+            if (receiving_clients_array[i] && cl->timeouts > 0) {
+               /* Disconnect clients that are unable to receive data fast enough and are blocking the whole module. */
+               disconnect_client(c, i);
+               receiving_clients_array[i] = 0;
+               VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", cl->id);
             }
-
-            /* Disconnect clients that are unable to receive data fast enough and are blocking the whole module. */
-            disconnect_client(c, i);
-            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", cl->id);
          }
          continue;
       }
@@ -1366,6 +1371,7 @@ static void *sending_thread_func(void *priv)
             break;
          }
 
+         receiving_clients_array[i] = 0;
          cl = &(c->clients[i]);
          if (cl->sd < 1) {
             continue;
