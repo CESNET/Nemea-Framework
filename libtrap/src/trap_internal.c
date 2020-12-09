@@ -55,6 +55,7 @@
  */
 int trap_debug = 0;
 int trap_verbose = -1;
+char trap_err_msg[4096];
 
 /**
  * \brief Return syslog and output level based on given verbose level
