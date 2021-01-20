@@ -21,10 +21,10 @@ AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
-                CFLAGS="-Wall -g -O0 $CFLAGS"
+                CFLAGS="-Wall -g -O0 -fcommon $CFLAGS"
                 CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
         fi],
-        [CFLAGS="-Wall -g -O3 $CFLAGS"
+        [CFLAGS="-Wall -g -O3 -fcommon $CFLAGS"
         CXXFLAGS="-Wall -g -O3 $CXXFLAGS"])
 LT_INIT()
 # Checks for programs.
