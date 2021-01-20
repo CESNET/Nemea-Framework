@@ -16,7 +16,7 @@ AC_SUBST(USERMAIL)
 
 AC_CONFIG_MACRO_DIR([m4])
 
-# Must be checked before default -g -O2 is set:
+# Must be checked before default -g -O3 is set:
 AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
         [Enable build with debug symbols and without optimizations.]),
