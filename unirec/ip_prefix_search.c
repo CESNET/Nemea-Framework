@@ -80,7 +80,7 @@ uint32_t **create_ip_v6_net_mask_array()
    for (i = 0; i < 129; i++) {
       net_mask_array[i] = malloc(4 * sizeof(uint32_t));
       if (net_mask_array[i] == NULL) {
-         for(int k = 0; k < i; k++) {
+         for (int k = 0; k < i; k++) {
             free(net_mask_array[i]);
          }
          return NULL;
