@@ -913,6 +913,9 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
    }
 
    if (rv != TRAP_E_OK) { /*something went wrong while setting up connection */
+      if (sockfd >= 0) {
+         close(sockfd);
+      }
       return rv;
    }
 

@@ -1449,11 +1449,10 @@ int trap_ctx_send(trap_ctx_t *ctx, unsigned int ifc, const void *data, uint16_t 
 {
    int ret_val = TRAP_E_OK;
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
-   trap_output_ifc_t* ifc_ptr = &c->out_ifc_list[ifc];
-
    if (c == NULL || c->initialized == 0) {
       return TRAP_E_NOT_INITIALIZED;
    }
+   trap_output_ifc_t* ifc_ptr = &c->out_ifc_list[ifc];
 
    if (c->terminated) {
       return trap_error(c, TRAP_E_TERMINATED);
@@ -2423,7 +2422,10 @@ void *service_thread_routine(void *arg)
                }
             }
             /* not enough space, go away */
-            close(accept(priv->server_sd, NULL, NULL));
+            int accept_retval = accept(priv->server_sd, NULL, NULL);
+            if (accept_retval >= 0) {
+               close(accept_retval);
+            }
 accept_success:
             continue;
          }

@@ -1020,7 +1020,8 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
    /* catching all possible errors from setting up socket before atempting tls handshake */
    if (rv != TRAP_E_OK) {
       freeaddrinfo(servinfo);
-      close(sockfd);
+      if (sockfd >= 0)
+         close(sockfd);
       return rv;
    }
 
@@ -1486,7 +1487,10 @@ static void *sending_thread_func(void *priv)
          cl = &(c->clients[i]);
          assigned_buffer = &c->buffers[cl->assigned_buffer];
 
-         FD_SET(cl->sd, &disset);
+         if (cl->sd >= 0) {
+            FD_SET(cl->sd, &disset);
+         }
+
          if (maxsd < cl->sd) {
             maxsd = cl->sd;
          }
@@ -1501,7 +1505,9 @@ static void *sending_thread_func(void *priv)
             cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
          }
 
-         FD_SET(cl->sd, &set);
+         if (cl->sd >= 0) {
+            FD_SET(cl->sd, &set);
+         }
       }
 
       if (waiting_clients == c->connected_clients) {
@@ -2161,4 +2167,3 @@ static int server_socket_open(void *priv)
 /**
  * @}
  *//* ifc modules */
-

@@ -540,7 +540,9 @@ void switch_file_wrapper(void *priv)
 {
    file_private_t *c = (file_private_t *) priv;
    if (c && !c->is_terminated && (create_next_filename(c) == TRAP_E_OK)) {
-      switch_file(c);
+      if (switch_file(c) != TRAP_E_OK) {
+         VERBOSE(CL_WARNING, "disconnect_clients sub function switch_file failed.");
+      }
    }
 }
 /**
@@ -844,7 +846,7 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
             if (strlen(priv->filename_tmplt) + TIME_FORMAT_STRING_LEN > sizeof(priv->filename_tmplt) - 1) {
                free(priv->buffer.header);
                free(priv);
-               return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", idx, sizeof(priv->filename_tmplt) - 1);
+               return trap_errorf(ctx, TRAP_E_BADPARAMS, "FILE OUTPUT IFC[%"PRIu32"]: Path and filename exceeds maximum size: %zu.", idx, sizeof(priv->filename_tmplt) - 1);
             }
 
             /* Append timestamp formate to the current template */
@@ -905,4 +907,3 @@ int create_file_send_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_i
 /**
  * @}
  *//* ifc modules */
-
