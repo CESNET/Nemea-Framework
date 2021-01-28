@@ -94,7 +94,7 @@ extern int trap_debug;
 /*! control verbose level */
 extern int trap_verbose;
 /*! buffer for verbose and debug messages */
-char trap_err_msg[4096];
+extern char trap_err_msg[];
 
 typedef struct trap_ctx_priv_s trap_ctx_priv_t;
 
