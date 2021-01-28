@@ -16,15 +16,15 @@ AC_SUBST(USERMAIL)
 
 AC_CONFIG_MACRO_DIR([m4])
 
-# Must be checked before default -g -O2 is set:
+# Must be checked before default -g -O3 is set:
 AC_ARG_ENABLE([debug],
         AC_HELP_STRING([--enable-debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
-                CFLAGS="-Wall -g -O0 $CFLAGS"
+                CFLAGS="-Wall -g -O0 -fcommon $CFLAGS"
                 CXXFLAGS="-Wall -g -O0 $CXXFLAGS"
         fi],
-        [CFLAGS="-Wall -g -O3 $CFLAGS"
+        [CFLAGS="-Wall -g -O3 -fcommon $CFLAGS"
         CXXFLAGS="-Wall -g -O3 $CXXFLAGS"])
 LT_INIT()
 # Checks for programs.
@@ -32,21 +32,6 @@ AM_PROG_CC_C_O
 AC_PROG_CC_C99
 AC_PROG_CXX
 AC_PROG_LIBTOOL
-AM_CONDITIONAL([GCC], [test x$GCC = xyes])
-
-# Check the version of the compiler, if gcc is used and it is newer than 10, we
-# need -fcommon in CFLAGS
-if test x"$CC" = xgcc; then
-    AC_MSG_CHECKING([for version of compiler])
-    compiler_version="`$CC -dumpversion`"
-    if test "$compiler_version" -ge 10 2>/dev/null ; then
-        CFLAGS="$CFLAGS -fcommon"
-	AC_MSG_RESULT([$compiler_version -> adding -fcommon into CFLAGS])
-    else
-	AC_MSG_RESULT([$compiler_version])
-    fi
-fi
-
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
 AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
