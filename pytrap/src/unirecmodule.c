@@ -85,12 +85,41 @@ UnirecTime_getMiliSeconds(pytrap_unirectime *self)
 }
 
 static PyObject *
+UnirecTime_getMicroSeconds(pytrap_unirectime *self)
+{
+    return PyLong_FromLong(ur_time_get_usec(self->timestamp));
+}
+
+static PyObject *
+UnirecTime_getMicroSecondsAsFloat(pytrap_unirectime *self)
+{
+    double t = (double)ur_time_get_sec(self->timestamp)*1000000;
+    t += (double) ur_time_get_usec(self->timestamp);
+    return PyFloat_FromDouble(t);
+}
+
+static PyObject *
+UnirecTime_getNanoSeconds(pytrap_unirectime *self)
+{
+    return PyLong_FromLong(ur_time_get_nsec(self->timestamp));
+}
+
+static PyObject *
+UnirecTime_getNanoSecondsAsFloat(pytrap_unirectime *self)
+{
+    double t = (double)ur_time_get_sec(self->timestamp)*1000000000;
+    t += (double) ur_time_get_nsec(self->timestamp);
+    return PyFloat_FromDouble(t);
+}
+
+static PyObject *
 UnirecTime_getTimeAsFloat(pytrap_unirectime *self)
 {
     double t = (double) ur_time_get_sec(self->timestamp);
     t += (double) ur_time_get_msec(self->timestamp) / 1000;
     return PyFloat_FromDouble(t);
 }
+
 static PyObject *
 UnirecTime_now(pytrap_unirectime *self)
 {
@@ -207,6 +236,26 @@ static PyMethodDef pytrap_unirectime_methods[] = {
         "Get number of seconds of timestamp.\n\n"
         "Returns:\n"
         "    (long): Retrieved number of seconds.\n"
+    },
+    {"getMicroSeconds", (PyCFunction) UnirecTime_getMicroSeconds, METH_NOARGS,
+        "Get number of microseconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (long): Retrieved number of microseconds.\n"
+    },
+    {"getMicroSecondsAsFloat", (PyCFunction) UnirecTime_getMicroSecondsAsFloat, METH_NOARGS,
+        "Get number of microseconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (double): Retrieved number of microseconds.\n"
+    },
+    {"getNanoSeconds", (PyCFunction) UnirecTime_getNanoSeconds, METH_NOARGS,
+        "Get number of nanoseconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (long): Retrieved number of nanoseconds.\n"
+    },
+    {"getNanoSecondsAsFloat", (PyCFunction) UnirecTime_getNanoSecondsAsFloat, METH_NOARGS,
+        "Get number of nanoseconds of timestamp.\n\n"
+        "Returns:\n"
+        "    (double): Retrieved number of nanoseconds.\n"
     },
     {"getTimeAsFloat", (PyCFunction) UnirecTime_getTimeAsFloat, METH_NOARGS,
         "Get number of seconds of timestamp.\n\n"
