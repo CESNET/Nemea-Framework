@@ -2,14 +2,14 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-framework], [2.1.2], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-framework], [2.1.3], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
-RELEASE=2
-AC_SUBST(RELEASE)
+RPM_RELEASE=1
+AC_SUBST(RPM_RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
 AC_SUBST(USERNAME)
@@ -54,8 +54,6 @@ if test -z "$RPMBUILD"; then
 	AC_MSG_WARN([Due to missing rpmbuild you will not able to generate RPM package.])
 fi
 
-RPM_RELEASE=1
-AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AC_ARG_ENABLE([libtrap], AC_HELP_STRING([--disable-libtrap], [Disable libtrap.]),
