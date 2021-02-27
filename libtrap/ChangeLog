@@ -1,3 +1,6 @@
+2021-02-27 libtrap-1.16.1
+	* bugfixes and refactoring (timestamps, deadlocks)
+
 2020-12-08 libtrap-1.16.0
 	* replaced select() with poll() - thanks to Flowmon Networks
 	* bugfixes of deadlocks, negotiation failure, memory leaks - Jiri Havranek

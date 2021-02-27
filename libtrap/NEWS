@@ -1,3 +1,18 @@
+2021-02-09 (Jiri Havranek): libtrap: hotfix preventing module from being blocked
+2021-01-27 (Tomas Cejka): fix coding style
+2021-01-20 (Radko Krkos): Revert "build: gcc10+ compatibility: add -fcommon if gcc version is at least 10"
+2021-01-07 (Radko Krkos): libtrap: Fix build on GCC v10.x
+2020-12-09 (Jiri Havranek): libtrap: improved detection and disconnect of slow client
+2020-12-09 (Jiri Havranek): libtrap: fixed work with pollfd struct array causing delays when client suddenly connects
+2020-12-02 (aPiecek): refactor: BUGFIX ifc_tls.c, trap.c, argument cannot be negative
+2020-12-02 (aPiecek): refactor: ifc_file, test_echo, test_echo_ctx, test_rxtx, ip_prefix_search, unirec, unchecked return value
+2020-11-24 (lePici): refactor: ifc_tcpip and ip_prefix_search, resource leak
+2020-11-24 (lePici): refactor: ifc_file, invalid type in argument to printf format
+2020-11-24 (lePici): refactor: libjansson, extra argument in printf
+2020-11-24 (lePici): refactor: trap, dereference before null check
+2020-11-24 (lePici): refactor: ifc_tls and ip_prefix_search, bad bit shift operation
+2020-11-24 (lePici): refactor: ifc_tls and trap, argument cannot be negative
+
 2020-11-04 (Jiri Havranek): libtrap: fixed return code when interface negotiation fails
 2020-11-02 (Jiri Havranek): libtrap: fixed autoflush not being called when sending thread was waiting
 2020-11-02 (Jiri Havranek): libtrap: improved verbose message about disconnecting slow reading client
