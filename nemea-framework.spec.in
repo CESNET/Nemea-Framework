@@ -33,7 +33,7 @@ Package that simplifies installation of libtrap, nemea-common and examples.
 %package devel
 Summary: NEMEA Framework development package
 Group: Liberouter
-Requires: libtrap-devel nemea-common-devel unirec python3-nemea-pytrap python3-nemea-pycommon
+Requires: libtrap-devel nemea-common-devel unirec python%{python3_pkgversion}-nemea-pytrap python%{python3_pkgversion}-nemea-pycommon
 Provides: nemea-framework-devel
 
 %description devel
