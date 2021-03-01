@@ -25,5 +25,6 @@ coverage:
 
 .PHONY: doc
 doc:
-	epydoc -o doc --html -v pytrap
+	pdoc3 -o doc --html pytrap
+	mv doc/pytrap.html doc/index.html
 
