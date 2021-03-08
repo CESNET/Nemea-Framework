@@ -576,29 +576,6 @@ int file_write_buffer(void *priv, const void *data, uint32_t size, int timeout)
       return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
    }
 
-#ifdef ENABLE_NEGOTIATION
-   if (config->neg_initialized == 0) {
-      ret_val = output_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE, 0);
-      if (ret_val == NEG_RES_OK) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: success.", config->ifc_idx);
-         config->neg_initialized = 1;
-         fflush(config->fd);
-      } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
-         VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: failed (unknown data format of this output interface -> refuse client).", config->ifc_idx);
-         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
-      } else { /* ret_val == NEG_RES_FAILED */
-         VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: failed (error while sending hello message to input interface).", config->ifc_idx);
-         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
-      }
-   }
-#endif
-
-   /* Writes data_length bytes to the file */
-   written = fwrite(data, 1, size, config->fd);
-   if (written != size) {
-      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "FILE OUTPUT IFC[%"PRIu32"]: unable to write to file: %s", config->ifc_idx, config->filename);
-   }
-
    if (config->file_change_time != 0) {
       time_t current_time = time(NULL);
 
@@ -632,6 +609,29 @@ int file_write_buffer(void *priv, const void *data, uint32_t size, int timeout)
       if (status != TRAP_E_OK) {
          return trap_errorf(config->ctx, status, "FILE OUTPUT IFC[%"PRIu32"]: Error during output file opening.", config->ifc_idx);
       }
+   }
+
+#ifdef ENABLE_NEGOTIATION
+   if (config->neg_initialized == 0) {
+      ret_val = output_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE, 0);
+      if (ret_val == NEG_RES_OK) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: success.", config->ifc_idx);
+         config->neg_initialized = 1;
+         fflush(config->fd);
+      } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: failed (unknown data format of this output interface -> refuse client).", config->ifc_idx);
+         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+      } else { /* ret_val == NEG_RES_FAILED */
+         VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: failed (error while sending hello message to input interface).", config->ifc_idx);
+         return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
+      }
+   }
+#endif
+
+   /* Writes data_length bytes to the file */
+   written = fwrite(data, 1, size, config->fd);
+   if (written != size) {
+      return trap_errorf(config->ctx, TRAP_E_IO_ERROR, "FILE OUTPUT IFC[%"PRIu32"]: unable to write to file: %s", config->ifc_idx, config->filename);
    }
 
    return TRAP_E_OK;
