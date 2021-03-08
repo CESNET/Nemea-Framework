@@ -665,9 +665,9 @@ void file_flush(void *priv)
    file_buffer_t *buffer = &c->buffer;
 
    /* Do not flush empty buffer. */
-   if (buffer->wr_index == 0)
+   if (buffer->wr_index == 0) {
       return;
-
+   }
    finish_buffer(buffer);
 
    result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), 0);
