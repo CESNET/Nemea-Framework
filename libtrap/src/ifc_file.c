@@ -652,18 +652,31 @@ static inline void insert_into_buffer(file_buffer_t *buffer, const void *data, u
    buffer->wr_index += (size + sizeof(size));
 }
 
+/**
+ * \brief Flush buffer to file.
+ *
+ * \param[in] priv      pointer to module private data
+ *
+ */
 void file_flush(void *priv)
 {
    int result;
    file_private_t *c = (file_private_t *) priv;
    file_buffer_t *buffer = &c->buffer;
 
+   /* Do not flush empty buffer. */
+   if (buffer->wr_index == 0) {
+      return;
+   }
    finish_buffer(buffer);
 
    result = file_write_buffer(priv, buffer->header, buffer->wr_index + sizeof(buffer->wr_index), 0);
 
    if (result == TRAP_E_OK) {
       __sync_add_and_fetch(&c->ctx->counter_send_buffer[c->ifc_idx], 1);
+
+      /* Flush buffer to file. */
+      fflush(c->fd);
 
       /* Reset buffer and insert the message if it was not inserted. */
       buffer->wr_index = 0;
