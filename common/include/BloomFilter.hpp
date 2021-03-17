@@ -156,6 +156,12 @@ public:
 
 };
 
+/*!
+ * \brief Used for a probabilistic test of whether an element is a member of a set
+ * When using, make sure that the inserted bytes
+ * do not contain alignment (padding) bytes with random values.
+ * Otherwise, the behaviour is undefined.
+ */
 class bloom_filter
 {
 protected:
