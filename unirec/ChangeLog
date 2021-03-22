@@ -1,3 +1,8 @@
+2021-03-22 unirec-2.9.4
+	* timestamps in microseconds precision
+	* fix build gcc10
+	* bugfixes
+
 2020-09-20 unirec-2.9.3
 	* compilation on gcc10
 	* improved doc of ur_time

@@ -1,3 +1,15 @@
+2021-01-27 (Tomas Cejka): fix coding style
+2021-01-20 (Radko Krkos): unirec: Fix comment in configure.ac
+2021-01-20 (Radko Krkos): unirec: Fix build with GCC v10.x
+2021-01-20 (Radko Krkos): Revert "unirec: build: gcc10+ compatibility: add -fcommon if gcc version is at least 10"
+2020-12-02 (aPiecek): bugfix: BUGFIX ip_prefix_search, bad bit shift operation
+2020-12-02 (aPiecek): bugfix: ifc_file, test_echo, test_echo_ctx, test_rxtx, ip_prefix_search, unirec, unchecked return value
+2020-11-24 (lePici): bugfix: ifc_tcpip and ip_prefix_search, resource leak
+2020-11-24 (lePici): bugfix: ip_prefix_search, double free
+2020-11-24 (lePici): bugfix: ifc_tls and ip_prefix_search, bad bit shift operation
+2020-11-06 (Josef Schlehofer): unirec.c: fix warning about deprecated _BSD_SOURCE
+2020-10-30 (Jiri Havranek): unirec: csv: timestamps are now printed in microsecond precision
+
 2020-09-11 (Tomas Cejka): unirec: build: gcc10+ compatibility: add -fcommon if gcc version is at least 10
 2020-08-18 (Václav Bartoš): ur_time: added comment pointing to implementation of ur_time_from_string
 
