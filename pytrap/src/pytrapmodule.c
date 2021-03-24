@@ -614,7 +614,8 @@ static PyMethodDef pytrap_methods[] = {
 "\n" \
 "Simple example for creation of new message of UnirecTemplate:\n" \
 "\n" \
-"    # 100 is the maximal total size of fields with variable length\n" \
+"    # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
+"    # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
 "    data = rec.createMessage(100)\n" \
 "    rec.DST_PORT = 80\n" \
 "\n" \
