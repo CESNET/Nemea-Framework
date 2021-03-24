@@ -82,6 +82,10 @@
 #  include <openssl/err.h>
 #endif
 
+/* Values for non-blocking sending and receiving service data. */
+#define SERVICE_WAIT_BEFORE_TIMEOUT 25000  ///< Timeout after EAGAIN or EWOULDBLOCK errno returned from service send() and recv().
+#define SERVICE_WAIT_MAX_TRY 8  ///< A maximal count of repeated timeouts per each service recv() and send() function call. 
+
 /**
  * Version of libtrap
  *
@@ -2151,10 +2155,10 @@ int service_get_data(int sock_d, uint32_t size, void **data)
       } else if (last_receved == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
             num_of_timeouts++;
-            if (num_of_timeouts >= 3) {
+            if (num_of_timeouts > SERVICE_WAIT_MAX_TRY) {
                return -1;
             } else {
-               usleep(25000);
+               usleep(SERVICE_WAIT_BEFORE_TIMEOUT);
                continue;
             }
          }
@@ -2174,10 +2178,10 @@ int service_send_data(int sock_d, uint32_t size, void **data)
       if (last_sent == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
             num_of_timeouts++;
-            if (num_of_timeouts >= 3) {
+            if (num_of_timeouts > SERVICE_WAIT_MAX_TRY) {
                return -1;
             } else {
-               usleep(25000);
+               usleep(SERVICE_WAIT_BEFORE_TIMEOUT);
                continue;
             }
          }
