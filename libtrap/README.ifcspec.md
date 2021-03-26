@@ -38,10 +38,10 @@ If you skip `<hostname or ip>:`, IFC assumes you want to use localhost as the ho
 Parameters when used as OUTPUT interface:
 
 ```
-<port>:<max_num_of_clients>
+<port>:<max_clients=>,<buffer_count=>,<buffer_size=>
 ```
 
-Maximal number of connected clients (input interfaces) is optional (64 by default).
+Maximum number of connected clients (max_clients=64 by default), buffer count and size (buffer_count=50,buffer_size=100000 by default) are optional parameters.
 
 TLS interface ('T')
 -------------------
@@ -64,9 +64,9 @@ If you skip `<hostname or ip>:`, IFC assumes you want to use localhost as a host
 
 Parameters when used as OUTPUT interface:
 ```
-<port>:<max_num_of_clients>:<keyfile>:<certfile>:<CAfile>
+<port>::<keyfile>:<certfile>:<CAfile>:<max_clients=>,<buffer_count=>,<buffer_size=>
 ```
-Maximal number of connected clients (input interfaces) is optional (64 by default).
+Interface uses the same optional parameters as TCP interface (max_clients, buffer_count and buffer_size). Optional parameters must be specified after mandatory parameters.
 
 Parameters keyfile, certfile, CAfile expect a path to apropriate files in PEM format.
 
@@ -83,10 +83,10 @@ Socket name can be any string usable as a file name.
 
 Parameters when used as OUTPUT interface:
 ```
-<socket_name>:<max_num_of_clients>
+<socket_name>:<max_clients=>,<buffer_count=>,<buffer_size=>
 ```
 Socket name can be any string usable as a file name.
-Maximal number of connected clients (input interfaces) is optional (64 by default).
+Interface uses the same optional parameters as TCP interface (max_clients, buffer_count and buffer_size). Optional parameters must be specified after mandatory parameters.
 
 
 Blackhole interface ('b')
