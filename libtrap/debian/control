@@ -1,0 +1,30 @@
+Source: libtrap
+Section: unknown
+Priority: extra
+Maintainer: CESNET <nemea@cesnet.cz> 
+Build-Depends: autotools-dev,
+	debhelper (>=9)
+Standards-Version: 3.9.5
+Homepage: https://github.com/CESNET/Nemea-Framework
+Vcs-Git: https://github.com/CESNET/Nemea-Framework
+Vcs-Browser: https://github.com/CESNET/Nemea-Framework/tree/master/libtrap
+
+Package: libtrap
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: libtrap - communication library for NEMEA project
+ This package contains libtrap - implementation of communication interfaces
+ that are used by NEMEA modules.
+
+Package: libtrap-dev
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: libtrap - communication library for NEMEA project
+ This package contains libtrap - implementation of communication interfaces
+ that are used by NEMEA modules.
+ .
+ Development files only.

@@ -1,0 +1,12 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+includedir = @includedir@
+libdir =  @libdir@
+datarootdir = @datarootdir@
+datadir = @datadir@
+
+Name: libtrap
+Version: @PACKAGE_VERSION@
+Description: Library contains modules of communication interface between TRAP modules.
+Libs: @LIBS@ -L${libdir} -ltrap
+Cflags: -I${includedir}

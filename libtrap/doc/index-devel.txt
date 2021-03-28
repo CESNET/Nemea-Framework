@@ -1,0 +1,12 @@
+/**
+\mainpage Development documentation
+Libtrap is divided into:
+<ul>
+<li>Public API (contains \ref contextapi and simple API)</li>
+<li>Buffering layer \ref buffering </li>
+<li>Interfaces \ref trap_ifc</li>
+</ul>
+
+To learn how to implement a new Libtrap interface, see \ref devel-ifc.
+
+*/

@@ -1,0 +1,2 @@
+#!/bin/bash
+./test_tcpip.sh simple u:libtrap-test > libtrap_simpleapi.log.rpt

@@ -1,0 +1,44 @@
+B+ tree
+-------
+
+   B+ tree is an n-ary tree for effective searching, inserting and deleting values which are
+sorted by their keys. A B+ tree consists of a root, internal nodes and leaves.The root may be
+either a leaf  or a node with two or more children. A B+ tree is B tree, where each node
+contains only keys. Values are stored in leaves. Leaves are in the same depth and they are
+interconnected to the linked list.
+
+   The primary value of a B+ tree is in storing data for efficient retrieval. For example
+it is used for storing information about IP addresses. Key is an IP address and value
+is a structure with information. The key can be any value of specific size, which has to
+be specified in advance. Then there has to be function for comparing the keys.
+
+   For using the tree, call the b_plus_tree_initialize() function first. The function
+creates all necessary structures for storing and accessing the data. Parameters you give
+the function are number of children for node, size of the table, pointer to function for
+comparing keys, size of the value, length of the key used for "indexing" stored items
+
+Function for comparing keys has two parameters (two keys which are compared),
+returns         zero - a==b,
+        negative int - a<b,
+        positive int - a>b.
+
+   For inserting or searching there is b_plus_tree_insert_or_find_item() function.
+Parameters are pointer to b+ tree structure and key which should be added. The return
+value is pointer to memory where the item is stored. If the item is not in the tree,
+it is created.
+
+   For removing items there is b_plus_tree_delete_item() function.
+Parameters are pointer to b+ tree structure and key which should be deleted. The return
+value is 1 when the key was in tree and was successfully deleted, otherwise 0.
+
+   For reading each item, there is function b_plus_tree_create_list_item() with parameter
+of tree structure, it returns structure of item (b_plus_tree_item), where the value and key
+is stored. For getting next item, call function  b_plus_tree_get_next_item_from_list(), with
+parameters pointer to the tree structure and pointer to the item. For removing item from tree there
+is b_plus_tree_delete_item_from_list() function with the same parameters
+as b_plus_tree_get_next_item_from_list(). For deleting the item structure, call
+b_plus_tree_destroy_list_item() with pointer to structure.
+
+   For destruction of the whole tree there is b_plus_tree_destroy() function, parameter is pointer
+to the b_plus_tree structure.
+

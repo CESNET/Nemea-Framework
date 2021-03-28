@@ -1,0 +1,8 @@
+/usr/include/
+/usr/lib/*/libtrap.so
+/usr/lib/*/libtrap.a
+/usr/lib/*/libtrap.la
+/usr/lib/*/pkgconfig/libtrap.pc
+/usr/share/
+
+

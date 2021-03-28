@@ -1,0 +1,34 @@
+2020-03-13 (Tomáš Čejka): common: fixed build, removed ip_prefix_search that was moved into unirec
+2020-03-13 (Tomáš Čejka): unirec: moved ip_prefix_search from common, fixed linking
+2016-10-18 (Nadia Eghbal): Convert README to Markdown
+2016-10-10 (Ondřej Plotěný): ip_prefix_search: first version, bug fixes and improvements
+
+2018-12-08 (Dominik Soukup): libtrap: BUGFIX Explicit conversion from int to char (#111)
+2018-09-18 (Ulrik Haugen): Document that items inserted into bplustree are zeroed
+2018-07-30 (Tomas Cejka): common: updated format of ChangeLog and NEWS
+2018-07-16 (Tomas Jansky): common: rpmbuild: added dependency for gcc-c++
+
+2016-08-05 (Zdenek Rosa): b_plus_tree: fixed some coding style issues
+2016-08-05 (Zdenek Rosa): common: b_plus_tree: Correction of B+ tree documentation
+2016-08-04 (Tomas Cejka): common: codecov: static link libnemea-common for tests
+2016-07-30 (Tomas Cejka): common: configure add --without to skip libxml2
+
+2016-07-21 (Tomas Cejka): common: add missing libxml2-devel dependency
+2016-06-24 (Zdenek Rosa): common:b_plus_tree: bugfix, wrong name of function in header file
+2016-06-22 (Zdenek Rosa): common:b_plus_tree: created public API
+2016-06-15 (Zdenek Rosa): prefix_tree: bugfix, number of pointers to children increased.
+2016-03-20  nemea-common-1.4.3
+        * bugfix in prefix tree
+
+2016-03-20 (Zdenek Rosa): common,prefix_tree: Bugfix - wrong string representatin if there were unreadable characters
+
+2016-03-10  nemea-common-1.4.2
+        * modules now can use nemea-common written in C
+
+2016-03-10 (Tomas Cejka): common: add extern "C" into header file
+
+2016-02-28 nemea-common-1.4.1
+	* bugfixes of b+ tree
+
+2016-02-09 (Tomas Jansky): b_plus_tree: fixed warning regarding void* in arithmetic
+

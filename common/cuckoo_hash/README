@@ -1,0 +1,40 @@
+Short howto for hashing table with cuckoo hashing.
+
+    For compilation compile the hash table itself and then link the library file
+to your program. The included Makefile is set to use hashes.c file present with
+the source codes. If you want to use your own hash functions just edit the make
+file and recompile the library with your the functions. It's also better to copy
+the compiled library to the same folder as your program to prevent any unnecesary
+errors.
+
+    For using the table call the ht_init() function first. The function creates
+all necesary structures for storing and accessing the data. Parameters you give the
+function are size of the table, size of the stored data, length of the key used
+for "indexing" stored items (if you want to use key with variable length use 0) 
+and constant REHASH_ENABLE or REHASH_DISABLE whether you want the table to adjust 
+its size or not. The function either returns 0 if everything goes well
+or -1 if the table couldn't be created mostly due the insufficent memory.
+
+    For inserting there is  ht_insert() function. It uses cuckoo hashing algorithm 
+for storing the given data. If the position determined by the hash function is free 
+then the new item is inserted without any other special operations. If the position is 
+occupied then the data is rearranged. There are only 15 attempts for this operation. 
+ If these are used up then the item that was kicked last is either destroyed or the 
+table is resized/rehased if enabled.
+
+NOTE:
+    If you use variable key length (for example URLs or any other string-like key) 
+the you also have to give the insert function the length of the key of the inserted 
+item.
+
+    For accessing the desired item there are ht_get() which returns pointer to
+the data you want and ht_get_index() which returns the index for accessing the
+item. You can use this function either for checking the presence of an item (the
+function return -1 if the item is not found) or for data of the item. You can 
+also check emptiness of the table by ht_is_empty() function. 
+
+    Items can be removed either by ht_remove_by_key() function which finds the
+item and destroys it  or by ht_remove_by_index() function which you give the index 
+of the item. For removing all the items use the ht_clear() procedure.
+
+    For destruction of the whole table there is ht_destroy() procedure.

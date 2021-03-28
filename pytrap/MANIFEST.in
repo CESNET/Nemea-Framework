@@ -1,0 +1,2 @@
+include src/*.c src/*.h README COPYING
+include test/*.py

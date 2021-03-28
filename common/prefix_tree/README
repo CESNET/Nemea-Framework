@@ -1,0 +1,251 @@
+Prefix tree
+-----------
+    This structure is an ordered tree data structure that is used to store a dynamic set or 
+associative array where the keys are usually strings. Unlike a binary search tree, no node in 
+the tree stores the key associated with that node; instead, its position in the tree defines 
+the key with which it is associated. All the descendants of a node have a common prefix or suffix
+of the string associated with that node, and the root is associated with the empty string.
+
+    The Prefix tree can be used for storing strings which have same prefix or suffix. The tree 
+structure has information about count of different (suf-pre)fixes of certain (suf-pre)fix. It can
+be used for example for storing domain names or email address. You can specify the delimiter of string
+and the tree automatically creates special (domain) node.
+
+    For using the tree call the prefix_tree_initialize() function first. The function creates
+all necessary structures for storing and accessing the data and return structure of tree. 
+The parameters are: 
+		Value "PREFIX" for prefix tree or SUFFIX for suffix tree.
+		Size of value which will be allocated for each inserted string. 
+		Delimiter.
+
+    For inserting there is prefix_tree_insert() function. Parameters are pointer to the prefix 
+tree structure, a string which should be added and length of string. The return value 
+is a domain node of inserted string. If the item is not in the tree, it is created, if the item
+is already in the tree, then the pointer to existing string is returned.
+
+    For reading saved string, there is a function prefix_tree_read_string() with parameters:
+		Pointer to the tree.
+		Domain structure.
+		Pointer, where the string should be saved.
+
+    For destruction of a whole tree there is prefix_tree_destroy() function, parameter is
+pointer to the prefix tree structure.
+
+
+Example usage
+-------------
+
+#include "prefix_tree.h"
+
+//structure for value
+typedef struct info_t{
+    unsigned int id;
+} info_t;
+
+int main(int argc, char *argv[])
+{
+	//pointer to the tree
+	prefix_tree_t * tree;
+
+	//any structure of value type. This structure should be defined in your code.
+	info_t * info;
+
+	//string - for reading saved string in the tree
+	char str[200];
+
+	/*
+	* return value from function prefix_tree_insert() or prefix_tree_search()
+	* in this structure is:
+	*	- degree 
+	*		Number of domain node in string (for example domain names have separator '.',
+	*		for domain domain1.domain2.cz is degree = 3).
+	*	- count_of_insert
+	*		count of operation insert on certain string.
+	* 	- count_of_different_subdomains
+	*		Count of different descendants. 
+	*		Example: You will insert 
+	*			"domain1.cz", "domain2.cz"," domain3.domain1.cz", "domain4.cz", "domain5.domain4.cz"
+	*			then for domain "cz" is  count_of_different_subdomains = 5
+	*	- value
+	*		User specified value saved created in every domain node
+	*/
+	prefix_tree_domain_t * domain = NULL;
+
+	/*
+	* Initial function, which return pointer to the created tree.
+	* Parameters are:
+	*	1. SUFFIX for suffix tree or PREFIX for prefix tree.
+	*	2. size of structure, which will be saved for every domain node
+	* 	3. delimiter.
+	*		For example delimiter of domain name is '.'. for email it is '@'.
+	*		For each delimiter in string will be created domain node (structure prefix_tree_domain_t).
+	*		If you don't want to use delimiter, use value -1.
+	*	4. For using domain extension statistic use DOMAIN_EXTENSION_YES. If there is no need for domain 
+	*	   extension use DOMAIN_EXTENSION_NO. Domain extension is set of linked lists, where domains are 
+	* 	   sorter by count of searching.
+	*	5. For using relaxation after delete use RELAXATION_AFTER_DELETE_YES otherwise 
+	*	   RELAXATION_AFTER_DELETE_NO. Relaxation means merging nodes, which have just one child. This 
+	*	   operation is called after deleting node.
+	* Return value is pointer to the tree.
+	*/
+	tree =  prefix_tree_initialize(SUFFIX ,sizeof(info_t),'.',DOMAIN_EXTENSION_YES, RELAXATION_AFTER_DELETE_YES);
+
+	/*
+	* Function for inserting strings to the tree.
+	* Parameters are:
+	*	1. Pointer to the tree, where the string will be inserted.
+	*	2. A String which witch will be added.
+	* 	3. Size of the string.
+	* Return value is pointer to structure prefix_tree_domain_t.
+	*/	
+	domain = prefix_tree_insert(tree, "google.com",10);
+
+	domain = prefix_tree_insert(tree, "domain2.com",11);
+	domain = prefix_tree_insert(tree, "translate.google.com",20);
+	domain = prefix_tree_insert(tree, "prefix.com",10);
+	domain = prefix_tree_insert(tree, "suffix.com",10);	
+	domain = prefix_tree_insert(tree, "ok.prefix.com",13);
+
+	/*
+	* Created tree of this values is:
+
+                            "."
+                             |
+                           "com"
+                             |
+                            "."
+                         /   |  \
+                       /     |    \
+                     /       |      \
+                "google" "domain2" "fix"
+                    |                 |  \
+                    |                 |   \
+                   "."              "pre"  suff 
+                    |                 |
+                "translate"          "."
+                                      |
+                                     "ok"
+	*/
+
+
+	/*
+	* Function for getting string from domain node.
+	* Parameters are:
+	*	1. Pointer to the tree.
+	*	2. Pointer to the domain node.
+	* 	3. Pointer to the string.
+	* Return value is char*.
+	*/
+	prefix_tree_read_string(tree, domain, str);
+	printf("%s\n", str);	
+
+	/*
+	* Function for searching string in tree.
+	* Function is similar to prefix_tree_insert(), but if the string 
+	* is not in the tree, it returns NULL.
+	* Parameters are:
+	*	1. Pointer to the tree, where the string will be inserted.
+	*	2. A String which witch will be added.
+	* 	3. Size of the string.
+	* Return value is domain structure or NULL.
+	*/	
+	domain = prefix_tree_search(tree, "google.com",10);
+
+	/*
+	* You can find specified space for value of string in domain structure.
+	*/
+	if(domain != NULL){
+		info = (info_t*)domain->value;
+		info->id = 5; 	
+	}
+
+	/*
+	* Function for destroying a tree.
+	* Parameter is pointer to the tree. 
+	*/
+	prefix_tree_destroy(tree);
+
+
+	//COUNT OF PREFIX/SUFFIX
+	//----------------------
+	/*
+	* For some purpose, the tree can be used just for count strings with
+	* same prefix or suffix.
+	* Count of strings is saved in each inner node (inner_node->count_of_string).
+	*/
+
+	/*
+	* First we will create tree structure (prefix tree), without additional 
+	* structure and without separator, 
+	*/
+	tree =  prefix_tree_initialize(PREFIX, 0, -1);
+	
+	/*
+	* We will insert some strings.
+	* 
+	*/
+	prefix_tree_insert(tree, "name1-one", 9);	
+	prefix_tree_insert(tree, "name2-two", 9);	
+	prefix_tree_insert(tree, "name3-three", 10);
+	prefix_tree_insert(tree, "national", 8);
+	/*
+	* tree structure will be:
+
+                            "."
+                             |
+                            "na"
+                            / \
+                           /   \
+                        "me"    "tional"
+                      /   |  \
+                    /     |    \
+                  /       |      \
+             "1-one"   "2-two"  "3-three"
+
+
+    * The most used inner node (prefix) is "na", which has 4 substrings.
+    * From node "na" is most used "me", which has 3 substrings.
+	*/
+
+	/*
+	* There is function for searching the most used inner node.
+	* Parameter is node, where to start searching. For example root node.
+	* It returns pointer to inner node or NULL(node does not exist)
+	*/
+	prefix_tree_inner_node_t * inner_node;
+	inner_node = prefix_tree_most_substring(tree->root);
+
+	/*
+	* Function for getting string from inner node.
+	* Parameters are:
+	*	1. Pointer to the tree.
+	*	2. Pointer to the inner node.
+	* 	3. Pointer to the string.
+	* Return value is char*.
+	*/
+	prefix_tree_read_inner_node(tree, inner_node, str);
+
+	printf("String in most used inner node is: \"%s\" and has %d substrings\n", str, inner_node->count_of_string);
+	//String in most used inner node is: "na" and has 4 substrings.
+
+	/*
+	* We can search following most used inner node.
+	*/	
+	inner_node = prefix_tree_most_substring(inner_node);
+	prefix_tree_read_inner_node(tree, inner_node, str);
+	printf("String in most used following inner node is: \"%s\" and has %d substrings\n", str, inner_node->count_of_string);
+	//String in most used following inner node is: "me" and has 3 substrings.
+
+	/*
+	* We can delete any node and his descendants by calling function prefix_tree_delete_inner_node(), 
+	* which has two parameters. First is pointer to the tree, and second is pointer to inner node, which 
+	* we want to delete. Counters (string counter and domain counter) will be changed to actually values. 
+	*/	
+	prefix_tree_delete_inner_node(tree, inner_node);
+
+	/*
+	* Function for destroying a tree.
+	*/
+	prefix_tree_destroy(tree);
+	return 0;
+}

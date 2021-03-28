@@ -1,0 +1,27 @@
+2020-07-16 nemea-common-1.6.2
+	* common: changes related to moving ip_prefix_search
+	* ip_prefix_search: was moved into unirec
+
+2019-05-18 nemea-common-1.6.1
+	* update doc
+	* maintenance
+	* bugfix implicit conversion
+
+2018-07-16 nemea-common-1.6.0
+	* Added Counting Sort implementation
+
+2017-08-21 nemea-common-1.5.3
+	* fixed rpm target - bad file name
+	* BUGFIX inline functions
+	* update source0 in specs and .travis.yml to contain sources
+	* substituted unsigned long long int with uint64_t
+	* removed commas in enumerations lists (fast_hash_filter, fast_hash_table)
+	* removed executable rights on some files
+
+2016-03-20 nemea-common-1.5.2
+	* fixed debian package generation
+
+2016-07-26 nemea-common-1.5.0
+	* change of b+ tree API
+	* bugfixes:
+		- prefix tree: number of children

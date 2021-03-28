@@ -1,0 +1,153 @@
+2021-03-22 libtrap-1.16.2
+	* bugfix: flush to file
+	* bugfix: write to file
+
+2021-02-27 libtrap-1.16.1
+	* bugfixes and refactoring (timestamps, deadlocks)
+
+2020-12-08 libtrap-1.16.0
+	* replaced select() with poll() - thanks to Flowmon Networks
+	* bugfixes of deadlocks, negotiation failure, memory leaks - Jiri Havranek
+
+2020-09-20 libtrap-1.15.1
+	* bugfix: strncpy in file IFC
+	* bugfix: compilation on openwrt
+	* bugfix: compilation on new gcc10 (-fcommon)
+
+2020-04-21 libtrap-1.15.0
+	* fixed CPU exhausting issue
+	* fixed missing atomicops on turris
+	* fixed segfault on bad params of file IFC
+	* add delay statistics for input IFC
+
+2020-04-01 libtrap-1.14.0
+	* libtrap:
+		New enhanced version of buffering that uses ring buffer.
+2019-05-18 libtrap-1.13.1
+	* Replace 8B atomics on platforms that do not support it (turris)
+	* File IFC file numbers are aligned to 5 digits with leading zeros
+	* File IFC file has default mode set to 'w' now
+	* Maintenance and fixing warnings.
+
+2019-04-20 libtrap-1.13.0
+	* Improved error messages
+	* Removed multi_recv unused feature
+
+2019-02-07 libtrap-1.12.2
+	* Bugfix in init - possible deadlock on uninitialized semaphore
+
+2018-11-23 libtrap-0.12.1
+	* libtrap:
+		Libtrap buffer now properly empties itself if no client is
+		connected to the ouput interface. (This changes how statistics
+		- number of messages sent and dropped - are treated when
+		no client is connected).
+
+		Added client identification for TCP and UNIX output interfaces
+		and computation of statistics. For UNIX IFC type, ID is set to PID of the connected client.
+		For TCP or TLS IFC types, ID is set to a remote TCP port of the connected
+		client (which can be looked up using `netstat(8)` or `ss(8)`).
+
+2018-10-26 libtrap-0.12.0
+	* libtrap:
+		Refactoring, improved throughput.
+		Fixed problems with not setting trap last error.
+		Most of the context functions are now thread safe.
+		Autoflush is no longer called in situations when send procedure keeps failing repeatedly.
+		Added periodical interface statistics printings when run in verbose mode.
+		Improved documentation.
+
+2018-10-09 libtrap-0.11.8
+	* libtrap:
+		Fix non-blocking recv in libtrap.
+		Fix possible write to uninitialized address.
+		Improved VERBOSE CPP macro to print file&line in debug.
+
+2018-09-18 libtrap-0.11.7
+	* libtrap:
+		Bugfixes and performance improvement (locks rework)
+	* trap_stats:
+		Improved trap_stats argument to allow passing just PID
+2018-07-30 libtrap-0.11.6
+	* libtrap:
+		bugfixes of TLS IFC
+		fixed bad error message (no error)
+		doc update
+
+2018-07-16 libtrap-0.11.5
+	* libtrap:
+		bugfixes in file and TLS interfaces
+	
+2017-08-08 libtrap-0.11.0
+	* added TLS communication IFC
+
+2017-08-07 libtrap-0.10.0
+	* extended API - new functions trap_ctx_init2() and trap_ctx_init3()
+	* changed name and path to sockets (/var/run/libtrap/)
+	* path to sockets can be specified in run-time (TRAP_SOCKET_DIR env variable)
+	* max clients of IFCs is configurable in compile-time
+	* many bugfixes
+	* added tests
+	* doc improved
+
+2016-07-26 libtrap-0.8.0
+	* extended internal IFC API
+	* documentation improved and revisited
+	* added build target for Debian packages
+	* cleanup of 3rd party json code
+	* file IFC can rotate files (based on time or size)
+	* trap_stats (and supervisor) shows IFC identification (socket name)
+	* bugfixes:
+		- memory leak in service IFC
+		- handling byte order in headers of libtrap messages (incompatibility with older versions)
+		- additional checks in code
+
+2016-02-28 libtrap-0.7.2
+	* trap_stats
+	* moved example into nemea-framework
+	* improved doc
+
+2015-06-26 libtrap-0.7.0:
+	* added new tests
+	* documentation improved and revisited
+		- 2 levels of documentation: internal (libtrap developers) and public (Nemea developers)
+	* Nemea module parameters API - helpers
+	* non-blocking connect
+	* removed unused shmem IFC
+	* extended IFC API:
+		- get_client_count
+		- create dump of configuration and buffer for development purposes
+	* experimental support of file IFC (integrated trap{dump,replay}
+	* bugfixes
+	* added new tests
+	* JSON output of module's parameters
+
+2015-06-20 libtrap-0.6.0:
+	* added new tests
+	* extended internal counters
+	* bugfixes:
+		- deadlocks during termination, disconnection
+		- revision blocking and non-blocking mode of IFCs
+		- service IFC
+
+2014-03-30 libtrap-0.5.3:
+	* trap_send() & trap_recv()
+	* force flush of output IFCs on finalize
+	* PAGER for help (use e.g. export PAGER=less)
+	* bugfixes:
+		- init and finalize
+		- removed recovery limit
+		- delete of old unix socket
+		- service thread close
+
+2014-02-20 libtrap-0.5.0:
+	* context libtrap API
+	* service interface for supervisor
+	* function for buffer flush
+	* constant text string with libtrap version
+
+2013-10-28 libtrap-0.4.4:
+	* max number of clients is optional IFC parameter (in -i)
+	* using autools
+	* autoflush
+

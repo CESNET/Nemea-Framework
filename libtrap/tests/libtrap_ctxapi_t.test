@@ -1,0 +1,2 @@
+#!/bin/bash
+./test_tcpip.sh ctx t:11334 > libtrap_ctxapi_t.log.rpt

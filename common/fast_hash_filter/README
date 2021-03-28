@@ -1,0 +1,53 @@
+This is new version of fast hash table, which does not have any replacement vector
+and stash. This is 8-way hash table. When the table row is full, new record will not
+be inserted and it will not replace any old record. This table contains resizing
+function fhf_resize, detailed description is in header file. 
+
+If the program is using resizing function, it can have maximum one thread which
+makes changes in the table (insert, update data, remove) and optional number of
+threads which make only reads from the table (this threads can not change any
+records).
+
+If the program does not use resizing function, optional number of writing threads
+can be used.
+
+Only one thread can access to the row in the same time regardless it writes or reads.
+
+The best performance can be reached by using 40 bytes long keys. Little worse
+performance can be reached with key lengths which are multiple of 8. But there
+can be also used different key lengths.
+
+Due to optimizations size of table must be power of 2.
+
+For initialization use function fhf_init. Size of table is set according to 
+parameter table_rows. Size of table can be increased by fhf_resize function,
+which doubles the size in default and when it can not insert all items in new table
+it tries double the size again and so on. 
+Hash functions use as a seed address of table, therefore new table should also
+generate new hashes.
+
+To insert item in the table use functions fhf_insert, which copies key and data
+to the table, or fhf_insert_own_or_update, which copies only key and sets pointer
+to data, which can be set then.
+To get data from the table use functions fhf_get_data, fhf_get_data_locked.
+Function fhf_get_data is intended to use only in single-thread application.
+To remove single unlocked item from the table use functions fhf_remove. 
+To remove locked item from the table, only after use of functions fhf_update_data,
+fhf_get_data_locked or fhf_insert_own_or_update use functions fhf_remove_locked.
+Function fhf_clear sets free flags of all items in the table to zero, which means 
+that they are free. But data remain in the table while they are rewritten by new items.
+When finishing work with table use function fhf_destroy to free memory of table
+structure.
+
+One thread can own (have locked) ONLY ONE ITEM at the time.
+It is important not to forget unlock data with function fhf_unlock_data when
+using functions fhf_get_data_locked, fhf_update_data or fhf_insert_own_or_update.
+
+For iterative pass through table, you can use iterator.
+For initialization of iterator use function fhf_init_iter.
+Iterator can be reinit by function fhf_reinit_iter.
+For getting next item, use function fhf_get_next_iter. Item is always locked.
+For removing actual item when using iterator, use function fhf_remove_iter.
+After using iterator, use function fhf_destroy_iter, to destroy iterator.
+
+See fast_hash_filter.h for detailed specification of functions.

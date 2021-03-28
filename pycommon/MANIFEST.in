@@ -1,0 +1,5 @@
+include *.py README README-RPM-release.md COPYING
+include reporter_config/*.py reporter_config/actions/*.py
+include test/*.py test/test_data.* test/*.json test/rc_config/*.yaml
+include reporter_config/default.html
+

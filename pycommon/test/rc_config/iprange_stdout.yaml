@@ -1,0 +1,26 @@
+---
+namespace: com.example.nemea
+custom_actions:
+  - id: stdout
+    file:
+      path: /dev/stdout
+rules:
+  - id: 1
+    condition: Source.IP4 in [ "192.168.0.0/24" ]
+    actions:
+      - stdout
+
+  - id: 1
+    condition: Source.IP4 in [ "192.168.1.0/24" ]
+    actions:
+      - stdout
+
+  - id: 1
+    condition: Source.IP4 in [ "10.0.0.0/8" ]
+    actions:
+      - stdout
+
+  - id: 1
+    condition: Source.IP4 in [ "10.1.0.0/16" ]
+    actions:
+      - stdout

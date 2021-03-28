@@ -1,0 +1,57 @@
+2021-03-22 unirec-2.9.4
+	* timestamps in microseconds precision
+	* fix build gcc10
+	* bugfixes
+
+2020-09-20 unirec-2.9.3
+	* compilation on gcc10
+	* improved doc of ur_time
+
+2020-07-09 unirec-2.9.2
+	* unirec: bugfixes when converting to CSV format
+
+2020-04-21 unirec-2.9.1
+	* bugfixes and maintenance of ip_prefix_search
+
+2020-04-01 unirec-2.9.0
+	* Added ip_prefix_search feature to search in IP subnets (by @plotenyondra)
+
+2020-01-31 unirec-2.8.0
+	* unirec:
+		- added ur_array_append_get_ptr(), which allocates new element
+		and returns pointer to it
+
+2019-09-02 unirec-2.7.0
+	* Add array type in UniRec
+	* Add conversion of array in ur2csv API
+
+2019-05-18 unirec-2.6.0
+	* Bugfixes for openwrt - timestamps, undefined constants
+	* csv - improved API to convert any field value to string
+
+2019-04-21 unirec-2.5.1
+	* UniRec2CSV: bugfixes string termination
+
+2019-04-20 unirec-2.5.0
+	* Fixed MAC address conversion functions
+	* Added API for UniRec to CSV conversion
+
+2019-03-21 unirec-2.4.0
+	* Add nanosecond precision for ur_time_t
+	* Improved ur_time_from_str() with UTC timezone format support
+
+2018-07-30 unirec-2.3.0
+	* unirec:
+		Add lists related to types and sizes of UniRec fields into public API
+
+2017-08-07 unirec-2.2.6
+	* doc updates
+	* minor improvements and bugfixes
+
+2016-07-26 unirec-2.2.3
+	* update spec file dependencies and debug package
+	* replaced python processor with bash&awk for ur_values
+	* bugfixes:
+		- ur_processor used bad type of timestamps
+		- fixed multiple execution of ur_processor.sh in tests
+

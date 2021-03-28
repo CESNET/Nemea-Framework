@@ -1,0 +1,43 @@
+Short howto for hashing table with cuckoo hashing and locking support.
+
+    For compilation compile the hash table itself and then link the library file
+to your program. The included Makefile is set to use hashes.c file present with 
+the source codes. If you want to use your own hash functions just edit the make 
+file and recompile the library with your the functions. It's also better to copy 
+the compiled library to the same folder as your program to prevent any unnecesary 
+errors. 
+
+    For using the table call the ht_init_v2() function first. The function creates 
+all necesary structures for storing and accessing the data. Parameters you give the 
+function are size of the table, size of the stored data and length of the key used 
+for "indexing" stored items. The function either returns 0 if everything goes well 
+or -1 if the table couldn't be created mostly due the insufficent memory.
+
+    For inserting there are two functions, ht_insert_v2() and ht_lock_insert_v2().
+Both functions work on the same principle. If the position in table determined by 
+the hash function is free then the new item is inserted without any other special 
+operations. If the position is occupied then the data is rearranged using cuckoo 
+hashing algorithm where there are 15 attempts at most. If these are used up then 
+the item that was kicked last is returned as removed from table to free the space 
+for another. The "lock" version supports lock usage for multithreaded applications.
+It has only two additional parameters which are locking and unlocking function you 
+want to use. If you need to use larger table you can call rehash_v2() function which 
+basically doubles the size of the table.
+
+!!!IMPORTANT!!!
+    In case you use this table in multithreaded program and reader threads 
+will use sequential access to the table then the thread MUST check the current whether 
+it is still within the table.
+
+    For accessing the desired item there are ht_get_v2() which returns pointer to 
+the data you want and ht_get_index_v2() which returns the index for accessing the 
+item. You can use this function either for checking the presence of an item (the 
+function return -1 if the item is not found) or for data of the item. If you have 
+and index and you want to check its validity you can use ht_is_valid_v2().
+
+    Items can be removed either by ht_remove_by_key_v2() functions which finds the 
+item and invalidates its access index or you can use ht_remove_precomp where you 
+can give precomputed hashes for the index array of the table. For removing all the 
+items use the ht_clear_v2() procedure.
+
+    For destruction of the whole table there is ht_destroy_v2() procedure.

@@ -1,0 +1,50 @@
+Short howto for fast 4-way hash table.
+
+This hash table is thread-safe. It can be used by multiple threads. Each row is
+locked separately. Only one thread can access to the row or to the stash in the
+same time regardless it writes or reads.
+
+The best performance can be reached by using 40 bytes long keys. Little worse
+performance can be reached with key lengths which are multiple of 8. But there
+can be also used different key lengths.
+
+Due to optimizations size of table and size of stash must be power of 2. Stash
+size can be zero.
+
+For initialization use function fht_init. Table and stash have fixed size set 
+during initialization. Therefore it is important to choose suitable size. If 
+there is not enough space in the row for new item, it will replace item already 
+in the row. For choosing which item will be replaced is used least recently used 
+algorithm. If table is used without using stash, replaced item will be lost.
+If used with stash, replaced item will be placed in stash. Stash is implemented
+like circular buffer. If the stash is full, new item in stash will replace item
+on the first place in stash and it will be lost.
+Functions for inserting items can get pointers to memory, where they can store
+key and data of item which is kicked from the table. When those parameters 
+are NULL, kicked item is definitely lost.
+
+To insert item in the table use functions fht_insert, fht_insert_with_stash.
+To get data from the table use functions fht_get_data, fht_get_data_locked,
+fht_get_data_with_stash, fht_get_data_with_stash_locked.
+To remove single unlocked item from the table use functions fht_remove,
+fht_remove_with_stash. 
+To remove locked item from the table, only after use of functions 
+fht_get_data_locked or fht_get_data_with_stash_locked, use functions
+fht_remove_locked, fht_remove_with_stash_locked.
+Function fht_clear sets free flags of all items in the table and stash to zero,
+which means that they are free. But data remain in the table while they are
+rewritted by new items.
+When finishing work with table use function fht_destroy to free memory of table
+structure.
+
+One thread can own (have locked) ONLY ONE ITEM at the time.
+It is important not to forget unlock data with function fht_unlock_data when
+using functions fht_get_data_locked, fht_get_data_with_stash_locked.
+
+For iterative pass through table, you can use iterator.
+For initialization of iterator use function fht_init_iter.
+For getting next item, use function fht_get_next_iter. Item is always locked.
+For removing actual item when using iterator, use function fht_remove_iter.
+After using iterator, use function fht_destroy_iter, to destroy iterator.
+
+See fast_hash_table.h for detailed specification of functions.

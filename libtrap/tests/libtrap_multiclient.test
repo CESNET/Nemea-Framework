@@ -1,0 +1,90 @@
+#!/bin/bash
+
+#set -x
+
+t_arg="u:multitest"
+clients=10
+
+#start 'clients'
+for i in `seq 1 $clients`; do
+  ./test_echo_reply_ctx -i $t_arg > cl$i 2>&1 &
+  cl[$i]=$!
+  echo "Started client #$i [${cl[$i]}]"
+done
+
+# start server
+./test_echo_ctx -i $t_arg -n 66 > srv&
+srv=$!
+echo "Started server [$srv]"
+
+
+sleep 3
+
+error=0
+echo "Try to kill every client and test if other still live..."
+for i in `seq 1 $clients`; do
+  # kill client $i
+  kill -INT ${cl[$i]}
+  # check if other clients and server runs
+
+  for c in `seq 1 $clients` $srv; do
+    if [ $c -ne $i ]; then
+      ps ${cl[$c]} > /dev/null || {
+        ((error++))
+        echo "killing client #$i caused client #$c died"
+      }
+    fi
+  done
+  if [ $error -ne 0 ]; then
+    break
+  fi
+
+  # start client $i again
+  ./test_echo_reply_ctx -i $t_arg > cl$i 2>&1 &
+  cl[$i]=$!
+  echo "Replaced client #$i [${cl[$i]}]"
+done
+sleep 3
+
+
+kill -INT $srv
+sleep 5
+if ps $srv > /dev/null; then
+  echo "Server is running but should not"
+  ((error++))
+fi
+for i in `seq 1 $clients`; do
+  # everybody should be stopped by now
+  if ps ${cl[$i]} > /dev/null; then
+    echo "Client #$i is running but should not"
+    ((error++))
+  fi
+done
+
+if [ $error -ne 0 ]; then
+  echo "Errors $error"
+  echo "failed"
+  exit 1
+fi
+
+echo ""
+for i in `seq 1 $clients`; do
+  echo -e "\nClient #$i"
+  cat cl$i
+  rm cl$i
+done
+
+echo ""
+echo "Server"
+cat srv
+rm srv
+
+if pgrep test_echo_; then
+  echo "FAILED, killing all clients and server."
+  pkill -9 -f "test_echo.*_ctx"
+  exit 1
+else
+  echo "OK"
+fi
+
+

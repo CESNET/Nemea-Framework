@@ -1,0 +1,18 @@
+unirec (2.2.9-1) stable; urgency=low
+
+  * improved UniRec specifier parsing - can contain spaces
+  * improved ur_clone_record() #48
+  * improved ur_processor
+  * improved ur_define_template
+  * added ur_template_compare()
+  * added MAC address data type
+  * added ur_timediff()
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 18 Mar 2018 20:23:32 +0100
+
+unirec (2.2.4-1) stable; urgency=high
+
+  * initial release of Debian package
+
+ -- Ladislav Macoun <ladislavmacoun@gmail.com>  Tue, 26 Jul 2016 13:56:30 +0200
+

@@ -1,0 +1,32 @@
+# About pytrap
+
+This directory contains an implementation of Python extension.  The aim
+is to allow native calls of base TRAP functionality (used by NEMEA modules).
+
+# Installation
+
+Development package of Python is required (python3-devel etc.
+according to your OS distribution).  It contains needed header files.
+
+Since this module uses libtrap and libunirec, https:/github.com/CESNET/Nemea-framework
+must be installed in the system.
+
+When all requirements are met, run as root:
+
+```
+python3 setup.py install
+```
+
+Note: for different versions of python, it is needed to perform this command
+separately for each of them.
+
+# Help
+
+Help is contained in the python module.  After successful installation run in
+a python interactive interpret:
+
+```python
+import pytrap
+help(pytrap)
+```
+

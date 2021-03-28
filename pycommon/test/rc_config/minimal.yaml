@@ -1,0 +1,4 @@
+namespace: com.example.nemea
+rules:
+- id: 1
+  condition: true

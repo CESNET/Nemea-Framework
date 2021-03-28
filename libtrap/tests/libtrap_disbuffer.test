@@ -1,0 +1,51 @@
+#!/bin/bash
+
+#set -x
+
+sock1="rxtxtest1"
+sock2="rxtxtest2"
+
+# start server
+./test_rxtx -i "u:$sock2,u:$sock1" -s -n 66&
+p1=$!
+
+#start client
+./test_rxtx -i "u:$sock1,u:$sock2" -n 66&
+p2=$!
+
+echo "Waiting for $p1"
+wait $p1
+echo "Waiting for $p2"
+wait $p2
+
+error=0
+ps $p1 > /dev/null && { ((error++)); ps $p1; }
+ps $p2 > /dev/null && { ((error++)); ps $p2; }
+
+if [ $error -ne 0 ]; then
+   echo "Test failed - disabled buffering" >&2
+   exit 1
+fi
+
+# start server
+./test_rxtx -i "u:$sock2,u:$sock1" -s -n 66 -b&
+p1=$!
+
+#start client
+./test_rxtx -i "u:$sock1,u:$sock2" -n 66 -b&
+p2=$!
+
+#sleep 5
+echo "Waiting for $p1"
+wait $p1
+echo "Waiting for $p2"
+wait $p2
+
+error=0
+ps $p1 > /dev/null && { ((error++)); ps $p1; }
+ps $p2 > /dev/null && { ((error++)); ps $p2; }
+
+if [ $error -ne 0 ]; then
+   echo "Test failed - enabled buffering" >&2
+   exit 1
+fi

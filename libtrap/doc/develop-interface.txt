@@ -1,0 +1,49 @@
+/**
+\page devel-ifc Development of libtrap interface
+
+\section intro General information
+There are two types of libtrap interfaces (unidirectional) --- *input* and *output*.
+After successful initialization of libtrap (trap_ctx_init()), all interfaces are stored
+in libtrap context in the array trap_ctx_priv_s::in_ifc_list or trap_ctx_priv_s::out_ifc_list.
+That means every IFC must initialize its structure trap_input_ifc_s or trap_output_ifc_s as it is listed in Steps section below.
+
+Libtrap interface (IFC) is a source code file that is compiled with the rest of libtrap.
+Every IFC implements functions:
+
+<pre>
+typedef void (*ifc_terminate_func_t)(void *);
+typedef void (*ifc_destroy_func_t)(void *);
+typedef void (*ifc_create_dump_func_t)(void *, uint32_t, const char *);
+</pre>
+
+and one or both functions:
+
+<pre>
+typedef int (*ifc_recv_func_t)(void *, void *, uint32_t *, int);
+typedef int (*ifc_send_func_t)(void *, const void *, uint32_t, int);
+</pre>
+The full list of required functions of IFC can be found in \ref trap_ifc_api.
+
+Additionally, IFC should implement it's own constructor function.
+
+\section steps What to do to develop IFC
+To add new IFC into libtrap some steps should be done:
+
+<ol>
+<li>choose new IFC type letter by defining new macro in \ref ifctypes.</li>
+<li>add new IFC type into #trap_ifc_type_supported</li>
+<li>add call to constructor into trapifc_in_construct() resp. trapifc_out_construct() for input resp. output IFC</li>
+<li>write own implementation of IFC functions (\ref trap_ifc_api)</li>
+<li>write own constructor of new IFC</li>
+<li>set pointers to functions in trap_input_ifc_s or trap_output_ifc_s, the setting of pointers should be done in IFC's constructor</li>
+</ol>
+
+Simplified example of input IFC can be found in ifc_dummy.c.
+This file implements blackhole and generator.
+Blackhole is the output IFC that drops every message that is sent by module.
+Generator is the input IFC generates messages that are received by module.
+
+More complex example is TCPIP and UNIX socket IFCs implemented in ifc_tcpip.c.
+
+*/
+

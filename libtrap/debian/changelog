@@ -1,0 +1,33 @@
+libtrap (0.11.0-1) stable; urgency=low
+
+  * added TLS communication IFC
+  * extended API - new functions trap_ctx_init2() and trap_ctx_init3()
+  * changed name and path to sockets (/var/run/libtrap/)
+  * path to sockets can be specified in run-time (TRAP_SOCKET_DIR env variable)
+  * max clients of IFCs is configurable in compile-time
+  * many bugfixes
+  * added tests
+  * doc improved
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 18 Mar 2018 15:56:35 +0100
+
+libtrap (0.8.0-1) stable; urgency=high
+
+  * extended internal IFC API
+  * documentation improved and revisited
+  * added build target for Debian packages
+  * cleanup of 3rd party json code
+  * file IFC can rotate files (based on time or size)
+  * trap_stats (and supervisor) shows IFC identification (socket name)
+  * bugfixes:
+     - memory leak in service IFC
+     - handling byte order in headers of libtrap messages (incompatibility with older versions)
+     - additional checks in code
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Tue, 26 Jul 2016 13:56:30 +0200
+
+libtrap (0.7.6-1) RELEASE; urgency=low
+
+  * release of debian package
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 24 Jul 2016 23:24:56 +0000

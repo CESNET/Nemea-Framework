@@ -1,0 +1,20 @@
+Metadata-Version: 1.2
+Name: nemea-pycommon
+Version: 1.5.3
+Summary: Common Python modules and methods of the NEMEA system.
+Home-page: https://github.com/CESNET/Nemea-Framework
+Author: Vaclav Bartos, CESNET
+Author-email: bartos@cesnet.cz
+Maintainer: Tomas Cejka
+Maintainer-email: cejkat@cesnet.cz
+License: BSD
+Description: The module contains methods for creation and submission of incident reports in IDEA format.
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: System :: Networking :: Monitoring
