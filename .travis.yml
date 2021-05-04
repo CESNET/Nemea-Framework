@@ -65,12 +65,3 @@ script:
     for d in pycommon pytrap; do (cd "$d" && sudo python setup.py sdist && sudo mv dist/*.tar.gz .;) done &&
     for d in libtrap unirec common pytrap pycommon; do mkdir dist-pkgs/"$d"; cp "$d"/*.spec "$d"/*.tar.gz dist-pkgs/"$d"; (cd dist-pkgs/"$d"; tar --strip-components=1 -xf *.tar.gz;) done
 
-deploy:
-  provider: pages
-  skip_cleanup: true
-  local_dir: dist-pkgs
-  github_token: $GITHUB_TOKEN
-  target_branch: dist-packages
-  on:
-    branch: master
-
