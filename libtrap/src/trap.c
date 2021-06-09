@@ -2529,6 +2529,14 @@ void trap_ctx_vset_data_fmt(trap_ctx_t *ctx, uint32_t out_ifc_idx, uint8_t data_
    }
 
    ifc = &c->out_ifc_list[out_ifc_idx];
+
+   /* If the new format and data type is equal as previous do nothing. */
+   if (ifc->data_fmt_spec && data_fmt_spec && ifc->data_type == data_type) {
+      if (strcmp(ifc->data_fmt_spec, data_fmt_spec) == 0) {
+         return;
+      }
+   }
+
    /* If the data type is already set, disconnect all connected clients to this output interface (auto-negotiation will be performed again to get new data format and data spec) */
    pthread_mutex_lock(&ifc->ifc_mtx);
    if (ifc->data_type != TRAP_FMT_UNKNOWN) {
