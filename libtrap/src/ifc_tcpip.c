@@ -973,16 +973,26 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
  * @{
  */
 
+pthread_mutex_t discnt_lock;
+
 /**
  * \brief This function is called when a client was/is being disconnected.
  *
  * \param[in] priv Pointer to interface's private data structure.
  * \param[in] cl_id Index of the client in 'clients' array.
  */
-static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
+static void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
 {
    int i;
    client_t *c = &priv->clients[cl_id];
+
+   pthread_mutex_lock(&discnt_lock);
+
+   // check this flag to prevent double client disconection.
+   if (check_index(priv->clients_bit_arr, cl_id) == 0) {
+      pthread_mutex_unlock(&discnt_lock);
+      return;
+   }
 
    for (i = 0; i < priv->buffer_count; ++i) {
       del_index(&priv->buffers[i].clients_bit_arr, cl_id);
@@ -999,6 +1009,8 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
    c->pfds_index = -1;
    c->pending_bytes = 0;
    c->sending_pointer = NULL;
+
+   pthread_mutex_unlock(&discnt_lock);
 }
 
 /**
