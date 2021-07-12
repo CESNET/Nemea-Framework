@@ -23,6 +23,8 @@ jobs:
       run: ./configure -q --enable-debug CXXFLAGS=-coverage CFLAGS=-coverage LDFLAGS=-lgcov --prefix=/usr
     - name: make
       run: make -j10
+    - name: install
+      run: sudo make install
     - name: install pytrap
       run: (cd pytrap && make coverage; sudo python3 setup.py install;)
     - name: make check
