@@ -157,6 +157,8 @@ pytrap_send(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
         data = PyByteArray_AsString(dataObj);
     } else if (PyBytes_Check(dataObj)) {
         PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else if (PyUnicode_Check(dataObj)) {
+        data = PyUnicode_AsUTF8AndSize(dataObj, &data_size);
     } else {
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
