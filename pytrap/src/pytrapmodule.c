@@ -157,6 +157,8 @@ pytrap_send(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
         data = PyByteArray_AsString(dataObj);
     } else if (PyBytes_Check(dataObj)) {
         PyBytes_AsStringAndSize(dataObj, &data, &data_size);
+    } else if (PyUnicode_Check(dataObj)) {
+        data = PyUnicode_AsUTF8AndSize(dataObj, &data_size);
     } else {
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
@@ -614,7 +616,8 @@ static PyMethodDef pytrap_methods[] = {
 "\n" \
 "Simple example for creation of new message of UnirecTemplate:\n" \
 "\n" \
-"    # 100 is the maximal total size of fields with variable length\n" \
+"    # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
+"    # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
 "    data = rec.createMessage(100)\n" \
 "    rec.DST_PORT = 80\n" \
 "\n" \

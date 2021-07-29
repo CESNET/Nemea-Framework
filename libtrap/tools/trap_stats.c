@@ -63,6 +63,10 @@
 #define SERVICE_SET_COM 11
 #define SERVICE_OK_REPLY 12
 
+/* Values for non-blocking sending and receiving service data. */
+#define SERVICE_WAIT_BEFORE_TIMEOUT 25000  ///< Timeout after EAGAIN or EWOULDBLOCK errno returned from service send() and recv().
+#define SERVICE_WAIT_MAX_TRY 8  ///< A maximal count of repeated timeouts per each service recv() and send() function call. 
+
 typedef struct service_msg_header_s {
    uint8_t com;
    uint32_t data_size;
@@ -412,10 +416,10 @@ int service_recv_data(uint32_t size, void **data)
       } else if (last_receved == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
             num_of_timeouts++;
-            if (num_of_timeouts >= 3) {
+            if (num_of_timeouts > SERVICE_WAIT_MAX_TRY) {
                return -1;
             } else {
-               usleep(25000);
+               usleep(SERVICE_WAIT_BEFORE_TIMEOUT);
                continue;
             }
          }
@@ -436,10 +440,10 @@ int service_send_data(uint32_t size, void **data)
       if (last_sent == -1) {
          if (errno == EAGAIN  || errno == EWOULDBLOCK) {
             num_of_timeouts++;
-            if (num_of_timeouts >= 3) {
+            if (num_of_timeouts > SERVICE_WAIT_MAX_TRY) {
                return -1;
             } else {
-               usleep(25000);
+               usleep(SERVICE_WAIT_BEFORE_TIMEOUT);
                continue;
             }
          }

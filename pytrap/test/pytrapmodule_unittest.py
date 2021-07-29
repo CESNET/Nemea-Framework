@@ -163,3 +163,29 @@ class StoreAndLoadMessage(unittest.TestCase):
 
         os.unlink("/tmp/pytrap_test")
 
+class StoreAndLoadStringMessage(unittest.TestCase):
+    def runTest(self):
+        """json.dump returns str object, which was formerly not supported by pytrep send()"""
+        import pytrap
+        import json
+        import os
+
+        urtempl = "test"
+        jdata = {"SRC_IP": "192.168.0.1"}
+        c = pytrap.TrapCtx()
+        c.init(["-i", "f:/tmp/pytrap_test2"], 0, 1)
+        c.setDataFmt(0, pytrap.FMT_JSON, urtempl)
+
+        c.send(json.dumps(jdata))
+        c.sendFlush()
+        c.finalize()
+
+        c = pytrap.TrapCtx()
+        c.init(["-i", "f:/tmp/pytrap_test2"], 1)
+        c.setRequiredFmt(0, pytrap.FMT_JSON, urtempl)
+        data = c.recv()
+        c.finalize()
+        self.assertEqual(jdata, json.loads(data))
+
+        os.unlink("/tmp/pytrap_test2")
+

@@ -1,3 +1,9 @@
+2021-03-17 (aPiecek): common: BloomFilter: added a small comment
+2021-03-08 (xsiska12): libtrap: fixed writing to file before checking its change.
+2021-03-08 (SiskaPavel): libtrap: fix coding style
+2021-03-05 (SiskaPavel): libtrap: Fixed flush to file.
+2021-03-01 (aPiecek): pytrap: generated documentation changed to pdoc3
+
 2021-02-09 (Jiri Havranek): libtrap: hotfix preventing module from being blocked
 2021-01-27 (Tomas Cejka): fix coding style
 2021-01-20 (Radko Krkos): Revert "build: gcc10+ compatibility: add -fcommon if gcc version is at least 10"
