@@ -2,8 +2,6 @@ BUILT_SOURCES=fields.h fields.c
 
 EXTRA_DIST=fields.c fields.h
 
-AM_CFLAGS=-std=c99
-
 fields.h: fields.c
 
 fields.c:
