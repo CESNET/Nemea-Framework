@@ -5,8 +5,6 @@ if ENABLE_TESTS
 SUBDIRS= . tests
 endif
 
-AM_CFLAGS=-std=c99
-
 RPMDIR=RPMBUILD
 
 BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
