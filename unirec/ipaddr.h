@@ -154,7 +154,7 @@ INLINE int ip_is6(const ip_addr_t *addr)
  * \param[in] addr   IP address for conversion.
  * \returns IP address as one 32b number in host byte order.
  */
-INLINE uint32_t ip_get_v4_as_int(ip_addr_t *addr)
+INLINE uint32_t ip_get_v4_as_int(const ip_addr_t *addr)
 {
    return ntohl(addr->ui32[2]);
 }
@@ -196,7 +196,7 @@ INLINE ip_addr_t ip_from_int(uint32_t i)
  * \returns IPv4 address stored as ip_addr_t.
  * \see ip_from_int()
  */
-INLINE ip_addr_t ip_from_4_bytes_be(char b[4])
+INLINE ip_addr_t ip_from_4_bytes_be(const char b[4])
 {
    ip_addr_t a;
    a.ui64[0] = 0;
@@ -215,7 +215,7 @@ INLINE ip_addr_t ip_from_4_bytes_be(char b[4])
  * \returns IPv4 address stored as ip_addr_t.
  * \see ip_from_int()
  */
-INLINE ip_addr_t ip_from_4_bytes_le(char b[4])
+INLINE ip_addr_t ip_from_4_bytes_le(const char b[4])
 {
    ip_addr_t a;
    a.ui64[0] = 0;
@@ -233,7 +233,7 @@ INLINE ip_addr_t ip_from_4_bytes_le(char b[4])
  * \param[in] b   16 bytes array in network byte order for conversion.
  * \returns IPv6 address stored as ip_addr_t.
  */
-INLINE ip_addr_t ip_from_16_bytes_be(char b[16])
+INLINE ip_addr_t ip_from_16_bytes_be(const char b[16])
 {
    ip_addr_t a;
    memcpy(&a, b, 16);
@@ -246,7 +246,7 @@ INLINE ip_addr_t ip_from_16_bytes_be(char b[16])
  * \param[in] b   16 bytes array in little-endian byte order for conversion.
  * \returns IPv6 address stored as ip_addr_t.
  */
-INLINE ip_addr_t ip_from_16_bytes_le(char b[16])
+INLINE ip_addr_t ip_from_16_bytes_le(const char b[16])
 {
    ip_addr_t a;
    int i;
