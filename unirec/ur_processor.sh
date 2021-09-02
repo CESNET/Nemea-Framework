@@ -99,7 +99,7 @@ size_table["ipaddr*"] = -16;
 size_table["macaddr*"] = -6;
 size_table["time*"] = -8;'
 
-find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' \) -exec grep -l "\s*UR_FIELDS\s*" {} \; |
+find "$inputdir" \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) -exec grep -l "\s*UR_FIELDS\s*" {} \; |
 # remove line and block comments
    xargs -I{} sed 's,\s*//.*$,,;:a; s%\(.*\)/\*.*\*/%\1%; ta; /\/\*/ !b; N; ba'  {} |
 # print contents of UR_FIELDS
