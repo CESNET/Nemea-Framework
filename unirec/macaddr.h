@@ -80,7 +80,7 @@ typedef struct __attribute__((packed)) mac_addr_s {
  * \param[in] array 6B array containing MAC address bytes.
  * \returns MAC address stored as mac_addr_t.
  */
-INLINE mac_addr_t mac_from_bytes(uint8_t *array)
+INLINE mac_addr_t mac_from_bytes(const uint8_t *array)
 {
    mac_addr_t tmp;
 

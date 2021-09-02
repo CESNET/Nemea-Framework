@@ -68,18 +68,18 @@
 // http://stackoverflow.com/questions/6312597/is-inline-without-static-or-extern-ever-useful-in-c99
 INLINE_IMPL int ip_is4(const ip_addr_t *addr);
 INLINE_IMPL int ip_is6(const ip_addr_t *addr);
-INLINE_IMPL uint32_t ip_get_v4_as_int(ip_addr_t *addr);
+INLINE_IMPL uint32_t ip_get_v4_as_int(const ip_addr_t *addr);
 INLINE_IMPL char *ip_get_v4_as_bytes(const ip_addr_t *addr);
 INLINE_IMPL ip_addr_t ip_from_int(uint32_t i);
-INLINE_IMPL ip_addr_t ip_from_4_bytes_be(char b[4]);
-INLINE_IMPL ip_addr_t ip_from_4_bytes_le(char b[4]);
-INLINE_IMPL ip_addr_t ip_from_16_bytes_be(char b[16]);
-INLINE_IMPL ip_addr_t ip_from_16_bytes_le(char b[16]);
+INLINE_IMPL ip_addr_t ip_from_4_bytes_be(const char b[4]);
+INLINE_IMPL ip_addr_t ip_from_4_bytes_le(const char b[4]);
+INLINE_IMPL ip_addr_t ip_from_16_bytes_be(const char b[16]);
+INLINE_IMPL ip_addr_t ip_from_16_bytes_le(const char b[16]);
 INLINE_IMPL int ip_cmp(const ip_addr_t *addr1, const ip_addr_t *addr2);
 INLINE_IMPL int ip_from_str(const char *str, ip_addr_t *addr);
 INLINE_IMPL void ip_to_str(const ip_addr_t *addr, char *str);
 
-INLINE_IMPL mac_addr_t mac_from_bytes(uint8_t *array);
+INLINE_IMPL mac_addr_t mac_from_bytes(const uint8_t *array);
 INLINE_IMPL int mac_from_str(const char *str, mac_addr_t *addr);
 INLINE_IMPL int mac_cmp(const mac_addr_t *addr1, const mac_addr_t *addr2);
 INLINE_IMPL void mac_to_str(const mac_addr_t *addr, char *str);
