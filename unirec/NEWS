@@ -1,3 +1,8 @@
+2021-09-02 (Jiri Havranek): unirec: set parameters of some functions as const
+2021-08-30 (Jiri Havranek): ur_processor: added support to process hpp files
+2021-07-29 (xsiska12): Unirec/tests - removed gnu standard from Makefile.am
+2021-03-03 (SiskaPavel): C/C++ standard unified to -std=gnu11 and -std=gnu++11
+
 2021-01-27 (Tomas Cejka): fix coding style
 2021-01-20 (Radko Krkos): unirec: Fix comment in configure.ac
 2021-01-20 (Radko Krkos): unirec: Fix build with GCC v10.x

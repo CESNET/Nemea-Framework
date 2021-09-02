@@ -1,3 +1,8 @@
+2021-09-02 unirec-2.9.5
+	* unirec: Set parameters of some functions as const
+	* ur_processor: Support to process .hpp files
+	* Makefile: Set default standard to gnu11 and gnu++11
+
 2021-03-22 unirec-2.9.4
 	* timestamps in microseconds precision
 	* fix build gcc10
