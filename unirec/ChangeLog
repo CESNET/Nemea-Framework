@@ -1,3 +1,6 @@
+2021-09-15 unirec-2.9.6
+	* unirec: Fixed reallocation of buffer when field is bigger than buffer/2 in unirec2csv file.
+
 2021-09-02 unirec-2.9.5
 	* unirec: Set parameters of some functions as const
 	* ur_processor: Support to process .hpp files

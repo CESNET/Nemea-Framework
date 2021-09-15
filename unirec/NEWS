@@ -1,3 +1,5 @@
+2021-09-15 (xsiska12): unirec: Fixed reallocation of buffer when field is bigger than buffer/2 in unirec2csv file.
+
 2021-09-02 (Jiri Havranek): unirec: set parameters of some functions as const
 2021-08-30 (Jiri Havranek): ur_processor: added support to process hpp files
 2021-07-29 (xsiska12): Unirec/tests - removed gnu standard from Makefile.am
