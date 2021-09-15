@@ -227,31 +227,30 @@ char *urcsv_record(urcsv_t *urcsv, const void *rec)
       }
 
       delim = 1;
-reallocated:
       if (ur_is_present(urcsv->tmplt, id)) {
-         // Static field - check what type is it and use appropriate format
+         // check buffer and field size
+         size_t field_size = ur_get_len(urcsv->tmplt, rec, id);
+         if (field_size > urcsv->free_space) {
+            size_t size = urcsv->buffer_size / 2;
+            if (urcsv->free_space + size < field_size)
+               size = field_size;
+            urcsv->free_space += size;
+            urcsv->buffer_size += size;
+            uint32_t offset = urcsv->curpos - urcsv->buffer;
+            void *temp = realloc(urcsv->buffer, urcsv->buffer_size);
+            if (temp != NULL) {
+               urcsv->buffer = temp;
+               urcsv->curpos = urcsv->buffer + offset;
+            } else {
+               return NULL;
+            }
+         }
          written = urcsv_field(urcsv->curpos, urcsv->free_space, rec, id, urcsv->tmplt);
 
          urcsv->free_space -= written;
          urcsv->curpos += written;
       } else {
          continue;
-      }
-
-      if (urcsv->free_space < 100 || (written == 0 && ur_get_var_len(urcsv->tmplt, rec, id) != 0)) {
-         urcsv->free_space += urcsv->buffer_size / 2;
-         urcsv->buffer_size += urcsv->buffer_size / 2;
-         uint32_t offset = urcsv->curpos - urcsv->buffer;
-         void *temp = realloc(urcsv->buffer, urcsv->buffer_size);
-         if (temp != NULL) {
-            urcsv->buffer = temp;
-            urcsv->curpos = urcsv->buffer + offset;
-         } else {
-            return NULL;
-         }
-         if (written == 0) {
-            goto reallocated;
-         }
       }
    } // loop over fields
 
