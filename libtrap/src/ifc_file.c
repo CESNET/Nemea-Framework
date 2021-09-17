@@ -209,7 +209,8 @@ int create_next_filename(file_private_t *config)
    }
 
    /* Create valid path string based on the template and actual time */
-   size_t len = strftime(buf, PATH_MAX - FILE_SIZE_SUFFIX_LEN, config->filename_tmplt, localtime(&config->create_time));
+   struct tm tm_tmp;
+   size_t len = strftime(buf, PATH_MAX - FILE_SIZE_SUFFIX_LEN, config->filename_tmplt, localtime_r(&config->create_time, &tm_tmp));
    if (len == 0) {
       VERBOSE(CL_ERROR, "FILE IFC[%"PRIu32"]: Path and filename exceeds maximum size: %u.", config->ifc_idx, PATH_MAX - FILE_SIZE_SUFFIX_LEN);
       return TRAP_E_BADPARAMS;

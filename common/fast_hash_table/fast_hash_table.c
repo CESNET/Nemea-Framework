@@ -347,13 +347,13 @@ fht_table_t * fht_init(uint32_t table_rows, uint32_t key_size, uint32_t data_siz
    }
 
    //allocate field of keys
-   if ((new_table->key_field = (uint8_t *) calloc(key_size * table_rows * FHT_TABLE_COLS, sizeof(uint8_t))) == NULL) {
+   if ((new_table->key_field = (uint8_t *) calloc((size_t) key_size * table_rows * FHT_TABLE_COLS, sizeof(uint8_t))) == NULL) {
       CHECK_AND_FREE(new_table);
       return NULL;
    }
 
    //allocate field of datas
-   if ((new_table->data_field = (uint8_t *) calloc(data_size * table_rows * FHT_TABLE_COLS, sizeof(uint8_t))) == NULL) {
+   if ((new_table->data_field = (uint8_t *) calloc((size_t) data_size * table_rows * FHT_TABLE_COLS, sizeof(uint8_t))) == NULL) {
       CHECK_AND_FREE(new_table->key_field);
       CHECK_AND_FREE(new_table);
       return NULL;
@@ -383,7 +383,7 @@ fht_table_t * fht_init(uint32_t table_rows, uint32_t key_size, uint32_t data_siz
    }
 
    //allocate field of stash keys
-   if ((new_table->stash_key_field = (uint8_t *) calloc(stash_size * key_size, sizeof(uint8_t))) == NULL) {
+   if ((new_table->stash_key_field = (uint8_t *) calloc((size_t) stash_size * key_size, sizeof(uint8_t))) == NULL) {
       CHECK_AND_FREE(new_table->key_field);
       CHECK_AND_FREE(new_table->data_field);
       CHECK_AND_FREE(new_table->free_flag_field);
@@ -393,7 +393,7 @@ fht_table_t * fht_init(uint32_t table_rows, uint32_t key_size, uint32_t data_siz
    }
 
    //allocate field of stash datas
-   if ((new_table->stash_data_field = (uint8_t *) calloc(stash_size * data_size, sizeof(uint8_t))) == NULL) {
+   if ((new_table->stash_data_field = (uint8_t *) calloc((size_t) stash_size * data_size, sizeof(uint8_t))) == NULL) {
       CHECK_AND_FREE(new_table->key_field);
       CHECK_AND_FREE(new_table->data_field);
       CHECK_AND_FREE(new_table->free_flag_field);
