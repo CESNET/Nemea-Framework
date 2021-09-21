@@ -779,12 +779,11 @@ static int wait_for_connection(int sock, struct timeval *tv)
    VERBOSE(CL_VERBOSE_LIBRARY, "wait for connection");
    rv = ppoll(&pfds, 1, tempts, NULL);
    if (rv == 1 && pfds.revents & POLLOUT) {
-      int so_error;
+      int so_error = 0;
       socklen_t len = sizeof so_error;
 
-      getsockopt(sock, SOL_SOCKET, SO_ERROR, &so_error, &len);
-
-      if (so_error == 0) {
+      if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &so_error, &len) != -1 &&
+          so_error == 0) {
          return TRAP_E_OK;
       }
    }
@@ -898,6 +897,7 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
          if (connect(sockfd, (struct sockaddr *) &addr.unix_addr, sizeof(addr.unix_addr)) < 0) {
             VERBOSE(CL_VERBOSE_LIBRARY, "recv UNIX domain socket connect error %d (%s)", errno, strerror(errno));
             close(sockfd);
+            sockfd = -1;
          } else {
             p = (struct addrinfo *) &addr.unix_addr;
          }

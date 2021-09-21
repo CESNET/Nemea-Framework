@@ -493,6 +493,17 @@ int main (int argc, char **argv)
    int original_argc = argc;
    int quit_after_read = 0;
 
+   if (buffer == NULL) {
+      fprintf(stderr, "Could not allocate memory.\n");
+      return 1;
+   }
+
+   if (header == NULL) {
+      fprintf(stderr, "Could not allocate memory.\n");
+      free(buffer);
+      return 1;
+   }
+
    // Parse program arguments
    while (1) {
       c = getopt(argc, argv, "h1s:");
@@ -598,9 +609,18 @@ int main (int argc, char **argv)
       }
 
       if (header->data_size > buffer_size) {
+         if (header->data_size >= UINT32_MAX) {
+            printf("[SERVICE] Size of message is too big\n");
+            break;
+         }
          // Reallocate buffer for incoming data
          buffer_size += (header->data_size - buffer_size) + 1;
-         buffer = (char *) realloc(buffer, buffer_size * sizeof(char));
+         char *tmp = (char *) realloc(buffer, buffer_size * sizeof(char));
+         if (tmp == NULL) {
+            fprintf(stderr, "Could not reallocate memory.\n");
+            break;
+         }
+         buffer = tmp;
       }
       memset(buffer, 0, buffer_size * sizeof(char));
 

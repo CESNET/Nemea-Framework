@@ -110,7 +110,10 @@ int main(int argc, char **argv)
    VERBOSE(CL_VERBOSE_OFF, "%s [number]\nnumber - size of data to send for testing", argv[0]);
 
    if (argc > 1) {
-      sscanf(argv[1], "%hu", &payload_size);
+      if (sscanf(argv[1], "%hu", &payload_size) != 1) {
+         VERBOSE(CL_ERROR, "sscanf failed.");
+         return 1;
+      }
    }
    payload = (char *) calloc(1, payload_size);
    if (payload == NULL) {
