@@ -107,19 +107,6 @@ int main(int argc, char **argv)
 
    //trap_verbose = CL_VERBOSE_LIBRARY;
    trap_verbose = CL_VERBOSE_OFF;
-   VERBOSE(CL_VERBOSE_OFF, "%s [number]\nnumber - size of data to send for testing", argv[0]);
-
-   if (argc > 1) {
-      if (sscanf(argv[1], "%hu", &payload_size) != 1) {
-         VERBOSE(CL_ERROR, "sscanf failed.");
-         return 1;
-      }
-   }
-   payload = (char *) calloc(1, payload_size);
-   if (payload == NULL) {
-      VERBOSE(CL_ERROR, "Allocation of payload buffer failed.");
-      return 1;
-   }
 
    // Initialize TRAP library (create and init all interfaces)
    ret = trap_init(&module_info, ifc_spec);
@@ -143,6 +130,10 @@ int main(int argc, char **argv)
          case 'n':
             if (sscanf(optarg, "%hu", &payload_size) == 1) {
                payload = (char *) calloc(1, payload_size);
+               if (payload == NULL) {
+                  VERBOSE(CL_ERROR, "Allocation of payload buffer failed.");
+                  return 1;
+               }
             } else {
                fprintf(stderr, "ERROR parameter n required integer\n");
                return 1;
@@ -152,9 +143,14 @@ int main(int argc, char **argv)
    }
 
    if (payload == NULL) {
-      VERBOSE(CL_ERROR, "Allocation of payload buffer failed.");
-      return 1;
+      // Alloc buffer with default size
+      payload = (char *) calloc(1, payload_size);
+      if (payload == NULL) {
+         VERBOSE(CL_ERROR, "Allocation of payload buffer failed.");
+         return 1;
+      }
    }
+   VERBOSE(CL_VERBOSE_OFF, "%"PRIu16" [number]\nnumber - size of data to send for testing", payload_size);
 
    // Read data from input, process them and write to output
    while(!stop) {
