@@ -336,7 +336,7 @@ pytrap_getDataFmt(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
     }
 
     trap_ctx_get_data_fmt(self->trap, TRAPIFC_INPUT, ifcidx, &data_type, &fmtspec);
-    return Py_BuildValue("(is)", data_type, strdup(fmtspec));
+    return Py_BuildValue("(is)", data_type, fmtspec);
 }
 
 static PyObject *
