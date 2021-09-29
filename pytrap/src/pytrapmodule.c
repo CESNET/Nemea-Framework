@@ -561,8 +561,8 @@ pytrap_getTrapVersion(PyObject *self)
 {
     PyObject *t = NULL;
     t = Py_BuildValue("(ss)",
-                      strdup(trap_version),
-                      strdup(trap_git_version));
+                      trap_version,
+                      trap_git_version);
 
     return t;
 }

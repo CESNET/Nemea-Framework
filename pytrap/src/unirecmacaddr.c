@@ -130,7 +130,6 @@ UnirecMACAddr_inc(pytrap_unirecmacaddr *self)
     tmp = mac_inc(tmp);
     mac_i2b(tmp, mac->mac.bytes);
 
-    Py_INCREF(mac);
     return (PyObject *) mac;
 }
 
@@ -144,7 +143,6 @@ UnirecMACAddr_dec(pytrap_unirecmacaddr *self)
     tmp = mac_dec(tmp);
     mac_i2b(tmp, mac->mac.bytes);
 
-    Py_INCREF(mac);
     return (PyObject *) mac;
 }
 
