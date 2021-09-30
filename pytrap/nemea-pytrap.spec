@@ -1,12 +1,12 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pytrap
 
-%if x%{?python3_pkgversion} == x
+%if "x%{?python3_pkgversion}" == "x"
 %global python3_pkgversion 3
 %endif
 
 Name:           %{pypi_name}
-Version:        0.13.0
+Version:        0.13.1
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
