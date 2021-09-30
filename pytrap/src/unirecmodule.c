@@ -210,12 +210,18 @@ UnirecTime_format(pytrap_unirectime *self, PyObject *args)
             PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
             return NULL;
         }
+
+        /* since reference counter is not increased for fmt by
+         * PyArg_ParseTuple(), we must increment manually, so we can decrement
+         * after PyObject_CallMethodObjArgs() for all cases */
+        Py_INCREF(fmt);
     } else {
         fmt = PyUnicode_FromString("%FT%TZ");
     }
     PyObject *strftime = PyUnicode_FromString("strftime");
 
     PyObject *result = PyObject_CallMethodObjArgs(dt, strftime, fmt, NULL);
+    Py_DECREF(fmt);
     Py_DECREF(dt);
     Py_DECREF(strftime);
     return result;
@@ -578,7 +584,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
     void *value = ur_get_ptr_by_id(self->urtmplt, data, field_id);
     int array_len = 0;
     int i;
-    PyObject *list = NULL;
+    PyObject *list = NULL, *elem = NULL;
 
     if (ur_is_varlen(field_id) && type != UR_TYPE_STRING && type != UR_TYPE_BYTES) {
        list = PyList_New(0);
@@ -658,52 +664,72 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
         break;
     case UR_TYPE_A_UINT8:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("B", ((uint8_t *) value)[i]));
+            elem = Py_BuildValue("B", ((uint8_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_INT8:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("b", ((int8_t *) value)[i]));
+            elem = Py_BuildValue("b", ((int8_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_UINT16:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("H", ((uint16_t *) value)[i]));
+            elem = Py_BuildValue("H", ((uint16_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_INT16:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("h", ((int16_t *) value)[i]));
+            elem = Py_BuildValue("h", ((int16_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_UINT32:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("I", ((uint32_t *) value)[i]));
+            elem = Py_BuildValue("I", ((uint32_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_INT32:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("i", ((int32_t *) value)[i]));
+            elem = Py_BuildValue("i", ((int32_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_UINT64:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("K", ((uint64_t *) value)[i]));
+            elem = Py_BuildValue("K", ((uint64_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_INT64:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("L", ((int64_t *) value)[i]));
+            elem = Py_BuildValue("L", ((int64_t *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_FLOAT:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("f", ((float *) value)[i]));
+            elem = Py_BuildValue("f", ((float *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_DOUBLE:
          for (i = 0; i < array_len; i++) {
-            PyList_Append(list, Py_BuildValue("d", ((double *) value)[i]));
+            elem = Py_BuildValue("d", ((double *) value)[i]);
+            PyList_Append(list, elem);
+            Py_DECREF(elem);
          }
          return list;
     case UR_TYPE_A_IP:
@@ -711,6 +737,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             pytrap_unirecipaddr *new_ip = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
             memcpy(&new_ip->ip, &((ip_addr_t *) value)[i], sizeof(ip_addr_t));
             PyList_Append(list, (PyObject *) new_ip);
+            Py_DECREF(new_ip);
          }
          return list;
     case UR_TYPE_A_MAC:
@@ -718,6 +745,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             pytrap_unirecmacaddr *new_mac = (pytrap_unirecmacaddr *) pytrap_UnirecMACAddr.tp_alloc(&pytrap_UnirecMACAddr, 0);
             memcpy(&new_mac->mac, &((mac_addr_t *) value)[i], sizeof(mac_addr_t));
             PyList_Append(list, (PyObject *) new_mac);
+            Py_DECREF(new_mac);
          }
          return list;
     case UR_TYPE_A_TIME:
@@ -725,6 +753,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
             pytrap_unirectime *new_time = (pytrap_unirectime *) pytrap_UnirecTime.tp_alloc(&pytrap_UnirecTime, 0);
             new_time->timestamp = ((ur_time_t *) value)[i];
             PyList_Append(list, (PyObject *) new_time);
+            Py_DECREF(new_time);
          }
          return list;
     default:
@@ -1551,6 +1580,7 @@ UnirecTemplate_copy(pytrap_unirectemplate *self)
         return NULL;
     }
     char *field_names = ur_ifc_data_fmt_to_field_names(spec);
+    free(spec);
     if (field_names == NULL) {
         PyErr_SetString(TrapError, "Creation of UniRec template failed. Could not get list of fields.");
         return NULL;
