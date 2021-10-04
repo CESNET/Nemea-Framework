@@ -2856,6 +2856,11 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
    char *data_fmt_spec = NULL;
    uint32_t ifc_idx = 0;
 
+   if (buffer == NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR: not enough memory");
+      goto out_neg_exit;
+   }
+
    // Decide which structure can be used for interfaces private data
    if (ifc_type == TRAP_IFC_TYPE_FILE) {
       file_ifc_priv = (file_private_t *) ifc_priv_data;
@@ -2882,6 +2887,10 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
 
    // Prepare hello_msg header with output interfaces data_type and data_fmt_spec size
    hello_msg_header = calloc(1, sizeof(hello_msg_header_t));
+   if (hello_msg_header == NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR: not enough memory");
+      goto out_neg_exit;
+   }
    // Check whether the output interfaces data format and data specifier are set correctly. If not, negotiation will fail.
    if (((data_type == TRAP_FMT_UNIREC || data_type == TRAP_FMT_JSON) && data_fmt_spec == NULL) || data_type == TRAP_FMT_UNKNOWN) {
       /**
@@ -2948,7 +2957,12 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
       }
       memset(buffer, 0, sizeof(hello_msg_header_t));
       if ((strlen(data_fmt_spec) + 1) > size_of_buffer) {
-         buffer = (char *) realloc(buffer, (strlen(data_fmt_spec) + 1) * sizeof(char));
+         char *tmp = (char *) realloc(buffer, (strlen(data_fmt_spec) + 1) * sizeof(char));
+         if (tmp == NULL) {
+            VERBOSE(CL_VERBOSE_LIBRARY, "ERROR: not enough memory");
+            goto out_neg_exit;
+         }
+         buffer = tmp;
          memset(buffer + size_of_buffer, 0, ((strlen(data_fmt_spec) + 1) - size_of_buffer) * sizeof(char));
          size_of_buffer = (strlen(data_fmt_spec) + 1);
       }
@@ -3006,6 +3020,11 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
    void *p_p = NULL;
    int neg_result = 0;
    int compare = 0;
+
+   if (hello_msg_header == NULL) {
+      VERBOSE(CL_VERBOSE_LIBRARY, "ERROR: not enough memory");
+      goto in_neg_exit;
+   }
 
    file_private_t *file_ifc_priv = NULL;
 #if HAVE_OPENSSL
@@ -3163,6 +3182,10 @@ int input_ifc_negotiation(void *ifc_priv_data, char ifc_type)
       VERBOSE(CL_VERBOSE_LIBRARY, "Step 3: receiving sender's data_fmt_spec...   ");
       size = hello_msg_header->data_fmt_spec_size;
       recv_data_fmt_spec = calloc(size+1, sizeof(char));
+      if (recv_data_fmt_spec == NULL) {
+         VERBOSE(CL_VERBOSE_LIBRARY, "ERROR: not enough memory");
+         goto in_neg_exit;
+      }
       p_p = (void *) recv_data_fmt_spec;
 
       if (hello_msg_header->data_fmt_spec_size > 0) {

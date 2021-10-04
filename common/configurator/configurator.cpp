@@ -1163,7 +1163,7 @@ void *createUserArray(configStrucItem &item)
         void *arrayData;
 
         // Allocate space for array
-        arrayData = malloc(elemCnt * elemSize);
+        arrayData = malloc((size_t) elemCnt * elemSize);
 
         if (arrayData == NULL) {
             cerr << "Error: Could not allocate memory for user array!\n";
@@ -1196,7 +1196,7 @@ void *createUserArray(configStrucItem &item)
         void *arrayData;
 
         // Allocate space for array
-        arrayData = malloc(structCnt * structSize);
+        arrayData = malloc((size_t) structCnt * structSize);
         if (arrayData == NULL) {
             cerr << "Error: Could not allocate memory for user array!\n";
             return NULL;

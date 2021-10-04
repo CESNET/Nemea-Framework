@@ -104,7 +104,8 @@ int urcsv_value(char *dst, uint32_t size, void *ptr, int type, int field_len)
          time_t sec = ur_time_get_sec(*(ur_time_t*) ptr);
          int usec = ur_time_get_usec(*(ur_time_t*) ptr);
          char str[40];
-         strftime(str, 39, "%FT%T", gmtime(&sec));
+         struct tm tm_tmp;
+         strftime(str, 39, "%FT%T", gmtime_r(&sec, &tm_tmp));
          written = snprintf(p, size, "%s.%06i", str, usec);
       }
       break;

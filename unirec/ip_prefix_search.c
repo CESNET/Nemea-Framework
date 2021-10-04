@@ -83,6 +83,7 @@ uint32_t **create_ip_v6_net_mask_array()
          for (int k = 0; k < i; k++) {
             free(net_mask_array[i]);
          }
+         free(net_mask_array);
          return NULL;
       }
       // Fill every word of IPv6 address
@@ -431,6 +432,7 @@ ipps_context_t *ipps_init(ipps_network_list_t *network_list)
    uint32_t **net_mask_array = create_ip_v6_net_mask_array();
    if (net_mask_array == NULL) {
       fprintf(stderr, "ERROR allocating memory for network mask array\n");
+      ipps_destroy(prefix_context);
       return NULL;
    }
 
@@ -648,6 +650,7 @@ ipps_interval_t *init_context( ipps_network_t **networks, uint32_t network_count
 
    if (add_data(interval_list->interval, networks[0]->data, networks[0]->data_len)) {
       // add data to root node
+      destroy_list(interval_list);
       return NULL;
    }
    interval_counter++;                             // number of intervals

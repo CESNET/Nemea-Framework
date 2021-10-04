@@ -135,7 +135,6 @@ int main(int argc, char **argv)
       while ((opt = getopt(argc, argv, options)) != ERRARG) {
          switch (opt) {
          case 'n':
-            sscanf(optarg, "%hu", &payload_size);
             if (sscanf(optarg, "%hu", &payload_size) == 1) {
                payload = (char *) calloc(1, payload_size);
             } else {
