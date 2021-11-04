@@ -2069,7 +2069,7 @@ static PyTypeObject pytrap_UnirecTemplate = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "UnirecTime(spec)\n"
+    "UnirecTemplate(spec)\n"
     "    Class for UniRec template storage and base data access.\n\n"
     "    Example:\n"
     "        UnirecTemplate(\"ipaddr SRC_IP,uint16 SRC_PORT,time START\")\n"
