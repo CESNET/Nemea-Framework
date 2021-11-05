@@ -631,7 +631,7 @@ static PyMethodDef pytrap_methods[] = {
 
 static struct PyModuleDef pytrapmodule = {
     PyModuleDef_HEAD_INIT,
-    "pytrap",   /* name of module */
+    "pytrap.pytrap",   /* name of module */
     DOCSTRING_MODULE,
     -1,   /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
     pytrap_methods, NULL, NULL, NULL, NULL
@@ -653,7 +653,7 @@ initpytrap(void)
 #if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&pytrapmodule);
 #else
-    m = Py_InitModule3("pytrap", pytrap_methods, DOCSTRING_MODULE);
+    m = Py_InitModule3("pytrap.pytrap", pytrap_methods, DOCSTRING_MODULE);
 #endif
     if (m == NULL) {
         INITERROR;

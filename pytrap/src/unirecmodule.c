@@ -1635,6 +1635,35 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 }
 
 static PyObject *
+UnirecTemplate_getDict(pytrap_unirectemplate *self)
+{
+    if (self->data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
+    }
+    PyObject *d = PyDict_New();
+    PyObject *key;
+    PyObject *val;
+
+    ur_field_id_t id = UR_ITER_BEGIN;
+    while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
+        //key = PyUnicode_FromString(ur_get_name(ur_get_name(id)));
+        key = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[id]));
+        val = UnirecTemplate_get_local(self, self->data, id);
+        if (val) {
+           PyDict_SetItem(d, key, val);
+           Py_DECREF(val);
+        } else {
+           Py_DECREF(key);
+           Py_DECREF(d);
+           return NULL;
+        }
+        Py_DECREF(key);
+    }
+    return d;
+}
+
+static PyObject *
 UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
 {
     PyObject *name;
@@ -1792,6 +1821,12 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    field_name (str): Field name.\n\n"
             "Returns:\n"
             "    type: Type object (e.g. int, str or pytrap.UnirecIPAddr).\n"
+        },
+
+        {"getDict", (PyCFunction) UnirecTemplate_getDict, METH_NOARGS,
+            "Get UniRec record as a dictionary.\n\n"
+            "Returns:\n"
+            "    dict(str, object): Dictionary of field names and field values.\n"
         },
 
         {"getByID", (PyCFunction) UnirecTemplate_getByID, METH_VARARGS | METH_KEYWORDS,
