@@ -189,3 +189,69 @@ class StoreAndLoadStringMessage(unittest.TestCase):
 
         os.unlink("/tmp/pytrap_test2")
 
+class SendAndReceiveMessageList(unittest.TestCase):
+    def runTest(self):
+        """json.dump returns str object, which was formerly not supported by pytrep send()"""
+        import pytrap
+        import os
+        import time
+
+        messages = 10000000
+
+        urtempl = "ipaddr IP,uint16 PORT"
+
+        # Start sender
+        c1 = pytrap.TrapCtx()
+        c1.init(["-i", "f:/tmp/pytrap_test3"], 0, 1)
+        c1.setDataFmt(0, pytrap.FMT_UNIREC, urtempl)
+        c1.ifcctl(0, False, pytrap.CTL_TIMEOUT, 500000)
+        c1.ifcctl(0, False, pytrap.CTL_AUTOFLUSH, 500000)
+
+        t = pytrap.UnirecTemplate(urtempl)
+        t.createMessage()
+
+        t.IP = pytrap.UnirecIPAddr("192.168.0.1")
+
+        for i in range(messages):
+            t.PORT=i
+            c1.send(t.getData())
+        c1.sendFlush()
+
+        # Start Receiver
+        c2 = pytrap.TrapCtx()
+        c2.init(["-i", "f:/tmp/pytrap_test3"], 1)
+        c2.setRequiredFmt(0, pytrap.FMT_UNIREC, urtempl)
+        startt = time.process_time()
+        data = c2.recvBulk(t, time=10, count=messages)
+        elapsed_time = time.process_time() - startt
+        print(f"recvBulk() Elapsed time for {messages} messages is: {elapsed_time}")
+
+        self.assertEqual(len(data), messages)
+        ports = [i["PORT"] for i in data]
+        self.assertEqual(ports, [i & 0xFFFF for i in range(messages)])
+
+        # Start Receiver
+        c2 = pytrap.TrapCtx()
+        c2.init(["-i", "f:/tmp/pytrap_test3"], 1)
+        c2.setRequiredFmt(0, pytrap.FMT_UNIREC, urtempl)
+        startt = time.process_time()
+        data = list()
+        while True:
+            d = c2.recv()
+            if not d:
+                break
+            t.setData(d)
+            data.append(t.getDict())
+
+        elapsed_time = time.process_time() - startt
+        print(f"recv() Elapsed time for {messages} messages is: {elapsed_time}")
+
+        self.assertEqual(len(data), messages)
+        ports = [i["PORT"] for i in data]
+        self.assertEqual(ports, [i & 0xFFFF for i in range(messages)])
+
+        c1.finalize()
+        c2.finalize()
+
+        os.unlink("/tmp/pytrap_test3")
+
