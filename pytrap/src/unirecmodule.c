@@ -527,7 +527,7 @@ static PyTypeObject pytrap_UnirecTime = {
         Py_TPFLAGS_BASETYPE, /* tp_flags */
     "UnirecTime(int(seconds), [int(miliseconds)])\n"
     "UnirecTime(double(secs_and_msecs))\n"
-    "UnirecTime(str(\"2019-03-18T12:11:10Z\"))\n"
+    "UnirecTime(str(\"2019-03-18T12:11:10Z\"))\n\n"
     "    Class for UniRec timestamp storage and base data access.\n\n"
     "    Args:\n"
     "        str: datetime, e.g., \"2019-03-18T12:11:10.123Z\"\n"

@@ -689,41 +689,46 @@ static PyMethodDef pytrap_methods[] = {
 "\n" \
 "Simple example to receive and send one message:\n" \
 "\n" \
-"    import pytrap\n" \
-"    c = pytrap.TrapCtx()\n" \
-"    c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
-"    fmttype = pytrap.FMT_UNIREC\n" \
-"    fmtspec = \"ipaddr SRC_IP\"\n" \
-"    c.setRequiredFmt(0, fmttype, fmtspec)\n" \
-"    rec = pytrap.UnirecTemplate(fmtspec)\n" \
-"    try:\n" \
-"        data = c.recv()\n" \
-"    except pytrap.FormatChanged as e:\n" \
-"        fmttype, fmtspec = c.getDataFmt(0)\n" \
-"        rec = pytrap.UnirecTemplate(fmtspec)\n" \
-"        data = e.data\n" \
-"    c.setDataFmt(0, fmttype, fmtspec)\n" \
-"    rec.setData(data)\n" \
-"    print(rec.strRecord())\n" \
-"    # send the message that was received:\n" \
-"    c.send(data)\n" \
-"    c.finalize()\n" \
-"\n" \
-"Simple example for data access using rec - UnirecTemplate instance:\n" \
-"\n" \
-"    print(rec.SRC_IP)\n" \
-"    rec.SRC_IP = pytrap.UnirecIPAddr(\"127.0.0.1\")\n" \
-"    print(getattr(rec, \"SRC_IP\"))\n" \
-"    rec.TIME_FIRST = pytrap.UnirecTime(12345678)\n" \
-"    print(rec.TIME_FIRST)\n" \
-"    print(rec.TIME_FIRST.toDatetime())\n" \
+"Example:\n" \
+"    >>> import pytrap\n" \
+"    >>> c = pytrap.TrapCtx()\n" \
+"    >>> c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
+"    >>> fmttype = pytrap.FMT_UNIREC\n" \
+"    >>> fmtspec = \"ipaddr SRC_IP\"\n" \
+"    >>> c.setRequiredFmt(0, fmttype, fmtspec)\n" \
+"    >>> rec = pytrap.UnirecTemplate(fmtspec)\n" \
+"    >>> try:\n" \
+"    ...     data = c.recv()\n" \
+"    >>> except pytrap.FormatChanged as e:\n" \
+"    ...     fmttype, fmtspec = c.getDataFmt(0)\n" \
+"    ...     rec = pytrap.UnirecTemplate(fmtspec)\n" \
+"    ...     data = e.data\n" \
+"    >>> if len(data) <= 1:\n" \
+"    ...     # empty message - do not process it!!!\n" \
+"    ...     pass\n" \
+"    >>> else:\n" \
+"    ...     c.setDataFmt(0, fmttype, fmtspec)\n" \
+"    ...     rec.setData(data)\n" \
+"    ...     print(rec.strRecord())\n" \
+"    >>> # send the message that was received:\n" \
+"    >>> c.send(data)\n" \
+"    >>> c.finalize()\n" \
+"\n\n" \
+"Simple example for data access using rec - UnirecTemplate instance:\n\n" \
+"Example:\n" \
+"    >>> print(rec.SRC_IP)\n" \
+"    >>> rec.SRC_IP = pytrap.UnirecIPAddr(\"127.0.0.1\")\n" \
+"    >>> print(getattr(rec, \"SRC_IP\"))\n" \
+"    >>> rec.TIME_FIRST = pytrap.UnirecTime(12345678)\n" \
+"    >>> print(rec.TIME_FIRST)\n" \
+"    >>> print(rec.TIME_FIRST.toDatetime())\n" \
 "\n" \
 "Simple example for creation of new message of UnirecTemplate:\n" \
-"\n" \
-"    # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
-"    # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
-"    data = rec.createMessage(100)\n" \
-"    rec.DST_PORT = 80\n" \
+"Example:\n" \
+"    >>> # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
+"    >>> # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
+"    >>> data = rec.createMessage(100)\n" \
+"    >>> rec.DST_PORT = 80\n" \
 "\n" \
 "createMessage() should be called just at the beginning of program\n" \
 "or when format change is needed.\n\n" \
