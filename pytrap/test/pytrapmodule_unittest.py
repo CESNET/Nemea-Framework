@@ -165,7 +165,7 @@ class StoreAndLoadMessage(unittest.TestCase):
 
 class StoreAndLoadStringMessage(unittest.TestCase):
     def runTest(self):
-        """json.dump returns str object, which was formerly not supported by pytrep send()"""
+        #"""json.dump returns str object, which was formerly not supported by pytrep send()"""
         import pytrap
         import json
         import os
@@ -191,7 +191,6 @@ class StoreAndLoadStringMessage(unittest.TestCase):
 
 class SendAndReceiveMessageList(unittest.TestCase):
     def runTest(self):
-        """json.dump returns str object, which was formerly not supported by pytrep send()"""
         import pytrap
         import os
         import time
@@ -222,7 +221,7 @@ class SendAndReceiveMessageList(unittest.TestCase):
         c2.init(["-i", "f:/tmp/pytrap_test3"], 1)
         c2.setRequiredFmt(0, pytrap.FMT_UNIREC, urtempl)
         startt = time.process_time()
-        data = c2.recvBulk(t, time=10, count=messages)
+        data = c2.recvBulk(t, time=15, count=messages)
         elapsed_time = time.process_time() - startt
         print(f"recvBulk() Elapsed time for {messages} messages is: {elapsed_time}")
 
