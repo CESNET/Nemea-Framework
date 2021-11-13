@@ -1640,8 +1640,7 @@ UnirecTemplate_getDict(pytrap_unirectemplate *self)
 
     ur_field_id_t id = UR_ITER_BEGIN;
     while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
-        //key = PyUnicode_FromString(ur_get_name(ur_get_name(id)));
-        key = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[id]));
+        key = PyUnicode_FromString(ur_get_name(id));
         val = UnirecTemplate_get_local(self, self->data, id);
         if (val) {
            PyDict_SetItem(d, key, val);

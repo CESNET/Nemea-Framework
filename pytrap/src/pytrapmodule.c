@@ -369,6 +369,7 @@ pytrap_finalize(pytrap_trapcontext *self, PyObject *args)
     trap_ctx_finalize(&self->trap);
     self->trap = NULL;
     ur_free_template(in_tmplt);
+    in_tmplt = NULL;
     ur_finalize();
 
     Py_RETURN_NONE;
