@@ -1,2 +1,2 @@
-include src/*.c src/*.h README COPYING
+include src/*.c src/*.h README docs/* COPYING
 include test/*.py

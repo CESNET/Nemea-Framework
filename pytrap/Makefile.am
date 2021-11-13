@@ -25,6 +25,5 @@ coverage:
 
 .PHONY: doc
 doc:
-	pdoc3 -o doc --html pytrap
-	mv doc/pytrap.html doc/index.html
+	python3 setup.py build_sphinx
 

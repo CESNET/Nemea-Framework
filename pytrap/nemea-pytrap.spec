@@ -46,7 +46,6 @@ rm -rf %{pypi_name}.egg-info
 # overwritten with every setup.py install.
 %{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
 
-
 %check
 TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test
 
