@@ -3,18 +3,42 @@ import os
 
 SRC_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__), ".", "src"))
 
+name = 'nemea-pytrap'
+version = '0.14.0'
+release = version
+description = 'Python extension of the NEMEA project.'
+long_description = 'The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.'
+author = 'Tomas Cejka'
+author_email = 'cejkat@cesnet.cz'
+maintainer = 'Tomas Cejka'
+maintainer_email = 'cejkat@cesnet.cz'
+
 pytrapmodule = Extension('pytrap.pytrap',
                     sources = ['src/pytrapmodule.c', 'src/unirecmodule.c', 'src/unirecipaddr.c', 'src/unirecmacaddr.c', 'src/fields.c'],
                     libraries = ['trap', 'unirec'])
 
-setup(name = 'nemea-pytrap',
-       version = '0.13.1',
-       description = 'Python extension of the NEMEA project.',
-       long_description = 'The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.',
-       author = 'Tomas Cejka',
-       author_email = 'cejkat@cesnet.cz',
-       maintainer = 'Tomas Cejka',
-       maintainer_email = 'cejkat@cesnet.cz',
+try:
+    from sphinx.setup_command import BuildDoc
+    cmdclass = {'build_sphinx': BuildDoc}
+    command_options = {'build_sphinx': {
+               'project': ('setup.py', name),
+               'version': ('setup.py', version),
+               'release': ('setup.py', release),
+               'source_dir': ('setup.py', 'docs'),
+               'build_dir': ('setup.py', 'dist/doc/')}
+               }
+except:
+    cmdclass = {}
+    command_options = {}
+
+setup(name = name,
+       version = version,
+       description = description,
+       long_description = long_description,
+       author = author,
+       author_email = author_email,
+       maintainer = maintainer,
+       maintainer_email = maintainer_email,
        url = 'https://github.com/CESNET/Nemea-Framework',
        license = 'BSD',
        test_suite = "test",
@@ -33,5 +57,9 @@ setup(name = 'nemea-pytrap',
        ext_modules = [pytrapmodule],
        packages = ["pytrap"],
        package_dir={ "": SRC_PATH, },
+       # sphinx:
+       cmdclass=cmdclass,
+       # these are optional and override conf.py settings
+       command_options=command_options,
        )
 
