@@ -24,6 +24,7 @@ Summary:        Python extension of the NEMEA project
 Requires: libtrap
 BuildRequires:  python%{python3_pkgversion}-setuptools
 BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  gcc
 BuildRequires:  libtrap
 BuildRequires:  libtrap-devel
 BuildRequires:  unirec
