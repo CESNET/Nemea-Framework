@@ -44,6 +44,14 @@
 #ifndef _ifc_socket_common_h_
 #define _ifc_socket_common_h_
 
+#define BLOCKING_MODE    13   /**< Used for parsing ifc params */
+#define ACTIVE_CONTAINERS_PARAM_LENGTH    18  /**< Used for parsing ifc params */
+
+#ifndef DEFAULT_ACTIVE_CONTAINERS
+#define DEFAULT_ACTIVE_CONTAINERS     50       /**< Default buffer count */
+#endif
+
+
 #define BUFFER_COUNT_PARAM_LENGTH    13   /**< Used for parsing ifc params */
 #define BUFFER_SIZE_PARAM_LENGTH     12   /**< Used for parsing ifc params */
 #define MAX_CLIENTS_PARAM_LENGTH     12   /**< Used for parsing ifc params */

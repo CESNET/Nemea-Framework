@@ -42,6 +42,9 @@
  */
 
 #include "ifc_socket_common.h"
+#include "trap_mbuf.h"
+
+#include <sys/queue.h>
 
 /** \addtogroup trap_ifc
  * @{
@@ -56,83 +59,117 @@
  * @{
  */
 
+
 /**
  * \brief Structure for TCP/IP IFC client information.
  */
 typedef struct client_s {
-   int sd;                                 /**< Client socket descriptor */
-   int pfds_index;                         /**< Client pfds struct array index. */
-   void *sending_pointer;                  /**< Pointer to data in client's assigned buffer */
+	int sd;                    /**< Client socket descriptor */
+	uint64_t cont_id;          /**< ID of current container. */
+	uint32_t id;               /**< Client identification - PID for unix socket, port number for TCP socket */
 
-   uint64_t timer_total;                   /**< Total time spent sending (microseconds) since client connection */
-   uint64_t timeouts;                      /**< Number of messages dropped (since connection) due to client blocking active buffer */
+	uint64_t sent_containers;  /**< Container counter */
+	uint64_t sent_messages;    /**< Messages counter */
 
-   uint32_t timer_last;                    /**< Time spent on last send call [microseconds] */
-   uint32_t pending_bytes;                 /**< The size of data that must be sent */
-   uint32_t id;                            /**< Client identification - PID for unix socket, port number for TCP socket */
-   uint32_t assigned_buffer;               /**< Index of assigned buffer in array of buffers */
-} client_t;
+	pthread_t tid;   
+
+	int pfds_index;            /**< Client pfds struct array index. */
+	LIST_ENTRY(client_s) entries; 
+} client_t __attribute__ ((aligned (64)));
+
+struct client_container_s {
+   LIST_ENTRY(client_container_s) entries; 
+};
+
+LIST_HEAD(clients_head_s, client_s);
+
+/**
+ * \brief Structure for service IFC client information.
+ */
+typedef struct service_client_s {
+	int sd;  /**< Client socket descriptor */
+} service_client_t;
+
+/**
+ * \brief Structure for service IFC private information.
+ */
+typedef struct tcpip_sender_service_private_s {
+	size_t max_clients;         /**< Maximum number of clients */
+	int server_sd;              /**< Server socket descriptor */
+	char *server_port;          /**< UNIX socket path */
+	char initialized;           /**< Initialization flag */
+	char is_terminated;         /**< Termination flag */
+	int term_pipe[2];           /**< File descriptor pair for select() termination */
+	service_client_t *clients;  /**< Array of client structures */
+} tcpip_sender_service_private_t;
+
 
 /**
  * \brief Structure for TCP/IP IFC private information.
  */
 typedef struct tcpip_sender_private_s {
-   trap_ctx_priv_t *ctx;                   /**< Libtrap context */
+	trap_ctx_priv_t *ctx;                   /**< Libtrap context */
 
-   enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
+	enum tcpip_ifc_sockettype socket_type;  /**< Socket type (TCPIP / UNIX) */
+	size_t connected_clients;
+	size_t max_clients;
 
-   int term_pipe[2];                       /**< File descriptor pair for select() termination */
-   int server_sd;                          /**< Server socket descriptor */
+   bool is_blocking_mode;
+	bool is_client_waiting_for_connection;
 
-   char *server_port;                      /**< TCPIP port number / UNIX socket path */
-   char is_terminated;                     /**< Termination flag */
-   char initialized;                       /**< Initialization flag */
+	struct clients_head_s clients_list_head; /**< clients container list */
 
-   uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
-   uint64_t clients_bit_arr;               /**< Bit array of currently connected clients - lowest bit = index 0, highest bit = index 63 */
+	uint32_t ifc_idx;                       /**< Index of interface in 'out_ifc_list' array */
+	struct trap_mbuf_s t_mbuf;
+	char *server_port;                      /**< TCPIP port number / UNIX socket path */
+	char is_terminated;                     /**< Termination flag */
+	char initialized;                       /**< Initialization flag */
+	int server_sd;                          /**< Server socket descriptor */
+	uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
 
-   uint32_t ifc_idx;                       /**< Index of interface in 'out_ifc_list' array */
-   uint32_t connected_clients;             /**< Number of currently connected clients */
-   uint32_t clients_arr_size;              /**< Maximum number of clients */
-   uint32_t buffer_count;                  /**< Number of buffers used */
-   uint32_t buffer_size;                   /**< Buffer size [bytes] */
-   uint32_t active_buffer;                 /**< Index of active buffer in 'buffers' array */
+	int term_pipe[2];                       /**< File descriptor pair for select() termination */
+	uint64_t max_cont_id;
+	
+	struct pollfd *clients_pfds;            /**< Array of clients pfds for poll */
 
-   buffer_t *buffers;                      /**< Array of buffer structures */
-   client_t *clients;                      /**< Array of client structures */
-
-   struct pollfd *clients_pfds;            /**< Array of clients pfds for poll */
-
-   pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
-   pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
-
-   pthread_mutex_t mtx_no_data;            /**< Mutex for cond_no_data */
-   pthread_cond_t cond_no_data;            /**< Condition struct used when waiting for new data */
-   pthread_cond_t cond_full_buffer;        /**< Condition struct used when waiting for free buffer */
+	pthread_mutex_t client_list_mtx;
+	pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
+	pthread_t autoflush_thr;
 } tcpip_sender_private_t;
 
 /**
  * @}
  */
 
+#define TERMINATE_IMMEDIATELY 1
+#define TERMINATE_AFTER_JOB_DONE 2
+
 /**
  * \defgroup tcpip_receiver TCPIP input IFC
  * @{
  */
 typedef struct tcpip_receiver_private_s {
-   trap_ctx_priv_t *ctx;                   /**< Libtrap context */
-   char *dest_addr;
-   char *dest_port;
-   char connected;
-   char is_terminated;
-   int sd;
-   enum tcpip_ifc_sockettype socket_type;
-   void *data_pointer;                     /**< Pointer to next free byte, if NULL, we ended in header */
-   uint32_t data_wait_size;                /**< Missing data to accept in the next function call */
-   void *ext_buffer;                       /**< Pointer to buffer that was passed by higher layer - this is the place we write */
-   uint32_t ext_buffer_size;               /**< size of content of the extbuffer */
-   trap_buffer_header_t int_mess_header;   /**< Internal message header - used for message_buffer payload size \note message_buffer size is sizeof(tcpip_tdu_header_t) + payload size */
-   uint32_t ifc_idx;
+	 trap_ctx_priv_t *ctx;                   /**< Libtrap context */
+	 char *dest_addr;
+	 char *dest_port;
+	 char connected;
+	// char is_terminated;
+
+	 int is_terminated;
+
+	 uint64_t total_msg;
+	 uint64_t total_missed;
+	 uint64_t seq;
+	 uint16_t c_size;
+
+	 int sd;
+	 enum tcpip_ifc_sockettype socket_type;
+	 void *data_pointer;                     /**< Pointer to next free byte, if NULL, we ended in header */
+	 uint32_t data_wait_size;                /**< Missing data to accept in the next function call */
+	 void *ext_buffer;                       /**< Pointer to buffer that was passed by higher layer - this is the place we write */
+	 uint32_t ext_buffer_size;               /**< size of content of the extbuffer */
+	 trap_buffer_header_t int_mess_header;   /**< Internal message header - used for message_buffer payload size \note message_buffer size is sizeof(tcpip_tdu_header_t) + payload size */
+	 uint32_t ifc_idx;
 } tcpip_receiver_private_t;
 
 /**

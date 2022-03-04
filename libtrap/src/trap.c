@@ -2302,9 +2302,9 @@ void *service_thread_routine(void *arg)
    char *json_data = NULL;
    int ret_val, supervisor_sd;
    trap_output_ifc_t *service_ifc = NULL;
-   tcpip_sender_private_t *priv;
+   tcpip_sender_service_private_t *priv;
    int i, j; /* loop vars */
-   struct client_s *cl;
+   service_client_t *cl;
    struct pollfd *pfds = NULL;
    int pfds_size;
 
@@ -2322,19 +2322,20 @@ void *service_thread_routine(void *arg)
    }
 
    /* service port does not create thread for accepting clients */
-   if (create_tcpip_sender_ifc(NULL, g_ctx->service_ifc_name, service_ifc, 0, TRAP_IFC_TCPIP_SERVICE) != TRAP_E_OK) {
+   if (create_service_sender_ifc(g_ctx->service_ifc_name, service_ifc) != TRAP_E_OK) {
       VERBOSE(CL_ERROR,"Error while creating service IFC.");
       free(service_ifc);
       service_ifc = NULL;
       goto exit_service_thread;
    }
 
-   priv = (tcpip_sender_private_t *) service_ifc->priv;
-   pfds = calloc(priv->clients_arr_size + 1, sizeof(*pfds));
+   priv = (tcpip_sender_service_private_t *) service_ifc->priv;
+   pfds = calloc(priv->max_clients + 1, sizeof(*pfds));
    if (pfds == NULL) {
       VERBOSE(CL_ERROR, "Error: allocation of pfds failed.");
       goto exit_service_thread;
    }
+
    while (1) {
       if (g_ctx->terminated) {
          break;
@@ -2343,7 +2344,7 @@ void *service_thread_routine(void *arg)
       /* prepare file descriptor set */
       pfds_size = 0;
       pfds[pfds_size++] = (struct pollfd) {.fd = priv->server_sd, .events = POLLIN};
-      for (i=0; i<priv->clients_arr_size; ++i) {
+      for (i=0; i<priv->max_clients; ++i) {
          cl = &priv->clients[i];
          if (cl->sd > 0) {
             pfds[pfds_size++] = (struct pollfd) {.fd = cl->sd, .events = POLLIN};
@@ -2364,7 +2365,7 @@ void *service_thread_routine(void *arg)
          continue;
       } else {
          /* handle all read events - requests / new client */
-         for (i = j = 0; i < priv->clients_arr_size; ++i) {
+         for (i = j = 0; i < priv->max_clients; ++i) {
             cl = &priv->clients[i];
             if (cl->sd > -1 && pfds[++j].revents & POLLIN) {
                supervisor_sd = cl->sd;
@@ -2418,7 +2419,7 @@ void *service_thread_routine(void *arg)
          }
          if (pfds[0].revents & POLL_IN) {
             /* accept new client */
-            for (i=0; i<priv->clients_arr_size; ++i) {
+            for (i=0; i<priv->max_clients; ++i) {
                cl = &priv->clients[i];
                if (cl->sd == -1) {
                   cl->sd = accept(priv->server_sd, NULL, NULL);
@@ -2437,7 +2438,7 @@ accept_success:
    }
 
    /* disconnect rest clients */
-   for (i=0; i<priv->clients_arr_size; ++i) {
+   for (i=0; i<priv->max_clients; ++i) {
       cl = &priv->clients[i];
       if (cl->sd > -1) {
          close(cl->sd);
@@ -2834,7 +2835,7 @@ void *trap_get_global_ctx()
  */
 
 
-int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_idx)
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sd)
 {
    VERBOSE(CL_VERBOSE_LIBRARY, "--- Output IFC negotiation ---");
 
@@ -2879,7 +2880,7 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
       data_type = tcp_ifc_priv->ctx->out_ifc_list[tcp_ifc_priv->ifc_idx].data_type;
       data_fmt_spec = tcp_ifc_priv->ctx->out_ifc_list[tcp_ifc_priv->ifc_idx].data_fmt_spec;
       ifc_idx = tcp_ifc_priv->ifc_idx;
-      sock_d = tcp_ifc_priv->clients[client_idx].sd;
+      sock_d = sd;
    } else {
       neg_result = NEG_RES_FAILED;
       goto out_neg_exit;
@@ -2928,7 +2929,8 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
       compare = size;
 #if HAVE_OPENSSL
    } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-      ret_val = SSL_write(tls_ifc_priv->clients[client_idx].ssl, p, size);
+      // TODO
+      //ret_val = SSL_write(tls_ifc_priv->clients[client_idx].ssl, p, size);
       if (ret_val > 0) {
          compare = ret_val;
       } else {
@@ -2975,7 +2977,8 @@ int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_i
          compare = size;
 #if HAVE_OPENSSL
       } else if (ifc_type == TRAP_IFC_TYPE_TLS) {
-         ret_val = SSL_write(tls_ifc_priv->clients[client_idx].ssl, p, size);
+         // TODO
+         //ret_val = SSL_write(tls_ifc_priv->clients[client_idx].ssl, p, size);
          if (ret_val > 0) {
             compare = ret_val;
          } else {

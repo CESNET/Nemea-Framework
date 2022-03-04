@@ -351,6 +351,8 @@ int decode_cnts_from_json(char **data)
          return -1;
       }
       
+      printf("TT %d\n", json_array_size(client_stats_arr));
+
       if (json_array_size(client_stats_arr) > 0)
       {
          printf("\tClient statistics:\n");
@@ -390,7 +392,7 @@ int decode_cnts_from_json(char **data)
                printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu\n", client_id, client_timer_last, client_timer_total);
             } else {
                client_timeouts = (uint64_t)(json_integer_value(val));
-               printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu, TIMEOUTS: %lu\n", client_id, client_timer_last, client_timer_total, client_timeouts);
+               printf("\t\tID: %u, MESSAGES: %u, CONTAINERS: %lu, TIMEOUTS: %lu\n", client_id, client_timer_last, client_timer_total, client_timeouts);
             }
          }
       }
@@ -629,6 +631,8 @@ int main (int argc, char **argv)
          printf( "[SERVICE] Error while receiving stats from module.\n");
          break;
       }
+
+      printf("HERE\n");
 
       // Decode json and save stats into structures
       if (decode_cnts_from_json(&buffer) == -1) {

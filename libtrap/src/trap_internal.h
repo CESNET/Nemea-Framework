@@ -357,6 +357,8 @@ trap_ctx_priv_t *trap_create_ctx_t();
 
 struct trap_buffer_header_s {
    uint32_t data_length;  /**< size of data in the data unit */
+   uint64_t seq_num;
+   uint16_t size;
 #ifdef ENABLE_HEADER_TIMESTAMP
    uint64_t timestamp;
 #endif

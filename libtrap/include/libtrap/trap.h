@@ -1066,7 +1066,7 @@ void trap_ctx_create_ifc_dump(trap_ctx_t *ctx, const char *path);
  *             NEG_RES_FMT_UNKNOWN if the output interface has not specified data format,
  *             NEG_RES_OK signaling success (hello message successfully sent to input interface).
  */
-int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, uint32_t client_idx);
+int output_ifc_negotiation(void *ifc_priv_data, char ifc_type, int sd);
 
 
 /**
