@@ -714,7 +714,7 @@ static PyMethodDef pytrap_methods[] = {
 "    >>> # send the message that was received:\n" \
 "    >>> c.send(data)\n" \
 "    >>> c.finalize()\n" \
-"\n\n" \
+"\n" \
 "Simple example for data access using rec - UnirecTemplate instance:\n\n" \
 "Example:\n" \
 "    >>> print(rec.SRC_IP)\n" \
@@ -732,10 +732,40 @@ static PyMethodDef pytrap_methods[] = {
 "    >>> rec.DST_PORT = 80\n" \
 "\n" \
 "createMessage() should be called just at the beginning of program\n" \
-"or when format change is needed.\n\n" \
-"There is a complete example module:\n" \
+"or when format change is needed.\n" \
+"\n" \
+"It is possible to set JSON format and send JSON documents via TRAP interface.\n" \
+"Example (send):\n" \
+"\n" \
+"    >>> import pytrap\n" \
+"    >>> import json\n" \
+"    >>> c = pytrap.TrapCtx()\n" \
+"    >>> c.init([\"-i\", \"f:/tmp/jsondata.trapcap:w\"], 0, 1)\n" \
+"    >>> c.setDataFmt(0, pytrap.FMT_JSON, \"JSON\")\n" \
+"    >>>\n" \
+"    >>> a = json.dumps({\"a\": 123, \"b\": \"aaa\"})\n" \
+"    >>>\n" \
+"    >>> c.send(bytearray(a, \"utf-8\"))\n" \
+"    >>>\n" \
+"    >>> c.finalize()\n" \
+"\n" \
+"Example (receive):\n" \
+"\n" \
+"    >>> import pytrap\n" \
+"    >>> import json\n" \
+"    >>> c = pytrap.TrapCtx()\n" \
+"    >>> c.init([\"-i\", \"f:/tmp/jsondata.trapcap\"], 1)\n" \
+"    >>> c.setRequiredFmt(0, pytrap.FMT_JSON, \"JSON\")\n" \
+"    >>>\n" \
+"    >>> data = c.recv()\n" \
+"    >>> print(json.loads(data.decode(\"utf-8\")))\n" \
+"    >>>\n" \
+"    >>> c.finalize()\n" \
+"\n" \
+"There are complete example modules, see:\n" \
 "https://github.com/CESNET/Nemea-Framework/tree/master/examples/python\n\n" \
-"For more details, see docstring of the classes and methods.\n"
+"For more details, see the generated documentation:\n" \
+"https://nemea.liberouter.org/doc/pytrap/.\n"
 
 #if PY_MAJOR_VERSION >= 3
 
