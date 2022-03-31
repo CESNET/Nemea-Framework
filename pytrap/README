@@ -28,5 +28,10 @@ a python interactive interpret:
 ```python
 import pytrap
 help(pytrap)
+help(pytrap.pytrap)
 ```
+
+# Examples
+
+See https://github.com/CESNET/Nemea-Framework/tree/master/examples/python
 
