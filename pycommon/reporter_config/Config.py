@@ -87,6 +87,10 @@ class Config():
                     from .actions.File import FileAction
                     self.actions[i["id"]] = FileAction(i)
 
+                elif "syslog" in i:
+                    from .actions.Syslog import SyslogAction
+                    self.actions[i["id"]] = SyslogAction(i)
+
                 elif "warden" in i:
                     """
                     Pass Warden Client instance to the Warden action

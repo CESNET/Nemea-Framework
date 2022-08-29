@@ -1,0 +1,16 @@
+# Simple Reporter Configuration for Syslog action
+namespace: com.example.nemea
+custom_actions:
+  - id: mysyslog
+    syslog:
+      identifier: NEMEA
+      logoption: LOG_PID | LOG_CONS
+      facility: LOG_DAEMON
+      priority: LOG_ALERT
+
+rules:
+- id: 1
+  condition: True
+  actions:
+  - mysyslog
+
