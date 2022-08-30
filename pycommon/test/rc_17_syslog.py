@@ -45,7 +45,7 @@ class RCSyslogTest(unittest.TestCase):
 
     def test_04_syslog(self):
         """
-        Load email.yaml configuration file, parse it and analyze it
+        Load syslog.yaml configuration file, parse it and analyze it
         This shouldn't rise any exceptions
         """
         self.parser = Parser(os.path.dirname(__file__) + '/rc_config/syslog.yaml');
