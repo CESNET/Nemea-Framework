@@ -1,0 +1,15 @@
+# Configuation for syslog test containing error
+namespace: com.example.nemea
+custom_actions:
+  - id: mysyslog
+    syslog:
+      identifier: NEMEA
+      priority: LOG_NONEXIST
+
+rules:
+- id: 1
+  condition: True
+  actions:
+  - mysyslog
+
+
