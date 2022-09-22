@@ -1,9 +1,8 @@
 import threading
 import os
 import copy
-from idea import lite
-from pynspect.rules import *
-from pynspect.filters import DataObjectFilter
+import logging
+
 from pynspect.compilers import IDEAFilterCompiler
 from pynspect.gparser import PynspectFilterParser
 
@@ -12,8 +11,6 @@ from .actions.Action import Action
 from .Parser import Parser
 from .AddressGroup import AddressGroup
 from .Rule import Rule, clearCounters, STAT_KEYPREFIX
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +52,7 @@ class Config():
         self.compiler = IDEAFilterCompiler()
         self.parser = PynspectFilterParser()
         self.parser.build()
+        self.trap = trap
         self.autoreload = autoreload
         self.path = path
         self.configdir = os.path.dirname(path)
@@ -72,10 +70,10 @@ class Config():
         try:
             self.loadConfig()
         except (SyntaxError, LookupError) as e:
-            logger.error("Error: Loading configuration file failed. " +  e.msg)
+            logger.error("Error: Loading configuration file failed: %s " % e.msg)
 
         if not self.conf:
-            raise ImportError("Loading YAML file ({0}) failed. Isn't it empty?".format(path))
+            raise ImportError("Loading YAML file (%s) failed. Isn't it empty?" % path)
 
         # Configuration was succsesfuly loaded, it is possible to continue with init.
         if not dry:
@@ -108,6 +106,7 @@ class Config():
             self.wardenclient.close()
 
     def printConfig(self, signum = -1, frame = None):
+        """Print current configuration, this is used as a signal handler for SIGUSR2."""
         print(str(self))
 
     def checkConfigChanges(self, signum = -1, frame = None):
@@ -119,17 +118,18 @@ class Config():
         """
         if signum != -1:
             logger.warning(f"Received signal {signum}.")
+
         logger.debug("Checking for changes in configuration.")
         mtime = os.stat(self.path).st_mtime
         if mtime <= self.config_mtime:
             logger.debug("Skipping configuration reload, we have newer version of the file.")
             return
-        else:
-            self.config_mtime = mtime
-            try:
-                self.loadConfig()
-            except (SyntaxError, LookupError) as e:
-                logger.error("Loading new configuration failed due to error(s), continue with the old one. " + str(e))
+
+        self.config_mtime = mtime
+        try:
+            self.loadConfig()
+        except (SyntaxError, LookupError) as e:
+            logger.error("Loading new configuration failed due to error(s), continue with the old one. " + str(e))
 
     def loadConfig(self):
         """
@@ -201,15 +201,14 @@ class Config():
                         raise SyntaxError("Cannot use warden action if --warden argument was not provided.")
 
                     from .actions.Warden import WardenAction
-                    actions[i["id"]] = WardenAction(i, warden)
-
+                    actions[i["id"]] = WardenAction(i, self.wardenclient)
 
                 elif "trap" in i:
                     """
                     Pass TRAP context instance to the TRAP action
                     """
                     from .actions.Trap import TrapAction
-                    actions[i["id"]] = TrapAction(i, trap)
+                    actions[i["id"]] = TrapAction(i, self.trap)
 
                 elif "drop" in i:
                     logger.warning("Drop action mustn't be specified in custom_actions!")
@@ -301,7 +300,7 @@ class Config():
         """
         try:
             return (self.conf["reporter"]["loglevel"]) * 10
-        except:
+        except KeyError:
             return 30
 
     def __str__(self):
@@ -317,6 +316,3 @@ class Config():
                  "----------------\nCustom Actions:\n{3}\n----------------\nRules:\n{4}\n".format(self.conf.get("namespace"), s, ag, a, r)
         return string
 
-if __name__ == "__main__":
-    """Run basic tests
-    """

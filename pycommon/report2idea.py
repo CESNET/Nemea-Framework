@@ -1,17 +1,17 @@
-import sys, os.path
+import sys
 import argparse
 import json
-import pytrap
-from time import time, gmtime
+from time import gmtime
 from uuid import uuid4
 from datetime import datetime, timedelta
 import re
 import logging
 import signal
+import pytrap
 
 from reporter_config import Config
-from reporter_config import Parser
 from reporter_config.actions.Drop import DropMsg
+
 FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
 
 logger = logging.getLogger(__name__)
@@ -20,13 +20,18 @@ config = None
 
 def getRandomId():
     """Return unique ID of IDEA message. It is done by UUID in this implementation."""
+
     return str(uuid4())
 
 def setAddr(idea_field, addr):
     """Set IP address into 'idea_field'.
-This method automatically recognize IPv4 vs IPv6 and sets the correct information into the IDEA message.
-If there is already a list of addresses, new `addr` is appended.
-Usage: setAddr(idea['Source'][0], rec.SRC_IP)"""
+
+    This method automatically recognize IPv4 vs IPv6 and sets the correct
+    information into the IDEA message.
+    If there is already a list of addresses, new `addr` is appended.
+
+    Usage: setAddr(idea['Source'][0], rec.SRC_IP)
+    """
 
     if addr.isIPv4():
         if 'IP4' in idea_field:
@@ -53,9 +58,9 @@ def getIDEAtime(unirecField = None):
         # Convert UnirecTime
         ts = unirecField.toDatetime()
         return ts.strftime('%Y-%m-%dT%H:%M:%SZ')
-    else:
-        g = gmtime()
-        iso = '%04d-%02d-%02dT%02d:%02d:%02dZ' % g[0:6]
+
+    g = gmtime()
+    iso = '%04d-%02d-%02dT%02d:%02d:%02dZ' % g[0:6]
     return iso
 
 
@@ -78,8 +83,8 @@ def parseRFCtime(time_str):
         zoneoffset = 0 if zonestr in ('z', 'Z') else int(zonestr[:3])*60 + int(zonestr[4:6])
         zonediff = timedelta(minutes=zoneoffset)
         return datetime(year, month, day, hour, minute, second, us) - zonediff
-    else:
-        raise ValueError("Wrong timestamp format")
+
+    raise ValueError("Wrong timestamp format")
 
 # TODO: resolve argument parsing and help in Python modules
 # Ideally it should all be done in Python using overloaded ArgParse
@@ -97,15 +102,17 @@ Description:
   {original_desc}Required format of input:
     {type}: "{fmt}"
 
-  All '<something>2idea' modules convert reports from various detectors to Intrusion Detection Extensible Alert (IDEA) format.
-  The IDEA messages may be send or stored using various actions, see http://nemea.liberouter.org/reporting/ for more information.
+  All '<something>2idea' modules convert reports from various detectors to
+  Intrusion Detection Extensible Alert (IDEA) format.
+  The IDEA messages may be send or stored using various actions, see
+  http://nemea.liberouter.org/reporting/ for more information.
 """
 
 DEFAULT_NODE_NAME = "undefined"
 
 trap = pytrap.TrapCtx()
 
-def signal_h(signal, f):
+def signal_handler(signalno, f):
     global trap
     global config
     logging.warning("Signal interrupt received, terminating.")
@@ -116,7 +123,8 @@ def signal_h(signal, f):
 
 def check_valid_timestamps(idea, dpast=1, dfuture=0):
     """
-    Return True if EventTime, CeaseTime, and DetectTime are in the interval (CreateTime - dpast, CreateTime + dfuture).
+    Return True if EventTime, CeaseTime, and DetectTime are in the interval
+    (CreateTime - dpast, CreateTime + dfuture).
 
     :param idea: dict with filled IDEA message
     :param dpast: int maximal number of days into past
@@ -153,8 +161,8 @@ def check_valid_timestamps(idea, dpast=1, dfuture=0):
     create = idea.get("CreateTime", None)
     if not create:
         return True
-    else:
-        create = parseRFCtime(create)
+
+    create = parseRFCtime(create)
     deltapast = create - timedelta(dpast)
     deltafuture = create + timedelta(dfuture)
     for t in [et, ct, dt]:
@@ -168,11 +176,18 @@ def check_valid_timestamps(idea, dpast=1, dfuture=0):
 
 
 def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = None):
-    """Run the main loop of the reporter module called `module_name` with `module_desc` (used in help).
+    """Run the main loop of the reporter module called `module_name` with
+    `module_desc` (used in help).
 
-    The module requires data format of `req_type` type and `req_format` specifier - these must be given by author of the module.
+    The module requires data format of `req_type` type and `req_format`
+    specifier - these must be given by author of the module.
 
-    `conv_func(rec, args)` is a callback function that must translate given incoming alert `rec` (typically in UniRec according to `req_type`) into IDEA message. `args` contains CLI arguments parsed by ArgumentParser. `conv_func` must return dict().
+    `conv_func(rec, args)` is a callback function that must translate given
+    incoming alert `rec` (typically in UniRec according to `req_type`) into
+    IDEA message. `args` contains CLI arguments parsed by ArgumentParser.
+    `conv_func` must return dict().
+
+    arg_parser - CLI arguments of the module using argparse.ArgumentParser()
     """
     global trap, config
 
@@ -240,22 +255,20 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         logger.info("Trap arguments: %s", args.i)
         trap.init(["-i", args.i], 1, 1 if args.trap else 0)
         #trap.setVerboseLevel(3)
-        signal.signal(signal.SIGINT, signal_h)
+        signal.signal(signal.SIGINT, signal_handler)
 
         # Set required input format
         trap.setRequiredFmt(0, req_type, req_format)
         if args.trap:
-           trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
+            trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
     # *** Create output handles/clients/etc ***
 
     try:
         # Initialize configuration
-        config = Config.Config(args.config, args.dry, trap = trap,
-                               wardenargs = args.warden, module_name = module_name,
-                               autoreload = args.autoreload, use_namespace = use_namespace)
-
-    except Exception:
+        config = Config.Config(args.config, args.dry, trap, args.warden,
+                               module_name, args.autoreload, use_namespace)
+    except ImportError:
         logger.error("error: Loading configuration file failed.")
         sys.exit(1)
 

@@ -1,11 +1,11 @@
-from pynspect.rules import *
+import re
+import logging
+import redis
+#from pynspect.rules import *
 from pynspect.filters import DataObjectFilter
 from pynspect.compilers import IDEAFilterCompiler
 from pynspect.gparser import PynspectFilterParser
 from idea import lite
-import re
-import logging
-import redis
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class Rule():
                     logger.debug("Rule %s inserting %s", self.id, actionId)
                     self.__actions.append(actions[actionId])
                 except KeyError as e:
-                    raise Exception("Missing action with ID " + str(e))
+                    raise SyntaxError("Missing action with ID %s" % str(e))
 
         # Associate elseactions
         if "elseactions" in rule:
@@ -97,7 +97,7 @@ class Rule():
                 try:
                     self.__elseactions.append(actions[actionId])
                 except KeyError as e:
-                    raise Exception("Missing elseaction with ID " + str(e))
+                    raise SyntaxError("Missing elseaction with ID %s" % str(e))
 
 
     def parseRule(self):
@@ -198,7 +198,7 @@ class Rule():
         Tautology - empty rule should always match
         Don't try to match or replace any address group
         """
-        if rule == None or isinstance(rule, bool):
+        if rule is None or isinstance(rule, bool):
             return False
 
         for key in addrGroups:
