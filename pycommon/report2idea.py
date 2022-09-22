@@ -268,6 +268,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             URInputTmplt = pytrap.UnirecTemplate(req_format) # TRAP expects us to have predefined template for required set of fields
             rec = URInputTmplt
 
+
+        trap.ifcctl(0, True, pytrap.CTL_TIMEOUT, 3000000)
         stop = False
         while not stop:
             logger.info("Starting receiving")
@@ -277,6 +279,9 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
             except pytrap.FormatMismatch:
                 logger.error("Input data format mismatch in receiving from TRAP interface")
                 break
+            except pytrap.TimeoutError:
+                logger.debug("libtrap: Reading input data timeout.")
+                continue
             except pytrap.FormatChanged as e:
                 # Get negotiated input data format
                 (fmttype, fmtspec) = trap.getDataFmt(0)
