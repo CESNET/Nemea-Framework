@@ -17,8 +17,7 @@ class RCBaseTest(unittest.TestCase):
         pass
 
     def test_02_basic_match(self):
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/tautology.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/tautology.yaml');
 
         results, actions = self.config.match(self.msg)
 

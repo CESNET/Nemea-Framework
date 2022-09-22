@@ -22,7 +22,7 @@ class RCReporterTest(unittest.TestCase):
         script = d + "/test2idea.py"
         data = d + "/test_data.trapcap"
         config = d + "/rc_config/stdout.yaml"
-        output = subprocess.check_output(["python2" if sys.version_info[0] < 3 else "python3", script, "-D", "-i", "f:" + data, "-c", config], env={"PYTHONPATH": d + "/.."})
+        output = subprocess.check_output(["python3", script, "-D", "-i", "f:" + data, "-c", config], env={"PYTHONPATH": d + "/.."})
         output = re.sub(idre, "", output.decode("utf-8")).split("\n")
         expect = re.sub(idre, "", EXPSTRING).split("\n")
 

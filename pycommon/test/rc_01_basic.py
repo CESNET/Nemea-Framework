@@ -22,8 +22,7 @@ class RCBaseTest(unittest.TestCase):
 
         This shouldn't rise any exceptions
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/basic.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/basic.yaml');
 
         self.assertNotEqual(self.config, None)
 
@@ -37,8 +36,7 @@ class RCBaseTest(unittest.TestCase):
         self.assertEqual(len(self.config.rules), 1)
 
     def test_02_basic_match(self):
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/basic.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/basic.yaml');
 
         try:
             results, actions = self.config.match(self.msg)

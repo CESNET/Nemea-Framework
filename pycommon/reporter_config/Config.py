@@ -1,3 +1,5 @@
+import threading
+import os
 import copy
 from idea import lite
 from pynspect.rules import *
@@ -9,127 +11,244 @@ from .actions.Drop import DropAction, DropMsg
 from .actions.Action import Action
 from .Parser import Parser
 from .AddressGroup import AddressGroup
-from .Rule import Rule
+from .Rule import Rule, clearCounters, STAT_KEYPREFIX
 
 import logging
 
 logger = logging.getLogger(__name__)
 
+class RepeatTimer(threading.Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args,**self.kwargs)
+
 class Config():
+    """
+    Configuration loaded from the file and command line arguments that tunes
+    functionality of the reporter module.
 
-    addrGroups = dict()
-    actions = dict()
-    rules = list()
-    parser = None
-    compiler = None
+    The class provides loading/reloading config, matching rules from config,
+    counters update, printing loaded config.
+    """
 
-    def __init__(self, parsed_config, trap = None, warden = None):
+    def __init__(self, path, dry = False, trap = None, wardenargs = None, module_name = "reporter", autoreload = 0, use_namespace = True):
         """
-        :param parsed_config Parser with parsed Yaml configuration
+        :param path Path to Yaml configuration file
+
+        :param dry "Don't run yet" switch to parse but not execute/init
 
         :param trap Instance of TRAP client used in TrapAction
 
-        :param warden Instance of Warden Client used in WardenAction
+        :param wardenargs Arguments to initiate Warden Client used in WardenAction
+
+        :param module_name Name usually given to Run() by the reporter's
+                           developer, can be related to the name of script
+
+        :param autoreload Timeout in seconds to perform automatic checking and
+                          reload of config file, default is 0 to disable this feature.
+
+        :param use_namespace Use generated name created from namespace (from
+                             config) and module_name; if use_namespace is set to False, user
+                             overrided the name by -n and only the module_name is used.
         """
 
-        self.conf = parsed_config
-
-        if not self.conf:
-            raise Exception("Loading YAML file ({0}) failed. Isn't it empty?".format(path))
-
-        # Build parser
+        self.compiler = IDEAFilterCompiler()
         self.parser = PynspectFilterParser()
         self.parser.build()
+        self.autoreload = autoreload
+        self.path = path
+        self.configdir = os.path.dirname(path)
+        self.conf = None
+        self.config_mtime = 0
+        self.module_name = module_name
+        self.use_namespace = use_namespace
 
-        self.compiler = IDEAFilterCompiler()
-
+        self.timer = None
+        self.wardenclient = None
         self.addrGroups = dict()
+        self.actions = dict()
+        self.rules = list()
 
-        if "namespace" not in self.conf:
+        try:
+            self.loadConfig()
+        except (SyntaxError, LookupError) as e:
+            logger.error("Error: Loading configuration file failed. " +  e.msg)
+
+        if not self.conf:
+            raise ImportError("Loading YAML file ({0}) failed. Isn't it empty?".format(path))
+
+        # Configuration was succsesfuly loaded, it is possible to continue with init.
+        if not dry:
+            logger.info("Subscription to configuration changes.")
+            if self.autoreload > 0:
+                self.timer = RepeatTimer(self.autoreload, self.checkConfigChanges)
+                self.timer.start()
+
+        if wardenargs:
+            try:
+                import warden_client
+            except:
+                logger.error("Loading warden_client module failed.  Install it or remove '--warden' from the module's arguments.")
+                raise ImportError("Warden client module could not be imported.")
+
+            config = warden_client.read_cfg(wardenargs)
+            config['name'] = self.name
+            self.wardenclient = warden_client.Client(**config)
+
+        # update modification time of loaded config, this timestamp is used checkConfigChanges()
+        self.config_mtime = os.stat(self.path).st_mtime
+
+    def __del__(self):
+        logger.warning("Freeing configuration...")
+        if self.timer:
+            logger.info("Stopping configuration autoreload.")
+            self.timer.cancel()
+
+        if self.wardenclient:
+            self.wardenclient.close()
+
+    def printConfig(self, signum = -1, frame = None):
+        print(str(self))
+
+    def checkConfigChanges(self, signum = -1, frame = None):
+        """
+        Check if the configuration file was modified (time of modification is
+        newer); try to reload it using self.loadConfig().
+
+        This method is called as a signal handler (SIGUSR1) or by the timer (self.timer).
+        """
+        if signum != -1:
+            logger.warning(f"Received signal {signum}.")
+        logger.debug("Checking for changes in configuration.")
+        mtime = os.stat(self.path).st_mtime
+        if mtime <= self.config_mtime:
+            logger.debug("Skipping configuration reload, we have newer version of the file.")
+            return
+        else:
+            self.config_mtime = mtime
+            try:
+                self.loadConfig()
+            except (SyntaxError, LookupError) as e:
+                logger.error("Loading new configuration failed due to error(s), continue with the old one. " + str(e))
+
+    def loadConfig(self):
+        """
+        Load new configuration and when everything is ok, replace the previous
+        one. When the new configuration contains errors, keep the previous one.
+
+        Raises: SyntaxError, LookupError
+        """
+        logger.warning("Loading new configuration.")
+
+        conf = Parser(self.path)
+
+        if not conf or not conf.config:
+            raise SyntaxError("Yaml parsing error: " + str(e))
+
+        addrGroups = dict()
+        smtp_conns = dict()
+        actions = dict()
+        rules = list()
+
+        if "namespace" not in conf:
             logger.error("ERROR: 'namespace' is required but is missing. Please specify 'namespace' in YAML config to identify names of reporters (e.g., com.example.collectornemea).")
 
         # Create all address groups if there are any
-        if "addressgroups" in self.conf:
-            for i in self.conf["addressgroups"]:
-                self.addrGroups[i["id"]] = AddressGroup(i)
+        if "addressgroups" in conf:
+            for i in conf["addressgroups"]:
+                addrGroups[i["id"]] = AddressGroup(i)
 
-        self.smtp_conns = dict()
 
         # Check if "smtp_connections" exists when there is some "email" action in "custom_actions"
-        if ("custom_actions" in self.conf
-                and any([i.__contains__("email") for i in self.conf["custom_actions"]])
-                and "smtp_connections" not in self.conf):
+        if ("custom_actions" in conf
+                and any([i.__contains__("email") for i in conf["custom_actions"]])
+                and "smtp_connections" not in conf):
             raise LookupError("'smtp_connections' is required when there is at least one 'email' action but it is missing in YAML config. Check your YAML config.")
 
         # Parse parameters for all smtp connections
-        if "smtp_connections" in self.conf:
-            for i in self.conf["smtp_connections"]:
-                self.smtp_conns[i["id"]] = i
-
-        self.actions = dict()
+        if "smtp_connections" in conf:
+            for i in conf["smtp_connections"]:
+                smtp_conns[i["id"]] = i
 
         # Parse and instantiate all custom actions
-        if "custom_actions" in self.conf:
-            for i in self.conf["custom_actions"]:
+        if "custom_actions" in conf:
+            for i in conf["custom_actions"]:
                 if "mark" in i:
                     from .actions.Mark import MarkAction
-                    self.actions[i["id"]] = MarkAction(i)
+                    actions[i["id"]] = MarkAction(i)
 
                 elif "mongo" in i:
                     from .actions.Mongo import MongoAction
-                    self.actions[i["id"]] =  MongoAction(i)
+                    actions[i["id"]] =  MongoAction(i)
 
                 elif "email" in i:
                     from .actions.Email import EmailAction
-                    self.actions[i["id"]] = EmailAction(i, self.smtp_conns[i['email']['smtp_connection']])
+                    actions[i["id"]] = EmailAction(i, smtp_conns[i['email']['smtp_connection']])
 
                 elif "file" in i:
                     from .actions.File import FileAction
-                    self.actions[i["id"]] = FileAction(i)
+                    actions[i["id"]] = FileAction(i)
 
                 elif "syslog" in i:
                     from .actions.Syslog import SyslogAction
-                    self.actions[i["id"]] = SyslogAction(i)
+                    actions[i["id"]] = SyslogAction(i)
 
                 elif "warden" in i:
                     """
                     Pass Warden Client instance to the Warden action
                     """
+                    if not self.wardenclient:
+                        raise SyntaxError("Cannot use warden action if --warden argument was not provided.")
+
                     from .actions.Warden import WardenAction
-                    self.actions[i["id"]] = WardenAction(i, warden)
+                    actions[i["id"]] = WardenAction(i, warden)
+
 
                 elif "trap" in i:
                     """
                     Pass TRAP context instance to the TRAP action
                     """
                     from .actions.Trap import TrapAction
-                    self.actions[i["id"]] = TrapAction(i, trap)
+                    actions[i["id"]] = TrapAction(i, trap)
 
                 elif "drop" in i:
                     logger.warning("Drop action mustn't be specified in custom_actions!")
                     continue
 
                 else:
-                    raise Exception("Undefined action: " + str(i))
+                    raise SyntaxError("Undefined action: " + str(i))
 
-        self.actions["drop"] = DropAction()
+        actions["drop"] = DropAction()
 
-        self.rules = list()
         # Parse all rules and match them with actions and address groups
         # There must be at least one rule (mandatory field)
-        if "rules" in self.conf:
-            if self.conf["rules"]:
-                for i in self.conf["rules"]:
-                    self.rules.append(Rule(i
-                            , self.actions
-                            , self.addrGroups
-                            , parser = self.parser
-                            , compiler = self.compiler
-                            ))
-            if not self.rules:
-                raise Exception("YAML file should contain at least one `rule` in `rules`.")
+        if "rules" in conf:
+            if conf["rules"]:
+                for i in conf["rules"]:
+                    r = Rule(i, actions, addrGroups,
+                                           parser = self.parser, compiler = self.compiler,
+                                           module_name = self.module_name)
+                    rules.append(r)
+            if not rules:
+                raise SyntaxError("YAML file should contain at least one `rule` in `rules`.")
         else:
-            raise Exception("YAML file must contain `rules`.")
+            raise SyntaxError("YAML file must contain `rules`.")
+
+        self.conf = conf
+        self.rules = rules
+        self.actions = actions
+        self.addrGroups = addrGroups
+        self.smtp_conns = smtp_conns
+
+        if self.use_namespace:
+
+            self.name = ".".join([conf.get("namespace", "com.example"), self.module_name])
+        else:
+            self.name = self.module_name
+
+        clearCounters(STAT_KEYPREFIX, self.module_name)
+        logging.warning("Success: New configuration loaded, applied and counters reset.")
+
 
     def match(self, msg):
         """

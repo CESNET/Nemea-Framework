@@ -45,8 +45,7 @@ class RCMultipleActionsTest(unittest.TestCase):
 
         This shouldn't rise any exceptions
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/multiple_actions.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/multiple_actions.yaml');
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

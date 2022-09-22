@@ -29,8 +29,7 @@ class RCMongoTest(unittest.TestCase):
 
         Should store message in DB and test if there is one record
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)
@@ -45,8 +44,7 @@ class RCMongoTest(unittest.TestCase):
 
         Should store message in DB, find it, and check contents
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/mongo.yaml');
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

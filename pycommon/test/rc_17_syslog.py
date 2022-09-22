@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import unittest
 import os
 import json
@@ -21,36 +22,35 @@ class RCSyslogTest(unittest.TestCase):
         Load malformed syslog configuration file, parse it and analyze it
         This should rise exception
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/syslog-malformed-facility.yaml');
         with self.assertRaises(Exception):
-            self.config = Config(self.parser);
+            self.config = Config(os.path.dirname(__file__) + '/rc_config/syslog-malformed-facility.yaml');
 
     def test_02_syslogerror_priority(self):
         """
         Load malformed syslog configuration file, parse it and analyze it
         This should rise exception
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/syslog-malformed-priority.yaml');
         with self.assertRaises(Exception):
-            self.config = Config(self.parser);
+            self.config = Config(os.path.dirname(__file__) + '/rc_config/syslog-malformed-priority.yaml');
 
     def test_03_syslogerror_logoption(self):
         """
         Load malformed syslog configuration file, parse it and analyze it
         This should rise exception
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/syslog-malformed-logoption.yaml');
         with self.assertRaises(Exception):
-            self.config = Config(self.parser);
+            self.config = Config(os.path.dirname(__file__) + '/rc_config/syslog-malformed-logoption.yaml');
 
     def test_04_syslog(self):
         """
         Load syslog.yaml configuration file, parse it and analyze it
         This shouldn't rise any exceptions
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/syslog.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/syslog.yaml');
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)
+
+if __name__ == '__main__':
+    unittest.main()
 

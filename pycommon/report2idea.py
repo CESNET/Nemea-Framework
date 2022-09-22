@@ -16,6 +16,8 @@ FORMAT="%(asctime)s %(module)s:%(filename)s:%(lineno)d:%(message)s"
 
 logger = logging.getLogger(__name__)
 
+config = None
+
 def getRandomId():
     """Return unique ID of IDEA message. It is done by UUID in this implementation."""
     return str(uuid4())
@@ -79,7 +81,6 @@ def parseRFCtime(time_str):
     else:
         raise ValueError("Wrong timestamp format")
 
-
 # TODO: resolve argument parsing and help in Python modules
 # Ideally it should all be done in Python using overloaded ArgParse
 
@@ -106,7 +107,12 @@ trap = pytrap.TrapCtx()
 
 def signal_h(signal, f):
     global trap
+    global config
+    logging.warning("Signal interrupt received, terminating.")
     trap.terminate()
+    if config and config.timer:
+        print("Stopping configuration autoreload.")
+        config.timer.cancel()
 
 def check_valid_timestamps(idea, dpast=1, dfuture=0):
     """
@@ -168,7 +174,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
     `conv_func(rec, args)` is a callback function that must translate given incoming alert `rec` (typically in UniRec according to `req_type`) into IDEA message. `args` contains CLI arguments parsed by ArgumentParser. `conv_func` must return dict().
     """
-    global trap
+    global trap, config
 
     # *** Parse command-line arguments ***
     if arg_parser is None:
@@ -188,6 +194,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     arg_parser.add_argument('-T', '--trap', action='store_true',
             help='Enable output via TRAP interface (JSON type with format id "IDEA"). Parameters are set using "-i" option as usual.')
     # Config file
+    arg_parser.add_argument('-a', '--autoreload', metavar="SECONDS", default="0", type=int,
+            help='Set interval of automatic checking of configuration file and reload. Set 0 to disable (default behavior)')
     arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
             help='Specify YAML config file path which to load.')
     arg_parser.add_argument('-d', '--dry',  action='store_true',
@@ -215,17 +223,12 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     # Set log level
     logging.basicConfig(level=(args.verbose*10), format=FORMAT)
 
-    parsed_config = Config.Parser(args.config)
-    if not parsed_config or not parsed_config.config:
-        print("error: Parsing configuration file failed.")
-        sys.exit(1)
-
-    # Check if node name is set if Warden output is enabled
-    if not args.name:
-        args.name = ".".join([parsed_config.get("namespace", "com.example"), module_name])
-    else:
+    if args.name:
         logger.warning("Node name is specified as '-n' argument.")
-    logger.info("Node name: %s", args.name)
+        module_name = args.name
+        use_namespace = False
+    else:
+        use_namespace = True
 
     if not args.dry:
         if not args.i:
@@ -245,23 +248,22 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
            trap.setDataFmt(0, pytrap.FMT_JSON, "IDEA")
 
     # *** Create output handles/clients/etc ***
-    wardenclient = None
 
-    if args.warden:
-        try:
-            import warden_client
-        except:
-            logger.error("There is no available warden_client python module.  Install it or remove '--warden' from the module's arguments.")
-            sys.exit(1)
-        config = warden_client.read_cfg(args.warden)
-        config['name'] = args.name
-        wardenclient = warden_client.Client(**config)
+    try:
+        # Initialize configuration
+        config = Config.Config(args.config, args.dry, trap = trap,
+                               wardenargs = args.warden, module_name = module_name,
+                               autoreload = args.autoreload, use_namespace = use_namespace)
 
-    # Initialize configuration
-    config = Config.Config(parsed_config, trap = trap, warden = wardenclient)
-
+    except Exception:
+        logger.error("error: Loading configuration file failed.")
+        sys.exit(1)
 
     if not args.dry:
+        # Set signal handlers related to configuration
+        signal.signal(signal.SIGUSR1, config.checkConfigChanges)
+        signal.signal(signal.SIGUSR2, config.printConfig)
+
         # *** Main loop ***
         URInputTmplt = None
         if req_type == pytrap.FMT_UNIREC and req_format != "":
@@ -322,8 +324,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
                 # Record can't be converted - skip it
                 continue
 
-            if args.name is not None:
-                idea['Node'][0]['Name'] = args.name
+            if config.name:
+                idea['Node'][0]['Name'] = config.name
 
             # Sanity check of timestamps
             if args.dontvalidate == False and not check_valid_timestamps(idea):
@@ -348,6 +350,5 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
         print(config)
 
     if not args.dry:
-        if wardenclient:
-            wardenclient.close()
         trap.finalize()
+        del config

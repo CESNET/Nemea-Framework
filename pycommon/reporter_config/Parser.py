@@ -20,6 +20,7 @@ class Parser:
             cfg = yaml.load(config, yaml.SafeLoader)
         except ParserError as e:
             print("Yaml file could not be parsed: " + str(e))
+            return None
         return cfg
 
     def __str__(self):
