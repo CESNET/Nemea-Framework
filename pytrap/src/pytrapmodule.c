@@ -241,6 +241,63 @@ pytrap_recv(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 }
 
 static PyObject *
+pytrap_sendBulk(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
+{
+    // IFC index
+    uint32_t ifcidx = 0;
+    int ret = 0;
+
+    pytrap_unirectemplate *pyurtempl = NULL;
+    PyObject *iterable = NULL;
+
+    if (self->trap == NULL) {
+        PyErr_SetString(TrapError, "TrapCtx is not initialized.");
+        return NULL;
+    }
+
+    static char *kwlist[] = {"urtempl", "data", "ifcidx", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O|I", kwlist, &pytrap_UnirecTemplate, &pyurtempl, &iterable, &ifcidx)) {
+        return NULL;
+    }
+
+
+    if (!PySequence_Check(iterable)) {
+        PyErr_SetString(PyExc_TypeError, "Data argument must be a sequence of dict().");
+        return NULL;
+    }
+
+    Py_ssize_t count = PySequence_Size(iterable);
+    if (count == -1) {
+        PyErr_SetString(PyExc_IndexError, "Could not get size of iterable.");
+        return NULL;
+    } else if (count == 0) {
+        Py_RETURN_NONE;
+    }
+
+    for (Py_ssize_t i = 0; i < count; i++) {
+        PyObject *pydict = NULL;
+        pydict = PySequence_GetItem(iterable, i);
+
+        // Convert to dictionary
+        UnirecTemplate_setFromDict(pyurtempl, pydict, 1 /* skip errors */);
+
+        Py_BEGIN_ALLOW_THREADS
+        ret = trap_ctx_send(self->trap, ifcidx, pyurtempl->data, pyurtempl->data_size);
+        Py_END_ALLOW_THREADS
+        Py_XDECREF(pydict);
+
+        if (ret != TRAP_E_OK) {
+            PyErr_Format(TrapError, "Sending failed: %s", trap_ctx_get_last_error_msg(self->trap));
+            return NULL;
+        }
+
+    }
+
+    Py_XDECREF(iterable);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 pytrap_recvBulk(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     // IFC index
@@ -525,6 +582,31 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "        update template.  The received data is in `data` attribute\n"
         "        of the FormatChanged instance.\n"
         "    Terminated: The TRAP IFC was terminated.\n"},
+
+    {"sendBulk",    (PyCFunction) pytrap_sendBulk, METH_VARARGS | METH_KEYWORDS,
+        "Send sequence of records at once via TRAP interface.\n\n"
+        "Example:\n"
+        "    >>> import pytrap\n"
+        "    >>> c1 = pytrap.TrapCtx()\n"
+        "    >>> c1.init([\"-i\", \"f:/tmp/pytrap_sendbulktest\"], 0, 1)\n"
+        "    >>> urtempl = \"ipaddr IP,uint16 PORT\"\n"
+        "    >>> c1.setDataFmt(0, pytrap.FMT_UNIREC, urtempl)\n"
+        "    >>> data = ({\"IP\": \"10.0.0.1\", \"PORT\": 1},\n"
+        "    ...         {\"IP\": \"10.0.0.2\", \"PORT\": 2},\n"
+        "    ...         {\"IP\": \"10.0.0.3\", \"PORT\": 3},\n"
+        "    ...         {\"IP\": \"10.0.0.4\", \"PORT\": 4},\n"
+        "    ...         {\"IP\": \"10.0.0.1\", \"PORT\": 5},\n"
+        "    ...         {\"IP\": \"10.0.0.2\", \"PORT\": 6})\n"
+        "    >>> t = pytrap.UnirecTemplate(urtempl)\n"
+        "    >>> c1.sendBulk(t, data)\n"
+        "    >>> c1.sendFlush()\n"
+        "    >>> c1.finalize()\n\n"
+        "Args:\n"
+        "    urtempl (UnirecTemplate): Created UnirecTemplate with the template, it is updated internally when the format is changed.\n\n"
+        "    data (list(dict)): Sequence of data to send; i.e., an iterable object containing dict, dict keys must match names of the UniRec fields in the template.\n\n"
+        "    ifcidx (Optional[int]): Index of input IFC (default: 0).\n\n"
+        "Raises:\n"
+        "    TrapError: Bad index given.\n"},
 
     {"recvBulk",    (PyCFunction) pytrap_recvBulk, METH_VARARGS | METH_KEYWORDS,
         "Receive sequence of records at once via TRAP interface.\n\n"
