@@ -1447,12 +1447,11 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
 }
 
 PyObject *
-UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
+UnirecTemplate_getFieldsDict_local(pytrap_unirectemplate *self, char byId)
 {
-    PyObject *d = PyDict_New();
     PyObject *key, *num;
     int i;
-
+    PyObject *d = PyDict_New();
     if (d != NULL) {
         for (i = 0; i < self->urtmplt->count; i++) {
 #if PY_MAJOR_VERSION >= 3
@@ -1461,7 +1460,11 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
             key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
 #endif
             num = PyLong_FromLong(self->urtmplt->ids[i]);
-            PyDict_SetItem(d, key, num);
+            if (byId) {
+                PyDict_SetItem(d, num, key);
+            } else {
+                PyDict_SetItem(d, key, num);
+            }
             Py_DECREF(num);
             Py_DECREF(key);
         }
@@ -1469,6 +1472,18 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
     }
     Py_DECREF(d);
     Py_RETURN_NONE;
+}
+
+PyObject *
+UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self, PyObject *args)
+{
+    int idkey = 0;
+
+    if (!PyArg_ParseTuple(args, "|p", &idkey)) {
+        return NULL;
+    }
+    return UnirecTemplate_getFieldsDict_local(self, idkey);
+
 }
 
 PyObject *
@@ -1553,7 +1568,11 @@ UnirecTemplate_init(pytrap_unirectemplate *self)
     if (self->urdict != NULL) {
         Py_DECREF(self->urdict);
     }
-    self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
+    if (self->fields_dict != NULL) {
+        Py_DECREF(self->fields_dict);
+    }
+    self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict_local(self, 0);
+    self->fields_dict = (PyDictObject *) UnirecTemplate_getFieldsDict_local(self, 1);
 
     self->iter_index = 0;
     self->field_count = PyDict_Size((PyObject *) self->urdict);
@@ -1878,8 +1897,10 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    data (bytearray or bytes): Data - UniRec message.\n"
         },
 
-        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS,
+        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_VARARGS,
             "Get set of fields of the template.\n\n"
+            "Args:\n"
+            "    byId (Optional[bool]): True - use field_id as key, False (default) - use name as key\n"
             "Returns:\n"
             "    Dict(str,int): Dictionary of field_id with field name as a key.\n"
         },
@@ -1979,6 +2000,9 @@ static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
     if (self->urdict) {
         Py_DECREF(self->urdict);
+    }
+    if (self->fields_dict) {
+        Py_DECREF(self->fields_dict);
     }
     if (self->urtmplt) {
         ur_free_template(self->urtmplt);

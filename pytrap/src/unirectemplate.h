@@ -11,6 +11,7 @@ typedef struct {
     Py_ssize_t data_size;
     PyObject *data_obj; // Pointer to object containing the data we are pointing to
     PyDictObject *urdict;
+    PyDictObject *fields_dict; // dictionary of field names indexed by field ID
 
     /* for iteration */
     Py_ssize_t iter_index;
