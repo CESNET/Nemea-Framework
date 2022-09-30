@@ -6,8 +6,8 @@
 %endif
 
 Name:           %{pypi_name}
-Version:        0.14.0
-Release:        2%{?dist}
+Version:        0.15.0
+Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
 License:        BSD
