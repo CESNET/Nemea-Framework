@@ -1522,16 +1522,19 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
     Py_RETURN_NONE;
 }
 
-static PyObject *
-UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+PyObject *
+UnirecTemplate_createMessage(pytrap_unirectemplate *self, uint32_t dynamic_size)
 {
     char *data;
-    uint32_t data_size = 0;
+    uint32_t data_size = dynamic_size;
 
-    static char *kwlist[] = {"dyn_size", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|I", kwlist, &data_size)) {
-        return NULL;
+    if (self->data != NULL) {
+        /* decrease refCount of the previously stored data */
+        Py_DECREF(self->data_obj);
+        self->data = NULL;
+        self->data_obj = NULL;
     }
+
     data_size += ur_rec_fixlen_size(self->urtmplt);
     if (data_size > UR_MAX_SIZE) {
         PyErr_Format(TrapError, "Size of message is %d B, which is more than maximum %d bytes.",
@@ -1541,10 +1544,6 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     data = ur_create_record(self->urtmplt, (uint16_t) data_size);
     PyObject *res = PyByteArray_FromStringAndSize(data, data_size);
 
-    if (self->data != NULL) {
-        /* decrease refCount of the previously stored data */
-        Py_DECREF(self->data_obj);
-    }
     self->data_obj = res;
     self->data_size = PyByteArray_Size(res);
     self->data = PyByteArray_AsString(res);
@@ -1553,6 +1552,18 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     free(data);
 
     return res;
+}
+
+static PyObject *
+UnirecTemplate_createMessage_py(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    uint32_t data_size = 0;
+
+    static char *kwlist[] = {"dyn_size", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|I", kwlist, &data_size)) {
+        return NULL;
+    }
+    return UnirecTemplate_createMessage(self, data_size);
 }
 
 
@@ -1905,7 +1916,7 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    Dict(str,int): Dictionary of field_id with field name as a key.\n"
         },
 
-        {"createMessage", (PyCFunction) UnirecTemplate_createMessage, METH_VARARGS | METH_KEYWORDS,
+        {"createMessage", (PyCFunction) UnirecTemplate_createMessage_py, METH_VARARGS | METH_KEYWORDS,
             "Create a message that can be filled in with values according to the template.\n\n"
             "Args:\n"
             "    dyn_size (Optional[int]): Maximal size of variable data (in total) (default: 0).\n\n"
