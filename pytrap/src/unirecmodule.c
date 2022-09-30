@@ -1487,6 +1487,84 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self, PyObject *args)
 }
 
 PyObject *
+UnirecTemplate_setFromDict(pytrap_unirectemplate *self, PyObject *dict, int skip_errors)
+{
+    // Create message if missing
+    if (self->data_obj == NULL) {
+        PyObject *res = UnirecTemplate_createMessage(self, (uint32_t) 1000);
+        if (res == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Could not allocate new message memory.");
+            return NULL;
+        }
+    }
+
+    if (!PyDict_Check(dict)) {
+        PyErr_SetString(PyExc_TypeError, "setFromDict() expects dict() argument.");
+        return NULL;
+    }
+
+    if (!PyDict_Size((PyObject *) dict)) {
+        Py_RETURN_NONE;
+    }
+
+    ur_field_id_t id = UR_ITER_BEGIN;
+    while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
+        PyObject *idkey = Py_BuildValue("i", id);
+        if (!idkey) {
+            //printf("failed idkey\n");
+            return NULL;
+        }
+        PyObject *keyfield = PyDict_GetItem((PyObject *) self->fields_dict, idkey);
+        Py_DECREF(idkey);
+
+        if (!keyfield) {
+            continue;
+        }
+        PyObject *v = PyDict_GetItem((PyObject *) dict, keyfield);
+
+        if (!v) {
+            if (skip_errors != 0) {
+                continue;
+            } else {
+                PyErr_Format(PyExc_IndexError, "Key %s was not found in the dictionary.", ur_get_name(id));
+                return NULL;
+            }
+        } else {
+            if (PyUnicode_Check(v)) {
+                const char *cstr = PyUnicode_AsUTF8(v);
+                int res = ur_set_from_string(self->urtmplt, self->data, id, cstr);
+                if (res != 0) {
+                    PyErr_SetString(TrapError, "Could not set field.");
+                    Py_DECREF(idkey);
+                    return NULL;
+                }
+            } else if (PyLong_Check(v)) {
+                if (UnirecTemplate_set_local(self, self->data, id, v) == NULL) {
+                    Py_DECREF(idkey);
+                    return NULL;
+                }
+            }
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+PyObject *
+UnirecTemplate_setFromDict_py(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    // Create message if missing
+    PyDictObject *dict;
+    int skip_errors = 1;
+
+    static char *kwlist[] = {"data", "skip_errors", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|p", kwlist, &PyDict_Type, &dict, &skip_errors)) {
+        return NULL;
+    }
+
+    return UnirecTemplate_setFromDict(self, (PyObject *) dict, skip_errors);
+}
+
+PyObject *
 UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
 {
     PyObject *dataObj;
@@ -1849,6 +1927,23 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Get UniRec record as a dictionary.\n\n"
             "Returns:\n"
             "    dict(str, object): Dictionary of field names and field values.\n"
+        },
+
+        {"setFromDict", (PyCFunction) UnirecTemplate_setFromDict_py, METH_VARARGS | METH_KEYWORDS,
+            "Set UniRec record from a give dictionary. UniRec template is used to iterate over fields, so the fields from dict not in UniRec template are skipped.\n\n"
+            "Example:\n"
+            "    >>> rec = pytrap.UnirecTemplate(\"ipaddr SRC_IP,ipaddr DST_IP,uint16 SRC_PORT,uint16 DST_PORT\")\n"
+            "    >>> rec.setFromDict({\"SRC_IP\": \"10.0.0.1\", \"DST_IP\": \"10.0.0.2\", \"SRC_PORT\": 12111, \"DST_PORT\": 80})\n"
+            "    >>> print(rec)\n"
+            "    (ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT)\n"
+            "    >>> rec.strRecord()\n"
+            "    SRC_IP = UnirecIPAddr('10.0.0.1'), DST_IP = UnirecIPAddr('10.0.0.2'), SRC_PORT = 12111, DST_PORT = 80\n\n"
+            "Args:\n"
+            "    data (dict()): dictionary, UniRec fields are set to the values of matching keys.\n"
+            "    skip_errors (Optional[bool]): Skip UniRec fields that are missing in dict if True, otherwise, raise IndexError when key is missing in dict.\n\n"
+            "Raises:\n"
+            "    IndexError: If skip_errors is False, raise exception on a missing key.\n"
+            "\n"
         },
 
         {"getByID", (PyCFunction) UnirecTemplate_getByID, METH_VARARGS | METH_KEYWORDS,

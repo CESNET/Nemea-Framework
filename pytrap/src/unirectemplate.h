@@ -28,6 +28,8 @@ PyAPI_FUNC(PyObject *) UnirecTemplate_getDict(pytrap_unirectemplate *self);
 
 PyAPI_FUNC(PyObject *) UnirecTemplate_createMessage(pytrap_unirectemplate *self, uint32_t dynamic_size);
 
+PyAPI_FUNC(PyObject *) UnirecTemplate_setFromDict(pytrap_unirectemplate *self, PyObject *dict, int skip_errors);
+
 PyAPI_FUNC(pytrap_unirectemplate *) UnirecTemplate_init(pytrap_unirectemplate *self);
 
 #ifdef __cplusplus
