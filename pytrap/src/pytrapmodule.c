@@ -772,7 +772,7 @@ static PyMethodDef pytrap_methods[] = {
 "\n" \
 "Simple example to receive and send one message:\n" \
 "\n" \
-"Example:\n" \
+"Examples:\n" \
 "    >>> import pytrap\n" \
 "    >>> c = pytrap.TrapCtx()\n" \
 "    >>> c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
@@ -797,8 +797,7 @@ static PyMethodDef pytrap_methods[] = {
 "    >>> c.send(data)\n" \
 "    >>> c.finalize()\n" \
 "\n" \
-"Simple example for data access using rec - UnirecTemplate instance:\n\n" \
-"Example:\n" \
+"Simple example for data access using rec - UnirecTemplate instance::\n\n" \
 "    >>> print(rec.SRC_IP)\n" \
 "    >>> rec.SRC_IP = pytrap.UnirecIPAddr(\"127.0.0.1\")\n" \
 "    >>> print(getattr(rec, \"SRC_IP\"))\n" \
@@ -806,8 +805,7 @@ static PyMethodDef pytrap_methods[] = {
 "    >>> print(rec.TIME_FIRST)\n" \
 "    >>> print(rec.TIME_FIRST.toDatetime())\n" \
 "\n" \
-"Simple example for creation of new message of UnirecTemplate:\n" \
-"Example:\n" \
+"Simple example for creation of new message of UnirecTemplate::\n\n" \
 "    >>> # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
 "    >>> # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
 "    >>> data = rec.createMessage(100)\n" \
@@ -816,35 +814,28 @@ static PyMethodDef pytrap_methods[] = {
 "createMessage() should be called just at the beginning of program\n" \
 "or when format change is needed.\n" \
 "\n" \
-"It is possible to set JSON format and send JSON documents via TRAP interface.\n" \
-"Example (send):\n" \
-"\n" \
+"It is possible to set JSON format and send JSON documents via TRAP interface.\n\n" \
+"Example - send::\n\n" \
 "    >>> import pytrap\n" \
 "    >>> import json\n" \
 "    >>> c = pytrap.TrapCtx()\n" \
 "    >>> c.init([\"-i\", \"f:/tmp/jsondata.trapcap:w\"], 0, 1)\n" \
 "    >>> c.setDataFmt(0, pytrap.FMT_JSON, \"JSON\")\n" \
-"    >>>\n" \
 "    >>> a = json.dumps({\"a\": 123, \"b\": \"aaa\"})\n" \
-"    >>>\n" \
 "    >>> c.send(bytearray(a, \"utf-8\"))\n" \
-"    >>>\n" \
 "    >>> c.finalize()\n" \
 "\n" \
-"Example (receive):\n" \
-"\n" \
+"Example - receive::\n\n" \
 "    >>> import pytrap\n" \
 "    >>> import json\n" \
 "    >>> c = pytrap.TrapCtx()\n" \
 "    >>> c.init([\"-i\", \"f:/tmp/jsondata.trapcap\"], 1)\n" \
 "    >>> c.setRequiredFmt(0, pytrap.FMT_JSON, \"JSON\")\n" \
-"    >>>\n" \
 "    >>> data = c.recv()\n" \
 "    >>> print(json.loads(data.decode(\"utf-8\")))\n" \
-"    >>>\n" \
 "    >>> c.finalize()\n" \
 "\n" \
-"There are complete example modules, see:\n" \
+"There are some complete example modules, see:\n" \
 "https://github.com/CESNET/Nemea-Framework/tree/master/examples/python\n\n" \
 "For more details, see the generated documentation:\n" \
 "https://nemea.liberouter.org/doc/pytrap/.\n"
