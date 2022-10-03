@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.6.0
+%global pypi_version 1.7.0
 
 %if "x%{?python3_pkgversion}" == "x"
 %global python3_pkgversion 3
