@@ -43,7 +43,8 @@ BuildRequires:	python%{python3_pkgversion}-setuptools
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
 BuildRequires:	python%{python3_pkgversion}-pynspect
-
+BuildRequires:	python%{python3_pkgversion}-redis
+BuildRequires:	redis
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
