@@ -254,3 +254,32 @@ class SendAndReceiveMessageList(unittest.TestCase):
 
         os.unlink("/tmp/pytrap_test3")
 
+class SendBulkTest(unittest.TestCase):
+    def runTest(self):
+        import os
+        import pytrap
+
+        urtempl = "ipaddr IP,uint16 PORT"
+
+        # Start sender
+        c1 = pytrap.TrapCtx()
+        c1.init(["-i", "f:/tmp/pytrap_sendbulktest"], 0, 1)
+        c1.setDataFmt(0, pytrap.FMT_UNIREC, urtempl)
+        t = pytrap.UnirecTemplate(urtempl)
+        data = (
+            {"IP": "10.0.0.1", "PORT": 1},
+            {"IP": "10.0.0.2", "PORT": 2},
+            {"IP": "10.0.0.3", "PORT": 3},
+            {"IP": "10.0.0.4", "PORT": 4},
+            {"IP": "10.0.0.1", "PORT": 5},
+            {"IP": "10.0.0.2", "PORT": 6}
+        )
+
+        c1.sendBulk(t, data)
+
+        c1.sendFlush()
+
+        c1.finalize()
+
+        os.unlink("/tmp/pytrap_sendbulktest")
+        

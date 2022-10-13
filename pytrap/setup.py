@@ -4,7 +4,7 @@ import os
 SRC_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__), ".", "src"))
 
 name = 'nemea-pytrap'
-version = '0.14.0'
+version = '0.15.0'
 release = version
 description = 'Python extension of the NEMEA project.'
 long_description = 'The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.'

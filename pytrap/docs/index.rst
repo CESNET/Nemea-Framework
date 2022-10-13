@@ -12,6 +12,7 @@ Welcome to pytrap's documentation!
 
    pytrap
    recvbulk
+   helpers
 
 
 Indices and tables
