@@ -813,3 +813,29 @@ class AllocateBigMessage(unittest.TestCase):
         with self.assertRaises(pytrap.TrapError):
             a.createMessage(100000)
 
+class NonUtf8string(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import time
+        a = pytrap.UnirecTemplate("string TEXT")
+        a.setData(b'\x00\x00\x08\x00\xf0abbccdd')
+        messages = 10000000
+        startt = time.process_time()
+        for i in range(messages):
+            b = a.TEXT
+        elapsed_time = time.process_time() - startt
+        print(f"Elapsed time for {messages} messages is: {elapsed_time}")
+
+class Utf8string(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import time
+        a = pytrap.UnirecTemplate("string TEXT")
+        a.setData(b'\x00\x00\x08\x00aabbccdd')
+        messages = 10000000
+        startt = time.process_time()
+        for i in range(messages):
+            b = a.TEXT
+        elapsed_time = time.process_time() - startt
+        print(f"Elapsed time for {messages} messages is: {elapsed_time}")
+

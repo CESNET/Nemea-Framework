@@ -637,11 +637,7 @@ UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_
     case UR_TYPE_STRING:
         {
             Py_ssize_t value_size = ur_get_var_len(self->urtmplt, data, field_id);
-#if PY_MAJOR_VERSION >= 3
-            return PyUnicode_FromStringAndSize(value, value_size);
-#else
-            return PyString_FromStringAndSize(value, value_size);
-#endif
+            return PyUnicode_DecodeUTF8(value, value_size, "replace");
         }
         break;
     case UR_TYPE_BYTES:
