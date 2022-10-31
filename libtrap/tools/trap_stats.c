@@ -131,9 +131,9 @@ int decode_cnts_from_json(char **data)
    json_t *val = NULL;
    json_t *client_stats_arr = NULL;
    json_t *client = NULL;
-   uint32_t client_timer_last;
-   uint64_t client_timer_total;
-   uint64_t client_timeouts;
+   uint64_t client_sent_containers;
+   uint64_t client_sent_messages;
+   uint64_t client_skipped_messages;
    uint32_t client_id;
 
    /***********************************/
@@ -350,8 +350,9 @@ int decode_cnts_from_json(char **data)
          json_decref(json_struct);
          return -1;
       }
-      
-      printf("TT %d\n", json_array_size(client_stats_arr));
+
+      int first = 0;
+      char *client_str_id;
 
       if (json_array_size(client_stats_arr) > 0)
       {
@@ -362,6 +363,16 @@ int decode_cnts_from_json(char **data)
                json_decref(json_struct);
                return -1;
             }
+
+            if (first == 0) {
+               val = json_object_get(client, "id");
+               if (val == NULL) {
+                  printf("[ERROR] Could not get string value of key \"id\" from a client timers array json object.\n");
+                  json_decref(json_struct);
+                  return -1;
+               }
+               client_str_id = json_string_value(val);
+            }
             
             val = json_object_get(client, "id");
             if (val == NULL) {
@@ -371,28 +382,43 @@ int decode_cnts_from_json(char **data)
             }
             client_id = (uint32_t)(json_integer_value(val));
                     
-            val = json_object_get(client, "timer_last");
+            val = json_object_get(client, "sent_containers");
             if (val == NULL) {
-               printf("[ERROR] Could not get string value of key \"timer_last\" from a client timers array json object.\n");
+               printf("[ERROR] Could not get string value of key \"sent_containers\" from a client timers array json object.\n");
                json_decref(json_struct);
                return -1; 
             }
-            client_timer_last = (uint32_t)(json_integer_value(val));
+            client_sent_containers = (uint64_t)(json_integer_value(val));
             
-            val = json_object_get(client, "timer_total");
+            val = json_object_get(client, "sent_messages");
             if (val == NULL) {
-               printf("[ERROR] Could not get string value of key \"timer_total\" from a client timers array json object.\n");
+               printf("[ERROR] Could not get string value of key \"sent_messages\" from a client timers array json object.\n");
                json_decref(json_struct);
                return -1;
             }
-            client_timer_total = (uint64_t)(json_integer_value(val));
+            client_sent_messages = (uint64_t)(json_integer_value(val));
 
-            val = json_object_get(client, "timeouts");
+            val = json_object_get(client, "skipped_messages");
             if (val == NULL) {
-               printf("\t\tID: %u, TIMER_LAST: %u, TIMER_TOTAL: %lu\n", client_id, client_timer_last, client_timer_total);
+               printf("[ERROR] Could not get string value of key \"skipped_messages\" from a client timers array json object.\n");
+               json_decref(json_struct);
+               return -1;
+            }
+            client_skipped_messages = (uint64_t)(json_integer_value(val));
+
+            val = json_object_get(client, "skipped_percentage");
+               if (val == NULL) {
+                  printf("[ERROR] Could not get string value of key \"id\" from a client timers array json object.\n");
+                  json_decref(json_struct);
+                  return -1;
+               }
+            float perc = json_real_value(val);
+
+            if (first == 0) {
+               printf("\t\tID: %s, RECV CONTAINERS: %u, RECV MESSAGES: %lu, LOST MESSAGES: %lu, LOST %%: %.2f%%\n", client_str_id, client_sent_containers, client_sent_messages, client_skipped_messages, perc);
+               first++;
             } else {
-               client_timeouts = (uint64_t)(json_integer_value(val));
-               printf("\t\tID: %u, MESSAGES: %u, CONTAINERS: %lu, TIMEOUTS: %lu\n", client_id, client_timer_last, client_timer_total, client_timeouts);
+               printf("\t\tID: %u, SENT CONTAINERS: %u, SENT MESSAGES: %lu, SKIPPED MESSAGES: %lu, SKIPPED %%: %.2f%%\n", client_id, client_sent_containers, client_sent_messages, client_skipped_messages, perc);
             }
          }
       }
@@ -631,8 +657,6 @@ int main (int argc, char **argv)
          printf( "[SERVICE] Error while receiving stats from module.\n");
          break;
       }
-
-      printf("HERE\n");
 
       // Decode json and save stats into structures
       if (decode_cnts_from_json(&buffer) == -1) {

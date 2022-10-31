@@ -70,6 +70,8 @@ typedef struct client_s {
 
 	uint64_t sent_containers;  /**< Container counter */
 	uint64_t sent_messages;    /**< Messages counter */
+	uint64_t skipped_messages; /**< Skipped messages counter */
+	float    perc;
 
 	pthread_t tid;   
 

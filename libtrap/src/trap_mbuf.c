@@ -115,6 +115,7 @@ t_mbuf_get_empty_container(struct trap_mbuf_s *t_mbuf)
 {
     if (!t_stack_is_empty(&t_mbuf->empty)) {
         t_mbuf->active = t_stack_pop(&t_mbuf->empty);
+
         return t_mbuf->active;
     }
 
@@ -143,15 +144,12 @@ get_next_container(struct trap_mbuf_s *t_mbuf)
         return t_mbuf->active;
     }
 
-  //  printf("STACK E: %u D: %u\n", t_mbuf->empty.top, t_mbuf->deferred.top);
 
 again:
     for (size_t i = 0; i < t_mbuf->deferred.top; i++) {
         struct trap_container_s *t_cont;
         t_cont = t_mbuf->deferred.data[i];
-      //  printf("D: %u %u\n", i, t_cont->ref_counter);
         uint8_t ref_counter = __sync_add_and_fetch(&t_cont->ref_counter, 0);
-       // printf("DEF: %u %u\n", i, ref_counter);
         if (ref_counter == 0) {
             t_cont = t_stack_swap_and_pop(&t_mbuf->deferred, i);
             t_cont_clear(t_cont);

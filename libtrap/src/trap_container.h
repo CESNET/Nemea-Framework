@@ -61,8 +61,9 @@ static size_t container_buff_len = CONTAINER_DEFAULT_LEN;
 struct trap_container_s {
     uint8_t ref_counter __attribute__((aligned (64)));  // number of clients referencing this container
     uint64_t seq_num;      // initial sequence number
-    size_t size;           // number of inserted elements
-    size_t used_bytes;     // number of used bytes in buffer
+    uint64_t idx;
+    volatile size_t size;           // number of inserted elements
+    volatile size_t used_bytes;     // number of used bytes in buffer
     char *buffer;
 };
 
@@ -93,6 +94,7 @@ t_cont_has_capacity(size_t capacity)
 static inline void
 t_cont_clear(struct trap_container_s *t_cont)
 {
+    t_cont->idx = 0;
     t_cont->ref_counter = 1;
     t_cont->seq_num = 0;
     t_cont->size = 0;
@@ -137,6 +139,7 @@ t_cont_destroy(struct trap_container_s *t_cont)
 static inline uint8_t
 t_cont_acquiere(struct trap_container_s *t_cont)
 {
+    //return __atomic_fetch_add(&t_cont->ref_counter, 1, __ATOMIC_SEQ_CST);
     return __sync_fetch_and_add(&t_cont->ref_counter, 1);
 }
 
@@ -150,6 +153,7 @@ t_cont_acquiere(struct trap_container_s *t_cont)
 static inline uint8_t
 t_cont_release(struct trap_container_s *t_cont)
 {
+    //return __atomic_sub_fetch(&t_cont->ref_counter, 1, __ATOMIC_SEQ_CST);
     return __sync_sub_and_fetch(&t_cont->ref_counter, 1);
 }
 
@@ -206,12 +210,13 @@ t_cond_set_seq_num(struct trap_container_s *t_cont, uint64_t value)
  * @param t_cont Container
  */
 static inline void
-t_cond_write_header(struct trap_container_s *t_cont)
+t_cond_write_header(struct trap_container_s *t_cont, uint64_t idx)
 {
     uint32_t *buffer = (uint32_t *) t_cont->buffer;
     uint64_t *seq    = (uint64_t *) &t_cont->buffer[4];
     uint16_t *size   = (uint16_t *) &t_cont->buffer[12];
     uint32_t header = htonl(t_cont->used_bytes - TRAP_HEADER_SIZE);
+    t_cont->idx = idx;
     
     *buffer = header;
     *seq = t_cont->seq_num;

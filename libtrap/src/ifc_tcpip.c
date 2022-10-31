@@ -113,6 +113,13 @@ static void client_socket_disconnect(void *priv);
 static int server_socket_open(void *priv);
 static int server_service_socket_open(void *priv);
 
+struct tcp_trap_stats {
+   uint64_t total_missed;
+   uint64_t total_msg;
+   uint64_t total_containers;
+   float percentage_missed;
+} tcp_trap_stats;
+
 /**
  * \brief Get sockaddr, IPv4 or IPv6
  * \param[in] sa  structure with input socket address
@@ -204,7 +211,6 @@ static int receive_part(void *priv, void **data, uint32_t *size, struct timeval 
       if (retval > 0 && pfds.revents & POLLIN) {
          do {
             recvb = recv(config->sd, data_p, numbytes, 0);
-            //printf("RECV: %d %u\n", recvb, *size);
             if (recvb < 1) {
                if (recvb == 0) {
                   errno = EPIPE;
@@ -301,11 +307,6 @@ static inline uint64_t get_cur_timestamp()
  * \param [in] timeout  timeout in usec, can be TRAP_WAIT, TRAP_HALFWAIT, or TRAP_NO_WAIT
  * \return TRAP_E_OK (0) on success
  */
-
-uint64_t total_missed = 0;
-uint64_t total_msg = 0;
-uint64_t total_containers = 0;
-
 int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
 {
 #ifdef LIMITED_RECOVERY
@@ -334,7 +335,7 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
    }
    (*size) = 0;
 
-   VERBOSE(CL_VERBOSE_LIBRARY, "recv trap_recv() was called");
+   //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv trap_recv() was called"));
 
    /* convert libtrap timeout into timespec and timeval */
    trap_set_timeouts(timeout, &tm, NULL);
@@ -343,7 +344,7 @@ int tcpip_receiver_recv(void *priv, void *data, uint32_t *size, int timeout)
    while (config->is_terminated == 0) {
 init:
       p = &messageframe;
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv INIT");
+      //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv INIT"));
       if (config->connected == 0) {
          goto conn_wait;
       } else {
@@ -356,7 +357,7 @@ init:
          }
       }
 discard:
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv DISCARD");
+      //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv DISCARD"));
       config->data_pointer = NULL;
       goto reset;
 reset:
@@ -367,7 +368,7 @@ reset:
       }
       /* failure, next state is exit when we are non-blocking or INIT on blocking,
          this state is a great place for handling timeouts. */
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv RESET");
+      //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv RESET"));
       if (timeout == TRAP_WAIT) {
 #ifdef LIMITED_RECOVERY
          if (++recovery > MAX_RECOVERY_TRY) {
@@ -403,10 +404,10 @@ reset:
                   if (errno == EINTR) {
                      goto reset;
                   } else {
-                     VERBOSE(CL_ERROR, "recv nanosleep(): %s", strerror(errno));
+                    //DEBUG_IFC(VERBOSE(CL_ERROR, "recv nanosleep(): %s", strerror(errno)));
                   }
                }
-               VERBOSE(CL_VERBOSE_LIBRARY, "recv nanosleep finished");
+               //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv nanosleep finished"));
             }
 
             /* update timeout that is used for recv after successful connection */
@@ -424,7 +425,7 @@ reset:
 conn_wait:
       /* check if connected -> try to connect -> check if connected; next state is RESET or HEAD_WAIT */
       /* expected next state is waiting for header */
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv CONN_WAIT");
+      //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv CONN_WAIT"));
       if (config->connected == 0) {
          /* we don't have connection, we must try to connect before accepting header */
          retval = client_socket_connect(priv, config->dest_addr, config->dest_port, &config->sd, temptm);
@@ -450,12 +451,12 @@ conn_wait:
       goto head_wait;
 head_wait:
       /* get and check header of message, next state can be MESS_WAIT or RESET */
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv HEAD_WAIT (%p)", p);
+      //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv HEAD_WAIT (%p)", p));
       config->data_wait_size = sizeof(trap_buffer_header_t);
       retval = receive_part(config, &p, &config->data_wait_size, temptm);
       if (retval != TRAP_E_OK) {
          /* receiving failed */
-         VERBOSE(CL_VERBOSE_LIBRARY, "recv failed HEAD (%p) waiting %d B", p, config->data_wait_size);
+         //DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv failed HEAD (%p) waiting %d B", p, config->data_wait_size));
          if (retval == TRAP_E_IO_ERROR) {
             /* disconnected -> drop data */
             goto discard;
@@ -473,8 +474,11 @@ head_wait:
          		(100.0 / (config->total_msg + config->total_missed)) * (config->total_missed), 
          		config->total_missed + config->total_msg);
          }
-         total_missed = config->total_missed;
-         total_msg = config->total_msg;
+         tcp_trap_stats.total_containers++;
+         tcp_trap_stats.total_missed = config->total_missed;
+         tcp_trap_stats.total_msg = config->total_msg;
+         tcp_trap_stats.percentage_missed = (100.0 / (config->total_msg + config->total_missed)) * (config->total_missed);
+
          config->seq = messageframe.seq_num;
          config->c_size = messageframe.size;
          config->data_wait_size = messageframe.data_length;
@@ -493,16 +497,16 @@ head_wait:
 mess_wait:
       /* get and check payload of message, next state can be RESET or success exit */
       /* receive payload */
-      VERBOSE(CL_VERBOSE_LIBRARY, "recv waiting MESS (%p) %d B", p, config->data_wait_size);
+      DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv waiting MESS (%p) %d B", p, config->data_wait_size));
       retval = receive_part(config, &p, &config->data_wait_size, temptm);
       if (retval == TRAP_E_OK) {
          /* Success! Data was already set by recv */
          config->data_pointer = NULL;
          (*size) = messageframe.data_length;
-         VERBOSE(CL_VERBOSE_LIBRARY, "recv get MESS (%p) remains: %d B", p, config->data_wait_size);
+         DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv get MESS (%p) remains: %d B", p, config->data_wait_size));
          return TRAP_E_OK;
       } else {
-         VERBOSE(CL_VERBOSE_LIBRARY, "recv get MESS (%p) still waiting for %d B", p, config->data_wait_size);
+         DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv get MESS (%p) still waiting for %d B", p, config->data_wait_size));
          if (retval == TRAP_E_IO_ERROR) {
             /* disconnected -> drop data */
             goto discard;
@@ -660,6 +664,8 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    char *dest_addr = NULL;
    char *dest_port = NULL;
    tcpip_receiver_private_t *config = NULL;
+
+   //printf("CREATE IFC\n");
 
    if (params == NULL) {
       VERBOSE(CL_ERROR, "No parameters found for input IFC.");
@@ -1024,7 +1030,6 @@ tcpip_server_disconnect_all_clients(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
    client_t *cl;
-
    pthread_mutex_lock(&c->client_list_mtx);
    LIST_FOREACH(cl, &c->clients_list_head, entries) {
       LIST_REMOVE(cl, entries);
@@ -1065,7 +1070,7 @@ static void
 finish_container(tcpip_sender_private_t *c, struct trap_mbuf_s *t_mbuf)
 {
     __sync_add_and_fetch(&is_in_finish_container, 1);
-    t_cond_write_header(t_mbuf->active);
+    t_cond_write_header(t_mbuf->active, t_mbuf->to_send.head_);
 
     uint64_t current_sleep = 1;
     
@@ -1093,14 +1098,15 @@ repeat:
     	if (ref == 0) {
             t_cont_clear(old_cont);
             t_stack_push(&t_mbuf->empty, old_cont);
-        } else {
+      } else {
 	        ref = __sync_sub_and_fetch(&old_cont->ref_counter, 1);
 	        if (ref != 0) {
 	            t_stack_push(&t_mbuf->deferred, old_cont);
 	        } else {
+               __sync_sub_and_fetch(&old_cont->idx, 1);
 	            t_cont_clear(old_cont);
 	            t_stack_push(&t_mbuf->empty, old_cont);
-	        }
+	      }
     	}
     }
 
@@ -1181,6 +1187,8 @@ again:
         __sync_add_and_fetch(&cl->cont_id, 1);
     }
 
+    pthread_exit(NULL);
+
 cleanup:
     disconnect_client(c, cl);
     free(arg);
@@ -1190,85 +1198,97 @@ cleanup:
 static void *
 send_non_blocking_mode(void *arg)
 {
-    tcpip_sender_private_t *c = ((struct thread_data *) arg)->arg;
-    client_t *cl = ((struct thread_data *) arg)->client;
-    struct trap_container_s *t_cont;
+   tcpip_sender_private_t *c = ((struct thread_data *) arg)->arg;
+   client_t *cl = ((struct thread_data *) arg)->client;
+   struct trap_container_s *t_cont;
 
-    uint64_t sleep_time = 1;
-    size_t pending_bytes;
-    char *buffer;
-    int send_rc;
+   uint64_t sleep_time = 1;
+   uint64_t next_seq_number = -1;
+   size_t pending_bytes;
+   char *buffer;
+   int send_rc;
 
-    while (!c->is_terminated) {
-
+   while (!c->is_terminated) {
 again_set_container:
-
-        // check if client is not too slow
-        while (!is_next_container_ready(c, cl)) {
+      // check if client is not too slow
+      while (!is_next_container_ready(c, cl)) {
         	sleep_time = calculate_sleep(sleep_time);
-            usleep(sleep_time);
-        }
+         usleep(sleep_time);
+      }
 
-        sleep_time = 1;
+      sleep_time = 1;
           
-        // get next container
-        t_cont = t_rb_at(&c->t_mbuf.to_send, cl->cont_id);
+      // get next container
+      t_cont = t_rb_at(&c->t_mbuf.to_send, cl->cont_id);
 
-        if (t_cont_acquiere(t_cont) < 1) {
-            t_cont_release(t_cont);
-            uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
-            __sync_add_and_fetch(&cl->cont_id, head - cl->cont_id);
-            goto again_set_container;
-        }
+      if (t_cont_acquiere(t_cont) < 1 || __sync_fetch_and_add(&t_cont->idx, 0) != cl->cont_id) {
+         t_cont_release(t_cont);
+         uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+         __sync_add_and_fetch(&cl->cont_id, head - cl->cont_id);
+         goto again_set_container;
+      }
 
-        buffer = t_cont->buffer;
-        pending_bytes = t_cont->used_bytes;
+      buffer = t_cont->buffer;
+      pending_bytes = t_cont->used_bytes;
 
 again:
-        send_rc = send(cl->sd, &buffer[t_cont->used_bytes - pending_bytes], pending_bytes, MSG_NOSIGNAL);
-        if (send_rc < 0) { // Send failed
-            if (c->is_terminated) {
-               break;
-            }
-            switch (errno) {
-            case EBADF:
-            case EPIPE:
-            case EFAULT:
-                t_cont_release(t_cont);
-                goto cleanup;
-            case EAGAIN:
-               goto again;
-            default:    
-                VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_blocking_mode (errno: %i)", errno);
-                t_cont_release(t_cont);
-                goto cleanup;
-            }
-        } else {
-            pending_bytes -= send_rc;
-            if (pending_bytes) { // buffer was not send completely. Try again send pending bytes.
-                goto again;
-            }
-        }
+      send_rc = send(cl->sd, &buffer[t_cont->used_bytes - pending_bytes], pending_bytes, MSG_NOSIGNAL);
+      if (send_rc < 0) { // Send failed
+         if (c->is_terminated) {
+            break;
+         }
+         switch (errno) {
+         case EBADF:
+         case EPIPE:
+         case EFAULT:
+            t_cont_release(t_cont);
+            goto cleanup;
+         case EAGAIN:
+            goto again;
+         default:    
+            VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_non_blocking_mode (errno: %i)", errno);
+            t_cont_release(t_cont);
+            goto cleanup;
+         }
+      } else {
+         pending_bytes -= send_rc;
+         if (pending_bytes) { // buffer was not send completely. Try again send pending bytes.
+            goto again;
+         }
+      }
 
-        // increase container ID and statistics
-        cl->sent_containers++;
-        cl->sent_messages += t_cont->size; 
-        uint8_t ref = t_cont_release(t_cont);
+      // calculate skipped messages 
+      if (next_seq_number == -1) {
+         next_seq_number = t_cont->seq_num + t_cont->size;
+      } else {
+         if (next_seq_number != t_cont->seq_num) {
+            cl->skipped_messages += t_cont->seq_num - next_seq_number;
+         }
+         next_seq_number = t_cont->seq_num + t_cont->size;
+      }
 
-        uint64_t tail = __sync_fetch_and_add(&c->t_mbuf.to_send.tail_, 0);
+      // increase container ID and statistics
+      cl->sent_containers++;
+      cl->sent_messages += t_cont->size; 
+      cl->perc = (100.0 / (cl->sent_messages + cl->skipped_messages)) * (cl->skipped_messages);
+      
+      uint8_t ref = t_cont_release(t_cont);
+      uint64_t tail = __sync_fetch_and_add(&c->t_mbuf.to_send.tail_, 0);
 
-        if (cl->cont_id < tail) {
-        	uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
-            __sync_add_and_fetch(&cl->cont_id, head - cl->cont_id);
-        } else {
-            __sync_add_and_fetch(&cl->cont_id, 1);
-        }
-    }
+      if (cl->cont_id < tail) {
+         uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+         __sync_add_and_fetch(&cl->cont_id, head - cl->cont_id);
+      } else {
+         __sync_add_and_fetch(&cl->cont_id, 1);
+      }
+   }
+
+   pthread_exit(NULL);
 
 cleanup:
-    disconnect_client(c, cl);
-    free(arg);
-    return NULL;
+   disconnect_client(c, cl);
+   free(arg);
+   return NULL;
 }
 
 static void *accept_clients_thread(void *arg)
@@ -1297,6 +1317,10 @@ static void *accept_clients_thread(void *arg)
         if (newclient == -1) {
             VERBOSE(CL_ERROR, "Accepting new client failed.");
         } else {
+        	if (c->is_terminated != 0) {
+            	break;
+        	}
+
             if (c->socket_type == TRAP_IFC_TCPIP) {
                 tmpaddr = (struct sockaddr *) &remoteaddr;
                 switch (((struct sockaddr *) tmpaddr)->sa_family) {
@@ -1339,7 +1363,6 @@ static void *accept_clients_thread(void *arg)
                 cl->sd = newclient;
                 cl->pfds_index = -1;
                 cl->id = client_id;
-           
             
 #ifdef ENABLE_NEGOTIATION
                 int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, newclient);
@@ -1502,7 +1525,6 @@ void tcpip_sender_terminate(void *priv)
    uint32_t i;
    uint64_t sum;
    int try = 0;
-
    /* Wait for connected clients to receive all finished buffers before terminating */
    if (c != NULL) {
       do {
@@ -1514,7 +1536,6 @@ void tcpip_sender_terminate(void *priv)
          if (try == 100)
          	break;
       } while (true);
-
       c->is_terminated = 1;
       close(c->term_pipe[1]);
       VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break poll()");
@@ -1600,6 +1621,7 @@ void tcpip_sender_service_destroy(void *priv)
    void *res;
    int32_t i;
 
+
 #define X(x) free(x); x = NULL;
    // Free private data
    if (c != NULL) {
@@ -1649,37 +1671,38 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
       return 0;
    }
 
+   client_stats = json_pack("{sssisisisf}", 
+      "id", "extended_input_interface_info", 
+      "sent_containers", tcp_trap_stats.total_containers, 
+      "sent_messages", tcp_trap_stats.total_msg, 
+      "skipped_messages", tcp_trap_stats.total_missed,
+      "skipped_percentage", tcp_trap_stats.percentage_missed);
+	if (client_stats == NULL) {
+	   return 0;
+	}
+
+	if (json_array_append_new(client_stats_arr, client_stats) == -1) {
+	   return 0;
+	}
+
+
   	pthread_mutex_lock(&c->client_list_mtx);
-    LIST_FOREACH(cl, &c->clients_list_head, entries) {
-      printf("STAT\n");
-    	client_stats = json_pack("{sisisisi}", "id", cl->id, "timer_total", cl->sent_containers, "timer_last", cl->sent_messages, "timeouts", total_containers);
-	    if (client_stats == NULL) {
-	        return 0;
-	    }
+   LIST_FOREACH(cl, &c->clients_list_head, entries) {
+    	client_stats = json_pack("{sisisisisf}", 
+         "id", cl->id, 
+         "sent_containers", cl->sent_containers, 
+         "sent_messages", cl->sent_messages, 
+         "skipped_messages", cl->skipped_messages,
+         "skipped_percentage", cl->perc);
+	   if (client_stats == NULL) {
+	      return 0;
+	   }
 
-	    if (json_array_append_new(client_stats_arr, client_stats) == -1) {
-	        return 0;
-	    }
-    }
-    pthread_mutex_unlock(&c->client_list_mtx);
-
-/*
-   for (i = 0; i < c->clients_arr_size; ++i) {
-      if (check_index(c->clients_bit_arr, i) == 0) {
-         continue;
-      }
-
-      client_stats = json_pack("{sisisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last, "timeouts", c->clients[i].timeouts);
-      if (client_stats == NULL) {
-         return 0;
-      }
-
-      if (json_array_append_new(client_stats_arr, client_stats) == -1) {
-         return 0;
-      }
-
+	   if (json_array_append_new(client_stats_arr, client_stats) == -1) {
+	      return 0;
+	   }
    }
-   */
+   pthread_mutex_unlock(&c->client_list_mtx);
    return 1;
 }
 
