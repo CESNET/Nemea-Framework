@@ -6,7 +6,7 @@
 %endif
 
 Name:           %{pypi_name}
-Version:        0.13.1
+Version:        0.15.0
 Release:        1%{?dist}
 Summary:        Python extension of the NEMEA project
 
@@ -24,6 +24,7 @@ Summary:        Python extension of the NEMEA project
 Requires: libtrap
 BuildRequires:  python%{python3_pkgversion}-setuptools
 BuildRequires:  python%{python3_pkgversion}-devel
+BuildRequires:  gcc
 BuildRequires:  libtrap
 BuildRequires:  libtrap-devel
 BuildRequires:  unirec
@@ -45,7 +46,6 @@ rm -rf %{pypi_name}.egg-info
 # Must do the subpackages' install first because the scripts in /usr/bin are
 # overwritten with every setup.py install.
 %{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
-
 
 %check
 TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test

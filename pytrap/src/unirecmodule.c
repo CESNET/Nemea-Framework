@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 #include "fields.h"
+#include "unirectemplate.h"
 #include "unirecipaddr.h"
 #include "unirecmacaddr.h"
 #include "pytrapexceptions.h"
@@ -526,7 +527,7 @@ static PyTypeObject pytrap_UnirecTime = {
         Py_TPFLAGS_BASETYPE, /* tp_flags */
     "UnirecTime(int(seconds), [int(miliseconds)])\n"
     "UnirecTime(double(secs_and_msecs))\n"
-    "UnirecTime(str(\"2019-03-18T12:11:10Z\"))\n"
+    "UnirecTime(str(\"2019-03-18T12:11:10Z\"))\n\n"
     "    Class for UniRec timestamp storage and base data access.\n\n"
     "    Args:\n"
     "        str: datetime, e.g., \"2019-03-18T12:11:10.123Z\"\n"
@@ -559,19 +560,6 @@ static PyTypeObject pytrap_UnirecTime = {
 /* UnirecTemplate    */
 /*********************/
 
-
-typedef struct {
-    PyObject_HEAD
-    ur_template_t *urtmplt;
-    char *data;
-    Py_ssize_t data_size;
-    PyObject *data_obj; // Pointer to object containing the data we are pointing to
-    PyDictObject *urdict;
-
-    /* for iteration */
-    Py_ssize_t iter_index;
-    Py_ssize_t field_count;
-} pytrap_unirectemplate;
 
 static inline PyObject *
 UnirecTemplate_get_local(pytrap_unirectemplate *self, char *data, int32_t field_id)
@@ -1459,12 +1447,11 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
 }
 
 PyObject *
-UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
+UnirecTemplate_getFieldsDict_local(pytrap_unirectemplate *self, char byId)
 {
-    PyObject *d = PyDict_New();
     PyObject *key, *num;
     int i;
-
+    PyObject *d = PyDict_New();
     if (d != NULL) {
         for (i = 0; i < self->urtmplt->count; i++) {
 #if PY_MAJOR_VERSION >= 3
@@ -1473,7 +1460,11 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
             key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
 #endif
             num = PyLong_FromLong(self->urtmplt->ids[i]);
-            PyDict_SetItem(d, key, num);
+            if (byId) {
+                PyDict_SetItem(d, num, key);
+            } else {
+                PyDict_SetItem(d, key, num);
+            }
             Py_DECREF(num);
             Py_DECREF(key);
         }
@@ -1483,7 +1474,97 @@ UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self)
     Py_RETURN_NONE;
 }
 
-static PyObject *
+PyObject *
+UnirecTemplate_getFieldsDict(pytrap_unirectemplate *self, PyObject *args)
+{
+    int idkey = 0;
+
+    if (!PyArg_ParseTuple(args, "|p", &idkey)) {
+        return NULL;
+    }
+    return UnirecTemplate_getFieldsDict_local(self, idkey);
+
+}
+
+PyObject *
+UnirecTemplate_setFromDict(pytrap_unirectemplate *self, PyObject *dict, int skip_errors)
+{
+    // Create message if missing
+    if (self->data_obj == NULL) {
+        PyObject *res = UnirecTemplate_createMessage(self, (uint32_t) 1000);
+        if (res == NULL) {
+            PyErr_SetString(PyExc_MemoryError, "Could not allocate new message memory.");
+            return NULL;
+        }
+    }
+
+    if (!PyDict_Check(dict)) {
+        PyErr_SetString(PyExc_TypeError, "setFromDict() expects dict() argument.");
+        return NULL;
+    }
+
+    if (!PyDict_Size((PyObject *) dict)) {
+        Py_RETURN_NONE;
+    }
+
+    ur_field_id_t id = UR_ITER_BEGIN;
+    while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
+        PyObject *idkey = Py_BuildValue("i", id);
+        if (!idkey) {
+            //printf("failed idkey\n");
+            return NULL;
+        }
+        PyObject *keyfield = PyDict_GetItem((PyObject *) self->fields_dict, idkey);
+        Py_DECREF(idkey);
+
+        if (!keyfield) {
+            continue;
+        }
+        PyObject *v = PyDict_GetItem((PyObject *) dict, keyfield);
+
+        if (!v) {
+            if (skip_errors != 0) {
+                continue;
+            } else {
+                PyErr_Format(PyExc_IndexError, "Key %s was not found in the dictionary.", ur_get_name(id));
+                return NULL;
+            }
+        } else {
+            if (PyUnicode_Check(v)) {
+                const char *cstr = PyUnicode_AsUTF8(v);
+                int res = ur_set_from_string(self->urtmplt, self->data, id, cstr);
+                if (res != 0) {
+                    PyErr_SetString(TrapError, "Could not set field.");
+                    Py_DECREF(idkey);
+                    return NULL;
+                }
+            } else if (PyLong_Check(v)) {
+                if (UnirecTemplate_set_local(self, self->data, id, v) == NULL) {
+                    Py_DECREF(idkey);
+                    return NULL;
+                }
+            }
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+PyObject *
+UnirecTemplate_setFromDict_py(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    // Create message if missing
+    PyDictObject *dict;
+    int skip_errors = 1;
+
+    static char *kwlist[] = {"data", "skip_errors", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|p", kwlist, &PyDict_Type, &dict, &skip_errors)) {
+        return NULL;
+    }
+
+    return UnirecTemplate_setFromDict(self, (PyObject *) dict, skip_errors);
+}
+
+PyObject *
 UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
 {
     PyObject *dataObj;
@@ -1519,16 +1600,19 @@ UnirecTemplate_setData(pytrap_unirectemplate *self, PyObject *args, PyObject *kw
     Py_RETURN_NONE;
 }
 
-static PyObject *
-UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+PyObject *
+UnirecTemplate_createMessage(pytrap_unirectemplate *self, uint32_t dynamic_size)
 {
     char *data;
-    uint32_t data_size = 0;
+    uint32_t data_size = dynamic_size;
 
-    static char *kwlist[] = {"dyn_size", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|I", kwlist, &data_size)) {
-        return NULL;
+    if (self->data != NULL) {
+        /* decrease refCount of the previously stored data */
+        Py_DECREF(self->data_obj);
+        self->data = NULL;
+        self->data_obj = NULL;
     }
+
     data_size += ur_rec_fixlen_size(self->urtmplt);
     if (data_size > UR_MAX_SIZE) {
         PyErr_Format(TrapError, "Size of message is %d B, which is more than maximum %d bytes.",
@@ -1538,10 +1622,6 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     data = ur_create_record(self->urtmplt, (uint16_t) data_size);
     PyObject *res = PyByteArray_FromStringAndSize(data, data_size);
 
-    if (self->data != NULL) {
-        /* decrease refCount of the previously stored data */
-        Py_DECREF(self->data_obj);
-    }
     self->data_obj = res;
     self->data_size = PyByteArray_Size(res);
     self->data = PyByteArray_AsString(res);
@@ -1552,15 +1632,36 @@ UnirecTemplate_createMessage(pytrap_unirectemplate *self, PyObject *args, PyObje
     return res;
 }
 
-static PyTypeObject pytrap_UnirecTemplate;
+static PyObject *
+UnirecTemplate_createMessage_py(pytrap_unirectemplate *self, PyObject *args, PyObject *kwds)
+{
+    uint32_t data_size = 0;
 
-static pytrap_unirectemplate *
+    static char *kwlist[] = {"dyn_size", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|I", kwlist, &data_size)) {
+        return NULL;
+    }
+    return UnirecTemplate_createMessage(self, data_size);
+}
+
+
+pytrap_unirectemplate *
 UnirecTemplate_init(pytrap_unirectemplate *self)
 {
     self->data = NULL;
     self->data_size = 0;
-    self->data_obj = NULL;
-    self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict(self);
+    if (self->data_obj != NULL) {
+        Py_DECREF(self->data_obj);
+        self->data_obj = NULL;
+    }
+    if (self->urdict != NULL) {
+        Py_DECREF(self->urdict);
+    }
+    if (self->fields_dict != NULL) {
+        Py_DECREF(self->fields_dict);
+    }
+    self->urdict = (PyDictObject *) UnirecTemplate_getFieldsDict_local(self, 0);
+    self->fields_dict = (PyDictObject *) UnirecTemplate_getFieldsDict_local(self, 1);
 
     self->iter_index = 0;
     self->field_count = PyDict_Size((PyObject *) self->urdict);
@@ -1632,6 +1733,34 @@ UnirecTemplate_strRecord(pytrap_unirectemplate *self)
     Py_DECREF(format);
     Py_DECREF(l);
     return result;
+}
+
+PyObject *
+UnirecTemplate_getDict(pytrap_unirectemplate *self)
+{
+    if (self->data == NULL) {
+        PyErr_SetString(TrapError, "Data was not set yet.");
+        return NULL;
+    }
+    PyObject *d = PyDict_New();
+    PyObject *key;
+    PyObject *val;
+
+    ur_field_id_t id = UR_ITER_BEGIN;
+    while ((id = ur_iter_fields(self->urtmplt, id)) != UR_ITER_END) {
+        key = PyUnicode_FromString(ur_get_name(id));
+        val = UnirecTemplate_get_local(self, self->data, id);
+        if (val) {
+           PyDict_SetItem(d, key, val);
+           Py_DECREF(val);
+        } else {
+           Py_DECREF(key);
+           Py_DECREF(d);
+           return NULL;
+        }
+        Py_DECREF(key);
+    }
+    return d;
 }
 
 static PyObject *
@@ -1794,6 +1923,29 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    type: Type object (e.g. int, str or pytrap.UnirecIPAddr).\n"
         },
 
+        {"getDict", (PyCFunction) UnirecTemplate_getDict, METH_NOARGS,
+            "Get UniRec record as a dictionary.\n\n"
+            "Returns:\n"
+            "    dict(str, object): Dictionary of field names and field values.\n"
+        },
+
+        {"setFromDict", (PyCFunction) UnirecTemplate_setFromDict_py, METH_VARARGS | METH_KEYWORDS,
+            "Set UniRec record from a give dictionary. UniRec template is used to iterate over fields, so the fields from dict not in UniRec template are skipped.\n\n"
+            "Example:\n"
+            "    >>> rec = pytrap.UnirecTemplate(\"ipaddr SRC_IP,ipaddr DST_IP,uint16 SRC_PORT,uint16 DST_PORT\")\n"
+            "    >>> rec.setFromDict({\"SRC_IP\": \"10.0.0.1\", \"DST_IP\": \"10.0.0.2\", \"SRC_PORT\": 12111, \"DST_PORT\": 80})\n"
+            "    >>> print(rec)\n"
+            "    (ipaddr DST_IP,ipaddr SRC_IP,uint16 DST_PORT,uint16 SRC_PORT)\n"
+            "    >>> rec.strRecord()\n"
+            "    SRC_IP = UnirecIPAddr('10.0.0.1'), DST_IP = UnirecIPAddr('10.0.0.2'), SRC_PORT = 12111, DST_PORT = 80\n\n"
+            "Args:\n"
+            "    data (dict()): dictionary, UniRec fields are set to the values of matching keys.\n"
+            "    skip_errors (Optional[bool]): Skip UniRec fields that are missing in dict if True, otherwise, raise IndexError when key is missing in dict.\n\n"
+            "Raises:\n"
+            "    IndexError: If skip_errors is False, raise exception on a missing key.\n"
+            "\n"
+        },
+
         {"getByID", (PyCFunction) UnirecTemplate_getByID, METH_VARARGS | METH_KEYWORDS,
             "Get value of the field from the UniRec message.\n\n"
             "Args:\n"
@@ -1851,13 +2003,15 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "    data (bytearray or bytes): Data - UniRec message.\n"
         },
 
-        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_NOARGS,
+        {"getFieldsDict", (PyCFunction) UnirecTemplate_getFieldsDict, METH_VARARGS,
             "Get set of fields of the template.\n\n"
+            "Args:\n"
+            "    byId (Optional[bool]): True - use field_id as key, False (default) - use name as key\n"
             "Returns:\n"
             "    Dict(str,int): Dictionary of field_id with field name as a key.\n"
         },
 
-        {"createMessage", (PyCFunction) UnirecTemplate_createMessage, METH_VARARGS | METH_KEYWORDS,
+        {"createMessage", (PyCFunction) UnirecTemplate_createMessage_py, METH_VARARGS | METH_KEYWORDS,
             "Create a message that can be filled in with values according to the template.\n\n"
             "Args:\n"
             "    dyn_size (Optional[int]): Maximal size of variable data (in total) (default: 0).\n\n"
@@ -1953,6 +2107,9 @@ static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
     if (self->urdict) {
         Py_DECREF(self->urdict);
     }
+    if (self->fields_dict) {
+        Py_DECREF(self->fields_dict);
+    }
     if (self->urtmplt) {
         ur_free_template(self->urtmplt);
     }
@@ -1974,7 +2131,7 @@ UnirecTemplate_str(pytrap_unirectemplate *self)
     return result;
 }
 
-static PyObject *
+PyObject *
 UnirecTemplate_getAttr(pytrap_unirectemplate *self, PyObject *attr)
 {
     int32_t field_id = UnirecTemplate_get_field_id(self, attr);
@@ -2047,7 +2204,7 @@ static PySequenceMethods UnirecTemplate_seqmethods = {
     0 /* ssizeargfunc sq_inplace_repeat; */
 };
 
-static PyTypeObject pytrap_UnirecTemplate = {
+PyTypeObject pytrap_UnirecTemplate = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.UnirecTemplate",          /* tp_name */
     sizeof(pytrap_unirectemplate),    /* tp_basicsize */

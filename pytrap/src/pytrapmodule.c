@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "pytrapexceptions.h"
+#include "unirectemplate.h"
 
 PyObject *TrapError;
 
@@ -158,7 +160,7 @@ pytrap_send(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
     } else if (PyBytes_Check(dataObj)) {
         PyBytes_AsStringAndSize(dataObj, &data, &data_size);
     } else if (PyUnicode_Check(dataObj)) {
-        data = PyUnicode_AsUTF8AndSize(dataObj, &data_size);
+        data = (char *) PyUnicode_AsUTF8AndSize(dataObj, &data_size);
     } else {
         PyErr_SetString(PyExc_TypeError, "Argument data must be of bytes or bytearray type.");
         return NULL;
@@ -239,6 +241,153 @@ pytrap_recv(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 }
 
 static PyObject *
+pytrap_sendBulk(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
+{
+    // IFC index
+    uint32_t ifcidx = 0;
+    int ret = 0;
+
+    pytrap_unirectemplate *pyurtempl = NULL;
+    PyObject *iterable = NULL;
+
+    if (self->trap == NULL) {
+        PyErr_SetString(TrapError, "TrapCtx is not initialized.");
+        return NULL;
+    }
+
+    static char *kwlist[] = {"urtempl", "data", "ifcidx", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!O|I", kwlist, &pytrap_UnirecTemplate, &pyurtempl, &iterable, &ifcidx)) {
+        return NULL;
+    }
+
+
+    if (!PySequence_Check(iterable)) {
+        PyErr_SetString(PyExc_TypeError, "Data argument must be a sequence of dict().");
+        return NULL;
+    }
+
+    Py_ssize_t count = PySequence_Size(iterable);
+    if (count == -1) {
+        PyErr_SetString(PyExc_IndexError, "Could not get size of iterable.");
+        return NULL;
+    } else if (count == 0) {
+        Py_RETURN_NONE;
+    }
+
+    for (Py_ssize_t i = 0; i < count; i++) {
+        PyObject *pydict = NULL;
+        pydict = PySequence_GetItem(iterable, i);
+
+        // Convert to dictionary
+        UnirecTemplate_setFromDict(pyurtempl, pydict, 1 /* skip errors */);
+
+        Py_BEGIN_ALLOW_THREADS
+        ret = trap_ctx_send(self->trap, ifcidx, pyurtempl->data, pyurtempl->data_size);
+        Py_END_ALLOW_THREADS
+        Py_XDECREF(pydict);
+
+        if (ret != TRAP_E_OK) {
+            PyErr_Format(TrapError, "Sending failed: %s", trap_ctx_get_last_error_msg(self->trap));
+            return NULL;
+        }
+
+    }
+
+    Py_XDECREF(iterable);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+pytrap_recvBulk(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
+{
+    // IFC index
+    uint32_t ifcidx = 0;
+    // time (in seconds) to interrupt capturing
+    uint32_t timeout = 60;
+    // number of messages to interrupt capturing
+    int32_t count = -1;
+
+    const void *in_rec;
+    uint16_t in_rec_size;
+
+    pytrap_unirectemplate *pyurtempl = NULL;
+
+    if (self->trap == NULL) {
+        PyErr_SetString(TrapError, "TrapCtx is not initialized.");
+        return NULL;
+    }
+
+    static char *kwlist[] = {"urtempl", "time", "count", "ifcidx", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!Ii|I", kwlist, &pytrap_UnirecTemplate, &pyurtempl, &timeout, &count, &ifcidx)) {
+        return NULL;
+    }
+
+    int ret;
+    PyObject *pylist = PyList_New(0);
+    PyObject *pydict = NULL;
+
+    // get current time and stop time
+    time_t endtime = time(NULL) + (time_t) timeout;
+
+    while (endtime > time(NULL) && count != 0) {
+        Py_BEGIN_ALLOW_THREADS
+        ret = trap_ctx_recv(self->trap, ifcidx, &in_rec, &in_rec_size);
+        Py_END_ALLOW_THREADS
+
+        if (ret == TRAP_E_TIMEOUT || ret == TRAP_E_TERMINATED) {
+            // nothing to read, return current data
+            break;
+        } else if (ret == TRAP_E_BAD_IFC_INDEX) {
+            PyErr_SetString(TrapError, "Bad index of IFC.");
+            goto error_cleanup;
+        } else if (ret == TRAP_E_FORMAT_MISMATCH) {
+            PyErr_SetString(TrapError, "Connection to incompatible IFC - format mismatch.");
+            goto error_cleanup;
+        } else if (ret == TRAP_E_FORMAT_CHANGED) {
+            // recreate UnirecTemplate
+            const char *spec;
+            uint8_t data_type;
+            trap_ctx_get_data_fmt(self->trap, TRAPIFC_INPUT, ifcidx, &data_type, &spec);
+            pyurtempl->urtmplt = ur_define_fields_and_update_template(spec, pyurtempl->urtmplt);
+            if (pyurtempl->urtmplt == NULL) {
+                PyErr_SetString(TrapError, "Creation of UniRec template failed.");
+                goto error_cleanup;
+            }
+            pyurtempl = UnirecTemplate_init(pyurtempl);
+        }
+
+        if (in_rec_size <= 1) {
+            break;
+        }
+        if (count > 0) {
+            count--;
+        }
+
+        // setData()
+        pyurtempl->data = (void *) in_rec;
+        pyurtempl->data_size = in_rec_size;
+        if (pyurtempl->data_obj != NULL) {
+            Py_DECREF(pyurtempl->data_obj);
+        }
+        pyurtempl->data_obj = PyByteArray_FromStringAndSize(in_rec, in_rec_size);;
+
+        // Convert to dictionary
+        pydict = UnirecTemplate_getDict(pyurtempl);
+
+        // Append into result list
+        PyList_Append(pylist, pydict);
+
+        Py_XDECREF(pydict);
+    }
+
+    return pylist;
+
+error_cleanup:
+    Py_DECREF(pylist);
+    return NULL;
+}
+
+static PyObject *
 pytrap_ifcctl(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
 {
     PyObject *dir_in;
@@ -277,6 +426,7 @@ pytrap_finalize(pytrap_trapcontext *self, PyObject *args)
     trap_ctx_finalize(&self->trap);
     self->trap = NULL;
     ur_free_template(in_tmplt);
+    in_tmplt = NULL;
     ur_finalize();
 
     Py_RETURN_NONE;
@@ -433,6 +583,43 @@ static PyMethodDef pytrap_TrapContext_methods[] = {
         "        of the FormatChanged instance.\n"
         "    Terminated: The TRAP IFC was terminated.\n"},
 
+    {"sendBulk",    (PyCFunction) pytrap_sendBulk, METH_VARARGS | METH_KEYWORDS,
+        "Send sequence of records at once via TRAP interface.\n\n"
+        "Example:\n"
+        "    >>> import pytrap\n"
+        "    >>> c1 = pytrap.TrapCtx()\n"
+        "    >>> c1.init([\"-i\", \"f:/tmp/pytrap_sendbulktest\"], 0, 1)\n"
+        "    >>> urtempl = \"ipaddr IP,uint16 PORT\"\n"
+        "    >>> c1.setDataFmt(0, pytrap.FMT_UNIREC, urtempl)\n"
+        "    >>> data = ({\"IP\": \"10.0.0.1\", \"PORT\": 1},\n"
+        "    ...         {\"IP\": \"10.0.0.2\", \"PORT\": 2},\n"
+        "    ...         {\"IP\": \"10.0.0.3\", \"PORT\": 3},\n"
+        "    ...         {\"IP\": \"10.0.0.4\", \"PORT\": 4},\n"
+        "    ...         {\"IP\": \"10.0.0.1\", \"PORT\": 5},\n"
+        "    ...         {\"IP\": \"10.0.0.2\", \"PORT\": 6})\n"
+        "    >>> t = pytrap.UnirecTemplate(urtempl)\n"
+        "    >>> c1.sendBulk(t, data)\n"
+        "    >>> c1.sendFlush()\n"
+        "    >>> c1.finalize()\n\n"
+        "Args:\n"
+        "    urtempl (UnirecTemplate): Created UnirecTemplate with the template, it is updated internally when the format is changed.\n\n"
+        "    data (list(dict)): Sequence of data to send; i.e., an iterable object containing dict, dict keys must match names of the UniRec fields in the template.\n\n"
+        "    ifcidx (Optional[int]): Index of input IFC (default: 0).\n\n"
+        "Raises:\n"
+        "    TrapError: Bad index given.\n"},
+
+    {"recvBulk",    (PyCFunction) pytrap_recvBulk, METH_VARARGS | METH_KEYWORDS,
+        "Receive sequence of records at once via TRAP interface.\n\n"
+        "Args:\n"
+        "    urtempl (UnirecTemplate): Created UnirecTemplate with the template, it is updated internally when the format is changed.\n\n"
+        "    time (int): Timeout in seconds before interrupt of capture.\n\n"
+        "    count (int): Maximum number of messages to capture, infinite when -1 (Warning! This can consume much memory.).\n\n"
+        "    ifcidx (Optional[int]): Index of input IFC (default: 0).\n\n"
+        "Returns:\n"
+        "    list(dict): Received data.\n\n"
+        "Raises:\n"
+        "    TrapError: Bad index given.\n"},
+
     {"send",        (PyCFunction) pytrap_send, METH_VARARGS | METH_KEYWORDS,
         "Send data via TRAP interface.\n\n"
         "Args:\n"
@@ -585,53 +772,79 @@ static PyMethodDef pytrap_methods[] = {
 "\n" \
 "Simple example to receive and send one message:\n" \
 "\n" \
-"    import pytrap\n" \
-"    c = pytrap.TrapCtx()\n" \
-"    c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
-"    fmttype = pytrap.FMT_UNIREC\n" \
-"    fmtspec = \"ipaddr SRC_IP\"\n" \
-"    c.setRequiredFmt(0, fmttype, fmtspec)\n" \
-"    rec = pytrap.UnirecTemplate(fmtspec)\n" \
-"    try:\n" \
-"        data = c.recv()\n" \
-"    except pytrap.FormatChanged as e:\n" \
-"        fmttype, fmtspec = c.getDataFmt(0)\n" \
-"        rec = pytrap.UnirecTemplate(fmtspec)\n" \
-"        data = e.data\n" \
-"    c.setDataFmt(0, fmttype, fmtspec)\n" \
-"    rec.setData(data)\n" \
-"    print(rec.strRecord())\n" \
-"    # send the message that was received:\n" \
-"    c.send(data)\n" \
-"    c.finalize()\n" \
+"Examples:\n" \
+"    >>> import pytrap\n" \
+"    >>> c = pytrap.TrapCtx()\n" \
+"    >>> c.init([\"-i\", \"u:socket1,u:socket2\"], 1, 1)\n" \
+"    >>> fmttype = pytrap.FMT_UNIREC\n" \
+"    >>> fmtspec = \"ipaddr SRC_IP\"\n" \
+"    >>> c.setRequiredFmt(0, fmttype, fmtspec)\n" \
+"    >>> rec = pytrap.UnirecTemplate(fmtspec)\n" \
+"    >>> try:\n" \
+"    ...     data = c.recv()\n" \
+"    >>> except pytrap.FormatChanged as e:\n" \
+"    ...     fmttype, fmtspec = c.getDataFmt(0)\n" \
+"    ...     rec = pytrap.UnirecTemplate(fmtspec)\n" \
+"    ...     data = e.data\n" \
+"    >>> if len(data) <= 1:\n" \
+"    ...     # empty message - do not process it!!!\n" \
+"    ...     pass\n" \
+"    >>> else:\n" \
+"    ...     c.setDataFmt(0, fmttype, fmtspec)\n" \
+"    ...     rec.setData(data)\n" \
+"    ...     print(rec.strRecord())\n" \
+"    >>> # send the message that was received:\n" \
+"    >>> c.send(data)\n" \
+"    >>> c.finalize()\n" \
 "\n" \
-"Simple example for data access using rec - UnirecTemplate instance:\n" \
+"Simple example for data access using rec - UnirecTemplate instance::\n\n" \
+"    >>> print(rec.SRC_IP)\n" \
+"    >>> rec.SRC_IP = pytrap.UnirecIPAddr(\"127.0.0.1\")\n" \
+"    >>> print(getattr(rec, \"SRC_IP\"))\n" \
+"    >>> rec.TIME_FIRST = pytrap.UnirecTime(12345678)\n" \
+"    >>> print(rec.TIME_FIRST)\n" \
+"    >>> print(rec.TIME_FIRST.toDatetime())\n" \
 "\n" \
-"    print(rec.SRC_IP)\n" \
-"    rec.SRC_IP = pytrap.UnirecIPAddr(\"127.0.0.1\")\n" \
-"    print(getattr(rec, \"SRC_IP\"))\n" \
-"    rec.TIME_FIRST = pytrap.UnirecTime(12345678)\n" \
-"    print(rec.TIME_FIRST)\n" \
-"    print(rec.TIME_FIRST.toDatetime())\n" \
-"\n" \
-"Simple example for creation of new message of UnirecTemplate:\n" \
-"\n" \
-"    # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
-"    # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
-"    data = rec.createMessage(100)\n" \
-"    rec.DST_PORT = 80\n" \
+"Simple example for creation of new message of UnirecTemplate::\n\n" \
+"    >>> # createMessage() expects the maximal total size of fields with variable length as an argument,\n" \
+"    >>> # here it is 100, i.e., size of all variable length data (sum of sizes) MUST be <= 100 bytes\n" \
+"    >>> data = rec.createMessage(100)\n" \
+"    >>> rec.DST_PORT = 80\n" \
 "\n" \
 "createMessage() should be called just at the beginning of program\n" \
-"or when format change is needed.\n\n" \
-"There is a complete example module:\n" \
+"or when format change is needed.\n" \
+"\n" \
+"It is possible to set JSON format and send JSON documents via TRAP interface.\n\n" \
+"Example - send::\n\n" \
+"    >>> import pytrap\n" \
+"    >>> import json\n" \
+"    >>> c = pytrap.TrapCtx()\n" \
+"    >>> c.init([\"-i\", \"f:/tmp/jsondata.trapcap:w\"], 0, 1)\n" \
+"    >>> c.setDataFmt(0, pytrap.FMT_JSON, \"JSON\")\n" \
+"    >>> a = json.dumps({\"a\": 123, \"b\": \"aaa\"})\n" \
+"    >>> c.send(bytearray(a, \"utf-8\"))\n" \
+"    >>> c.finalize()\n" \
+"\n" \
+"Example - receive::\n\n" \
+"    >>> import pytrap\n" \
+"    >>> import json\n" \
+"    >>> c = pytrap.TrapCtx()\n" \
+"    >>> c.init([\"-i\", \"f:/tmp/jsondata.trapcap\"], 1)\n" \
+"    >>> c.setRequiredFmt(0, pytrap.FMT_JSON, \"JSON\")\n" \
+"    >>> data = c.recv()\n" \
+"    >>> print(json.loads(data.decode(\"utf-8\")))\n" \
+"    >>> c.finalize()\n" \
+"\n" \
+"There are some complete example modules, see:\n" \
 "https://github.com/CESNET/Nemea-Framework/tree/master/examples/python\n\n" \
-"For more details, see docstring of the classes and methods.\n"
+"For more details, see the generated documentation:\n" \
+"https://nemea.liberouter.org/doc/pytrap/.\n"
 
 #if PY_MAJOR_VERSION >= 3
 
 static struct PyModuleDef pytrapmodule = {
     PyModuleDef_HEAD_INIT,
-    "pytrap",   /* name of module */
+    "pytrap.pytrap",   /* name of module */
     DOCSTRING_MODULE,
     -1,   /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
     pytrap_methods, NULL, NULL, NULL, NULL
@@ -653,7 +866,7 @@ initpytrap(void)
 #if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&pytrapmodule);
 #else
-    m = Py_InitModule3("pytrap", pytrap_methods, DOCSTRING_MODULE);
+    m = Py_InitModule3("pytrap.pytrap", pytrap_methods, DOCSTRING_MODULE);
 #endif
     if (m == NULL) {
         INITERROR;
