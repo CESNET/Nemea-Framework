@@ -506,7 +506,7 @@ ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t *tmplt
          name_len++;
          p++;
       }
-      if (name_len + act_len + 1 > concat_str_len) {
+      while (name_len + act_len + 1 > concat_str_len) {
          char *str_new;
          str_new = (char *) realloc(concat_str, sizeof(char) * (concat_str_len * 2));
          if (str_new == NULL) {
@@ -527,7 +527,7 @@ ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t *tmplt
       for (int i = 0; i < tmplt->count; i++) {
          const char *f_name = ur_get_name(tmplt->ids[i]);
          name_len = strlen(f_name);
-         if (name_len + act_len + 1 > concat_str_len) {
+         while (name_len + act_len + 1 > concat_str_len) {
             char *str_new;
             str_new = (char *) realloc(concat_str, sizeof(char) * (concat_str_len * 2));
             if (str_new == NULL) {
