@@ -49,52 +49,79 @@
 
 int main(int argc, char **argv)
 {
-   ur_template_t *tmplt, *tmplt2;
+   ur_template_t *tmplt;
+   int retval = 0;
 
    /* Create small template with undefined fields */
-   tmplt = ur_create_template_from_ifc_spec("time TIME");
-   if (tmplt != NULL) {
-      fprintf(stderr, "Creating template with undefined field should fail.\n");
-      return 1;
-   }
-
-   /* define new field */
-   if (ur_define_set_of_fields("time TIME") != UR_OK) {
-      fprintf(stderr, "Error when defining 1st UniRec field.\n");
-      return 1;
-   }
-
-   /* repeat creating template */
-   tmplt = ur_create_template_from_ifc_spec("time TIME");
+   //ur_define_set_of_fields("time TIME");
+   tmplt = ur_create_template("", NULL);
    if (tmplt == NULL) {
-      fprintf(stderr, "Error when creating UniRec template.\n");
-      return 1;
+      fprintf(stderr, "Creating template failed.\n");
+      retval = 1;
+      goto cleanup;
    }
-   ur_print_template(tmplt);
 
    /* define fields and expand template */
    if (ur_define_set_of_fields("uint64 baseStore_cacheline_max_index,uint64 baseStore_cacheline_max_index2") != UR_OK) {
-      fprintf(stderr, "Error when defining 1st UniRec field.\n");
-      return 1;
+      fprintf(stderr, "1. Error when defining 1st UniRec field.\n");
+      retval = 1;
+      goto cleanup;
    }
-   tmplt2 = ur_expand_template("uint64 baseStore_cacheline_max_index,uint64 baseStore_cacheline_max_index2", tmplt);
-   if (tmplt2 == NULL) {
-      fprintf(stderr, "Error expanding template.\n");
-      return 1;
+   tmplt = ur_expand_template("uint64 baseStore_cacheline_max_index,uint64 baseStore_cacheline_max_index2", tmplt);
+   if (tmplt == NULL) {
+      fprintf(stderr, "2. Error expanding template.\n");
+      retval = 1;
+      goto cleanup;
    }
-   ur_print_template(tmplt2);
+   ur_print_template(tmplt);
+   if (ur_define_set_of_fields("uint8 a") != UR_OK) {
+      fprintf(stderr, "3. Error when defining 1st UniRec field a.\n");
+      retval = 1;
+      goto cleanup;
+   }
+   tmplt = ur_expand_template("uint8 a", tmplt);
+   if (tmplt == NULL) {
+      fprintf(stderr, "4. Error expanding template a.\n");
+      retval = 1;
+      goto cleanup;
+   }
+   if (ur_define_set_of_fields("uint8 b") != UR_OK) {
+      fprintf(stderr, "5. Error when defining 1st UniRec field.\n");
+      retval = 1;
+      goto cleanup;
+   }
+   tmplt = ur_expand_template("uint8 b", tmplt);
+   if (tmplt == NULL) {
+      fprintf(stderr, "6. Error expanding template.\n");
+      retval = 1;
+      goto cleanup;
+   }
+   if (ur_define_set_of_fields("uint8 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb") != UR_OK) {
+      fprintf(stderr, "7. Error when defining 1st UniRec field.\n");
+      retval = 1;
+      goto cleanup;
+   }
+   tmplt = ur_expand_template("uint8 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", tmplt);
+   if (tmplt == NULL) {
+      fprintf(stderr, "8. Error expanding template.\n");
+      retval = 1;
+      goto cleanup;
+   }
+   ur_print_template(tmplt);
 
    /* extend tamplete with auto defining */
-   tmplt2 = ur_define_fields_and_update_template("time TIME,uint64 baseStore_cacheline_max_index,uint64 baseStore_cacheline_max_index2,int32 test,ipaddr IP", tmplt2);
-   if (tmplt2 == NULL) {
-      fprintf(stderr, "Error when creating extended UniRec template.\n");
-      return 1;
+   tmplt = ur_define_fields_and_update_template("time TIME,uint64 baseStore_cacheline_max_index,uint64 baseStore_cacheline_max_index2,int32 test,ipaddr IP", tmplt);
+   if (tmplt == NULL) {
+      fprintf(stderr, "9. Error when creating extended UniRec template.\n");
+      retval = 1;
+      goto cleanup;
    }
-   ur_print_template(tmplt2);
+   ur_print_template(tmplt);
 
-   ur_free_template(tmplt2);
+cleanup:
+   ur_free_template(tmplt);
 
    ur_finalize();
 
-   return 0;
+   return retval;
 }
