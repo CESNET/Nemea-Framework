@@ -61,6 +61,10 @@
 #include "ur_values.c"
 #include "inline.h"
 
+#ifndef MAX
+#define MAX(A, B) ((A >= B) ? (A) : (B))
+#endif
+
 // All inline functions from ipaddr.h must be declared again with "extern"
 // in exactly one translation unit (it generates externally linkable code of
 // these function)
@@ -508,12 +512,13 @@ ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t *tmplt
       }
       if (name_len + act_len + 1 > concat_str_len) {
          char *str_new;
-         str_new = (char *) realloc(concat_str, sizeof(char) * (concat_str_len * 2));
+         size_t req_size = MAX(name_len + act_len + 1, (concat_str_len * 2));
+         str_new = (char *) realloc(concat_str, sizeof(char) * req_size);
          if (str_new == NULL) {
             /* XXX memory leak original concat_str? */
             return NULL;
          }
-         concat_str_len *= 2;
+         concat_str_len = req_size;
          concat_str = str_new;
       }
       memcpy(concat_str + act_len, source_cpy, name_len);
@@ -529,12 +534,13 @@ ur_template_t *ur_expand_template(const char *ifc_data_fmt, ur_template_t *tmplt
          name_len = strlen(f_name);
          if (name_len + act_len + 1 > concat_str_len) {
             char *str_new;
-            str_new = (char *) realloc(concat_str, sizeof(char) * (concat_str_len * 2));
+            size_t req_size = MAX(name_len + act_len + 1, (concat_str_len * 2));
+            str_new = (char *) realloc(concat_str, sizeof(char) * req_size);
             if (str_new == NULL) {
                /* XXX memory leak original concat_str? */
                return NULL;
             }
-            concat_str_len *= 2;
+            concat_str_len = req_size;
             concat_str = str_new;
          }
          memcpy(concat_str + act_len, f_name, name_len);
