@@ -7,9 +7,9 @@ fields.h: fields.c
 fields.c:
 	${top_srcdir}/ur_processor.sh -i ${top_srcdir} -o ./
 
-check_PROGRAMS=test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp ip_prefix_search_test
+check_PROGRAMS=test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp ip_prefix_search_test test_resize
 
-TESTS = test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp ip_prefix_search_test
+TESTS = test_basic test_creation test_ipaddr test_time test_macaddr test_iter test_speed test_speed_o test_speed_ur test_speed_uro test_template_cmp ip_prefix_search_test test_resize
 
 if HAVE_CMOCKA
 check_PROGRAMS += test_ur2csv
@@ -24,6 +24,9 @@ test_basic_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_creation_SOURCES=test_creation.c fields.c
 test_creation_CPPFLAGS=$(COM_CPPFLAGS)
+
+test_resize_SOURCES=test_resize.c fields.c
+test_resize_CPPFLAGS=$(COM_CPPFLAGS)
 
 test_ipaddr_SOURCES=test_ipaddr.c fields.c
 test_ipaddr_CPPFLAGS=$(COM_CPPFLAGS)
