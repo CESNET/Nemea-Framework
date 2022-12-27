@@ -1,3 +1,8 @@
+2022-12-27 unirec-2.9.7
+	* rpm: skip installation of .la files
+	* bugfix: ur_expand_template() bad reallocation
+	* bugfixes based on coverity and codeQL
+
 2021-09-15 unirec-2.9.6
 	* unirec: Fixed reallocation of buffer when field is bigger than buffer/2 in unirec2csv file.
 
