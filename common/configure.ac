@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-common], [1.6.2], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-common], [1.6.3], [traffic-analysis@cesnet.cz])
 AC_CONFIG_SRCDIR([nemea-common.spec.in])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([silent-rules subdir-objects])
