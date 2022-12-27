@@ -30,3 +30,9 @@ help_trapifcspec.c: ${top_srcdir}/README.ifcspec.md
 
 clean-local:
 	rm -f help_trapifcspec.c *.gcda *.gcno
+
+install-exec-hook:
+	rm -f $(DESTDIR)$(libdir)/libtrap.la
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(libdir)/libtrap.la $(DESTDIR)$(libdir)/libtrap.a $(DESTDIR)$(libdir)/libtrap.so.*
