@@ -254,6 +254,41 @@ class SendAndReceiveMessageList(unittest.TestCase):
 
         os.unlink("/tmp/pytrap_test3")
 
+class SendAndReceiveMalfList(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import os
+        import time
+
+        messages = 10
+
+        urtempl = "uint8 NUM,string TEXT"
+
+        # Start sender
+        c1 = pytrap.TrapCtx()
+        c1.init(["-i", "f:/tmp/pytrap_test3:w"], 0, 1)
+        c1.setDataFmt(0, pytrap.FMT_UNIREC, urtempl)
+        c1.ifcctl(0, False, pytrap.CTL_TIMEOUT, 500000)
+        c1.ifcctl(0, False, pytrap.CTL_AUTOFLUSH, 500000)
+
+        t = pytrap.UnirecTemplate(urtempl)
+        t.createMessage(10)
+        t.NUM = 1
+        for i in range(messages):
+            c1.send(bytearray(b'\x01\x00\x00\x01\x00\xff'))
+        c1.sendFlush()
+
+        # Start Receiver
+        c2 = pytrap.TrapCtx()
+        c2.init(["-i", "f:/tmp/pytrap_test3"], 1)
+        c2.setRequiredFmt(0, pytrap.FMT_UNIREC, urtempl)
+        data = c2.recvBulk(t, time=15, count=messages)
+
+        c1.finalize()
+        c2.finalize()
+
+        os.unlink("/tmp/pytrap_test3")
+
 class SendBulkTest(unittest.TestCase):
     def runTest(self):
         import os

@@ -1747,12 +1747,14 @@ UnirecTemplate_getDict(pytrap_unirectemplate *self)
         key = PyUnicode_FromString(ur_get_name(id));
         val = UnirecTemplate_get_local(self, self->data, id);
         if (val) {
-           PyDict_SetItem(d, key, val);
-           Py_DECREF(val);
+            PyDict_SetItem(d, key, val);
+            Py_DECREF(val);
         } else {
-           Py_DECREF(key);
-           Py_DECREF(d);
-           return NULL;
+            PyErr_Print();
+            PyErr_Format(TrapError, "Could not encode value of %s field.", ur_get_name(id));
+            Py_DECREF(key);
+            Py_DECREF(d);
+            return NULL;
         }
         Py_DECREF(key);
     }
