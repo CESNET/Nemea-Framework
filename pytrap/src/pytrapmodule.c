@@ -374,10 +374,16 @@ pytrap_recvBulk(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
         // Convert to dictionary
         pydict = UnirecTemplate_getDict(pyurtempl);
 
-        // Append into result list
-        PyList_Append(pylist, pydict);
+        if (pydict) {
+            // Append into result list
+            PyList_Append(pylist, pydict);
 
-        Py_XDECREF(pydict);
+            Py_XDECREF(pydict);
+        } else {
+            /* if there was a problem with dict() construction, print
+             * traceback and skip the message */
+            PyErr_Print();
+        }
     }
 
     return pylist;
