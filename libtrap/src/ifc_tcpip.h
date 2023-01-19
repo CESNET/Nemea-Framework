@@ -2,11 +2,12 @@
  * \file ifc_tcpip.h
  * \brief TRAP TCP/IP interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
- * \date 2013
- * \date 2014
+ * \author Pavel Siska <siska@cesnet.cz>
+ * \date 2018
+ * \date 2023
  */
 /*
- * Copyright (C) 2013,2014 CESNET
+ * Copyright (C) 2023 CESNET
  *
  * LICENSE TERMS
  *

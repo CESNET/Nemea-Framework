@@ -2,10 +2,12 @@
  * \file ifc_tcpip.c
  * \brief TRAP TCP/IP interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
+ * \author Pavel Siska <siska@cesnet.cz>
  * \date 2018
+ * \date 2023
  */
 /*
- * Copyright (C) 2013-2018 CESNET
+ * Copyright (C) 2023 CESNET
  *
  * LICENSE TERMS
  *
@@ -101,6 +103,24 @@ union tcpip_socket_addr {
    struct addrinfo tcpip_addr; ///< used for TCPIP socket
    struct sockaddr_un unix_addr; ///< used for path of UNIX socket
 };
+
+/**
+ * \brief Structure passed to send thread.
+ */
+struct thread_data {
+    tcpip_sender_private_t *arg;
+    client_t *client;
+};
+
+/**
+ * Basic interface statistics
+ */
+struct tcp_trap_stats {
+   uint64_t total_missed; /** Missed receive messages */
+   uint64_t total_msg; /** Total messages */
+   uint64_t total_containers; /** Total containers */
+   float percentage_missed;
+} tcp_trap_stats;
 
 static int client_socket_connect(void *priv, const char *dest_addr, const char *dest_port, int *socket_descriptor, struct timeval *tv);
 static void client_socket_disconnect(void *priv);
@@ -348,6 +368,7 @@ discard:
       config->data_pointer = NULL;
       goto reset;
 reset:
+      config->seq = -1;
       if (config->is_terminated != 0) {
          /* TRAP_E_TERMINATED is returned outside the loop */
          break;
@@ -455,6 +476,25 @@ head_wait:
       } else {
          /* we expect to receive data */
          messageframe.data_length = ntohl(messageframe.data_length);
+
+         config->total_msg += messageframe.size;
+         if (config->seq != -1 && config->seq + config->cur_size != messageframe.seq_num) {
+         	config->total_missed += (messageframe.seq_num - config->seq + config->cur_size);
+         	VERBOSE(CL_VERBOSE_BASIC, "Recv: missed %" PRIu64 " messages. %.1f%% of total seen messages %" 
+               PRIu64 " has been missed", 
+         		messageframe.seq_num - config->seq + config->cur_size,
+         		(100.0 / (config->total_msg + config->total_missed)) * (config->total_missed), 
+         		config->total_missed + config->total_msg);
+         }
+         tcp_trap_stats.total_containers++;
+         tcp_trap_stats.total_missed = config->total_missed;
+         tcp_trap_stats.total_msg = config->total_msg;
+         tcp_trap_stats.percentage_missed = (100.0 / (config->total_msg + config->total_missed)) * (config->total_missed);
+
+         config->seq = messageframe.seq_num;
+         config->cur_size = messageframe.size;
+
+
          config->data_wait_size = messageframe.data_length;
          config->ext_buffer_size = messageframe.data_length;
 #ifdef ENABLE_CHECK_HEADER
@@ -499,6 +539,7 @@ mess_wait:
 void tcpip_receiver_terminate(void *priv)
 {
    tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
+
    if (config != NULL) {
       config->is_terminated = 1;
    } else {
@@ -653,6 +694,10 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    config->is_terminated = 0;
    config->socket_type = type;
    config->ifc_idx = idx;
+   config->seq = -1;
+   config->cur_size = 0;
+   config->total_missed = 0;
+   config->total_msg = 0;
 
    /* Parsing params */
    param_iterator = trap_get_param_by_delimiter(params, &dest_addr, TRAP_IFC_PARAM_DELIMITER);
@@ -784,7 +829,6 @@ static int wait_for_connection(int sock, struct timeval *tv)
    }
    return TRAP_E_TIMEOUT;
 }
-
 
 /**
  * \brief client_socket is used as a receiver
@@ -968,32 +1012,52 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
  * @{
  */
 
+static uint64_t
+calculate_sleep(uint64_t current_sleep)
+{
+	uint64_t sleep = current_sleep * 2;
+	return sleep > 5000 ? 5000 : sleep;
+}
+
+static uint64_t
+find_lowest_container_id(tcpip_sender_private_t *c)
+{
+   struct client_s *cl;
+   uint64_t lowest = -1;
+
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->clients_list_head, entries) {
+      if (cl->container_id < lowest) {
+         lowest = cl->container_id;
+      }
+   }
+   pthread_mutex_unlock(&c->client_list_mtx);
+   return lowest == -1 ? 0: lowest;
+}
+
 /**
  * \brief This function is called when a client was/is being disconnected.
  *
- * \param[in] priv Pointer to interface's private data structure.
- * \param[in] cl_id Index of the client in 'clients' array.
+ * \param[in] c Pointer to interface's private data structure.
+ * \param[in] cl Client to disconnect
  */
-static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
+static void
+disconnect_client(tcpip_sender_private_t *c, client_t *cl)
 {
-   int i;
-   client_t *c = &priv->clients[cl_id];
+   pthread_mutex_lock(&c->client_list_mtx);
+   client_t *cl_iterator;
+   LIST_FOREACH(cl_iterator, &c->clients_list_head, entries) {
+      if (cl_iterator == cl) {
+         __sync_sub_and_fetch(&c->connected_clients, 1);
+         shutdown(cl->sd, SHUT_RDWR);
+         close(cl->sd);
 
-   for (i = 0; i < priv->buffer_count; ++i) {
-      del_index(&priv->buffers[i].clients_bit_arr, cl_id);
-      if (priv->buffers[i].clients_bit_arr == 0) {
-         pthread_cond_broadcast(&priv->cond_full_buffer);
+         LIST_REMOVE(cl, entries);
+         free(cl);
+         break;
       }
    }
-   del_index(&priv->clients_bit_arr, cl_id);
-   __sync_sub_and_fetch(&priv->connected_clients, 1);
-
-   shutdown(c->sd, SHUT_RDWR);
-   close(c->sd);
-   c->sd = -1;
-   c->pfds_index = -1;
-   c->pending_bytes = 0;
-   c->sending_pointer = NULL;
+   pthread_mutex_unlock(&c->client_list_mtx);
 }
 
 /**
@@ -1003,14 +1067,197 @@ static inline void disconnect_client(tcpip_sender_private_t *priv, int cl_id)
  */
 void tcpip_server_disconnect_all_clients(void *priv)
 {
-   uint32_t i;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
+   client_t *cl;
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->clients_list_head, entries) {
+      LIST_REMOVE(cl, entries);
+      __sync_sub_and_fetch(&c->connected_clients, 1);
+   	shutdown(cl->sd, SHUT_RDWR);
+    	close(cl->sd);
+    	free(cl);
+   }
+   pthread_mutex_unlock(&c->client_list_mtx);
+}
 
-   for (i = 0; i<c->clients_arr_size; i++) {
-      if (c->clients[i].sd > 0) {
-         disconnect_client(priv, i);
+static bool
+is_next_container_ready(tcpip_sender_private_t *c, client_t *cl)
+{
+	uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+   if (head == 0 || cl->container_id >= head) {
+      return false;
+   } 
+   return true;
+}
+
+/**
+ * \brief This function runs in a separate thread. It handles sending data
+          to connected clients for TCPIP and UNIX interfaces (this function is blocking).
+ * \param[in] arg pointer to thread_data
+ */
+static void *
+send_blocking_mode(void *arg)
+{
+   tcpip_sender_private_t *c = ((struct thread_data *) arg)->arg;
+   client_t *cl = ((struct thread_data *) arg)->client;
+   struct trap_container_s *t_cont;
+
+   uint64_t sleep_time = 1;
+   size_t pending_bytes;
+   char *buffer;
+   int send_ret_code;
+
+   while (!c->is_terminated) {
+      // is next container ready
+      while (!is_next_container_ready(c, cl)) {
+         if (c->is_terminated) {
+            break;
+         }
+        	sleep_time = calculate_sleep(sleep_time);
+        	usleep(sleep_time);
+      }
+
+      sleep_time = 1;
+
+      // get next container
+      t_cont = t_rb_at(&c->t_mbuf.to_send, cl->container_id);
+          
+      buffer = t_cont->buffer;
+      pending_bytes = t_cont->used_bytes;
+
+again:
+      send_ret_code = send(cl->sd, &buffer[t_cont->used_bytes - pending_bytes], pending_bytes, MSG_NOSIGNAL);
+      if (send_ret_code < 0) { // Send failed
+         if (c->is_terminated) {
+            break;
+         }
+         switch (errno) {
+         case EBADF:
+         case EPIPE:
+         case EFAULT:
+            goto cleanup;
+         case EAGAIN:
+            goto again;
+         default:    
+            VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_blocking_mode (errno: %i)", errno);
+            goto cleanup;
+         }
+      } else {
+         pending_bytes -= send_ret_code;
+         if (pending_bytes) { // buffer was not send completely. Try again send pending bytes.
+            goto again;
+         }
+      }
+
+      // increase container ID and statistics
+      cl->sent_containers++;
+      cl->sent_messages += t_cont->size; 
+      __sync_add_and_fetch(&cl->container_id, 1);
+   }
+
+   pthread_exit(NULL);
+
+cleanup:
+   disconnect_client(c, cl);
+   free(arg);
+   return NULL;
+}
+
+static void *
+send_non_blocking_mode(void *arg)
+{
+   tcpip_sender_private_t *c = ((struct thread_data *) arg)->arg;
+   client_t *cl = ((struct thread_data *) arg)->client;
+   struct trap_container_s *t_cont;
+
+   uint64_t sleep_time = 1;
+   uint64_t next_seq_number = -1;
+   size_t pending_bytes;
+   char *buffer;
+   int send_ret_code;
+
+   while (!c->is_terminated) {
+again_set_container:
+      while (!is_next_container_ready(c, cl)) {
+        	sleep_time = calculate_sleep(sleep_time);
+         usleep(sleep_time);
+      }
+
+      sleep_time = 1;
+          
+      // get next container
+      t_cont = t_rb_at(&c->t_mbuf.to_send, cl->container_id);
+
+      // container is no longer available
+      if (t_cont_acquiere(t_cont) < 1 || __sync_fetch_and_add(&t_cont->idx, 0) != cl->container_id) {
+         t_cont_release(t_cont);
+         uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+         __sync_add_and_fetch(&cl->container_id, head - cl->container_id);
+         goto again_set_container;
+      }
+
+      buffer = t_cont->buffer;
+      pending_bytes = t_cont->used_bytes;
+
+again:
+      send_ret_code = send(cl->sd, &buffer[t_cont->used_bytes - pending_bytes], pending_bytes, MSG_NOSIGNAL);
+      if (send_ret_code < 0) { // Send failed
+         if (c->is_terminated) {
+            break;
+         }
+         switch (errno) {
+         case EBADF:
+         case EPIPE:
+         case EFAULT:
+            t_cont_release(t_cont);
+            goto cleanup;
+         case EAGAIN:
+            goto again;
+         default:    
+            VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_non_blocking_mode (errno: %i)", errno);
+            t_cont_release(t_cont);
+            goto cleanup;
+         }
+      } else {
+         pending_bytes -= send_ret_code;
+         if (pending_bytes) { // buffer was not send completely. Try again send pending bytes.
+            goto again;
+         }
+      }
+
+      // calculate skipped messages 
+      if (next_seq_number == -1) {
+         next_seq_number = t_cont->seq_num + t_cont->size;
+      } else {
+         if (next_seq_number != t_cont->seq_num) {
+            cl->skipped_messages += t_cont->seq_num - next_seq_number;
+         }
+         next_seq_number = t_cont->seq_num + t_cont->size;
+      }
+
+      cl->timeouts = cl->skipped_messages;
+
+      // increase container ID and statistics
+      cl->sent_containers++;
+      cl->sent_messages += t_cont->size; 
+      
+      t_cont_release(t_cont);
+      uint64_t tail = __sync_fetch_and_add(&c->t_mbuf.to_send.tail_, 0);
+
+      if (cl->container_id < tail) {
+         uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+         __sync_add_and_fetch(&cl->container_id, head - cl->container_id);
+      } else {
+         __sync_add_and_fetch(&cl->container_id, 1);
       }
    }
+
+   pthread_exit(NULL);
+
+cleanup:
+   disconnect_client(c, cl);
+   free(arg);
+   return NULL;
 }
 
 /**
@@ -1026,7 +1273,6 @@ static void *accept_clients_thread(void *arg)
    socklen_t addrlen;
    int newclient;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) arg;
-   int i;
    struct sockaddr *tmpaddr;
    struct ucred ucred;
    uint32_t ucredlen = sizeof(struct ucred);
@@ -1051,6 +1297,8 @@ static void *accept_clients_thread(void *arg)
             VERBOSE(CL_ERROR, "%s:%d unexpected error code %d", __func__, __LINE__, errno);
          }
       }
+
+      cl = NULL;
 
       if (pfds.revents & POLLIN) {
          newclient = accept(c->server_sd, (struct sockaddr *) &remoteaddr, &addrlen);
@@ -1080,79 +1328,124 @@ static void *accept_clients_thread(void *arg)
                     inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
                     newclient);
 
-            if (c->connected_clients < c->clients_arr_size) {
-               cl = NULL;
-               for (i = 0; i < c->clients_arr_size; ++i) {
-                  if (check_index(c->clients_bit_arr, i) == 0) {
-                     cl = &c->clients[i];
-                     break;
-                  }
-               }
-               if (cl == NULL) {
-                  goto refuse_client;
-               }
+            cl = calloc(1, sizeof(struct client_s));
+            if (cl == NULL) {
+                VERBOSE(CL_VERBOSE_LIBRARY, "Client's memory allocation failed. Refuse connection.");
+               goto refuse_client;
+            }
 
+            if (c->connected_clients < c->max_clients) {
+               // lock interface to connect new client
+
+               __sync_add_and_fetch(&c->clients_waiting_for_connection, 1);
+
+               pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+
+               __sync_sub_and_fetch(&c->clients_waiting_for_connection, 1);
+
+               cl->container_id = t_rb_head_id(&c->t_mbuf.to_send);
                cl->sd = newclient;
                cl->pfds_index = -1;
-               cl->sending_pointer = NULL;
-               cl->pending_bytes = 0;
-               cl->timer_total = 0;
                cl->id = client_id;
-               cl->assigned_buffer = c->active_buffer;
-               cl->timeouts = 0;
 
 #ifdef ENABLE_NEGOTIATION
-               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, i);
+               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TCPIP, newclient, NULL);
                if (ret_val == NEG_RES_OK) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
                } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
-                  cl->sd = -1;
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
-                  cl->sd = -1;
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                }
 #endif
+               pthread_mutex_lock(&c->client_list_mtx);
+               LIST_INSERT_HEAD(&c->clients_list_head, cl, entries);
+               pthread_mutex_unlock(&c->client_list_mtx);
+               struct thread_data *client_thread_data = malloc(sizeof(struct thread_data));
+               if (client_thread_data == NULL) {
+                	VERBOSE(CL_VERBOSE_LIBRARY, "Client's memory allocation failed. Refuse connection.");
+                	pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+                	goto refuse_client;
+               }
 
-               set_index(&c->clients_bit_arr, i);
+               client_thread_data->arg = c;
+               client_thread_data->client = cl;
+
+               if (c->timeout == TRAP_WAIT || c->timeout == TRAP_HALFWAIT) {
+                  pthread_create(&cl->sender_thread_id, NULL, send_blocking_mode, client_thread_data);
+               } else {
+                  pthread_create(&cl->sender_thread_id, NULL, send_non_blocking_mode, client_thread_data);
+               }
+               
                __sync_add_and_fetch(&c->connected_clients, 1);
+               pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
             } else {
+               VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)", 
+                  c->connected_clients, c->max_clients);
 refuse_client:
-               VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)", c->connected_clients, c->clients_arr_size);
                shutdown(newclient, SHUT_RDWR);
                close(newclient);
+               free(cl);
             }
          }
       }
    }
+
    pthread_exit(NULL);
 }
 
-/**
- * \brief Write buffer size to its header and shift active index.
- *
- * \param[in] priv Pointer to output interface private structure.
- * \param[in] buffer Pointer to the buffer.
- */
-static inline void finish_buffer(tcpip_sender_private_t *priv, buffer_t *buffer)
+static void 
+finish_container(tcpip_sender_private_t *c, struct trap_mbuf_s *t_mbuf)
 {
-   priv->autoflush_timestamp = get_cur_timestamp();
+   t_cond_write_header(t_mbuf->active, t_mbuf->to_send.head_);
+   uint64_t current_sleep = 1;
+    
+   if ((c->timeout == TRAP_WAIT || (c->timeout == TRAP_HALFWAIT && c->connected_clients))  
+      && c->lowest_container_id <= t_mbuf->to_send.tail_ 
+      && (t_mbuf->to_send.head_ - t_mbuf->to_send.tail_ >= t_mbuf->to_send.size - 1) ) {
+repeat:
+      c->lowest_container_id = find_lowest_container_id(c); 
+      if (c->lowest_container_id <= t_mbuf->to_send.tail_) {
+         if (c->is_terminated) {
+            return;
+         }
+         if (__sync_add_and_fetch(&c->clients_waiting_for_connection, 0)) {
+            pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+            while(__sync_add_and_fetch(&c->clients_waiting_for_connection, 0)) {
+               usleep(1000);
+            }
+            pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+            goto repeat;
+         }
+         current_sleep = calculate_sleep(current_sleep);
+         usleep(current_sleep);
+         goto repeat;
+      }
+   }        
 
-   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
-      uint32_t header = htonl(buffer->wr_index);
-      memcpy(buffer->header, &header, sizeof(header));
-
-      priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
-
-      buffer->clients_bit_arr = priv->clients_bit_arr;
-      buffer->wr_index = 0;
+    struct trap_container_s *old_container = t_rb_get_old_write_new(&t_mbuf->to_send, t_mbuf->active);
+    if (old_container != NULL) {
+      uint8_t ref = __sync_sub_and_fetch(&old_container->ref_counter, 0);
+    	if (ref == 0) {
+         t_cont_clear(old_container);
+         t_stack_push(&t_mbuf->empty, old_container);
+      } else {
+	      ref = __sync_sub_and_fetch(&old_container->ref_counter, 1);
+	      if (ref != 0) {
+	         t_stack_push(&t_mbuf->deferred, old_container);
+	      } else {
+            __sync_sub_and_fetch(&old_container->idx, 1);
+	         t_cont_clear(old_container);
+	         t_stack_push(&t_mbuf->empty, old_container);
+	      }
+      }
    }
 
-   pthread_mutex_lock(&priv->mtx_no_data);
-   pthread_cond_broadcast(&priv->cond_no_data);
-   pthread_mutex_unlock(&priv->mtx_no_data);
+   c->autoflush_timestamp = get_cur_timestamp();
 }
 
 /**
@@ -1165,253 +1458,44 @@ void tcpip_sender_flush(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
    pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-   finish_buffer(c, &c->buffers[c->active_buffer]);
-   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+   struct trap_mbuf_s *t_mbuf = &c->t_mbuf;
 
+   // buffer is empty, only header inside
+   if (t_mbuf->active->used_bytes == TRAP_HEADER_SIZE) {
+      pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+      return;
+   }
+
+   finish_container(c, t_mbuf);
+   c->max_container_id++;
+   struct trap_container_s *t_cont = t_mbuf_get_empty_container(t_mbuf);
+   t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
+
+   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
    __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
 }
 
-/**
- * \brief Send data to client from his assigned buffer.
- *
- * \param[in] priv Pointer to iterface's private data structure.
- * \param[in] c Pointer to the client's structure.
- * \param[in] cl_id Client's index in the 'clients' array.
- *
- * \return TRAP_E_OK successfully sent.
- * \return TRAP_E_TERMINATED TRAP was terminated.
- * \return TRAP_E_IO_ERROR send failed although TRAP was not terminated.
- */
-static inline int send_data(tcpip_sender_private_t *priv, client_t *c, uint32_t cl_id)
+static void *autoflush_thread(void *priv)
 {
-   int sent;
-   /* Pointer to client's assigned buffer */
-   buffer_t *buffer = &priv->buffers[c->assigned_buffer];
-
-again:
-   sent = send(c->sd, c->sending_pointer, c->pending_bytes, MSG_NOSIGNAL);
-
-   if (sent < 0) {
-      /* Send failed */
-      if (priv->is_terminated != 0) {
-         return TRAP_E_TERMINATED;
-      }
-      switch (errno) {
-      case EBADF:
-      case EPIPE:
-      case EFAULT:
-         return TRAP_E_IO_ERROR;
-      case EAGAIN:
-         goto again;
-      default:
-         VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in send_data (errno: %i)", errno);
-         return TRAP_E_IO_ERROR;
-      }
-   } else {
-      c->pending_bytes -= sent;
-      c->sending_pointer = (uint8_t *) c->sending_pointer + sent;
-
-      /* Client received whole buffer */
-      if (c->pending_bytes <= 0) {
-         del_index(&buffer->clients_bit_arr, cl_id);
-         if (buffer->clients_bit_arr == 0) {
-            __sync_add_and_fetch(&priv->ctx->counter_send_buffer[priv->ifc_idx], 1);
-            pthread_cond_broadcast(&priv->cond_full_buffer);
-         }
-
-         /* Assign client the next buffer in sequence */
-         c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
-      }
-   }
-   return TRAP_E_OK;
-}
-
-/**
- * \brief This function runs in a separate thread. It handles sending data
-          to connected clients for TCPIP and UNIX interfaces.
- * \param[in] priv pointer to interface private data
- */
-static void *sending_thread_func(void *priv)
-{
-   uint32_t i, j;
-   int res;
-   client_t *cl;
-   buffer_t *assigned_buffer;
-   uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
-   uint64_t send_entry_time;
-   uint64_t send_exit_time;
-   uint8_t waiting_clients;
-   int poll_timeout;
-   int clients_pfds_size;
-   struct pollfd *pfds;
-   int64_t time_since_flush;
-   int receiving_clients_array[DEFAULT_MAX_CLIENTS] = {0}; // Array of clients for whom we have data for
-
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
+   int64_t time_since_flush;
 
-   while (1) {
-      if (c->is_terminated != 0) {
-         pthread_exit(NULL);
-      }
+   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+   while (!c->is_terminated) {
       if (c->connected_clients == 0) {
-         usleep(NO_CLIENTS_SLEEP);
+         usleep(c->ctx->out_ifc_list[c->ifc_idx].timeout);
          continue;
       }
-
       time_since_flush = get_cur_timestamp() - c->autoflush_timestamp;
-      if (time_since_flush > c->ctx->out_ifc_list[c->ifc_idx].timeout) {
+      if (time_since_flush >= c->ctx->out_ifc_list[c->ifc_idx].timeout) {
          tcpip_sender_flush(c);
-      }
-
-      clients_pfds_size = 0;
-      waiting_clients = 0;
-      poll_timeout = 1;
-
-      /* Add term_pipe for reading into the disconnect client set */
-      c->clients_pfds[clients_pfds_size++] = (struct pollfd) {.fd = c->term_pipe[0], .events = POLLIN};
-
-      /* Check whether clients are connected and there is data for them to receive. */
-      for (i = j = 0; i < c->clients_arr_size; ++i) {
-         if (j == c->connected_clients) {
-            break;
-         }
-
-         if (check_index(c->clients_bit_arr, i) == 0) {
-            continue;
-         }
-
-         ++j;
-         receiving_clients_array[i] = 0;
-
-         cl = &(c->clients[i]);
-         assigned_buffer = &c->buffers[cl->assigned_buffer];
-
-         cl->pfds_index = j;
-         pfds = c->clients_pfds + j;
-         ++clients_pfds_size;
-         *pfds = (struct pollfd) {.fd = cl->sd, .events = POLLIN};
-
-         if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
-            ++waiting_clients;
-            continue;
-         }
-
-         if (cl->pending_bytes <= 0) {
-            cl->sending_pointer = assigned_buffer->header;
-            cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
-         }
-
-         pfds->events = pfds->events | POLLOUT;
-         receiving_clients_array[i] = 1;
-      }
-
-      if (waiting_clients == c->connected_clients) {
-         int timeout = c->ctx->out_ifc_list[c->ifc_idx].timeout - time_since_flush;
-         struct timespec ts;
-         clock_gettime(CLOCK_REALTIME, &ts);
-
-         ts.tv_nsec += (ts.tv_sec * 1000000000L) + (timeout * 1000L);
-         ts.tv_sec = (ts.tv_nsec / 1000000000L);
-         ts.tv_nsec %= 1000000000L;
-
-         pthread_mutex_lock(&c->mtx_no_data);
-         pthread_cond_timedwait(&c->cond_no_data, &c->mtx_no_data, &ts);
-         pthread_mutex_unlock(&c->mtx_no_data);
-         continue;
-      }
-
-      res = poll(c->clients_pfds, clients_pfds_size, poll_timeout);
-      if (res < 0) {
-         /* Select returned with an error */
-         if (c->is_terminated == 0) {
-            switch (errno) {
-               case EINTR:
-                  continue;
-               default:
-                  VERBOSE(CL_ERROR, "Sending thread: unexpected error in select (errno: %i)", errno);
-                  pthread_exit(NULL);
-            }
-         } else {
-            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: terminating...");
-            pthread_exit(NULL);
-         }
-      } else if (res == 0) {
-         /* Select timed out - no client will be receiving */
-         for (i = j = 0; i < c->clients_arr_size; ++i) {
-            if (j == c->connected_clients) {
-               break;
-            }
-            if (check_index(c->clients_bit_arr, i) == 0) {
-               continue;
-            }
-            j++;
-            cl = &(c->clients[i]);
-            if (receiving_clients_array[i] && cl->timeouts > 0) {
-               /* Disconnect clients that are unable to receive data fast enough and are blocking the whole module. */
-               disconnect_client(c, i);
-               receiving_clients_array[i] = 0;
-               VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Client %" PRIu32 " could not receive data fast enough and was disconnected", cl->id);
-            } else if (cl->sd < 0) {
-               disconnect_client(c, i);
-               receiving_clients_array[i] = 0;
-            }
-         }
-         continue;
-      }
-
-      if (c->clients_pfds[0].revents & POLLIN) {
-         /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
-         VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: Sending was interrupted by terminate()");
-         pthread_exit(NULL);
-      }
-
-      /* Check file descriptors. Disconnect "inactive" clients and send data to those designated by select */
-      for (i = j = 0; i < c->clients_arr_size; ++i) {
-         if (j == c->connected_clients) {
-            break;
-         }
-
-         receiving_clients_array[i] = 0;
-         cl = &(c->clients[i]);
-         if (cl->sd < 1) {
-            continue;
-         }
-
-         ++j;
-         if (cl->pfds_index < 0) {
-            continue;
-         }
-
-         pfds = c->clients_pfds + cl->pfds_index;
-         assert(pfds->fd == cl->sd);
-
-         /* Check if client is still connected */
-         if (pfds->revents & POLLIN) {
-            res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
-            if (res < 1) {
-               disconnect_client(c, i);
-               VERBOSE(CL_VERBOSE_LIBRARY, "Sending thread: Client %" PRIu32 " disconnected", cl->id);
-               continue;
-            }
-         }
-
-         /* Check if client is ready for data */
-         if (pfds->revents & POLLOUT) {
-            send_entry_time = get_cur_timestamp();
-            res = send_data(c, cl, i);
-            send_exit_time = get_cur_timestamp();
-
-            /* Measure how much time we spent sending to this client (in microseconds) */
-            cl->timer_last = (send_exit_time - send_entry_time);
-            cl->timer_total += cl->timer_last;
-
-            if (res != TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_OFF, "Sending thread: Disconnected client %" PRIu32 " (ret val: %d)", cl->id, res);
-               disconnect_client(c, i);
-            }
-         }
+         usleep(c->ctx->out_ifc_list[c->ifc_idx].timeout);
+      } else {
+         usleep(c->ctx->out_ifc_list[c->ifc_idx].timeout - time_since_flush);    
       }
    }
+   pthread_exit(NULL);
 }
 
 /**
@@ -1428,95 +1512,54 @@ static void *sending_thread_func(void *priv)
  */
 int tcpip_sender_send(void *priv, const void *data, uint16_t size, int timeout)
 {
-   int res, i;
-   uint32_t free_bytes;
-   struct timespec ts;
-   buffer_t *buffer;
-
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
 
-   /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
-   if ((size + sizeof(size)) > c->buffer_size) {
-      VERBOSE(CL_ERROR, "Buffer is too small for this message. Skipping...");
-      goto timeout;
-   }
-
-   /* If timeout is wait or half wait, we need to set some valid timeout value (>= 0)*/
-   if (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) {
-      timeout = 10000;
+   // Can we put message at least into empty buffer? 
+   if (t_cont_has_capacity(size + sizeof(size)) == false) {
+      VERBOSE(CL_ERROR, "Container is too small for message of size [%u B]. Skipping...", size);
+      return TRAP_E_OK;
    }
 
 repeat:
-   if (c->is_terminated != 0) {
+   if (c->is_terminated) {
       return TRAP_E_TERMINATED;
    }
-   if (block && c->connected_clients == 0) {
+
+   if (timeout == TRAP_WAIT && c->connected_clients == 0) {
       usleep(NO_CLIENTS_SLEEP);
       goto repeat;
    }
 
-   pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-   buffer = &c->buffers[c->active_buffer];
-   while (buffer->clients_bit_arr != 0) {
-      clock_gettime(CLOCK_REALTIME, &ts);
+   // lock critical section
+   pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);      
 
-      ts.tv_nsec += (ts.tv_sec * 1000000000L) + (timeout * 1000L);
-      ts.tv_sec = (ts.tv_nsec / 1000000000L);
-      ts.tv_nsec %= 1000000000L;
+   struct trap_mbuf_s *t_mbuf = &c->t_mbuf;
+   struct trap_container_s *t_cont = t_mbuf->active;
 
-      /* Wait until woken up by sending thread or until timeout elapses */
-      res = pthread_cond_timedwait(&c->cond_full_buffer, &c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx, &ts);
-      switch (res) {
-         case 0:
-            /* Succesfully locked, buffer can be used */
-            break;
-         case ETIMEDOUT:
-            /* Desired buffer is still full after timeout */
-            if (block) {
-               /* Blocking send, wait until buffer is free to use */
-               pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-               goto repeat;
-            } else {
-               /* Non-blocking send, drop message or force buffer reset (not implemented) */
-               goto timeout;
-            }
-         default:
-            VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-            goto timeout;
-      }
-   }
-
-   /* Check if there is enough space in buffer */
-   free_bytes = c->buffer_size - buffer->wr_index;
-   if (free_bytes >= (size + sizeof(size))) {
-      /* Store message into buffer */
-      insert_into_buffer(buffer, data, size);
-
-      /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
-      if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
-         finish_buffer(c, buffer);
-      }
-
-      pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-      return TRAP_E_OK;
+   // check if container has enough space to insert new message
+   // if not finish current container and get new empty one.
+   if (t_cont_has_space(t_cont, size + sizeof(size))) {
+      t_cont_insert(t_cont, data, size);
    } else {
-      /* Not enough space for message, finish current buffer and try to store message into next buffer */
-      finish_buffer(c, buffer);
-      buffer = &c->buffers[c->active_buffer];
-
-      pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-      goto repeat;
+      finish_container(c, t_mbuf);
+      c->max_container_id++;
+      t_cont = t_mbuf_get_empty_container(t_mbuf);
+      t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
+      t_cont_insert(t_cont, data, size);
    }
 
-timeout:
-   for (i = 0; i < c->clients_arr_size; i++) {
-      if (c->clients[i].sd > 0 && c->clients[i].assigned_buffer == c->active_buffer) {
-         c->clients[i].timeouts++;
-      }
+   /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
+   if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
+      finish_container(c, t_mbuf);
+      c->max_container_id++;
+      t_cont = t_mbuf_get_empty_container(t_mbuf);
+      t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
    }
+
+   t_mbuf->processed_messages++;
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-   return TRAP_E_TIMEOUT;
+   
+   return TRAP_E_OK;
 }
 
 /**
@@ -1527,25 +1570,26 @@ void tcpip_sender_terminate(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
 
-   uint32_t i;
-   uint64_t sum;
-
    /* Wait for connected clients to receive all finished buffers before terminating */
-   if (c != NULL) {
-      do {
-         usleep(10000); //prevents busy waiting
-         sum = 0;
-         for (i = 0; i < c->buffer_count; i++) {
-            sum |= c->buffers[i].clients_bit_arr;
-         }
-      } while (sum != 0);
-
-      c->is_terminated = 1;
-      close(c->term_pipe[1]);
-      VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break poll()");
-   } else {
+   if (c == NULL) {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
+      return;
    }
+   
+   do {
+      size_t lowest_container_id = find_lowest_container_id(c);
+      if (lowest_container_id == c->t_mbuf.to_send.head_) {
+         break;
+      }
+
+      if (c->connected_clients == 0) {
+         break;
+      }
+      usleep(10000); //prevents busy waiting
+   } while (true);
+   c->is_terminated = 1;
+   close(c->term_pipe[1]);
+   VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break poll()");
    return;
 }
 
@@ -1558,53 +1602,40 @@ void tcpip_sender_destroy(void *priv)
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
    char *unix_socket_path = NULL;
    void *res;
-   int32_t i;
+
+   if (c == NULL) {
+      return;
+   }
 
 #define X(x) free(x); x = NULL;
    // Free private data
-   if (c != NULL) {
-      if ((c->socket_type == TRAP_IFC_TCPIP_UNIX) || (c->socket_type == TRAP_IFC_TCPIP_SERVICE)) {
-         if (asprintf(&unix_socket_path, trap_default_socket_path_format, c->server_port) != -1) {
-            if (unix_socket_path != NULL) {
-               unlink(unix_socket_path);
-               X(unix_socket_path);
-            }
+   if (c->socket_type == TRAP_IFC_TCPIP_UNIX) {
+      if (asprintf(&unix_socket_path, trap_default_socket_path_format, c->server_port) != -1) {
+         if (unix_socket_path != NULL) {
+            unlink(unix_socket_path);
+            X(unix_socket_path);
          }
       }
-      if (c->server_port != NULL) {
-         X(c->server_port);
-      }
-      if ((c->initialized) && (c->socket_type != TRAP_IFC_TCPIP_SERVICE)) {
-         pthread_cancel(c->send_thr);
-         pthread_cancel(c->accept_thr);
-         pthread_join(c->send_thr, &res);
-         pthread_join(c->accept_thr, &res);
-      }
-
-      /* close server socket */
-      close(c->server_sd);
-
-      if (c->clients_pfds != NULL) {
-         X(c->clients_pfds);
-      }
-      /* disconnect all clients */
-      if (c->clients != NULL) {
-         tcpip_server_disconnect_all_clients(priv);
-         X(c->clients);
-      }
-
-      if (c->buffers != NULL) {
-         for (i = 0; i < c->buffer_count; i++) {
-            X(c->buffers[i].header);
-         }
-         X(c->buffers);
-      }
-
-      pthread_mutex_destroy(&c->mtx_no_data);
-      pthread_cond_destroy(&c->cond_no_data);
-      pthread_cond_destroy(&c->cond_full_buffer);
-      X(c)
    }
+   if (c->server_port != NULL) {
+      X(c->server_port);
+   }
+ 
+   if (c->initialized) {
+      pthread_cancel(c->accept_thr);
+      pthread_join(c->accept_thr, &res);
+   }
+
+   /* close server socket */
+   close(c->server_sd);
+
+   if (c->clients_pfds != NULL) {
+      X(c->clients_pfds);
+   }
+
+   /* disconnect all clients */
+   tcpip_server_disconnect_all_clients(priv);
+   X(c)
 #undef X
 }
 
@@ -1621,28 +1652,64 @@ int32_t tcpip_sender_get_client_count(void *priv)
 
 int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
 {
-   int i;
    json_t *client_stats = NULL;
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
+   struct client_s *cl;
 
    if (c == NULL) {
       return 0;
    }
 
-   for (i = 0; i < c->clients_arr_size; ++i) {
-      if (check_index(c->clients_bit_arr, i) == 0) {
-         continue;
-      }
+   char total_container_buf[40];
+   char total_messages_buf[40];
+   char total_missed_buf[40];
 
-      client_stats = json_pack("{sisisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last, "timeouts", c->clients[i].timeouts);
-      if (client_stats == NULL) {
-         return 0;
-      }
+   sprintf(total_container_buf, "%" PRIu64, tcp_trap_stats.total_containers);
+   sprintf(total_messages_buf, "%" PRIu64, tcp_trap_stats.total_msg);
+   sprintf(total_missed_buf, "%" PRIu64, tcp_trap_stats.total_missed);
 
-      if (json_array_append_new(client_stats_arr, client_stats) == -1) {
-         return 0;
-      }
+   client_stats = json_pack("{sssssssssf}", 
+      "id", "extended_input_interface_info", 
+      "sent_containers", total_container_buf, 
+      "sent_messages", total_messages_buf, 
+      "skipped_messages", total_missed_buf,
+      "skipped_percentage", tcp_trap_stats.percentage_missed);
+	if (client_stats == NULL) {
+	   return 0;
+	}
+
+	if (json_array_append_new(client_stats_arr, client_stats) == -1) {
+	   return 0;
+	}
+
+
+  	pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->clients_list_head, entries) {
+      char sent_container_buf[40];
+      char sent_messages_buf[40];
+      char skipped_messages_buf[40];
+
+      sprintf(sent_container_buf, "%" PRIu64, cl->sent_containers);
+      sprintf(sent_messages_buf, "%" PRIu64, cl->sent_messages);
+      sprintf(skipped_messages_buf, "%" PRIu64, cl->skipped_messages);
+
+    	client_stats = json_pack("{sisssssssf}", 
+         "id", cl->id, 
+         "sent_containers", sent_container_buf, 
+         "sent_messages", sent_messages_buf, 
+         "skipped_messages", skipped_messages_buf,
+         "skipped_percentage", ((100.0 / (cl->sent_messages + cl->skipped_messages)) * (cl->skipped_messages)));
+	   if (client_stats == NULL) {
+         pthread_mutex_unlock(&c->client_list_mtx);
+	      return 0;
+	   }
+
+	   if (json_array_append_new(client_stats_arr, client_stats) == -1) {
+         pthread_mutex_unlock(&c->client_list_mtx);
+	      return 0;
+	   }
    }
+   pthread_mutex_unlock(&c->client_list_mtx);
    return 1;
 }
 
@@ -1654,7 +1721,6 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
    /* config file trap-i<number>-config.txt */
    char *conf_file = NULL;
    FILE *f = NULL;
-   int32_t i;
    client_t *cl;
 
    r = asprintf(&conf_file, "%s/trap-o%02"PRIu32"-config.txt", path, idx);
@@ -1668,7 +1734,6 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
               "Server socket descriptor: %d\n"
               "Connected clients: %d\n"
               "Max clients: %d\n"
-              "Active buffer: %d\n"
               "Buffer count: %u\n"
               "Buffer size: %u\n"
               "Terminated: %d\n"
@@ -1678,8 +1743,7 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
               c->server_port,
               c->server_sd,
               c->connected_clients,
-              c->clients_arr_size,
-              c->active_buffer,
+              c->max_clients,
               c->buffer_size,
               c->buffer_size,
               c->is_terminated,
@@ -1687,10 +1751,14 @@ static void tcpip_sender_create_dump(void *priv, uint32_t idx, const char *path)
               TCPIP_SOCKETTYPE_STR(c->socket_type),
               c->ctx->out_ifc_list[idx].datatimeout);
    fprintf(f, "Clients:\n");
-   for (i = 0; i < c->clients_arr_size; i++) {
-      cl = &c->clients[i];
-      fprintf(f, "\t{%d, %d, %p, %d}\n", cl->sd, cl->assigned_buffer, cl->sending_pointer, cl->pending_bytes);
+   fprintf(f, "SD, Sent containers, sent messages, skipped messages, current container id:\n");
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->clients_list_head, entries) {
+      fprintf(f, "\t{%d, %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 "}\n", 
+         cl->sd, cl->sent_containers, cl->sent_messages, cl->skipped_messages, cl->container_id);
    }
+   pthread_mutex_unlock(&c->client_list_mtx);
+
    fclose(f);
 exit:
    free(conf_file);
@@ -1732,7 +1800,6 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    unsigned int max_clients = DEFAULT_MAX_CLIENTS;
    unsigned int buffer_count = DEFAULT_BUFFER_COUNT;
    unsigned int buffer_size = DEFAULT_BUFFER_SIZE;
-   uint32_t i;
 
 #define X(pointer) free(pointer); \
    pointer = NULL;
@@ -1786,67 +1853,26 @@ int create_tcpip_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_outpu
    }
    /* Parsing params ended */
 
-   priv->buffers = calloc(buffer_count, sizeof(buffer_t));
-   if (priv->buffers == NULL) {
-      /* if some memory could not have been allocated, we cannot continue */
-      goto failsafe_cleanup;
-   }
-   for (i = 0; i < buffer_count; ++i) {
-      buffer_t *b = &(priv->buffers[i]);
-
-      b->header = malloc(buffer_size + sizeof(buffer_size));
-      if (b->header == NULL) {
-         /* if some memory could not have been allocated, we cannot continue */
-         result = TRAP_E_MEMORY;
-         goto failsafe_cleanup;
-      }
-
-      b->data = b->header + sizeof(buffer_size);
-      b->wr_index = 0;
-      b->clients_bit_arr = 0;
-   }
-   priv->clients_pfds = calloc(max_clients + 1, sizeof(*priv->clients_pfds));
-   if (priv->clients_pfds == NULL) {
-      /* if some memory could not have been allocated, we cannot continue */
+   if (t_mbuf_init(&priv->t_mbuf, buffer_count, max_clients)) {
+      VERBOSE(CL_ERROR, "Trap mbuf initialization failed");
       result = TRAP_E_MEMORY;
-      goto failsafe_cleanup;
+      goto failsafe_cleanup;	
    }
-   priv->clients = calloc(max_clients, sizeof(client_t));
-   if (priv->clients == NULL) {
-      /* if some memory could not have been allocated, we cannot continue */
-      result = TRAP_E_MEMORY;
-      goto failsafe_cleanup;
-   }
-   for (i = 0; i < max_clients; ++i) {
-      client_t *client = &(priv->clients[i]);
 
-      client->assigned_buffer = 0;
-      client->sd = -1;
-      client->pfds_index = -1;
-      client->timer_total = 0;
-      client->pending_bytes = 0;
-      client->sending_pointer = NULL;
-   }
+   t_cont_set_len(buffer_size);
 
    priv->ctx = ctx;
+   priv->timeout = ifc->datatimeout;
    priv->socket_type = type;
    priv->ifc_idx = idx;
    priv->server_port = server_port;
-   priv->buffer_size = buffer_size;
-   priv->buffer_count = buffer_count;
-   priv->clients_arr_size = max_clients;
-   priv->clients_bit_arr = 0;
+   priv->max_clients = max_clients;
    priv->connected_clients = 0;
    priv->is_terminated = 0;
-   priv->active_buffer = 0;
    priv->autoflush_timestamp = get_cur_timestamp();
 
-   pthread_mutex_init(&priv->mtx_no_data, NULL);
-   pthread_cond_init(&priv->cond_no_data, NULL);
-   pthread_cond_init(&priv->cond_full_buffer, NULL);
-
-   VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
-                                priv->server_port, priv->clients_arr_size, priv->buffer_count, priv->buffer_size);
+   VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nactive_containers:\t%u\nbuffer size:\t%uB\n",
+      priv->server_port, priv->max_clients, buffer_count, buffer_size);
 
    result = server_socket_open(priv);
    if (result != TRAP_E_OK) {
@@ -1876,21 +1902,10 @@ failsafe_cleanup:
    X(server_port);
    X(param_str);
    if (priv != NULL) {
-      if (priv->buffers != NULL) {
-         for (i = 0; i < priv->buffer_count; i++) {
-            X(priv->buffers[i].header);
-         }
-         X(priv->buffers)
-      }
       if (priv->clients_pfds != NULL) {
          X(priv->clients_pfds);
       }
-      if (priv->clients != NULL) {
-         X(priv->clients);
-      }
-      pthread_mutex_destroy(&priv->mtx_no_data);
-      pthread_cond_destroy(&priv->cond_no_data);
-      pthread_cond_destroy(&priv->cond_full_buffer);
+      t_mbuf_clear(&priv->t_mbuf);
       X(priv);
    }
 #undef X
@@ -1947,7 +1962,7 @@ static int server_socket_open(void *priv)
          break; /* found socket to bind */
       }
       freeaddrinfo(ai); // all done with this
-   } else if ((c->socket_type == TRAP_IFC_TCPIP_UNIX) || (c->socket_type == TRAP_IFC_TCPIP_SERVICE)) {
+   } else if (c->socket_type == TRAP_IFC_TCPIP_UNIX) {
       /* UNIX socket */
       addr.unix_addr.sun_family = AF_UNIX;
       snprintf(addr.unix_addr.sun_path, sizeof(addr.unix_addr.sun_path) - 1, trap_default_socket_path_format, c->server_port);
@@ -1978,24 +1993,21 @@ static int server_socket_open(void *priv)
    }
 
    // listen
-   if (listen(c->server_sd, c->clients_arr_size) == -1) {
+   if (listen(c->server_sd, c->max_clients) == -1) {
       VERBOSE(CL_ERROR, "Listen failed");
       return TRAP_E_IO_ERROR;
    }
 
-   if (c->socket_type != TRAP_IFC_TCPIP_SERVICE) {
-      if (pthread_create(&c->send_thr, NULL, sending_thread_func, priv) != 0) {
-         VERBOSE(CL_ERROR, "Failed to create sending thread.");
-         return TRAP_E_IO_ERROR;
-      }
+   if (pthread_create(&c->accept_thr, NULL, accept_clients_thread, priv) != 0) {
+      VERBOSE(CL_ERROR, "Failed to create accept clients thread.");
+      return TRAP_E_IO_ERROR;
    }
 
-   if (c->socket_type != TRAP_IFC_TCPIP_SERVICE) {
-      if (pthread_create(&c->accept_thr, NULL, accept_clients_thread, priv) != 0) {
-         VERBOSE(CL_ERROR, "Failed to create accept_thread.");
-         return TRAP_E_IO_ERROR;
-      }
+   if (pthread_create(&c->autoflush_thr, NULL, autoflush_thread, priv) != 0) {
+      VERBOSE(CL_ERROR, "Failed to create autoflush thread.");
+      return TRAP_E_IO_ERROR;
    }
+
 
    c->initialized = 1;
    return 0;
