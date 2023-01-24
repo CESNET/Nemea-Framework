@@ -568,10 +568,6 @@ int file_write_buffer(void *priv, const void *data, uint32_t size, int timeout)
    file_private_t *config = (file_private_t*) priv;
    size_t written;
 
-   if (config->is_terminated) {
-      return trap_error(config->ctx, TRAP_E_TERMINATED);
-   }
-
    /* Check whether the file stream is opened */
    if (config->fd == NULL) {
       return trap_error(config->ctx, TRAP_E_NOT_INITIALIZED);
