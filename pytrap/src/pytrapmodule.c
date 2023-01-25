@@ -274,7 +274,8 @@ pytrap_sendBulk(pytrap_trapcontext *self, PyObject *args, PyObject *keywds)
         Py_RETURN_NONE;
     }
 
-    for (Py_ssize_t i = 0; i < count; i++) {
+    Py_ssize_t i;
+    for (i = 0; i < count; i++) {
         PyObject *pydict = NULL;
         pydict = PySequence_GetItem(iterable, i);
 
