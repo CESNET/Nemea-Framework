@@ -37,7 +37,6 @@ ldconfig
 %files
 %{_libdir}/pkgconfig/unirec.pc
 %{_libdir}/libunirec.a
-%{_libdir}/libunirec.la
 %{_bindir}/nemea/ur_values.sh
 %{_bindir}/nemea/ur_processor.sh
 %{_prefix}/include/unirec/*

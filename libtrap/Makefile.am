@@ -59,6 +59,7 @@ deb-clean:
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)/$(DEFAULTSOCKETDIR) && chmod 1777 $(DESTDIR)/$(DEFAULTSOCKETDIR) || true
+	rm -f $(DESTDIR)$(libdir)/libtrap.la
 
 changelog:
 	echo -e "This will insert history into ChangeLog file and open NEWS in vim.\nC-c to interrupt."; \

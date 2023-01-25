@@ -1,3 +1,8 @@
+2022-12-27 nemea-common-1.6.3
+	* rpm: skip installation of .la files
+	* bugfixes: issues found by codeQL
+	* unification of C/C++ standard gnu11
+
 2020-07-16 nemea-common-1.6.2
 	* common: changes related to moving ip_prefix_search
 	* ip_prefix_search: was moved into unirec

@@ -46,7 +46,6 @@ ldconfig
 %{_libdir}/pkgconfig/nemea-common.pc
 %{_libdir}/libnemea-common.so
 %{_libdir}/libnemea-common.a
-%{_libdir}/libnemea-common.la
 %{_prefix}/include/nemea-common/*
 %{_prefix}/share/doc/nemea-common/*
 

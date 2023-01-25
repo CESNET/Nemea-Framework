@@ -90,6 +90,15 @@ endif
 deb-clean:
 	rm -rf nemea-common*.build nemea-common*.changes nemea-common*.deb nemea-common-dev_*.deb nemea-common*.orig.tar.gz nemea-common-*.tar.gz nemea-common-@VERSION@
 
+install-exec-hook:
+	rm -f $(DESTDIR)$(libdir)/libnemea-common.la
+
 clean-local: deb-clean rpm-clean
 	rm -rf doc
+
+install-exec-hook:
+	rm -f $(DESTDIR)$(libdir)/libnemea-common.la
+
+uninstall-hook:
+	rm -f $(DESTDIR)$(libdir)/libnemea-common.la $(DESTDIR)$(libdir)/libnemea-common.a $(DESTDIR)$(libdir)/libnemea-common.so.*
 

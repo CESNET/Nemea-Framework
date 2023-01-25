@@ -1,3 +1,10 @@
+2022-12-27 (Tomas Cejka): rpm: skip installation of .la files
+2022-12-11 (Tomas Cejka): unirec: test resize: add more updates of template
+2022-12-11 (Tomas Cejka): unirec: fix ur_expand_template()
+2022-12-11 (Tomas Cejka): unirec: add test to extend unirec template
+2021-09-21 (Jiri Havranek): fixed issues reported by coverity
+2021-09-17 (Jiri Havranek): fixed issues found by codeQL
+
 2021-09-15 (xsiska12): unirec: Fixed reallocation of buffer when field is bigger than buffer/2 in unirec2csv file.
 
 2021-09-02 (Jiri Havranek): unirec: set parameters of some functions as const

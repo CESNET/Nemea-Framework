@@ -53,7 +53,6 @@ ldconfig
 %{_libdir}/pkgconfig/libtrap.pc
 %{_libdir}/libtrap.so
 %{_libdir}/libtrap.a
-%{_libdir}/libtrap.la
 %{_prefix}/include/libtrap/*
 %{_docdir}/libtrap/*
 
