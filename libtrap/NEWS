@@ -1,14 +1,3 @@
-2022-12-27 (Tomas Cejka): rpm: skip installation of .la files
-2021-09-22 (Jiri Havranek): libtrap: fixed tls test
-2021-09-21 (Jiri Havranek): fixed issues reported by coverity
-2021-09-17 (Jiri Havranek): fixed issues found by codeQL
-2021-07-29 (xsiska12): Merge branch 'master' of https://github.com/CESNET/Nemea-Framework into standard_unification
-2021-07-14 (Tomas Cejka): libtrap: tests: fixed tls test - unsupported hash algorithm in crt
-2021-03-26 (Jiri Havranek): libtrap: updated ifc help
-2021-03-24 (Jiri Havranek): Merge pull request #168 from CESNET/negotiation_timeout_exceeded
-2021-03-15 (xsiska12): libtrap: Increased timeout for sending and receiving service data.
-2021-03-03 (SiskaPavel): C/C++ standard unified to -std=gnu11 and -std=gnu++11
-
 2021-03-17 (aPiecek): common: BloomFilter: added a small comment
 2021-03-08 (xsiska12): libtrap: fixed writing to file before checking its change.
 2021-03-08 (SiskaPavel): libtrap: fix coding style
