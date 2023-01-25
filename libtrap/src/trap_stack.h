@@ -1,11 +1,11 @@
 /**
- * \file ifc_socket_common.h
- * \brief This file contains common functions and structures used in socket based interfaces (tcp-ip / tls).
- * \author Matej Barnat <barnama1@fit.cvut.cz>
- * \date 2019
+ * \file trap_stack.c
+ * \brief TRAP stack
+ * \author Pavel Siska <siska@cesnet.cz>
+ * \date 2021
  */
 /*
- * Copyright (C) 2013-2019 CESNET
+ * Copyright (C) 2021 CESNET
  *
  * LICENSE TERMS
  *
@@ -41,37 +41,86 @@
  *
  */
 
-#ifndef _ifc_socket_common_h_
-#define _ifc_socket_common_h_
+#ifndef TRAP_STACK_H_
+#define TRAP_STACK_H_
 
-#define BUFFER_COUNT_PARAM_LENGTH 13 /**< Used for parsing ifc params */
-#define BUFFER_SIZE_PARAM_LENGTH 12 /**< Used for parsing ifc params */
-#define MAX_CLIENTS_PARAM_LENGTH 12 /**< Used for parsing ifc params */
+#include <assert.h>
+#include <stdint.h>
 
-#define DEFAULT_MAX_DATA_LENGTH (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
+struct trap_stack_s {
+    size_t top;
+    size_t max_size;
+    void** data;
+};
 
-#ifndef DEFAULT_BUFFER_COUNT
-#define DEFAULT_BUFFER_COUNT 50 /**< Default buffer count */
-#endif
+static inline int
+t_stack_init(struct trap_stack_s* t_stack, size_t size)
+{
+    t_stack->top = 0;
+    t_stack->data = malloc(size * sizeof *t_stack->data);
+    t_stack->max_size = size;
+    if (t_stack->data == NULL)
+        return 1;
+    return 0;
+}
 
-#ifndef DEFAULT_BUFFER_SIZE
-#define DEFAULT_BUFFER_SIZE 100000 /**< Default buffer size [bytes] */
-#endif
+static inline void
+t_stack_destroy(struct trap_stack_s* t_stack)
+{
+    free(t_stack->data);
+}
 
-#ifndef DEFAULT_MAX_CLIENTS
-#define DEFAULT_MAX_CLIENTS 64 /**< Default size of client array */
-#endif
+static inline bool
+t_stack_is_empty(struct trap_stack_s* t_stack)
+{
+    return !t_stack->top;
+}
 
-#define NO_CLIENTS_SLEEP 100000 /**< Value used in usleep() when waiting for a client to connect */
+static inline bool
+t_stack_is_full(struct trap_stack_s* t_stack)
+{
+    return t_stack->top == t_stack->max_size;
+}
+
+static inline bool
+t_stack_push(struct trap_stack_s* t_stack, void* value)
+{
+    if (!t_stack_is_full(t_stack)) {
+        t_stack->data[t_stack->top] = value;
+        t_stack->top++;
+        return true;
+    }
+
+    return false;
+}
+
+static inline void*
+t_stack_swap_and_pop(struct trap_stack_s* t_stack, size_t idx)
+{
+    assert(idx < t_stack->top);
+
+    t_stack->top--;
+    void* tmp = t_stack->data[t_stack->top];
+    t_stack->data[t_stack->top] = t_stack->data[idx];
+    t_stack->data[idx] = tmp;
+    return t_stack->data[t_stack->top];
+}
 
 /**
- * \brief Output buffer structure.
+ * @brief
+ *
+ * @warning You have to check if stack is not empty before calling this function
+ *
+ * @param t_stack
+ * @return uint8_t Popped value
  */
-typedef struct buffer_s {
-    uint32_t wr_index; /**< Pointer to first free byte in buffer */
+static inline void*
+t_stack_pop(struct trap_stack_s* t_stack)
+{
+    assert(t_stack->top);
+    t_stack->top--;
 
-    uint8_t* header; /**< Pointer to first byte in buffer */
-    uint8_t* data; /**< Pointer to first byte of buffer payload */
-} buffer_t;
+    return t_stack->data[t_stack->top];
+}
 
-#endif
+#endif /* TRAP_STACK_H_ */

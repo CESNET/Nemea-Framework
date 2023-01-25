@@ -1,11 +1,11 @@
 /**
- * \file ifc_socket_common.h
- * \brief This file contains common functions and structures used in socket based interfaces (tcp-ip / tls).
- * \author Matej Barnat <barnama1@fit.cvut.cz>
- * \date 2019
+ * \file
+ * \brief TRAP service interfaces private structures
+ * \author Pavel Siska <siska@cesnet.cz>
+ * \date 2023
  */
 /*
- * Copyright (C) 2013-2019 CESNET
+ * Copyright (C) 2023 CESNET
  *
  * LICENSE TERMS
  *
@@ -41,37 +41,24 @@
  *
  */
 
-#ifndef _ifc_socket_common_h_
-#define _ifc_socket_common_h_
-
-#define BUFFER_COUNT_PARAM_LENGTH 13 /**< Used for parsing ifc params */
-#define BUFFER_SIZE_PARAM_LENGTH 12 /**< Used for parsing ifc params */
-#define MAX_CLIENTS_PARAM_LENGTH 12 /**< Used for parsing ifc params */
-
-#define DEFAULT_MAX_DATA_LENGTH (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
-
-#ifndef DEFAULT_BUFFER_COUNT
-#define DEFAULT_BUFFER_COUNT 50 /**< Default buffer count */
-#endif
-
-#ifndef DEFAULT_BUFFER_SIZE
-#define DEFAULT_BUFFER_SIZE 100000 /**< Default buffer size [bytes] */
-#endif
-
-#ifndef DEFAULT_MAX_CLIENTS
-#define DEFAULT_MAX_CLIENTS 64 /**< Default size of client array */
-#endif
-
-#define NO_CLIENTS_SLEEP 100000 /**< Value used in usleep() when waiting for a client to connect */
+#pragma once
 
 /**
- * \brief Output buffer structure.
+ * \brief Structure for service IFC client information.
  */
-typedef struct buffer_s {
-    uint32_t wr_index; /**< Pointer to first free byte in buffer */
+typedef struct service_client_s {
+    int sd; /**< Client socket descriptor */
+} service_client_t;
 
-    uint8_t* header; /**< Pointer to first byte in buffer */
-    uint8_t* data; /**< Pointer to first byte of buffer payload */
-} buffer_t;
-
-#endif
+/**
+ * \brief Structure for service IFC private information.
+ */
+typedef struct service_private_s {
+    uint32_t max_clients; /**< Maximum number of clients */
+    int server_sd; /**< Server socket descriptor */
+    char* server_port; /**< UNIX socket path */
+    char initialized; /**< Initialization flag */
+    char is_terminated; /**< Termination flag */
+    int term_pipe[2]; /**< File descriptor pair for select() termination */
+    service_client_t* clients; /**< Array of client structures */
+} service_private_t;

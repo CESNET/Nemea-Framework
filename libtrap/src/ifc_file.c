@@ -610,7 +610,7 @@ int file_write_buffer(void *priv, const void *data, uint32_t size, int timeout)
 
 #ifdef ENABLE_NEGOTIATION
    if (config->neg_initialized == 0) {
-      ret_val = output_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE, 0);
+      ret_val = output_ifc_negotiation((void *) config, TRAP_IFC_TYPE_FILE, 0, NULL);
       if (ret_val == NEG_RES_OK) {
          VERBOSE(CL_VERBOSE_LIBRARY, "FILE OUTPUT IFC[%"PRIu32"] negotiation result: success.", config->ifc_idx);
          config->neg_initialized = 1;

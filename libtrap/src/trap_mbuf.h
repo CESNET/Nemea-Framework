@@ -1,11 +1,11 @@
 /**
- * \file ifc_socket_common.h
- * \brief This file contains common functions and structures used in socket based interfaces (tcp-ip / tls).
- * \author Matej Barnat <barnama1@fit.cvut.cz>
- * \date 2019
+ * \file trap_mbuf.h
+ * \brief TRAP mbuf
+ * \author Pavel Siska <siska@cesnet.cz>
+ * \date 2021
  */
 /*
- * Copyright (C) 2013-2019 CESNET
+ * Copyright (C) 2021 CESNET
  *
  * LICENSE TERMS
  *
@@ -41,37 +41,56 @@
  *
  */
 
-#ifndef _ifc_socket_common_h_
-#define _ifc_socket_common_h_
+#ifndef TRAP_MBUF_H
+#define TRAP_MBUF_H
 
-#define BUFFER_COUNT_PARAM_LENGTH 13 /**< Used for parsing ifc params */
-#define BUFFER_SIZE_PARAM_LENGTH 12 /**< Used for parsing ifc params */
-#define MAX_CLIENTS_PARAM_LENGTH 12 /**< Used for parsing ifc params */
+#include "trap_container.h"
+#include "trap_ring_buffer.h"
+#include "trap_stack.h"
 
-#define DEFAULT_MAX_DATA_LENGTH (sizeof(trap_buffer_header_t) + 1024) /**< Obsolete? */
+struct trap_mbuf_s {
+    // counter of finished containers
+    uint64_t finished_containers;
 
-#ifndef DEFAULT_BUFFER_COUNT
-#define DEFAULT_BUFFER_COUNT 50 /**< Default buffer count */
-#endif
+    // counter of total processed messages
+    uint64_t processed_messages;
 
-#ifndef DEFAULT_BUFFER_SIZE
-#define DEFAULT_BUFFER_SIZE 100000 /**< Default buffer size [bytes] */
-#endif
+    // array of allocated containers
+    struct trap_container_s* containers;
 
-#ifndef DEFAULT_MAX_CLIENTS
-#define DEFAULT_MAX_CLIENTS 64 /**< Default size of client array */
-#endif
+    // pointer to currently active container
+    struct trap_container_s* active;
 
-#define NO_CLIENTS_SLEEP 100000 /**< Value used in usleep() when waiting for a client to connect */
+    // ring buffer with containers to send
+    struct trap_ring_buffer_s to_send;
+
+    // empty containers
+    struct trap_stack_s empty;
+
+    // deffered containers
+    struct trap_stack_s deferred;
+
+    // private
+    size_t total_size;
+};
 
 /**
- * \brief Output buffer structure.
+ * @brief Initialize mbuf structure.
+ *
+ * @param active_containers Maximal number of active containers at one time.
+ * @param max_clients Maximal number of connected clients at one time.
  */
-typedef struct buffer_s {
-    uint32_t wr_index; /**< Pointer to first free byte in buffer */
+int t_mbuf_init(struct trap_mbuf_s* t_mbuf, size_t active_containers, size_t max_clients);
 
-    uint8_t* header; /**< Pointer to first byte in buffer */
-    uint8_t* data; /**< Pointer to first byte of buffer payload */
-} buffer_t;
+/**
+ * @brief Deallocates memory needed by mbuf structure.
+ */
+void t_mbuf_clear(struct trap_mbuf_s* t_mbuf);
 
-#endif
+/**
+ * @brief Get empty container.
+ */
+struct trap_container_s*
+t_mbuf_get_empty_container(struct trap_mbuf_s* t_mbuf);
+
+#endif /* TRAP_MBUF_H */

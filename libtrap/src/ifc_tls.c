@@ -3,10 +3,11 @@
  * \brief TRAP TCP with TLS interfaces
  * \author Tomas Cejka <cejkat@cesnet.cz>
  * \author Jaroslav Hlavac <hlavaj20@fit.cvut.cz>
- * \date 2018
+ * \author Pavel Siska <siska@cesnet.cz>
+ * \date 2023
  */
 /*
- * Copyright (C) 2013-2018 CESNET
+ * Copyright (C) 2023 CESNET
  *
  * LICENSE TERMS
  *
@@ -98,6 +99,14 @@
 #ifndef MIN
 #define MIN(a,b) ((a)>(b)?(b):(a))
 #endif
+
+/**
+ * \brief Structure passed to send thread.
+ */
+struct thread_data {
+   tls_sender_private_t *arg;
+   tlsclient_t *client;
+};
 
 static SSL_CTX *tlsserver_create_context()
 {
@@ -1130,33 +1139,51 @@ static int client_socket_connect(tls_receiver_private_t *c, struct timeval *tv)
  * @{
  */
 
+static uint64_t
+calculate_sleep(uint64_t current_sleep)
+{
+	uint64_t sleep = current_sleep * 2;
+	return sleep > 5000 ? 5000 : sleep;
+}
+
+static uint64_t
+find_lowest_container_id(tls_sender_private_t *c)
+{
+   struct tlsclient_s *cl;
+   uint64_t lowest = -1;
+
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->tlsclients_list_head, entries) {
+      if (cl->container_id < lowest) {
+         lowest = cl->container_id;
+      }
+   }
+   pthread_mutex_unlock(&c->client_list_mtx);
+   return lowest == -1 ? 0: lowest;
+}
+
 /**
  * \brief This function is called when a client was/is being disconnected.
  *
  * \param[in] priv Pointer to interface's private data structure.
  * \param[in] cl_id Index of the client in 'clients' array.
  */
-static inline void disconnect_client(tls_sender_private_t *priv, int cl_id)
+static inline void disconnect_client(tls_sender_private_t *c, tlsclient_t *cl)
 {
-   int i;
-   tlsclient_t *c = &priv->clients[cl_id];
-
-   for (i = 0; i < priv->buffer_count; ++i) {
-      del_index(&priv->buffers[i].clients_bit_arr, cl_id);
-      if (priv->buffers[i].clients_bit_arr == 0) {
-         pthread_cond_broadcast(&priv->cond_full_buffer);
+   pthread_mutex_lock(&c->client_list_mtx);
+   tlsclient_t *cl_iterator;
+   LIST_FOREACH(cl_iterator, &c->tlsclients_list_head, entries) {
+      if (cl_iterator == cl) {
+         LIST_REMOVE(cl, entries);
+         __sync_sub_and_fetch(&c->connected_clients, 1);
+         shutdown(cl->sd, SHUT_RDWR);
+         close(cl->sd);
+         SSL_free(cl->ssl);
+         free(cl);
+         break;
       }
    }
-   del_index(&priv->clients_bit_arr, cl_id);
-   __sync_sub_and_fetch(&priv->connected_clients, 1);
-
-   shutdown(c->sd, SHUT_RDWR);
-   close(c->sd);
-   SSL_free(c->ssl);
-   c->sd = -1;
-   c->ssl = NULL;
-   c->pending_bytes = 0;
-   c->sending_pointer = NULL;
+   pthread_mutex_unlock(&c->client_list_mtx);
 }
 
 /**
@@ -1166,14 +1193,18 @@ static inline void disconnect_client(tls_sender_private_t *priv, int cl_id)
  */
 void tls_server_disconnect_all_clients(void *priv)
 {
-   uint32_t i;
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-
-   for (i = 0; i<c->clients_arr_size; i++) {
-      if (c->clients[i].sd > 0) {
-         disconnect_client(priv, i);
-      }
+   tlsclient_t *cl;
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->tlsclients_list_head, entries) {
+      LIST_REMOVE(cl, entries);
+      __sync_sub_and_fetch(&c->connected_clients, 1);
+   	shutdown(cl->sd, SHUT_RDWR);
+    	close(cl->sd);
+      SSL_free(cl->ssl);
+    	free(cl);
    }
+   pthread_mutex_unlock(&c->client_list_mtx);
 }
 
 /**
@@ -1192,6 +1223,229 @@ static inline uint64_t get_cur_timestamp()
    return spec_time.tv_sec * 1000000 + (spec_time.tv_nsec / 1000);
 }
 
+static void 
+finish_container(tls_sender_private_t *c, struct trap_mbuf_s *t_mbuf)
+{
+   t_cond_write_header(t_mbuf->active, t_mbuf->to_send.head_);
+   uint64_t current_sleep = 1;
+    
+   if ((c->timeout == TRAP_WAIT || (c->timeout == TRAP_HALFWAIT && c->connected_clients))  
+      && c->lowest_container_id <= t_mbuf->to_send.tail_ 
+      && (t_mbuf->to_send.head_ - t_mbuf->to_send.tail_ >= t_mbuf->to_send.size - 1) ) {
+repeat:
+      c->lowest_container_id = find_lowest_container_id(c); 
+      if (c->lowest_container_id <= t_mbuf->to_send.tail_) {
+         if (c->is_terminated) {
+            return;
+         }
+         if (__sync_add_and_fetch(&c->clients_waiting_for_connection, 0)) {
+            pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+            while(__sync_add_and_fetch(&c->clients_waiting_for_connection, 0)) {
+               usleep(1000);
+            }
+            pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+            goto repeat;
+         }
+         current_sleep = calculate_sleep(current_sleep);
+         usleep(current_sleep);
+         goto repeat;
+      }
+   }        
+
+    struct trap_container_s *old_container = t_rb_get_old_write_new(&t_mbuf->to_send, t_mbuf->active);
+    if (old_container != NULL) {
+      uint8_t ref = __sync_sub_and_fetch(&old_container->ref_counter, 0);
+    	if (ref == 0) {
+         t_cont_clear(old_container);
+         t_stack_push(&t_mbuf->empty, old_container);
+      } else {
+	      ref = __sync_sub_and_fetch(&old_container->ref_counter, 1);
+	      if (ref != 0) {
+	         t_stack_push(&t_mbuf->deferred, old_container);
+	      } else {
+            __sync_sub_and_fetch(&old_container->idx, 1);
+	         t_cont_clear(old_container);
+	         t_stack_push(&t_mbuf->empty, old_container);
+	      }
+      }
+   }
+
+   c->autoflush_timestamp = get_cur_timestamp();
+}
+
+static bool
+is_next_container_ready(tls_sender_private_t *c, tlsclient_t *cl)
+{
+	uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+   if (head == 0 || cl->container_id >= head) {
+      return false;
+   } 
+   return true;
+}
+
+static void *
+send_blocking_mode(void *arg)
+{
+   tls_sender_private_t *c = ((struct thread_data *) arg)->arg;
+   tlsclient_t *cl = ((struct thread_data *) arg)->client;
+   struct trap_container_s *t_cont;
+
+   uint64_t sleep_time = 1;
+   size_t pending_bytes;
+   char *buffer;
+   int send_ret_code;
+
+   while (!c->is_terminated) {
+      // is next container ready
+      while (!is_next_container_ready(c, cl)) {
+         if (c->is_terminated) {
+            break;
+         }
+        	sleep_time = calculate_sleep(sleep_time);
+        	usleep(sleep_time);
+      }
+
+      sleep_time = 1;
+
+      // get next container
+      t_cont = t_rb_at(&c->t_mbuf.to_send, cl->container_id);
+          
+      buffer = t_cont->buffer;
+      pending_bytes = t_cont->used_bytes;
+
+again:
+      send_ret_code = SSL_write(cl->ssl, &buffer[t_cont->used_bytes - pending_bytes], pending_bytes);
+      if (send_ret_code < 0) { // Send failed
+         if (c->is_terminated) {
+            break;
+         }
+         switch (SSL_get_error(cl->ssl, send_ret_code)) {
+         case SSL_ERROR_ZERO_RETURN:
+         case SSL_ERROR_SYSCALL:
+            goto cleanup;
+         case SSL_ERROR_WANT_READ:
+         case SSL_ERROR_WANT_WRITE:
+            goto again;
+         default:    
+            VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in ssl_write  (errno: %i)", errno);
+            goto cleanup;
+         }
+      } else {
+         pending_bytes -= send_ret_code;
+         if (pending_bytes) { // buffer was not send completely. Try again send pending bytes.
+            goto again;
+         }
+      }
+
+      // increase container ID and statistics
+      cl->sent_containers++;
+      cl->sent_messages += t_cont->size; 
+      __sync_add_and_fetch(&cl->container_id, 1);
+   }
+
+   pthread_exit(NULL);
+
+cleanup:
+   disconnect_client(c, cl);
+   free(arg);
+   return NULL;
+}
+
+static void *
+send_non_blocking_mode(void *arg)
+{
+   tls_sender_private_t *c = ((struct thread_data *) arg)->arg;
+   tlsclient_t *cl = ((struct thread_data *) arg)->client;
+   struct trap_container_s *t_cont;
+
+   uint64_t sleep_time = 1;
+   uint64_t next_seq_number = -1;
+   size_t pending_bytes;
+   char *buffer;
+   int send_ret_code;
+
+   while (!c->is_terminated) {
+again_set_container:
+      while (!is_next_container_ready(c, cl)) {
+        	sleep_time = calculate_sleep(sleep_time);
+         usleep(sleep_time);
+      }
+
+      sleep_time = 1;
+          
+      // get next container
+      t_cont = t_rb_at(&c->t_mbuf.to_send, cl->container_id);
+
+      // container is no longer available
+      if (t_cont_acquiere(t_cont) < 1 || __sync_fetch_and_add(&t_cont->idx, 0) != cl->container_id) {
+         t_cont_release(t_cont);
+         uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+         __sync_add_and_fetch(&cl->container_id, head - cl->container_id);
+         goto again_set_container;
+      }
+
+      buffer = t_cont->buffer;
+      pending_bytes = t_cont->used_bytes;
+
+again:
+      send_ret_code = SSL_write(cl->ssl, &buffer[t_cont->used_bytes - pending_bytes], pending_bytes);
+      if (send_ret_code < 0) { // Send failed
+         if (c->is_terminated) {
+            break;
+         }
+         switch (SSL_get_error(cl->ssl, send_ret_code)) {
+         case SSL_ERROR_ZERO_RETURN:
+         case SSL_ERROR_SYSCALL:
+            t_cont_release(t_cont);
+            goto cleanup;
+         case SSL_ERROR_WANT_READ:
+         case SSL_ERROR_WANT_WRITE:
+            goto again;
+         default:    
+            VERBOSE(CL_VERBOSE_OFF, "Unhandled error from send in ssl_write  (errno: %i)", errno);
+            goto cleanup;
+         }
+      } else {
+         pending_bytes -= send_ret_code;
+         if (pending_bytes) { // buffer was not send completely. Try again send pending bytes.
+            goto again;
+         }
+      }
+
+      // calculate skipped messages 
+      if (next_seq_number == -1) {
+         next_seq_number = t_cont->seq_num + t_cont->size;
+      } else {
+         if (next_seq_number != t_cont->seq_num) {
+            cl->skipped_messages += t_cont->seq_num - next_seq_number;
+         }
+         next_seq_number = t_cont->seq_num + t_cont->size;
+      }
+
+      // increase container ID and statistics
+      cl->sent_containers++;
+      cl->sent_messages += t_cont->size; 
+      
+      t_cont_release(t_cont);
+      uint64_t tail = __sync_fetch_and_add(&c->t_mbuf.to_send.tail_, 0);
+
+      if (cl->container_id < tail) {
+         uint64_t head = __sync_fetch_and_add(&c->t_mbuf.to_send.head_, 0); 
+         __sync_add_and_fetch(&cl->container_id, head - cl->container_id);
+      } else {
+         __sync_add_and_fetch(&cl->container_id, 1);
+      }
+   }
+
+   pthread_exit(NULL);
+
+cleanup:
+   disconnect_client(c, cl);
+   free(arg);
+   return NULL;
+}
+
+
 /**
  * \brief This function runs in a separate thread and handles new client's connection requests.
  *
@@ -1206,7 +1460,6 @@ static void *accept_clients_thread(void *arg)
    int newclient, fdmax;
    fd_set scset;
    tls_sender_private_t *c = (tls_sender_private_t *) arg;
-   int i;
    struct sockaddr *tmpaddr;
    uint32_t client_id = 0;
 
@@ -1249,20 +1502,25 @@ static void *accept_clients_thread(void *arg)
                     inet_ntop(remoteaddr.ss_family, get_in_addr((struct sockaddr*) &remoteaddr), remoteIP, INET6_ADDRSTRLEN),
                     newclient);
 
-            if (c->connected_clients < c->clients_arr_size) {
-               cl = NULL;
-               for (i = 0; i < c->clients_arr_size; ++i) {
-                  if (c->clients[i].sd < 1) {
-                     cl = &c->clients[i];
-                     break;
-                  }
-               }
-               if (cl == NULL) {
-                  goto refuse_client;
-               }
+            cl = calloc(1, sizeof(struct tlsclient_s));
+            if (cl == NULL) {
+                VERBOSE(CL_VERBOSE_LIBRARY, "Client's memory allocation failed. Refuse connection.");
+               goto refuse_client;
+            }
+
+            if (c->connected_clients < c->max_clients) {
+               __sync_add_and_fetch(&c->clients_waiting_for_connection, 1);
+               pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+               __sync_sub_and_fetch(&c->clients_waiting_for_connection, 1);
+
+               cl->container_id = t_rb_head_id(&c->t_mbuf.to_send);
+               cl->sd = newclient;
+               cl->id = client_id;
+
                cl->ssl = SSL_new(c->sslctx);
                if (cl->ssl == NULL) {
                   VERBOSE(CL_ERROR, "Creating SSL structure failed: %s", ERR_reason_error_string(ERR_get_error()));
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                }
                if (SSL_set_fd(cl->ssl, newclient) != 1) {
@@ -1270,6 +1528,7 @@ static void *accept_clients_thread(void *arg)
                           ERR_reason_error_string(ERR_get_error()));
                   SSL_free(cl->ssl);
                   cl->ssl = NULL;
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                }
 
@@ -1277,6 +1536,7 @@ static void *accept_clients_thread(void *arg)
                   ERR_print_errors_fp(stderr);
                   SSL_free(cl->ssl);
                   cl->ssl = NULL;
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                }
 
@@ -1284,38 +1544,52 @@ static void *accept_clients_thread(void *arg)
                int ret_ver = verify_certificate(cl->ssl);
                if (ret_ver != 0){
                   VERBOSE(CL_VERBOSE_LIBRARY, "verify_certificate: failed to verify client's certificate");
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                }
 
-               cl->sd = newclient;
-               cl->sending_pointer = NULL;
-               cl->pending_bytes = 0;
-               cl->timer_total = 0;
-               cl->id = client_id;
-               cl->assigned_buffer = c->active_buffer;
-               cl->timeouts = 0;
-
 #ifdef ENABLE_NEGOTIATION
-               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TLS, i);
+               int ret_val = output_ifc_negotiation(c, TRAP_IFC_TYPE_TLS, 0/*unused*/, cl->ssl);
                if (ret_val == NEG_RES_OK) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: success.");
                } else if (ret_val == NEG_RES_FMT_UNKNOWN) {
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (unknown data format of this output interface -> refuse client).");
                   cl->sd = -1;
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                } else { // ret_val == NEG_RES_FAILED, sending the data to input interface failed, refuse client
                   VERBOSE(CL_VERBOSE_LIBRARY, "Output_ifc_negotiation result: failed (error while sending hello message to input interface).");
                   cl->sd = -1;
+                  pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
                   goto refuse_client;
                }
 #endif
 
-               set_index(&c->clients_bit_arr, i);
+               pthread_mutex_lock(&c->client_list_mtx);
+               LIST_INSERT_HEAD(&c->tlsclients_list_head, cl, entries);
+               pthread_mutex_unlock(&c->client_list_mtx);
+               struct thread_data *client_thread_data = malloc(sizeof(struct thread_data));
+               if (client_thread_data == NULL) {
+                	VERBOSE(CL_VERBOSE_LIBRARY, "Client's memory allocation failed. Refuse connection.");
+                	pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+                	goto refuse_client;
+               }
+
+               client_thread_data->arg = c;
+               client_thread_data->client = cl;
+
+               if (c->timeout == TRAP_WAIT || c->timeout == TRAP_HALFWAIT) {
+                  pthread_create(&cl->sender_thread_id, NULL, send_blocking_mode, client_thread_data);
+               } else {
+                  pthread_create(&cl->sender_thread_id, NULL, send_non_blocking_mode, client_thread_data);
+               }
+
                __sync_add_and_fetch(&c->connected_clients, 1);
+               pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
             } else {
 refuse_client:
                VERBOSE(CL_VERBOSE_LIBRARY, "Shutting down client we do not have additional resources (%u/%u)",
-                       c->connected_clients, c->clients_arr_size);
+                       c->connected_clients, c->max_clients);
                shutdown(newclient, SHUT_RDWR);
                close(newclient);
             }
@@ -1326,31 +1600,6 @@ refuse_client:
 }
 
 /**
- * \brief Write buffer size to its header and shift active index.
- *
- * \param[in] priv Pointer to output interface private structure.
- * \param[in] buffer Pointer to the buffer.
- */
-static inline void finish_buffer(tls_sender_private_t *priv, buffer_t *buffer)
-{
-   priv->autoflush_timestamp = get_cur_timestamp();
-
-   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
-      uint32_t header = htonl(buffer->wr_index);
-      memcpy(buffer->header, &header, sizeof(header));
-
-      priv->active_buffer = (priv->active_buffer + 1) % priv->buffer_count;
-
-      buffer->clients_bit_arr = priv->clients_bit_arr;
-      buffer->wr_index = 0;
-   }
-
-   pthread_mutex_lock(&priv->mtx_no_data);
-   pthread_cond_broadcast(&priv->cond_no_data);
-   pthread_mutex_unlock(&priv->mtx_no_data);
-}
-
-/**
  * \brief Force flush of active buffer
  *
  * \param[in] priv pointer to interface private data
@@ -1358,231 +1607,46 @@ static inline void finish_buffer(tls_sender_private_t *priv, buffer_t *buffer)
 void tls_sender_flush(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-   c->autoflush_timestamp = get_cur_timestamp();
 
    pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+   struct trap_mbuf_s *t_mbuf = &c->t_mbuf;
 
-   buffer_t *buffer = &c->buffers[c->active_buffer];
-   if (buffer->clients_bit_arr == 0 && buffer->wr_index != 0) {
-      finish_buffer(c, buffer);
-      __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
+   // buffer is empty, only header inside
+   if (t_mbuf->active->used_bytes == TRAP_HEADER_SIZE) {
+      pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+      return;
    }
+
+   finish_container(c, t_mbuf);
+   c->max_container_id++;
+   struct trap_container_s *t_cont = t_mbuf_get_empty_container(t_mbuf);
+   t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
 
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
+   __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
 }
 
-/**
- * \brief Send data to client from his assigned buffer.
- *
- * \param[in] priv Pointer to iterface's private data structure.
- * \param[in] c Pointer to the client's structure.
- * \param[in] cl_id Client's index in the 'clients' array.
- *
- * \return TRAP_E_OK successfully sent.
- * \return TRAP_E_TERMINATED TRAP was terminated.
- * \return TRAP_E_IO_ERROR send failed although TRAP was not terminated.
- */
-static inline int send_data(tls_sender_private_t *priv, tlsclient_t *c, uint32_t cl_id)
+static void *autoflush_thread(void *priv)
 {
-   int sent;
-   /* Pointer to client's assigned buffer */
-   buffer_t *buffer = &priv->buffers[c->assigned_buffer];
-
-again:
-   sent = SSL_write(c->ssl, c->sending_pointer, c->pending_bytes);
-
-   if (sent < 0) {
-      /* Send failed */
-      if (priv->is_terminated != 0) {
-         return TRAP_E_TERMINATED;
-      }
-      switch (SSL_get_error(c->ssl, sent)) {
-      case SSL_ERROR_ZERO_RETURN:
-      case SSL_ERROR_SYSCALL:
-         return TRAP_E_IO_ERROR;
-      case SSL_ERROR_WANT_READ:
-      case SSL_ERROR_WANT_WRITE:
-         goto again;
-      default:
-         VERBOSE(CL_VERBOSE_OFF, "Unhandled error from ssl_write in send_data");
-         return TRAP_E_IO_ERROR;
-      }
-   } else {
-      c->pending_bytes -= sent;
-      c->sending_pointer = (uint8_t *) c->sending_pointer + sent;
-
-      /* Client received whole buffer */
-      if (c->pending_bytes <= 0) {
-         del_index(&buffer->clients_bit_arr, cl_id);
-         if (buffer->clients_bit_arr == 0) {
-            __sync_add_and_fetch(&priv->ctx->counter_send_buffer[priv->ifc_idx], 1);
-            pthread_cond_broadcast(&priv->cond_full_buffer);
-         }
-
-         /* Assign client the next buffer in sequence */
-         c->assigned_buffer = (c->assigned_buffer + 1) % priv->buffer_count;
-      }
-   }
-   return TRAP_E_OK;
-}
-
-/**
- * \brief This function runs in a separate thread. It handles sending data
-          to connected clients for TLS interface.
- * \param[in] priv pointer to interface private data
- */
-static void *sending_thread_func(void *priv)
-{
-   uint32_t i, j;
-   int res;
-   int maxsd = -1;
-   fd_set set, disset;
-   tlsclient_t *cl;
-   buffer_t *assigned_buffer;
-   uint8_t buffer[DEFAULT_MAX_DATA_LENGTH];
-   uint64_t send_entry_time;
-   uint64_t send_exit_time;
-   uint8_t waiting_clients;
-   struct timeval select_timeout;
-
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
+   int64_t time_since_flush;
 
-   while (1) {
-      if (c->is_terminated != 0) {
-         pthread_exit(NULL);
-      }
-      if (c->connected_clients == 0) {
-         usleep(NO_CLIENTS_SLEEP);
+   pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+   while (!c->is_terminated) {
+	  if (c->connected_clients == 0) {
+         usleep(c->ctx->out_ifc_list[c->ifc_idx].timeout);
          continue;
       }
-
-      if ((get_cur_timestamp() - c->autoflush_timestamp) > c->ctx->out_ifc_list[c->ifc_idx].timeout) {
+      time_since_flush = get_cur_timestamp() - c->autoflush_timestamp;
+      if (time_since_flush >= c->ctx->out_ifc_list[c->ifc_idx].timeout) {
          tls_sender_flush(c);
-      }
-
-      FD_ZERO(&disset);
-      FD_ZERO(&set);
-      waiting_clients = 0;
-      select_timeout.tv_sec = 1;
-      select_timeout.tv_usec = 0;
-
-      /* Add term_pipe for reading into the disconnect client set */
-      FD_SET(c->term_pipe[0], &disset);
-      if (maxsd < c->term_pipe[0]) {
-         maxsd = c->term_pipe[0];
-      }
-
-      /* Check whether clients are connected and there is data for them to receive. */
-      for (i = j = 0; i < c->clients_arr_size; ++i) {
-         if (j == c->connected_clients) {
-            break;
-         }
-
-         if (check_index(c->clients_bit_arr, i) == 0) {
-            continue;
-         }
-
-         ++j;
-
-         cl = &(c->clients[i]);
-         assigned_buffer = &c->buffers[cl->assigned_buffer];
-
-         if (cl->sd >= 0) {
-            FD_SET(cl->sd, &disset);
-         }
-
-         if (maxsd < cl->sd) {
-            maxsd = cl->sd;
-         }
-
-         if (check_index(assigned_buffer->clients_bit_arr, i) == 0) {
-            ++waiting_clients;
-            continue;
-         }
-
-         if (cl->pending_bytes <= 0) {
-            cl->sending_pointer = assigned_buffer->header;
-            cl->pending_bytes = ntohl(*((uint32_t *) assigned_buffer->header)) + sizeof(uint32_t);
-         }
-
-         if (cl->sd >= 0) {
-            FD_SET(cl->sd, &set);
-         }
-      }
-
-      if (waiting_clients == c->connected_clients) {
-         pthread_mutex_lock(&c->mtx_no_data);
-         pthread_cond_wait(&c->cond_no_data, &c->mtx_no_data);
-         pthread_mutex_unlock(&c->mtx_no_data);
-         continue;
-      }
-
-      res = select(maxsd + 1, &disset, &set, NULL, &select_timeout);
-      if (res < 0) {
-         /* Select returned with an error */
-         if (c->is_terminated == 0) {
-            switch (errno) {
-               case EINTR:
-                  continue;
-               default:
-                  VERBOSE(CL_ERROR, "Sending thread: unexpected error in select (errno: %i)", errno);
-                  pthread_exit(NULL);
-            }
-         } else {
-            VERBOSE(CL_VERBOSE_ADVANCED, "Sending thread: terminating...");
-            pthread_exit(NULL);
-         }
-      } else if (res == 0) {
-         /* Select timed out - no client will be receiving */
-         continue;
-      }
-
-      if (FD_ISSET(c->term_pipe[0], &disset)) {
-         /* Sending was interrupted by terminate(), exit even from TRAP_WAIT function call. */
-         VERBOSE(CL_VERBOSE_ADVANCED, "Sending was interrupted by terminate()");
-         pthread_exit(NULL);
-      }
-
-      /* Check file descriptors. Disconnect "inactive" clients and send data to those designated by select */
-      for (i = j = 0; i < c->clients_arr_size; ++i) {
-         if (j == c->connected_clients) {
-            break;
-         }
-
-         cl = &(c->clients[i]);
-         if (cl->sd < 1) {
-            continue;
-         }
-
-         ++j;
-
-         /* Check if client is still connected */
-         if (FD_ISSET(cl->sd, &disset)) {
-            res = recv(cl->sd, buffer, DEFAULT_MAX_DATA_LENGTH, 0);
-            if (res < 1) {
-               disconnect_client(c, i);
-               VERBOSE(CL_VERBOSE_LIBRARY, "Client %u disconnected", cl->id);
-               continue;
-            }
-         }
-
-         /* Check if client is ready for data */
-         if (FD_ISSET(cl->sd, &set)) {
-            send_entry_time = get_cur_timestamp();
-            res = send_data(c, cl, i);
-            send_exit_time = get_cur_timestamp();
-
-            /* Measure how much time we spent sending to this client (in microseconds) */
-            cl->timer_last = (send_exit_time - send_entry_time);
-            cl->timer_total += cl->timer_last;
-
-            if (res != TRAP_E_OK) {
-               VERBOSE(CL_VERBOSE_OFF, "Disconnected client %d (ret val: %d)", cl->id, res);
-               disconnect_client(c, i);
-            }
-         }
+         usleep(c->ctx->out_ifc_list[c->ifc_idx].timeout);
+      } else {
+         usleep(c->ctx->out_ifc_list[c->ifc_idx].timeout - time_since_flush);    
       }
    }
+   pthread_exit(NULL);
 }
 
 /**
@@ -1599,95 +1663,54 @@ static void *sending_thread_func(void *priv)
  */
 int tls_sender_send(void *priv, const void *data, uint16_t size, int timeout)
 {
-   int res, i;
-   uint32_t free_bytes;
-   struct timespec ts;
-   buffer_t *buffer;
-
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-   uint8_t block = (timeout == TRAP_WAIT || (timeout == TRAP_HALFWAIT && c->connected_clients != 0)) ? 1 : 0;
 
-   /* Can we put message at least into empty buffer? In the worst case, we could end up with SEGFAULT -> rather skip with error */
-   if ((size + sizeof(size)) > c->buffer_size) {
-      VERBOSE(CL_ERROR, "Buffer is too small for this message. Skipping...");
-      goto timeout;
-   }
-
-   /* If timeout is wait or half wait, we need to set some valid timeout value (>= 0)*/
-   if (timeout == TRAP_WAIT || timeout == TRAP_HALFWAIT) {
-      timeout = 10000;
+   // Can we put message at least into empty buffer? 
+   if (t_cont_has_capacity(size + sizeof(size)) == false) {
+      VERBOSE(CL_ERROR, "Container is too small for message of size [%u B]. Skipping...", size);
+      return TRAP_E_OK;
    }
 
 repeat:
-   if (c->is_terminated != 0) {
+   if (c->is_terminated) {
       return TRAP_E_TERMINATED;
    }
-   if (block && c->connected_clients == 0) {
+
+   if (timeout == TRAP_WAIT && c->connected_clients == 0) {
       usleep(NO_CLIENTS_SLEEP);
       goto repeat;
    }
 
-   pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-   buffer = &c->buffers[c->active_buffer];
-   while (buffer->clients_bit_arr != 0) {
-      clock_gettime(CLOCK_REALTIME, &ts);
+   // lock critical section
+   pthread_mutex_lock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);      
 
-      ts.tv_nsec += (ts.tv_sec * 1000000000L) + (timeout * 1000L);
-      ts.tv_sec = (ts.tv_nsec / 1000000000L);
-      ts.tv_nsec %= 1000000000L;
+   struct trap_mbuf_s *t_mbuf = &c->t_mbuf;
+   struct trap_container_s *t_cont = t_mbuf->active;
 
-      /* Wait until woken up by sending thread or until timeout elapses */
-      res = pthread_cond_timedwait(&c->cond_full_buffer, &c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx, &ts);
-      switch (res) {
-         case 0:
-            /* Succesfully locked, buffer can be used */
-            break;
-         case ETIMEDOUT:
-            /* Desired buffer is still full after timeout */
-            if (block) {
-               /* Blocking send, wait until buffer is free to use */
-               pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-               goto repeat;
-            } else {
-               /* Non-blocking send, drop message or force buffer reset (not implemented) */
-               goto timeout;
-            }
-         default:
-            VERBOSE(CL_ERROR, "Unexpected error in pthread_mutex_timedlock()");
-            goto timeout;
-      }
-   }
-
-   /* Check if there is enough space in buffer */
-   free_bytes = c->buffer_size - buffer->wr_index;
-   if (free_bytes >= (size + sizeof(size))) {
-      /* Store message into buffer */
-      insert_into_buffer(buffer, data, size);
-
-      /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
-      if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
-         finish_buffer(c, buffer);
-      }
-
-      pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-      return TRAP_E_OK;
+   // check if container has enough space to insert new message
+   // if not finish current container and get new empty one.
+   if (t_cont_has_space(t_cont, size + sizeof(size))) {
+      t_cont_insert(t_cont, data, size);
    } else {
-      /* Not enough space for message, finish current buffer and try to store message into next buffer */
-      finish_buffer(c, buffer);
-      buffer = &c->buffers[c->active_buffer];
-
-      pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-      goto repeat;
+      finish_container(c, t_mbuf);
+      c->max_container_id++;
+      t_cont = t_mbuf_get_empty_container(t_mbuf);
+      t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
+      t_cont_insert(t_cont, data, size);
    }
 
-timeout:
-   for (i = 0; i < c->clients_arr_size; i++) {
-      if (c->clients[i].sd > 0 && c->clients[i].assigned_buffer == c->active_buffer) {
-         c->clients[i].timeouts++;
-      }
+   /* If bufferswitch is 0, only 1 message is allowed to be stored in buffer */
+   if (c->ctx->out_ifc_list[c->ifc_idx].bufferswitch == 0) {
+      finish_container(c, t_mbuf);
+      c->max_container_id++;
+      t_cont = t_mbuf_get_empty_container(t_mbuf);
+      t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
    }
+
+   t_mbuf->processed_messages++;
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
-   return TRAP_E_TIMEOUT;
+   
+   return TRAP_E_OK;
 }
 
 /**
@@ -1698,25 +1721,26 @@ void tls_sender_terminate(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
 
-   uint32_t i;
-   uint64_t sum;
-
    /* Wait for connected clients to receive all finished buffers before terminating */
-   if (c != NULL) {
-      do {
-         usleep(10000); //prevents busy waiting
-         sum = 0;
-         for (i = 0; i < c->buffer_count; i++) {
-            sum |= c->buffers[i].clients_bit_arr;
-         }
-      } while (sum != 0);
-
-      c->is_terminated = 1;
-      close(c->term_pipe[1]);
-      VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break select()");
-   } else {
+   if (c == NULL) {
       VERBOSE(CL_ERROR, "Destroying IFC that is probably not initialized.");
+      return;
    }
+   
+   do {
+      size_t lowest_container_id = find_lowest_container_id(c);
+      if (lowest_container_id == c->t_mbuf.to_send.head_) {
+         break;
+      }
+
+      if (c->connected_clients == 0) {
+         break;
+      }
+      usleep(10000); //prevents busy waiting
+   } while (true);
+   c->is_terminated = 1;
+   close(c->term_pipe[1]);
+   VERBOSE(CL_VERBOSE_LIBRARY, "Closed term_pipe, it should break poll()");
    return;
 }
 
@@ -1728,7 +1752,6 @@ void tls_sender_destroy(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
    void *res;
-   int32_t i;
 
    /* free private data */
    if (c != NULL) {
@@ -1739,9 +1762,7 @@ void tls_sender_destroy(void *priv)
       free(c->cafile);
 
       if (c->initialized) {
-         pthread_cancel(c->send_thr);
          pthread_cancel(c->accept_thr);
-         pthread_join(c->send_thr, &res);
          pthread_join(c->accept_thr, &res);
       }
 
@@ -1754,16 +1775,6 @@ void tls_sender_destroy(void *priv)
          free(c->clients);
       }
 
-      if (c->buffers != NULL) {
-         for (i = 0; i < c->buffer_count; i++) {
-            free(c->buffers[i].header);
-         }
-         free(c->buffers);
-      }
-
-      pthread_mutex_destroy(&c->mtx_no_data);
-      pthread_cond_destroy(&c->cond_no_data);
-      pthread_cond_destroy(&c->cond_full_buffer);
       free(c);
    }
 }
@@ -1781,28 +1792,33 @@ int32_t tls_sender_get_client_count(void *priv)
 
 int8_t tls_sender_get_client_stats_json(void* priv, json_t *client_stats_arr)
 {
-   int i;
    json_t *client_stats = NULL;
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
+   struct tlsclient_s *cl;
 
    if (c == NULL) {
       return 0;
    }
 
-   for (i = 0; i < c->clients_arr_size; ++i) {
-      if (check_index(c->clients_bit_arr, i) == 0) {
-         continue;
-      }
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->tlsclients_list_head, entries) {
+    	client_stats = json_pack("{sisisisisf}", 
+         "id", cl->id, 
+         "sent_containers", cl->sent_containers, 
+         "sent_messages", cl->sent_messages, 
+         "skipped_messages", cl->skipped_messages,
+         "skipped_percentage", ((100.0 / (cl->sent_messages + cl->skipped_messages)) * (cl->skipped_messages)));
+	   if (client_stats == NULL) {
+         pthread_mutex_unlock(&c->client_list_mtx);
+	      return 0;
+	   }
 
-      client_stats = json_pack("{sisisisi}", "id", c->clients[i].id, "timer_total", c->clients[i].timer_total, "timer_last", c->clients[i].timer_last, "timeouts", c->clients[i].timeouts);
-      if (client_stats == NULL) {
-         return 0;
-      }
-
-      if (json_array_append_new(client_stats_arr, client_stats) == -1) {
-         return 0;
-      }
+	   if (json_array_append_new(client_stats_arr, client_stats) == -1) {
+         pthread_mutex_unlock(&c->client_list_mtx);
+	      return 0;
+	   }
    }
+   pthread_mutex_unlock(&c->client_list_mtx);
    return 1;
 }
 
@@ -1814,7 +1830,6 @@ static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
    /* config file trap-i<number>-config.txt */
    char *conf_file = NULL;
    FILE *f = NULL;
-   int32_t i;
    tlsclient_t *cl;
 
    r = asprintf(&conf_file, "%s/trap-o%02"PRIu32"-config.txt", path, idx);
@@ -1828,7 +1843,6 @@ static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
               "Server socket descriptor: %d\n"
               "Connected clients: %d\n"
               "Max clients: %d\n"
-              "Active buffer: %d\n"
               "Buffer count: %u\n"
               "Buffer size: %u\n"
               "Terminated: %d\n"
@@ -1837,18 +1851,20 @@ static void tls_sender_create_dump(void *priv, uint32_t idx, const char *path)
            c->server_port,
            c->server_sd,
            c->connected_clients,
-           c->clients_arr_size,
-           c->active_buffer,
+           c->max_clients,
            c->buffer_size,
            c->buffer_size,
            c->is_terminated,
            c->initialized,
            c->ctx->out_ifc_list[idx].datatimeout);
    fprintf(f, "Clients:\n");
-   for (i = 0; i < c->clients_arr_size; i++) {
-      cl = &c->clients[i];
-      fprintf(f, "\t{%d, %d, %p, %d}\n", cl->sd, cl->assigned_buffer, cl->sending_pointer, cl->pending_bytes);
+   fprintf(f, "SD, Sent containers, sent messages, skipped messages, current container id:\n");
+   pthread_mutex_lock(&c->client_list_mtx);
+   LIST_FOREACH(cl, &c->tlsclients_list_head, entries) {
+      fprintf(f, "\t{%d, %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 "}\n", 
+         cl->sd, cl->sent_containers, cl->sent_messages, cl->skipped_messages, cl->container_id);
    }
+   pthread_mutex_unlock(&c->client_list_mtx);
    fclose(f);
 exit:
    free(conf_file);
@@ -1893,7 +1909,6 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    unsigned int max_clients = DEFAULT_MAX_CLIENTS;
    unsigned int buffer_count = DEFAULT_BUFFER_COUNT;
    unsigned int buffer_size = DEFAULT_BUFFER_SIZE;
-   uint32_t i;
 
 #define X(pointer) free(pointer); \
    pointer = NULL;
@@ -1967,56 +1982,31 @@ int create_tls_sender_ifc(trap_ctx_priv_t *ctx, const char *params, trap_output_
    }
    /* Parsing params ended */
 
-   priv->buffers = calloc(buffer_count, sizeof(buffer_t));
-   if (priv->buffers == NULL) {
-      /* if some memory could not have been allocated, we cannot continue */
-      goto failsafe_cleanup;
-   }
-   for (i = 0; i < buffer_count; ++i) {
-      buffer_t *b = &(priv->buffers[i]);
-
-      b->header = malloc(buffer_size + sizeof(buffer_size));
-      b->data = b->header + sizeof(buffer_size);
-      b->wr_index = 0;
-      b->clients_bit_arr = 0;
+   if (t_mbuf_init(&priv->t_mbuf, buffer_count, max_clients)) {
+      VERBOSE(CL_ERROR, "Trap mbuf initialization failed");
+      result = TRAP_E_MEMORY;
+      goto failsafe_cleanup;	
    }
 
-   priv->clients = calloc(max_clients, sizeof(tlsclient_t));
-   if (priv->clients == NULL) {
-      /* if some memory could not have been allocated, we cannot continue */
-      goto failsafe_cleanup;
-   }
-   for (i = 0; i < max_clients; ++i) {
-      tlsclient_t *client = &(priv->clients[i]);
+   t_cont_set_len(buffer_size);
 
-      client->assigned_buffer = 0;
-      client->sd = -1;
-      client->timer_total = 0;
-      client->pending_bytes = 0;
-      client->sending_pointer = NULL;
-   }
-
+   priv->ctx = ctx;
+   priv->timeout = ifc->datatimeout;
+   priv->ifc_idx = idx;
+   priv->server_port = server_port;
+   priv->max_clients = max_clients;
+   priv->connected_clients = 0;
+   priv->is_terminated = 0;
+   priv->autoflush_timestamp = get_cur_timestamp();
    priv->keyfile = keyfile;
    priv->certfile = certfile;
    priv->cafile = cafile;
-   priv->ctx = ctx;
-   priv->ifc_idx = idx;
    priv->server_port = server_port;
    priv->buffer_size = buffer_size;
    priv->buffer_count = buffer_count;
-   priv->clients_arr_size = max_clients;
-   priv->clients_bit_arr = 0;
-   priv->connected_clients = 0;
-   priv->is_terminated = 0;
-   priv->active_buffer = 0;
-   priv->autoflush_timestamp = get_cur_timestamp();
-
-   pthread_mutex_init(&priv->mtx_no_data, NULL);
-   pthread_cond_init(&priv->cond_no_data, NULL);
-   pthread_cond_init(&priv->cond_full_buffer, NULL);
 
    VERBOSE(CL_VERBOSE_ADVANCED, "config:\nserver_port:\t%s\nmax_clients:\t%u\nbuffer count:\t%u\nbuffer size:\t%uB\n",
-                                priv->server_port, priv->clients_arr_size,priv->buffer_count, priv->buffer_size);
+                                priv->server_port, priv->max_clients,priv->buffer_count, priv->buffer_size);
 
    result = server_socket_open(priv);
    if (result != TRAP_E_OK) {
@@ -2065,18 +2055,6 @@ failsafe_cleanup:
    X(cafile);
    X(keyfile);
    if (priv != NULL) {
-      if (priv->buffers != NULL) {
-         for (i = 0; i < priv->buffer_count; i++) {
-            X(priv->buffers[i].header);
-         }
-         X(priv->buffers)
-      }
-      if (priv->clients != NULL) {
-         X(priv->clients);
-      }
-      pthread_mutex_destroy(&priv->mtx_no_data);
-      pthread_cond_destroy(&priv->cond_no_data);
-      pthread_cond_destroy(&priv->cond_full_buffer);
       X(priv);
    }
 #undef X
@@ -2136,18 +2114,18 @@ static int server_socket_open(void *priv)
    }
 
    /* listen */
-   if (listen(c->server_sd, c->clients_arr_size) == -1) {
+   if (listen(c->server_sd, c->max_clients) == -1) {
       VERBOSE(CL_ERROR, "Listen failed");
-      return TRAP_E_IO_ERROR;
-   }
-
-   if (pthread_create(&c->send_thr, NULL, sending_thread_func, priv) != 0) {
-      VERBOSE(CL_ERROR, "Failed to create sending thread.");
       return TRAP_E_IO_ERROR;
    }
 
    if (pthread_create(&c->accept_thr, NULL, accept_clients_thread, priv) != 0) {
       VERBOSE(CL_ERROR, "Failed to create accept_thread.");
+      return TRAP_E_IO_ERROR;
+   }
+
+   if (pthread_create(&c->autoflush_thr, NULL, autoflush_thread, priv) != 0) {
+      VERBOSE(CL_ERROR, "Failed to create autoflush thread.");
       return TRAP_E_IO_ERROR;
    }
 

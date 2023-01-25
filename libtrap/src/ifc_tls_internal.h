@@ -46,6 +46,9 @@
 #include <openssl/err.h>
 
 #include "ifc_socket_common.h"
+#include "trap_mbuf.h"
+
+#include <sys/queue.h>
 
 
 /** \addtogroup trap_ifc
@@ -68,16 +71,24 @@ typedef struct tlsclient_s {
    SSL *ssl;                                /**< Client SSL info. */
 
    int sd;                                  /**< Client socket descriptor */
-   void *sending_pointer;                   /**< Pointer to data in client's assigned buffer */
 
-   uint64_t timer_total;                    /**< Total time spent sending (microseconds) since client connection */
    uint64_t timeouts;                       /**< Number of messages dropped (since connection) due to client blocking active buffer */
-
-   uint32_t timer_last;                     /**< Time spent on last send call [microseconds] */
-   uint32_t pending_bytes;                  /**< The size of data that must be sent */
    uint32_t id;                             /**< Client identification - PID for unix socket, port number for TCP socket */
-   uint32_t assigned_buffer;                /**< Index of assigned buffer in array of buffers */
-} tlsclient_t;
+
+   pthread_t sender_thread_id;
+   uint64_t sent_containers; /**< Sent containers counter */
+   uint64_t sent_messages; /**< Sent messages counter */
+   uint64_t skipped_messages; /**< Skipped messages counter */
+   uint64_t container_id; /**< ID of current container. */
+   LIST_ENTRY(tlsclient_s) entries;
+} tlsclient_t __attribute__((aligned(64)));
+
+struct tlsclient_container_s {
+   LIST_ENTRY(tlsclient_container_s)
+   entries;
+};
+
+LIST_HEAD(tlsclients_head_s, tlsclient_s);
 
 /**
  * \brief Structure for TLS IFC private information.
@@ -99,24 +110,25 @@ typedef struct tls_sender_private_s {
     char initialized;                       /**< Initialization flag */
 
     uint64_t autoflush_timestamp;           /**< Time when the last buffer was finished - used for autoflush */
-    uint64_t clients_bit_arr;               /**< Bit array of currently connected clients - lowest bit = index 0, highest bit = index 63 */
-
     uint32_t ifc_idx;                       /**< Index of interface in 'out_ifc_list' array */
     uint32_t connected_clients;             /**< Number of currently connected clients */
-    uint32_t clients_arr_size;              /**< Maximum number of clients */
     uint32_t buffer_count;                  /**< Number of buffers used */
     uint32_t buffer_size;                   /**< Buffer size [bytes] */
-    uint32_t active_buffer;                 /**< Index of active buffer in 'buffers' array */
 
-    buffer_t *buffers;                      /**< Array of buffer structures */
     tlsclient_t *clients;                   /**< Array of client structures */
 
     pthread_t accept_thr;                   /**< Pthread structure containing info about accept thread */
-    pthread_t send_thr;                     /**< Pthread structure containing info about sending thread */
+    pthread_t autoflush_thr;                /**< Pthread to autoflush messages */
 
-    pthread_mutex_t mtx_no_data;            /**< Mutex for cond_no_data */
-    pthread_cond_t cond_no_data;            /**< Condition struct used when waiting for new data */
-    pthread_cond_t cond_full_buffer;        /**< Condition struct used when waiting for free buffer */
+    int timeout;
+    uint32_t max_clients;
+    struct trap_mbuf_s t_mbuf;
+    uint64_t max_container_id;
+
+    uint32_t clients_waiting_for_connection;
+    uint64_t lowest_container_id;
+    struct tlsclients_head_s tlsclients_list_head; /**< clients container list */
+    pthread_mutex_t client_list_mtx;
 } tls_sender_private_t;
 
 /**
@@ -138,6 +150,11 @@ typedef struct tls_receiver_private_s {
 
    SSL_CTX *sslctx;                         /**< Whole client SSL context. */
    SSL *ssl;                                /**< SSL conection info of client */
+
+   uint64_t total_msg;                      /**< Total messages seen on interface. */
+   uint64_t total_missed;                   /**< Total messages missed on interface. */
+   uint64_t seq;                            /**< Sequence number. */
+   uint16_t cur_size;                       /**< received size */
 
    char connected;                          /**< Indicates whether client is connected to server. */
    char is_terminated;                      /**< Indicates whether client should be destroyed. */
