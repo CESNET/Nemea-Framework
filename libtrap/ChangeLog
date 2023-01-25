@@ -1,3 +1,7 @@
+2023-01-25 libtrap-1.17.0
+	* libtrap: reworked buffers for tcp/unix and tls
+	* libtrap: file ifc flush last buffer before termination
+
 2021-03-22 libtrap-1.16.2
 	* bugfix: flush to file
 	* bugfix: write to file
