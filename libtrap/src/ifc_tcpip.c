@@ -1693,12 +1693,17 @@ int8_t tcpip_sender_get_client_stats_json(void *priv, json_t *client_stats_arr)
       sprintf(sent_messages_buf, "%" PRIu64, cl->sent_messages);
       sprintf(skipped_messages_buf, "%" PRIu64, cl->skipped_messages);
 
+      float skipped_percentage = 0;
+      if (cl->skipped_messages) {
+         skipped_percentage = ((100.0 / (cl->sent_messages + cl->skipped_messages)) * (cl->skipped_messages));
+      }
+
     	client_stats = json_pack("{sisssssssf}", 
          "id", cl->id, 
          "sent_containers", sent_container_buf, 
          "sent_messages", sent_messages_buf, 
          "skipped_messages", skipped_messages_buf,
-         "skipped_percentage", ((100.0 / (cl->sent_messages + cl->skipped_messages)) * (cl->skipped_messages)));
+         "skipped_percentage", skipped_percentage);
 	   if (client_stats == NULL) {
          pthread_mutex_unlock(&c->client_list_mtx);
 	      return 0;
