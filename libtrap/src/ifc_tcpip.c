@@ -1045,17 +1045,18 @@ static void
 disconnect_client(tcpip_sender_private_t *c, client_t *cl)
 {
    pthread_mutex_lock(&c->client_list_mtx);
-   client_t *cl_iterator;
-   LIST_FOREACH(cl_iterator, &c->clients_list_head, entries) {
+   client_t *next, *cl_iterator = LIST_FIRST(&c->clients_list_head);
+   while (cl_iterator != NULL) {
+      next = LIST_NEXT(cl_iterator, entries);
       if (cl_iterator == cl) {
          __sync_sub_and_fetch(&c->connected_clients, 1);
+         LIST_REMOVE(cl, entries);
          shutdown(cl->sd, SHUT_RDWR);
          close(cl->sd);
-
-         LIST_REMOVE(cl, entries);
          free(cl);
          break;
       }
+      cl_iterator = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
@@ -1068,14 +1069,16 @@ disconnect_client(tcpip_sender_private_t *c, client_t *cl)
 void tcpip_server_disconnect_all_clients(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   client_t *cl;
    pthread_mutex_lock(&c->client_list_mtx);
-   LIST_FOREACH(cl, &c->clients_list_head, entries) {
-      LIST_REMOVE(cl, entries);
+   client_t *next, *cl = LIST_FIRST(&c->clients_list_head);
+   while (cl != NULL) {
+      next = LIST_NEXT(cl, entries);
       __sync_sub_and_fetch(&c->connected_clients, 1);
-   	shutdown(cl->sd, SHUT_RDWR);
-    	close(cl->sd);
-    	free(cl);
+      LIST_REMOVE(cl, entries);
+      shutdown(cl->sd, SHUT_RDWR);
+      close(cl->sd);
+      free(cl);
+      cl = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }

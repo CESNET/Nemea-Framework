@@ -1171,17 +1171,19 @@ find_lowest_container_id(tls_sender_private_t *c)
 static inline void disconnect_client(tls_sender_private_t *c, tlsclient_t *cl)
 {
    pthread_mutex_lock(&c->client_list_mtx);
-   tlsclient_t *cl_iterator;
-   LIST_FOREACH(cl_iterator, &c->tlsclients_list_head, entries) {
+   tlsclient_t *next, *cl_iterator = LIST_FIRST(&c->tlsclients_list_head);
+   while (cl_iterator != NULL) {
+      next = LIST_NEXT(cl_iterator, entries);
       if (cl_iterator == cl) {
-         LIST_REMOVE(cl, entries);
          __sync_sub_and_fetch(&c->connected_clients, 1);
+         LIST_REMOVE(cl, entries);
          shutdown(cl->sd, SHUT_RDWR);
          close(cl->sd);
          SSL_free(cl->ssl);
          free(cl);
          break;
       }
+      cl_iterator = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
@@ -1194,15 +1196,17 @@ static inline void disconnect_client(tls_sender_private_t *c, tlsclient_t *cl)
 void tls_server_disconnect_all_clients(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-   tlsclient_t *cl;
    pthread_mutex_lock(&c->client_list_mtx);
-   LIST_FOREACH(cl, &c->tlsclients_list_head, entries) {
-      LIST_REMOVE(cl, entries);
+   tlsclient_t *next, *cl = LIST_FIRST(&c->tlsclients_list_head);
+   while (cl != NULL) {
+      next = LIST_NEXT(cl, entries);
       __sync_sub_and_fetch(&c->connected_clients, 1);
-   	shutdown(cl->sd, SHUT_RDWR);
-    	close(cl->sd);
+      LIST_REMOVE(cl, entries);
+      shutdown(cl->sd, SHUT_RDWR);
+      close(cl->sd);
       SSL_free(cl->ssl);
-    	free(cl);
+      free(cl);
+      cl = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
