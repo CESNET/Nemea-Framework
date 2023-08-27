@@ -1626,8 +1626,8 @@ void tls_sender_flush(void *priv)
    struct trap_container_s *t_cont = t_mbuf_get_empty_container(t_mbuf);
    t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
 
-   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
    __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
+   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
 }
 
 static void *autoflush_thread(void *priv)
@@ -1768,6 +1768,19 @@ void tls_sender_destroy(void *priv)
       if (c->initialized) {
          pthread_cancel(c->accept_thr);
          pthread_join(c->accept_thr, &res);
+
+         pthread_cancel(c->autoflush_thr);
+         pthread_join(c->autoflush_thr, &res);
+
+         tlsclient_t *next, *cl = LIST_FIRST(&c->tlsclients_list_head);
+         while (cl != NULL) {
+            next = LIST_NEXT(cl, entries);
+            pthread_cancel(cl->sender_thread_id);
+            pthread_join(cl->sender_thread_id, &res);
+            cl = next;
+         }
+
+         t_mbuf_clear(&c->t_mbuf);
       }
 
       /* close server socket */
