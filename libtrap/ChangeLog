@@ -1,3 +1,8 @@
+2023-08-28 libtrap-1.17.1
+	* BUGFIX: division by zero in JSON statistics
+	* BUGFIX: double close of the socket
+	* BUGFIX: double free of resources on finalization
+
 2023-01-25 libtrap-1.17.0
 	* libtrap: reworked buffers for tcp/unix and tls
 	* libtrap: file ifc flush last buffer before termination
