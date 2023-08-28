@@ -1,16 +1,54 @@
-from pynspect.rules import *
+import re
+import logging
+import redis
+#from pynspect.rules import *
 from pynspect.filters import DataObjectFilter
 from pynspect.compilers import IDEAFilterCompiler
 from pynspect.gparser import PynspectFilterParser
 from idea import lite
-import re
-
-import logging
 
 logger = logging.getLogger(__name__)
 
+STAT_KEYPREFIX = "nemea"
+
+redis_con = redis.StrictRedis()
+
+def UpdateCounter(prefix, module, ruleid, result, actionid, actiontype):
+    """Increment counter in redis, key is composed from:
+
+    prefix - string identifying all redis keys (NEMEA)
+    module - name of reporter
+    ruleid - identifier of rule from config
+    result - True / False
+    actionid - identifier of custom action from config
+    actiontype - type of the action
+    """
+
+    try:
+        if redis_con:
+            key = f"{prefix}|{module}|{ruleid}|{result}|{actionid}|{actiontype}"
+            redis_con.incr(key)
+    except redis.exceptions.ConnectionError:
+        logging.error("redis: Could not update statistics.")
+
+def clearCounters(prefix, module):
+    try:
+        if redis_con:
+            key = f"{prefix}|{module}|*"
+            for i in redis_con.keys(key):
+                redis_con.delete(i)
+    except redis.exceptions.ConnectionError:
+        logging.error("redis: Could not update statistics.")
+
 class Rule():
-    def __init__(self, rule, actions, addrGroups, parser=None, compiler=None):
+    def __init__(self, rule, actions, addrGroups, parser=None, compiler=None, module_name=""):
+
+        if not "condition" in rule:
+            raise SyntaxError("Missing 'condition' in the rule: " + str(rule))
+
+        if not "id" in rule:
+            raise SyntaxError("Missing 'id' in the rule: " + str(rule))
+
         # Check is we got parser instance
         if parser is None:
             self.parser = PynspectFilterParser()
@@ -27,12 +65,14 @@ class Rule():
         # Instantiate filter
         self.__filter = DataObjectFilter()
 
+
         # Store rule condition in raw form
         self.__conditionRaw = rule["condition"]
 
         if not self.__matchvar(rule["condition"], addrGroups):
             self.__condition = self.__conditionRaw
 
+        self.module_name = module_name
         # Set inner rule ID
         self.id = rule["id"]
 
@@ -49,7 +89,7 @@ class Rule():
                     logger.debug("Rule %s inserting %s", self.id, actionId)
                     self.__actions.append(actions[actionId])
                 except KeyError as e:
-                    raise Exception("Missing action with ID " + str(e))
+                    raise SyntaxError("Missing action with ID %s" % str(e))
 
         # Associate elseactions
         if "elseactions" in rule:
@@ -57,7 +97,7 @@ class Rule():
                 try:
                     self.__elseactions.append(actions[actionId])
                 except KeyError as e:
-                    raise Exception("Missing elseaction with ID " + str(e))
+                    raise SyntaxError("Missing elseaction with ID %s" % str(e))
 
 
     def parseRule(self):
@@ -71,7 +111,7 @@ class Rule():
                 self.__condition = self.parser.parse(self.__condition)
                 self.__condition = self.compiler.compile(self.__condition)
             except Exception as e:
-                print("Error while parsing condition: {0}\nOriginal exception: {1}".format(self.__condition, e))
+                raise SyntaxError("Error while parsing condition: {0}\nOriginal exception: {1}".format(self.__condition, e))
 
     def filter(self, record):
         """
@@ -104,11 +144,14 @@ class Rule():
 
     def actions(self, record):
         for action in self.__actions:
+            UpdateCounter(STAT_KEYPREFIX, self.module_name, self.id, True, action.actionId, action.actionType)
             action.run(record)
 
     def elseactions(self, record):
         for action in self.__elseactions:
+            UpdateCounter(STAT_KEYPREFIX, self.module_name, self.id, False, action.actionId, action.actionType)
             action.run(record)
+
 
     def __repr__(self):
         return self.__conditionRaw
@@ -116,7 +159,21 @@ class Rule():
     def __str__(self):
         actions = []
         for i in self.__actions:
-            actions.append("{0} ({1})".format(i.actionId, i.actionType))
+            key = "{prefix}|{module}|{ruleid}|{result}|{actionid}|{actiontype}".format(prefix=STAT_KEYPREFIX,
+                                                                                       module=self.module_name, ruleid=self.id,
+                                                                                       result="True", actionid=i.actionId,
+                                                                                       actiontype=i.actionType)
+            try:
+                cnt = redis_con.get(key)
+                if cnt:
+                    cnt = cnt.decode("utf-8")
+                else:
+                    cnt = 0
+            except redis.exceptions.ConnectionError:
+                logging.error("redis: Could not retrieve statistics.")
+                cnt = 0
+
+            actions.append(f"{i.actionId} ({i.actionType}) [{cnt}x]")
         elseactions = []
         for i in self.__elseactions:
             elseactions.append("{0} ({1})".format(i.actionId, i.actionType))
@@ -141,7 +198,7 @@ class Rule():
         Tautology - empty rule should always match
         Don't try to match or replace any address group
         """
-        if rule == None or isinstance(rule, bool):
+        if rule is None or isinstance(rule, bool):
             return False
 
         for key in addrGroups:

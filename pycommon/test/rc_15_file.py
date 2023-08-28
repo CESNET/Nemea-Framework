@@ -22,8 +22,7 @@ class RCFileTest(unittest.TestCase):
 
         This shouldn't rise any exceptions
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/file.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/file.yaml');
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)
@@ -32,8 +31,7 @@ class RCFileTest(unittest.TestCase):
         os.remove(self.config.conf["custom_actions"][0]["file"]["path"])
 
     def test_02_file_content(self):
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/file.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/file.yaml');
 
         self.assertNotEqual(self.config, None)
         self.config.match(self.msg)

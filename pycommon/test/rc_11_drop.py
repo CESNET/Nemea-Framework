@@ -22,8 +22,7 @@ class RCDropTest(unittest.TestCase):
         Load drop.yaml configuration file, parse it and analyze it
 
         """
-        self.parser = Parser(os.path.dirname(__file__) + '/rc_config/drop.yaml');
-        self.config = Config(self.parser);
+        self.config = Config(os.path.dirname(__file__) + '/rc_config/drop.yaml');
 
         self.assertNotEqual(self.config, None)
 

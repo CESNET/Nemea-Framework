@@ -1,6 +1,6 @@
 # Created by pyp2rpm-3.1.2
 %global pypi_name nemea-pycommon
-%global pypi_version 1.5.3
+%global pypi_version 1.7.0
 
 %if "x%{?python3_pkgversion}" == "x"
 %global python3_pkgversion 3
@@ -34,6 +34,8 @@ Requires:	python%{python3_pkgversion}-pynspect
 Requires:	python%{python3_pkgversion}-jinja2
 Requires:	python%{python3_pkgversion}-ply
 Requires:	python%{python3_pkgversion}-yaml
+Requires:	python%{python3_pkgversion}-redis
+Requires:	redis
 BuildRequires:	python%{python3_pkgversion}-ply
 BuildRequires:	python%{python3_pkgversion}-jinja2
 BuildRequires:	python%{python3_pkgversion}-yaml
@@ -41,7 +43,8 @@ BuildRequires:	python%{python3_pkgversion}-setuptools
 BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
 BuildRequires:	python%{python3_pkgversion}-pynspect
-
+BuildRequires:	python%{python3_pkgversion}-redis
+BuildRequires:	redis
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
