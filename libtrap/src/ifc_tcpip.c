@@ -1126,6 +1126,10 @@ send_blocking_mode(void *arg)
 
       // get next container
       t_cont = t_rb_at(&c->t_mbuf.to_send, cl->container_id);
+      if (t_cont == NULL) {
+         // we cannot operate with NULL t_cont
+         continue;
+      }
           
       buffer = t_cont->buffer;
       pending_bytes = t_cont->used_bytes;
@@ -1192,6 +1196,10 @@ again_set_container:
           
       // get next container
       t_cont = t_rb_at(&c->t_mbuf.to_send, cl->container_id);
+      if (t_cont == NULL) {
+         // we cannot operate with NULL t_cont
+         continue;
+      }
 
       // container is no longer available
       if (t_cont_acquiere(t_cont) < 1 || __sync_fetch_and_add(&t_cont->idx, 0) != cl->container_id) {
