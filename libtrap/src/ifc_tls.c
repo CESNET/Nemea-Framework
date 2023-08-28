@@ -1171,17 +1171,19 @@ find_lowest_container_id(tls_sender_private_t *c)
 static inline void disconnect_client(tls_sender_private_t *c, tlsclient_t *cl)
 {
    pthread_mutex_lock(&c->client_list_mtx);
-   tlsclient_t *cl_iterator;
-   LIST_FOREACH(cl_iterator, &c->tlsclients_list_head, entries) {
+   tlsclient_t *next, *cl_iterator = LIST_FIRST(&c->tlsclients_list_head);
+   while (cl_iterator != NULL) {
+      next = LIST_NEXT(cl_iterator, entries);
       if (cl_iterator == cl) {
-         LIST_REMOVE(cl, entries);
          __sync_sub_and_fetch(&c->connected_clients, 1);
+         LIST_REMOVE(cl, entries);
          shutdown(cl->sd, SHUT_RDWR);
          close(cl->sd);
          SSL_free(cl->ssl);
          free(cl);
          break;
       }
+      cl_iterator = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
@@ -1194,15 +1196,17 @@ static inline void disconnect_client(tls_sender_private_t *c, tlsclient_t *cl)
 void tls_server_disconnect_all_clients(void *priv)
 {
    tls_sender_private_t *c = (tls_sender_private_t *) priv;
-   tlsclient_t *cl;
    pthread_mutex_lock(&c->client_list_mtx);
-   LIST_FOREACH(cl, &c->tlsclients_list_head, entries) {
-      LIST_REMOVE(cl, entries);
+   tlsclient_t *next, *cl = LIST_FIRST(&c->tlsclients_list_head);
+   while (cl != NULL) {
+      next = LIST_NEXT(cl, entries);
       __sync_sub_and_fetch(&c->connected_clients, 1);
-   	shutdown(cl->sd, SHUT_RDWR);
-    	close(cl->sd);
+      LIST_REMOVE(cl, entries);
+      shutdown(cl->sd, SHUT_RDWR);
+      close(cl->sd);
       SSL_free(cl->ssl);
-    	free(cl);
+      free(cl);
+      cl = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
@@ -1622,8 +1626,8 @@ void tls_sender_flush(void *priv)
    struct trap_container_s *t_cont = t_mbuf_get_empty_container(t_mbuf);
    t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
 
-   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
    __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
+   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
 }
 
 static void *autoflush_thread(void *priv)
@@ -1764,6 +1768,19 @@ void tls_sender_destroy(void *priv)
       if (c->initialized) {
          pthread_cancel(c->accept_thr);
          pthread_join(c->accept_thr, &res);
+
+         pthread_cancel(c->autoflush_thr);
+         pthread_join(c->autoflush_thr, &res);
+
+         tlsclient_t *next, *cl = LIST_FIRST(&c->tlsclients_list_head);
+         while (cl != NULL) {
+            next = LIST_NEXT(cl, entries);
+            pthread_cancel(cl->sender_thread_id);
+            pthread_join(cl->sender_thread_id, &res);
+            cl = next;
+         }
+
+         t_mbuf_clear(&c->t_mbuf);
       }
 
       /* close server socket */

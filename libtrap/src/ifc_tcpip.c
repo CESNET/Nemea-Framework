@@ -900,11 +900,13 @@ static int client_socket_connect(void *priv, const char *dest_addr, const char *
                DEBUG_IFC(VERBOSE(CL_VERBOSE_LIBRARY, "recv TCPIP ifc connect error %d (%s)", errno,
                                  strerror(errno)));
                close(sockfd);
+               sockfd = -1;
                continue;
             } else {
                rv = wait_for_connection(sockfd, tv);
                if (rv == TRAP_E_TIMEOUT) {
                   close(sockfd);
+                  sockfd = -1;
                   if (config->is_terminated) {
                      rv = TRAP_E_TERMINATED;
                      break;
@@ -1045,17 +1047,18 @@ static void
 disconnect_client(tcpip_sender_private_t *c, client_t *cl)
 {
    pthread_mutex_lock(&c->client_list_mtx);
-   client_t *cl_iterator;
-   LIST_FOREACH(cl_iterator, &c->clients_list_head, entries) {
+   client_t *next, *cl_iterator = LIST_FIRST(&c->clients_list_head);
+   while (cl_iterator != NULL) {
+      next = LIST_NEXT(cl_iterator, entries);
       if (cl_iterator == cl) {
          __sync_sub_and_fetch(&c->connected_clients, 1);
+         LIST_REMOVE(cl, entries);
          shutdown(cl->sd, SHUT_RDWR);
          close(cl->sd);
-
-         LIST_REMOVE(cl, entries);
          free(cl);
          break;
       }
+      cl_iterator = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
@@ -1068,14 +1071,16 @@ disconnect_client(tcpip_sender_private_t *c, client_t *cl)
 void tcpip_server_disconnect_all_clients(void *priv)
 {
    tcpip_sender_private_t *c = (tcpip_sender_private_t *) priv;
-   client_t *cl;
    pthread_mutex_lock(&c->client_list_mtx);
-   LIST_FOREACH(cl, &c->clients_list_head, entries) {
-      LIST_REMOVE(cl, entries);
+   client_t *next, *cl = LIST_FIRST(&c->clients_list_head);
+   while (cl != NULL) {
+      next = LIST_NEXT(cl, entries);
       __sync_sub_and_fetch(&c->connected_clients, 1);
-   	shutdown(cl->sd, SHUT_RDWR);
-    	close(cl->sd);
-    	free(cl);
+      LIST_REMOVE(cl, entries);
+      shutdown(cl->sd, SHUT_RDWR);
+      close(cl->sd);
+      free(cl);
+      cl = next;
    }
    pthread_mutex_unlock(&c->client_list_mtx);
 }
@@ -1471,8 +1476,8 @@ void tcpip_sender_flush(void *priv)
    struct trap_container_s *t_cont = t_mbuf_get_empty_container(t_mbuf);
    t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
 
-   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
    __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
+   pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
 }
 
 static void *autoflush_thread(void *priv)
@@ -1624,7 +1629,22 @@ void tcpip_sender_destroy(void *priv)
    if (c->initialized) {
       pthread_cancel(c->accept_thr);
       pthread_join(c->accept_thr, &res);
+
+      pthread_cancel(c->autoflush_thr);
+      pthread_join(c->autoflush_thr, &res);
+
+      client_t *next, *cl = LIST_FIRST(&c->clients_list_head);
+      while (cl != NULL) {
+         next = LIST_NEXT(cl, entries);
+         pthread_cancel(cl->sender_thread_id);
+         pthread_join(cl->sender_thread_id, &res);
+         cl = next;
+      }
+
+      t_mbuf_clear(&c->t_mbuf);
    }
+
+
 
    /* close server socket */
    close(c->server_sd);
