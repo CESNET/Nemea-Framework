@@ -1118,8 +1118,8 @@ send_blocking_mode(void *arg)
          if (c->is_terminated) {
             break;
          }
-        	sleep_time = calculate_sleep(sleep_time);
-        	usleep(sleep_time);
+         sleep_time = calculate_sleep(sleep_time);
+         usleep(sleep_time);
       }
 
       sleep_time = 1;
