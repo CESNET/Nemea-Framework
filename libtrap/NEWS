@@ -1,3 +1,11 @@
+2023-08-28 (Tomas Cejka): Merge pull request #206 from CESNET/bugfix_libtrap_linkedlist_removal
+2023-08-27 (Pavel Siska): libtrap: BUGFIX synchronize threads at exit
+2023-08-10 (Tomas Cejka): libtrap: BUGFIX potential double close of the socket
+2023-08-10 (Tomas Cejka): libtrap: BUGFIX proper removing clients from list
+2023-02-14 (SiskaPavel): Merge pull request #205 from CESNET/libtrap-tcpip-json-stats-fix
+2023-02-14 (Pavel Siska): Libtrap - ifc_tcpip - fix division by zero in json stats
+2023-01-25 (Tomas Cejka): Merge pull request #204 from CESNET/libtrap-new-version
+
 2023-01-25 (xsiska12): libtrap - update stats tool
 2023-01-25 (xsiska12): libtrap - reworked tcpip and tls internal buffers
 2023-01-23 (xsiska12): libtrap - file ifc - write last buffer to the file, before terminate
