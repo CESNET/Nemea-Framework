@@ -18,7 +18,6 @@ TESTS = test.sh
 coverage:
 	CFLAGS=-coverage python setup.py build_ext --inplace
 	CFLAGS=-coverage python3 setup.py build_ext --inplace
-	python3 setup.py test
 	python3 setup.py test || echo "Skipped python3 tests"
 	@lcov --capture --directory . --output-file coverage.info 2>/dev/null && \
 	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"

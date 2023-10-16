@@ -747,7 +747,7 @@ static PyTypeObject pytrap_TrapContext = {
     0, /* tp_dictoffset */
     0, /* tp_init */
     0, /* tp_alloc */
-    0  /* tp_new */
+    PyType_GenericNew  /* tp_new */
 };
 
 PyObject *
@@ -879,10 +879,11 @@ initpytrap(void)
         INITERROR;
     }
 
-    pytrap_TrapContext.tp_new = PyType_GenericNew;
     if (PyType_Ready(&pytrap_TrapContext) < 0) {
         INITERROR;
     }
+    Py_INCREF(&pytrap_TrapContext);
+    PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
 
     /* Add Exceptions into pytrap module */
     TrapError = PyErr_NewException("pytrap.TrapError", NULL, NULL);
@@ -908,9 +909,6 @@ initpytrap(void)
     TrapHelp = PyErr_NewException("pytrap.TrapHelp", TrapHelp, NULL);
     Py_INCREF(TrapHelp);
     PyModule_AddObject(m, "TrapHelp", TrapHelp);
-
-    Py_INCREF(&pytrap_TrapContext);
-    PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
 
     /* Initialize UniRec part of pytrap */
     if (init_unirectemplate(m) == EXIT_FAILURE) {

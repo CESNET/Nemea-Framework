@@ -1447,6 +1447,7 @@ UnirecTemplate_getFieldsDict_local(pytrap_unirectemplate *self, char byId)
 {
     PyObject *key, *num;
     int i;
+    int result;
     PyObject *d = PyDict_New();
     if (d != NULL) {
         for (i = 0; i < self->urtmplt->count; i++) {
@@ -1457,16 +1458,20 @@ UnirecTemplate_getFieldsDict_local(pytrap_unirectemplate *self, char byId)
 #endif
             num = PyLong_FromLong(self->urtmplt->ids[i]);
             if (byId) {
-                PyDict_SetItem(d, num, key);
+                result = PyDict_SetItem(d, num, key);
             } else {
-                PyDict_SetItem(d, key, num);
+                result = PyDict_SetItem(d, key, num);
             }
-            Py_DECREF(num);
             Py_DECREF(key);
+            Py_DECREF(num);
+            if (result == -1) {
+               fprintf(stderr, "failed to set item dict.\n");
+               Py_RETURN_NONE;
+            }
         }
         return d;
     }
-    Py_DECREF(d);
+    Py_XDECREF(d);
     Py_RETURN_NONE;
 }
 
@@ -2102,16 +2107,12 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
-    if (self->urdict) {
-        Py_DECREF(self->urdict);
-    }
-    if (self->fields_dict) {
-        Py_DECREF(self->fields_dict);
-    }
+    Py_XDECREF(self->urdict);
+    Py_XDECREF(self->fields_dict);
     if (self->urtmplt) {
         ur_free_template(self->urtmplt);
     }
-    Py_XDECREF(self->data_obj); // Allow to free the original data object
+    Py_XDECREF(self->data_obj);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -2268,7 +2269,6 @@ init_unirectemplate(PyObject *m)
     PyModule_AddObject(m, "UnirecTime", (PyObject *) &pytrap_UnirecTime);
 
     /* Add IPAddr */
-    //pytrap_UnirecTemplate.tp_new = PyType_GenericNew;
     if (PyType_Ready(&pytrap_UnirecIPAddr) < 0) {
         return EXIT_FAILURE;
     }
@@ -2283,7 +2283,6 @@ init_unirectemplate(PyObject *m)
     PyModule_AddObject(m, "UnirecIPAddrRange", (PyObject *) &pytrap_UnirecIPAddrRange);
 
     /* Add MACAddr */
-    //pytrap_UnirecTemplate.tp_new = PyType_GenericNew;
     if (PyType_Ready(&pytrap_UnirecMACAddr) < 0) {
         return EXIT_FAILURE;
     }
