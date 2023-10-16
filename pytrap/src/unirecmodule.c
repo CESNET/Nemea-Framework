@@ -521,9 +521,6 @@ static PyTypeObject pytrap_UnirecTime = {
     0, /* tp_setattro */
     0, /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-#if PY_MAJOR_VERSION < 3
-        Py_TPFLAGS_CHECKTYPES |
-#endif
         Py_TPFLAGS_BASETYPE, /* tp_flags */
     "UnirecTime(int(seconds), [int(miliseconds)])\n"
     "UnirecTime(double(secs_and_msecs))\n"
@@ -810,11 +807,7 @@ UnirecTemplate_getByName(pytrap_unirectemplate *self, PyObject *args, PyObject *
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
     if (!PyUnicode_Check(field_name))
-#else
-    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
-#endif
     {
         PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
         return NULL;
@@ -1424,12 +1417,7 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyUnicode_Check(field_name))
-#else
-    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
-#endif
-    {
+    if (!PyUnicode_Check(field_name)) {
         PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
         return NULL;
     }
@@ -1447,26 +1435,27 @@ UnirecTemplate_getFieldsDict_local(pytrap_unirectemplate *self, char byId)
 {
     PyObject *key, *num;
     int i;
+    int result;
     PyObject *d = PyDict_New();
     if (d != NULL) {
         for (i = 0; i < self->urtmplt->count; i++) {
-#if PY_MAJOR_VERSION >= 3
             key = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[i]));
-#else
-            key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
-#endif
             num = PyLong_FromLong(self->urtmplt->ids[i]);
             if (byId) {
-                PyDict_SetItem(d, num, key);
+                result = PyDict_SetItem(d, num, key);
             } else {
-                PyDict_SetItem(d, key, num);
+                result = PyDict_SetItem(d, key, num);
             }
-            Py_DECREF(num);
             Py_DECREF(key);
+            Py_DECREF(num);
+            if (result == -1) {
+               fprintf(stderr, "failed to set item dict.\n");
+               Py_RETURN_NONE;
+            }
         }
         return d;
     }
-    Py_DECREF(d);
+    Py_XDECREF(d);
     Py_RETURN_NONE;
 }
 
@@ -1764,21 +1753,12 @@ UnirecTemplate_getDict(pytrap_unirectemplate *self)
 static PyObject *
 UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
 {
-    PyObject *name;
+    PyObject *name, *result = NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &name)) {
+    if (!PyArg_ParseTuple(args, "O!", &PyUnicode_Type, &name)) {
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyUnicode_Check(name))
-#else
-    if (!PyUnicode_Check(name) && !PyString_Check(name))
-#endif
-    {
-        PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
-        return NULL;
-    }
     int32_t field_id = UnirecTemplate_get_field_id(self, name);
 
     switch (ur_get_type(field_id)) {
@@ -1791,27 +1771,26 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     case UR_TYPE_INT32:
     case UR_TYPE_INT64:
     case UR_TYPE_CHAR:
-        return (PyObject *) &PyLong_Type;
+        result = (PyObject *) &PyLong_Type;
         break;
     case UR_TYPE_FLOAT:
     case UR_TYPE_DOUBLE:
-        return (PyObject *) &PyFloat_Type;
+        result = (PyObject *) &PyFloat_Type;
         break;
     case UR_TYPE_IP:
-        return (PyObject *) &pytrap_UnirecIPAddr;
+        result = (PyObject *) &pytrap_UnirecIPAddr;
+        break;
     case UR_TYPE_MAC:
-        return (PyObject *) &pytrap_UnirecMACAddr;
+        result = (PyObject *) &pytrap_UnirecMACAddr;
+        break;
     case UR_TYPE_TIME:
-        return (PyObject *) &pytrap_UnirecTime;
+        result = (PyObject *) &pytrap_UnirecTime;
+        break;
     case UR_TYPE_STRING:
-#if PY_MAJOR_VERSION >= 3
-        return (PyObject *) &PyUnicode_Type;
-#else
-        return (PyObject *) &PyString_Type;
-#endif
+        result = (PyObject *) &PyUnicode_Type;
         break;
     case UR_TYPE_BYTES:
-        return (PyObject *) &PyByteArray_Type;
+        result = (PyObject *) &PyByteArray_Type;
         break;
     case UR_TYPE_A_UINT8:
     case UR_TYPE_A_INT8:
@@ -1826,12 +1805,17 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     case UR_TYPE_A_IP:
     case UR_TYPE_A_MAC:
     case UR_TYPE_A_TIME:
-      return (PyObject *) &PyList_Type;
+      result = (PyObject *) &PyList_Type;
       break;
     default:
         PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
         return NULL;
     } // case (field type)
+
+    if (result != NULL) {
+        Py_INCREF(result);
+        return result;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2102,16 +2086,12 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static void UnirecTemplate_dealloc(pytrap_unirectemplate *self)
 {
-    if (self->urdict) {
-        Py_DECREF(self->urdict);
-    }
-    if (self->fields_dict) {
-        Py_DECREF(self->fields_dict);
-    }
+    Py_XDECREF(self->urdict);
+    Py_XDECREF(self->fields_dict);
     if (self->urtmplt) {
         ur_free_template(self->urtmplt);
     }
-    Py_XDECREF(self->data_obj); // Allow to free the original data object
+    Py_XDECREF(self->data_obj);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -2120,11 +2100,7 @@ UnirecTemplate_str(pytrap_unirectemplate *self)
 {
     char *s = ur_template_string_delimiter(self->urtmplt, ',');
     PyObject *result;
-#if PY_MAJOR_VERSION >= 3
     result = PyUnicode_FromFormat("(%s)", s);
-#else
-    result = PyString_FromFormat("(%s)", s);
-#endif
     free(s);
     return result;
 }
@@ -2171,11 +2147,7 @@ UnirecTemplate_next(pytrap_unirectemplate *self)
     PyObject *result;
 
     if (self->iter_index < self->field_count) {
-#if PY_MAJOR_VERSION >= 3
         name = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
-#else
-        name = PyString_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
-#endif
         value = UnirecTemplate_get_local(self, self->data, self->urtmplt->ids[self->iter_index]);
         self->iter_index++;
         result = Py_BuildValue("(OO)", name, value);
@@ -2268,7 +2240,6 @@ init_unirectemplate(PyObject *m)
     PyModule_AddObject(m, "UnirecTime", (PyObject *) &pytrap_UnirecTime);
 
     /* Add IPAddr */
-    //pytrap_UnirecTemplate.tp_new = PyType_GenericNew;
     if (PyType_Ready(&pytrap_UnirecIPAddr) < 0) {
         return EXIT_FAILURE;
     }
@@ -2283,7 +2254,6 @@ init_unirectemplate(PyObject *m)
     PyModule_AddObject(m, "UnirecIPAddrRange", (PyObject *) &pytrap_UnirecIPAddrRange);
 
     /* Add MACAddr */
-    //pytrap_UnirecTemplate.tp_new = PyType_GenericNew;
     if (PyType_Ready(&pytrap_UnirecMACAddr) < 0) {
         return EXIT_FAILURE;
     }

@@ -747,7 +747,7 @@ static PyTypeObject pytrap_TrapContext = {
     0, /* tp_dictoffset */
     0, /* tp_init */
     0, /* tp_alloc */
-    0  /* tp_new */
+    PyType_GenericNew  /* tp_new */
 };
 
 PyObject *
@@ -847,8 +847,6 @@ static PyMethodDef pytrap_methods[] = {
 "For more details, see the generated documentation:\n" \
 "https://nemea.liberouter.org/doc/pytrap/.\n"
 
-#if PY_MAJOR_VERSION >= 3
-
 static struct PyModuleDef pytrapmodule = {
     PyModuleDef_HEAD_INIT,
     "pytrap.pytrap",   /* name of module */
@@ -861,28 +859,19 @@ static struct PyModuleDef pytrapmodule = {
 
 PyMODINIT_FUNC
 PyInit_pytrap(void)
-#else
-#  define INITERROR return
-
-void
-initpytrap(void)
-#endif
 {
     PyObject *m;
 
-#if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&pytrapmodule);
-#else
-    m = Py_InitModule3("pytrap.pytrap", pytrap_methods, DOCSTRING_MODULE);
-#endif
     if (m == NULL) {
         INITERROR;
     }
 
-    pytrap_TrapContext.tp_new = PyType_GenericNew;
     if (PyType_Ready(&pytrap_TrapContext) < 0) {
         INITERROR;
     }
+    Py_INCREF(&pytrap_TrapContext);
+    PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
 
     /* Add Exceptions into pytrap module */
     TrapError = PyErr_NewException("pytrap.TrapError", NULL, NULL);
@@ -908,9 +897,6 @@ initpytrap(void)
     TrapHelp = PyErr_NewException("pytrap.TrapHelp", TrapHelp, NULL);
     Py_INCREF(TrapHelp);
     PyModule_AddObject(m, "TrapHelp", TrapHelp);
-
-    Py_INCREF(&pytrap_TrapContext);
-    PyModule_AddObject(m, "TrapCtx", (PyObject *) &pytrap_TrapContext);
 
     /* Initialize UniRec part of pytrap */
     if (init_unirectemplate(m) == EXIT_FAILURE) {
@@ -943,8 +929,5 @@ initpytrap(void)
     PyModule_AddIntConstant(m, "VERB_VERBOSE2",  1);
     PyModule_AddIntConstant(m, "VERB_VERBOSE3",  2);
 
-
-#if PY_MAJOR_VERSION >= 3
     return m;
-#endif
 }
