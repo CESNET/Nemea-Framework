@@ -1787,27 +1787,26 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     case UR_TYPE_INT32:
     case UR_TYPE_INT64:
     case UR_TYPE_CHAR:
-        return (PyObject *) &PyLong_Type;
+        result = (PyObject *) &PyLong_Type;
         break;
     case UR_TYPE_FLOAT:
     case UR_TYPE_DOUBLE:
-        return (PyObject *) &PyFloat_Type;
+        result = (PyObject *) &PyFloat_Type;
         break;
     case UR_TYPE_IP:
-        return (PyObject *) &pytrap_UnirecIPAddr;
+        result = (PyObject *) &pytrap_UnirecIPAddr;
+        break;
     case UR_TYPE_MAC:
-        return (PyObject *) &pytrap_UnirecMACAddr;
+        result = (PyObject *) &pytrap_UnirecMACAddr;
+        break;
     case UR_TYPE_TIME:
-        return (PyObject *) &pytrap_UnirecTime;
+        result = (PyObject *) &pytrap_UnirecTime;
+        break;
     case UR_TYPE_STRING:
-#if PY_MAJOR_VERSION >= 3
-        return (PyObject *) &PyUnicode_Type;
-#else
-        return (PyObject *) &PyString_Type;
-#endif
+        result = (PyObject *) &PyUnicode_Type;
         break;
     case UR_TYPE_BYTES:
-        return (PyObject *) &PyByteArray_Type;
+        result = (PyObject *) &PyByteArray_Type;
         break;
     case UR_TYPE_A_UINT8:
     case UR_TYPE_A_INT8:
@@ -1822,12 +1821,17 @@ UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
     case UR_TYPE_A_IP:
     case UR_TYPE_A_MAC:
     case UR_TYPE_A_TIME:
-      return (PyObject *) &PyList_Type;
+      result = (PyObject *) &PyList_Type;
       break;
     default:
         PyErr_SetString(PyExc_NotImplementedError, "Unknown UniRec field type.");
         return NULL;
     } // case (field type)
+
+    if (result != NULL) {
+        Py_INCREF(result);
+        return result;
+    }
     Py_RETURN_NONE;
 }
 
