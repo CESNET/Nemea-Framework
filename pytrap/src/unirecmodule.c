@@ -521,9 +521,6 @@ static PyTypeObject pytrap_UnirecTime = {
     0, /* tp_setattro */
     0, /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
-#if PY_MAJOR_VERSION < 3
-        Py_TPFLAGS_CHECKTYPES |
-#endif
         Py_TPFLAGS_BASETYPE, /* tp_flags */
     "UnirecTime(int(seconds), [int(miliseconds)])\n"
     "UnirecTime(double(secs_and_msecs))\n"
@@ -810,11 +807,7 @@ UnirecTemplate_getByName(pytrap_unirectemplate *self, PyObject *args, PyObject *
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
     if (!PyUnicode_Check(field_name))
-#else
-    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
-#endif
     {
         PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
         return NULL;
@@ -1424,12 +1417,7 @@ UnirecTemplate_set(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyUnicode_Check(field_name))
-#else
-    if (!PyUnicode_Check(field_name) && !PyString_Check(field_name))
-#endif
-    {
+    if (!PyUnicode_Check(field_name)) {
         PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
         return NULL;
     }
@@ -1451,11 +1439,7 @@ UnirecTemplate_getFieldsDict_local(pytrap_unirectemplate *self, char byId)
     PyObject *d = PyDict_New();
     if (d != NULL) {
         for (i = 0; i < self->urtmplt->count; i++) {
-#if PY_MAJOR_VERSION >= 3
             key = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[i]));
-#else
-            key = PyString_FromString(ur_get_name(self->urtmplt->ids[i]));
-#endif
             num = PyLong_FromLong(self->urtmplt->ids[i]);
             if (byId) {
                 result = PyDict_SetItem(d, num, key);
@@ -2116,11 +2100,7 @@ UnirecTemplate_str(pytrap_unirectemplate *self)
 {
     char *s = ur_template_string_delimiter(self->urtmplt, ',');
     PyObject *result;
-#if PY_MAJOR_VERSION >= 3
     result = PyUnicode_FromFormat("(%s)", s);
-#else
-    result = PyString_FromFormat("(%s)", s);
-#endif
     free(s);
     return result;
 }
@@ -2167,11 +2147,7 @@ UnirecTemplate_next(pytrap_unirectemplate *self)
     PyObject *result;
 
     if (self->iter_index < self->field_count) {
-#if PY_MAJOR_VERSION >= 3
         name = PyUnicode_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
-#else
-        name = PyString_FromString(ur_get_name(self->urtmplt->ids[self->iter_index]));
-#endif
         value = UnirecTemplate_get_local(self, self->data, self->urtmplt->ids[self->iter_index]);
         self->iter_index++;
         result = Py_BuildValue("(OO)", name, value);

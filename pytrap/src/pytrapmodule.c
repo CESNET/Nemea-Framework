@@ -847,8 +847,6 @@ static PyMethodDef pytrap_methods[] = {
 "For more details, see the generated documentation:\n" \
 "https://nemea.liberouter.org/doc/pytrap/.\n"
 
-#if PY_MAJOR_VERSION >= 3
-
 static struct PyModuleDef pytrapmodule = {
     PyModuleDef_HEAD_INIT,
     "pytrap.pytrap",   /* name of module */
@@ -861,20 +859,10 @@ static struct PyModuleDef pytrapmodule = {
 
 PyMODINIT_FUNC
 PyInit_pytrap(void)
-#else
-#  define INITERROR return
-
-void
-initpytrap(void)
-#endif
 {
     PyObject *m;
 
-#if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&pytrapmodule);
-#else
-    m = Py_InitModule3("pytrap.pytrap", pytrap_methods, DOCSTRING_MODULE);
-#endif
     if (m == NULL) {
         INITERROR;
     }
@@ -941,8 +929,5 @@ initpytrap(void)
     PyModule_AddIntConstant(m, "VERB_VERBOSE2",  1);
     PyModule_AddIntConstant(m, "VERB_VERBOSE3",  2);
 
-
-#if PY_MAJOR_VERSION >= 3
     return m;
-#endif
 }
