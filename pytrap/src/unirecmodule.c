@@ -1769,21 +1769,12 @@ UnirecTemplate_getDict(pytrap_unirectemplate *self)
 static PyObject *
 UnirecTemplate_getFieldType(pytrap_unirectemplate *self, PyObject *args)
 {
-    PyObject *name;
+    PyObject *name, *result = NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &name)) {
+    if (!PyArg_ParseTuple(args, "O!", &PyUnicode_Type, &name)) {
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyUnicode_Check(name))
-#else
-    if (!PyUnicode_Check(name) && !PyString_Check(name))
-#endif
-    {
-        PyErr_SetString(PyExc_TypeError, "Argument field_name must be string.");
-        return NULL;
-    }
     int32_t field_id = UnirecTemplate_get_field_id(self, name);
 
     switch (ur_get_type(field_id)) {
