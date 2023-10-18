@@ -46,7 +46,7 @@
 #include <signal.h>
 
 #include <string.h>
-#include "../unirec.h"
+#include "../include/unirec/unirec.h"
 #include "fields.h"
 //Example of usage Unirec library
 #define FIELDS_COUNT 99

@@ -17,8 +17,8 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include "../unirec.h"
-#include "../unirec2csv.h"
+#include "../include/unirec/unirec.h"
+#include "../include/unirec/unirec2csv.h"
 #include "fields.h"
 
 UR_FIELDS(

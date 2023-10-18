@@ -3,9 +3,9 @@
 
 AC_PREREQ([2.63])
 AC_INIT([unirec], [2.9.7], [nemea@cesnet.cz])
-AC_CONFIG_SRCDIR([unirec.h])
+AC_CONFIG_SRCDIR([unirec.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([silent-rules])
+AM_INIT_AUTOMAKE([subdir-objects silent-rules])
 AM_SILENT_RULES([yes])
 RELEASE=1
 AC_SUBST(RELEASE)
@@ -99,6 +99,9 @@ fi
 
 AC_CONFIG_FILES([Makefile
 		 unirec.pc
+		 include/Makefile
+		 include/unirec/Makefile
+		 include/unirec++/Makefile
 		 unirec++/unirec++.pc
 		 unirec++/Makefile
 		 unirec.spec

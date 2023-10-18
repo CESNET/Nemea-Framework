@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
-DIST_SUBDIRS = unirec++ tests
-SUBDIRS = . unirec++
+DIST_SUBDIRS = include unirec++ tests
+SUBDIRS = include . unirec++
 
 if ENABLE_TESTS
 SUBDIRS += tests
@@ -8,34 +8,14 @@ endif
 
 RPMDIR=RPMBUILD
 
-BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
-
-ur_values.h: ur_values.sh
-	${top_srcdir}/ur_values.sh -i ${top_srcdir}
-
-ur_values.c: ur_values.h
-
-ur_values.py: ur_values.h
-
-
 lib_LTLIBRARIES=libunirec.la
+libunirec_la_CPPFLAGS=-I${srcdir}/include
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h macaddr.h links.h ur_time.h unirec2csv.h unirec2csv.c ip_prefix_search.c ipps_internal.h
+libunirec_la_SOURCES=unirec.c include/unirec/ur_values.c unirec2csv.c ip_prefix_search.c ipps_internal.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
-
-unirecincludedir=$(includedir)/unirec
-unirecinclude_HEADERS=unirec.h \
-		     inline.h \
-		     ipaddr.h \
-		     macaddr.h \
-		     links.h  \
-		     ur_time.h \
-		     unirec2csv.h \
-		     ip_prefix_search.h \
-		     ur_values.h
 
 bin_SCRIPTS=ur_values.sh ur_processor.sh
 
