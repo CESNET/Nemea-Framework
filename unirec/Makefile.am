@@ -12,11 +12,7 @@ lib_LTLIBRARIES=libunirec.la
 libunirec_la_CPPFLAGS=-I${srcdir}/include
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c include/unirec/ur_values.c unirec2csv.c ip_prefix_search.c ipps_internal.h
-
-BUILT_SOURCES=include/unirec/ur_values.c
-
-libunirec_la: include/unirec/ur_values.c
+libunirec_la_SOURCES=unirec.c unirec2csv.c ip_prefix_search.c ipps_internal.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
