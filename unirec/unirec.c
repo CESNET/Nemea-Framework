@@ -59,7 +59,7 @@
 #include <unirec/inline.h>
 #include <libtrap/trap.h>
 #include <inttypes.h>
-#include <unirec/ur_values.c>
+#include "ur_values.c"
 
 #ifndef MAX
 #define MAX(A, B) ((A >= B) ? (A) : (B))
