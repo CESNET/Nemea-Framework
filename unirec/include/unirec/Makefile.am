@@ -7,10 +7,11 @@ unirecinclude_HEADERS=unirec.h \
 		     ur_time.h \
 		     unirec2csv.h \
 		     ur_values.h \
-		     ur_values.c \
 		     ip_prefix_search.h
 
 BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
+
+EXTRA_DIST=ur_values.c
 
 ur_values.h: ${top_srcdir}/ur_values.sh
 	${top_srcdir}/ur_values.sh -i ${top_srcdir}
