@@ -1,8 +1,9 @@
 ACLOCAL_AMFLAGS=-I m4
-DIST_SUBDIRS = tests
+DIST_SUBDIRS = unirec++ tests
+SUBDIRS = . unirec++
 
 if ENABLE_TESTS
-SUBDIRS= . tests
+SUBDIRS += tests
 endif
 
 RPMDIR=RPMBUILD

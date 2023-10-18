@@ -22,10 +22,10 @@ AC_ARG_ENABLE([debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
                 CFLAGS="-std=gnu11 -Wall -g -O0 -fcommon $CFLAGS"
-                CXXFLAGS="-std=gnu++11 -Wall -g -O0 $CXXFLAGS"
+                CXXFLAGS="-std=c++17 -Wall -g -O0 $CXXFLAGS"
         fi],
         [CFLAGS="-std=gnu11 -Wall -g -O3 -fcommon $CFLAGS"
-        CXXFLAGS="-std=gnu++11 -Wall -g -O3 $CXXFLAGS"])
+        CXXFLAGS="-std=c++17 -Wall -g -O3 $CXXFLAGS"])
 LT_INIT()
 # Checks for programs.
 AM_PROG_CC_C_O
@@ -99,6 +99,8 @@ fi
 
 AC_CONFIG_FILES([Makefile
 		 unirec.pc
+		 unirec++/unirec++.pc
+		 unirec++/Makefile
 		 unirec.spec
 		 Doxyfile
                  tests/Makefile])

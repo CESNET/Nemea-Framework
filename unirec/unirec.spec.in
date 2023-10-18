@@ -36,9 +36,25 @@ ldconfig
 
 %files
 %{_libdir}/pkgconfig/unirec.pc
+%{_libdir}/pkgconfig/unirec++.pc
 %{_libdir}/libunirec.a
+%{_libdir}/libunirec++.*
 %{_bindir}/nemea/ur_values.sh
 %{_bindir}/nemea/ur_processor.sh
-%{_prefix}/include/unirec/*
 %{_docdir}/unirec/*
+%{_includedir}/unirec/*
+%{_includedir}/unirec++/bidirectionalInterface.hpp
+%{_includedir}/unirec++/inputInterface.hpp
+%{_includedir}/unirec++/ipAddress.hpp
+%{_includedir}/unirec++/macAddress.hpp
+%{_includedir}/unirec++/outputInterface.hpp
+%{_includedir}/unirec++/trapModuleInfo.hpp
+%{_includedir}/unirec++/unirecArray.hpp
+%{_includedir}/unirec++/unirecException.hpp
+%{_includedir}/unirec++/unirec.hpp
+%{_includedir}/unirec++/unirecRecord.hpp
+%{_includedir}/unirec++/unirecRecordView.hpp
+%{_includedir}/unirec++/unirecTypes.hpp
+%{_includedir}/unirec++/unirecTypeTraits.hpp
+%{_includedir}/unirec++/urTime.hpp
 
