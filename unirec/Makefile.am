@@ -1,5 +1,5 @@
 ACLOCAL_AMFLAGS=-I m4
-DIST_SUBDIRS = include unirec++ tests
+DIST_SUBDIRS = include . unirec++ tests
 SUBDIRS = include . unirec++
 
 if ENABLE_TESTS
@@ -12,19 +12,11 @@ lib_LTLIBRARIES=libunirec.la
 libunirec_la_CPPFLAGS=-I${srcdir}/include
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c ur_values.c unirec2csv.c ip_prefix_search.c ipps_internal.h
+libunirec_la_SOURCES=unirec.c include/unirec/ur_values.c unirec2csv.c ip_prefix_search.c ipps_internal.h
 
-BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
+BUILT_SOURCES=include/unirec/ur_values.c
 
-ur_values.h: ${top_srcdir}/ur_values.sh
-	${top_srcdir}/ur_values.sh -i ${top_srcdir}
-
-ur_values.c: ur_values.h
-
-ur_values.py: ur_values.h
-
-unirecincludedir=$(includedir)/unirec
-unirecinclude_HEADERS=ur_values.h
+libunirec_la: include/unirec/ur_values.c
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
@@ -90,5 +82,5 @@ install-exec-hook:
 	rm -f $(DESTDIR)$(libdir)/libunirec.la $(DESTDIR)$(libdir)/libunirec++.la
 
 uninstall-hook:
-	rm -f $(DESTDIR)$(libdir)/libunirec.la $(DESTDIR)$(libdir)/libunirec++.la $(DESTDIR)$(libdir)/libunirec.a
+	rm -f $(DESTDIR)$(libdir)/libunirec.la $(DESTDIR)$(libdir)/libunirec++.la $(DESTDIR)$(libdir)/libunirec.a $(DESTDIR)$(libdir)/libunirec++.a $(DESTDIR)$(libdir)/libunirec++.so.*
 
