@@ -1523,7 +1523,7 @@ UnirecTemplate_setFromDict(pytrap_unirectemplate *self, PyObject *dict, int skip
                     Py_DECREF(idkey);
                     return NULL;
                 }
-            } else if (PyLong_Check(v)) {
+            } else {
                 if (UnirecTemplate_set_local(self, self->data, id, v) == NULL) {
                     Py_DECREF(idkey);
                     return NULL;

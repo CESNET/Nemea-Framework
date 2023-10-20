@@ -839,3 +839,41 @@ class Utf8string(unittest.TestCase):
         elapsed_time = time.process_time() - startt
         print(f"Elapsed time for {messages} messages is: {elapsed_time}")
 
+class ArrayFromDict(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        rec = pytrap.UnirecTemplate("int8* PPI_PKT_DIRECTIONS,uint8* PPI_PKT_FLAGS,uint16* PPI_PKT_LENGTHS,uint32* DBI_BRST_BYTES,time* DBI_BRST_TIME_START,ipaddr SRC_IP,time TIME")
+        rec.createMessage(10000)
+        # prepare dict
+        data = {
+                  "SRC_IP": pytrap.UnirecIPAddr("10.0.0.1"),
+                  "TIME": pytrap.UnirecTime(1669885132, 853),
+                  "PPI_PKT_DIRECTIONS": [
+                    1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                    -1, -1, -1, -1, -1, -1, -1, 1, -1, -1
+                  ],
+                  "PPI_PKT_FLAGS": [
+                    24, 16, 24, 16, 24, 24, 24, 24, 24, 24, 24, 24, 16, 24, 16, 24, 16, 24, 16,
+                    24, 16, 24, 16, 24, 16, 24, 16, 24, 24, 16
+                  ],
+                  "PPI_PKT_LENGTHS": [
+                    517, 1400, 1400, 1400, 282, 74, 98, 416, 978, 31, 590, 1400, 1400, 1400,
+                    1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400,
+                    1400, 31, 1400, 1400
+                  ],
+                  "DBI_BRST_BYTES": [
+                    71274
+                  ],
+                  "DBI_BRST_TIME_START": [
+                    pytrap.UnirecTime(1669885132, 853),
+                    pytrap.UnirecTime(1669985132, 853)
+                  ]
+              }
+
+        # set it into UnirecTemplate
+        rec.setFromDict(data)
+        # get the content
+        stored = rec.getDict()
+        # compare it
+        self.assertEqual(stored, data)
+
