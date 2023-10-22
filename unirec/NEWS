@@ -1,3 +1,9 @@
+2023-10-20 (Tomas Cejka): unirec: rpm: update build requirements - gcc-c++
+2023-10-20 (Tomas Cejka): unirec: update list of dirs for doc
+2023-10-20 (Tomas Cejka): unirec: rpm: fixed missing ur_values issue
+2023-10-20 (Tomas Cejka): unirec: moved headers into include/, fixed distcheck
+2023-10-20 (Tomas Cejka): unirec: add unirec++ by Pavel Siska et al.
+
 2022-12-27 (Tomas Cejka): rpm: skip installation of .la files
 2022-12-11 (Tomas Cejka): unirec: test resize: add more updates of template
 2022-12-11 (Tomas Cejka): unirec: fix ur_expand_template()

@@ -1,3 +1,6 @@
+2023-10-22 unirec-3.0.0
+	* add nemea++ API for C++ to support development of NEMEA modules
+
 2022-12-27 unirec-2.9.7
 	* rpm: skip installation of .la files
 	* bugfix: ur_expand_template() bad reallocation
