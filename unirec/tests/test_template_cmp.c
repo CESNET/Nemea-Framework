@@ -44,7 +44,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "../unirec.h"
+#include "../include/unirec/unirec.h"
 #include "fields.h"
 
 UR_FIELDS(

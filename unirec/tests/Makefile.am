@@ -17,7 +17,7 @@ TESTS += test_ur2csv
 endif
 
 AM_LDFLAGS=-static ../libunirec.la
-COM_CPPFLAGS=-I../../ -I../ -I${top_srcdir}/../../
+COM_CPPFLAGS=-I../include/ -I${top_srcdir}/include/
 
 test_basic_SOURCES=test_basic.c fields.c
 test_basic_CPPFLAGS=$(COM_CPPFLAGS)

@@ -47,7 +47,7 @@
 #include <signal.h>
 
 #include <string.h>
-#include "../unirec.h"
+#include "../include/unirec/unirec.h"
 #include "fields.h"
 //Example of usage Unirec library
 #define FOO_TEST_VALUE 12345

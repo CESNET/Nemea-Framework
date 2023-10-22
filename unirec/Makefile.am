@@ -1,40 +1,21 @@
 ACLOCAL_AMFLAGS=-I m4
-DIST_SUBDIRS = tests
+DIST_SUBDIRS = include . unirec++ tests
+SUBDIRS = include . unirec++
 
 if ENABLE_TESTS
-SUBDIRS= . tests
+SUBDIRS += tests
 endif
 
 RPMDIR=RPMBUILD
 
-BUILT_SOURCES=ur_values.h ur_values.c ur_values.py
-
-ur_values.h: ur_values.sh
-	${top_srcdir}/ur_values.sh -i ${top_srcdir}
-
-ur_values.c: ur_values.h
-
-ur_values.py: ur_values.h
-
-
 lib_LTLIBRARIES=libunirec.la
+libunirec_la_CPPFLAGS=-I${srcdir}/include
 libunirec_la_CFLAGS=-fPIC
 libunirec_la_LDFLAGS=-static -ltrap
-libunirec_la_SOURCES=unirec.c unirec.h ur_values.c ur_values.h inline.h ipaddr.h macaddr.h links.h ur_time.h unirec2csv.h unirec2csv.c ip_prefix_search.c ipps_internal.h
+libunirec_la_SOURCES=unirec.c unirec2csv.c ip_prefix_search.c ipps_internal.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = unirec.pc
-
-unirecincludedir=$(includedir)/unirec
-unirecinclude_HEADERS=unirec.h \
-		     inline.h \
-		     ipaddr.h \
-		     macaddr.h \
-		     links.h  \
-		     ur_time.h \
-		     unirec2csv.h \
-		     ip_prefix_search.h \
-		     ur_values.h
 
 bin_SCRIPTS=ur_values.sh ur_processor.sh
 
@@ -84,9 +65,6 @@ endif
 deb-clean:
 	rm -rf unirec_*.build unirec_*.changes unirec_*.deb unirec-dev_*.deb unirec_*.orig.tar.gz unirec-*.tar.gz unirec-@VERSION@
 
-install-exec-hook:
-	rm -f $(DESTDIR)$(libdir)/libunirec.la
-
 clean-local: rpm-clean deb-clean
 	find \( -name ur_values.c -o -name ur_values.h -o -name ur_values.py \) -exec rm -f {} + || true
 	find \( -name fields.c -o -name fields.h \) -exec rm -f {} + || true
@@ -97,7 +75,8 @@ coverage: check
 	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"
 
 install-exec-hook:
-	rm -f $(DESTDIR)$(libdir)/libunirec.la
+	rm -f $(DESTDIR)$(libdir)/libunirec.la $(DESTDIR)$(libdir)/libunirec++.la
 
 uninstall-hook:
-	rm -f $(DESTDIR)$(libdir)/libunirec.la $(DESTDIR)$(libdir)/libunirec.a
+	rm -f $(DESTDIR)$(libdir)/libunirec.la $(DESTDIR)$(libdir)/libunirec++.la $(DESTDIR)$(libdir)/libunirec.a $(DESTDIR)$(libdir)/libunirec++.a $(DESTDIR)$(libdir)/libunirec++.so.*
+

@@ -3,11 +3,11 @@
 
 AC_PREREQ([2.63])
 AC_INIT([unirec], [2.9.7], [nemea@cesnet.cz])
-AC_CONFIG_SRCDIR([unirec.h])
+AC_CONFIG_SRCDIR([unirec.c])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([silent-rules])
+AM_INIT_AUTOMAKE([subdir-objects silent-rules])
 AM_SILENT_RULES([yes])
-RELEASE=1
+RELEASE=99
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -22,10 +22,10 @@ AC_ARG_ENABLE([debug],
         [Enable build with debug symbols and without optimizations.]),
         [if test "$enableval" = "yes"; then
                 CFLAGS="-std=gnu11 -Wall -g -O0 -fcommon $CFLAGS"
-                CXXFLAGS="-std=gnu++11 -Wall -g -O0 $CXXFLAGS"
+                CXXFLAGS="-std=c++17 -Wall -g -O0 $CXXFLAGS"
         fi],
         [CFLAGS="-std=gnu11 -Wall -g -O3 -fcommon $CFLAGS"
-        CXXFLAGS="-std=gnu++11 -Wall -g -O3 $CXXFLAGS"])
+        CXXFLAGS="-std=c++17 -Wall -g -O3 $CXXFLAGS"])
 LT_INIT()
 # Checks for programs.
 AM_PROG_CC_C_O
@@ -99,6 +99,11 @@ fi
 
 AC_CONFIG_FILES([Makefile
 		 unirec.pc
+		 include/Makefile
+		 include/unirec/Makefile
+		 include/unirec++/Makefile
+		 unirec++/unirec++.pc
+		 unirec++/Makefile
 		 unirec.spec
 		 Doxyfile
                  tests/Makefile])

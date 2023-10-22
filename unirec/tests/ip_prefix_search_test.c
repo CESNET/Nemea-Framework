@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "../ip_prefix_search.h"
+#include "../include/unirec/ip_prefix_search.h"
 #include "../ipps_internal.h"
 
 //void print_networks( ipps_network_list_t *networks)

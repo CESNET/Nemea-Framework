@@ -97,9 +97,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ./ doc/
+INPUT                  = ./ ./unirec++/ ./include/unirec/ ./include/unirec++/ doc/
 INPUT_ENCODING         = UTF-8
-FILE_PATTERNS          = *.c *.h *.txt *.md
+FILE_PATTERNS          = *.c *.h *.cpp *.hpp *.txt *.md
 RECURSIVE              = NO
 EXCLUDE                =
 EXCLUDE_SYMLINKS       = NO

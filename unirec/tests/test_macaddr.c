@@ -41,7 +41,7 @@
  *
  */
 
-#include "../macaddr.h"
+#include "../include/unirec/macaddr.h"
 #include <stdio.h>
 
 int main()

@@ -55,11 +55,11 @@
 #include <regex.h>
 #include <assert.h>
 #include <ctype.h>
-#include "unirec.h"
+#include <unirec/unirec.h>
+#include <unirec/inline.h>
 #include <libtrap/trap.h>
 #include <inttypes.h>
-#include "ur_values.c"
-#include "inline.h"
+#include "include/unirec/ur_values.c"
 
 #ifndef MAX
 #define MAX(A, B) ((A >= B) ? (A) : (B))

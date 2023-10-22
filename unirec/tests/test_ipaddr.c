@@ -42,7 +42,7 @@
  *
  */
 
-#include "../ipaddr.h"
+#include "../include/unirec/ipaddr.h"
 #include <stdio.h>
 
 int main()

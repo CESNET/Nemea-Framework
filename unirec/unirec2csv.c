@@ -2,7 +2,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 #include <time.h>
-#include "unirec2csv.h"
+#include <unirec/unirec2csv.h>
 
 urcsv_t *urcsv_init(ur_template_t *tmplt, char delimiter)
 {
