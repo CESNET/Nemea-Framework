@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([unirec], [2.9.7], [nemea@cesnet.cz])
+AC_INIT([unirec], [3.0.0], [nemea@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([subdir-objects silent-rules])
 AM_SILENT_RULES([yes])
-RELEASE=99
+RELEASE=1
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -62,8 +62,6 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_MKTIME
 
-RPM_RELEASE=1
-AC_SUBST(RPM_RELEASE)
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
 
 AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
