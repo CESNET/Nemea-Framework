@@ -1,3 +1,51 @@
+unirec (3.0.0ubuntu1) focal; urgency=high
+
+  * Changes in 3.0.0
+    - add nemea++ API for C++ to support development of NEMEA modules
+  * Changes in 2.9.7
+    - rpm: skip installation of .la files
+    - bugfix: ur_expand_template() bad reallocation
+    - bugfixes based on coverity and codeQL
+  * Changes in 2.9.6
+    - unirec: Fixed reallocation of buffer when field is bigger than buffer/2 in unirec2csv file.
+  * Changes in 2.9.5
+    - unirec: Set parameters of some functions as const
+    - ur_processor: Support to process .hpp files
+    - Makefile: Set default standard to gnu11 and gnu++11
+  * Changes in 2.9.4
+    - timestamps in microseconds precision
+    - fix build gcc10
+    - bugfixes
+  * Changes in 2.9.3
+    - compilation on gcc10
+    - improved doc of ur_time
+  * Changes in 2.9.2
+    - unirec: bugfixes when converting to CSV format
+  * Changes in 2.9.1
+    - bugfixes and maintenance of ip_prefix_search
+  * Changes in 2.9.0
+    - Added ip_prefix_search feature to search in IP subnets (by @plotenyondra)
+  * Changes in 2.8.0
+    - added ur_array_append_get_ptr(), which allocates new element and returns pointer to it
+  * Changes in 2.7.0
+    - Add array type in UniRec
+    - Add conversion of array in ur2csv API
+  * Changes in 2.6.0
+    - Bugfixes for openwrt - timestamps, undefined constants
+    - csv - improved API to convert any field value to string
+  * Changes in 2.5.1
+    - UniRec2CSV: bugfixes string termination
+  * Changes in 2.5.0
+    - Fixed MAC address conversion functions
+    - Added API for UniRec to CSV conversion
+  * Changes in 2.4.0
+    - Add nanosecond precision for ur_time_t
+    - Improved ur_time_from_str() with UTC timezone format support
+  * Changes in 2.3.0
+    - Add lists related to types and sizes of UniRec fields into public API
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Mon, 30 Oct 2023 20:12:09 +0000
+
 unirec (2.2.9-1) stable; urgency=low
 
   * improved UniRec specifier parsing - can contain spaces

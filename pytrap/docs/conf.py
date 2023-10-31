@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.abspath('..'))
 copyright = '2021, Tomas Cejka, CESNET'
 author = 'Tomas Cejka, CESNET'
 
+master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
 

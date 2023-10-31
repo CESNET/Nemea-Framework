@@ -1,3 +1,73 @@
+libtrap (1.17.1ubuntu2) focal; urgency=high
+
+  * Changes in 1.17.1
+    - BUGFIX: division by zero in JSON statistics
+    - BUGFIX: double close of the socket
+    - BUGFIX: double free of resources on finalization
+  * Changes in 1.17.0
+    - libtrap: reworked buffers for tcp/unix and tls
+    - libtrap: file ifc flush last buffer before termination
+  * Changes in 1.16.2
+    * bugfix: flush to file
+    * bugfix: write to file
+  * Changes in 1.16.1
+    * bugfixes and refactoring (timestamps, deadlocks)
+  * Changes in 1.16.0
+    - replaced select() with poll() - thanks to Flowmon Networks
+    - bugfixes of deadlocks, negotiation failure, memory leaks - Jiri Havranek
+  * Changes in 1.15.1
+    - bugfix: strncpy in file IFC
+    - bugfix: compilation on openwrt
+    - bugfix: compilation on new gcc10 (-fcommon)
+  * Changes in 1.15.0
+    - fixed CPU exhausting issue
+    - fixed missing atomicops on turris
+    - fixed segfault on bad params of file IFC
+    - add delay statistics for input IFC
+  * Changes in 1.14.0
+    - New enhanced version of buffering that uses ring buffer.
+  * Changes in 1.13.1
+    - Replace 8B atomics on platforms that do not support it (turris)
+    - File IFC file numbers are aligned to 5 digits with leading zeros
+    - File IFC file has default mode set to 'w' now
+    - Maintenance and fixing warnings.
+  * Changes in 1.13.0
+    - Improved error messages
+    - Removed multi_recv unused feature
+  * Changes in 1.12.2
+    - Bugfix in init - possible deadlock on uninitialized semaphore
+  * Changes in 0.12.1
+    - Libtrap buffer now properly empties itself if no client is connected to
+      the ouput interface. (This changes how statistics
+    - number of messages sent and dropped - are treated when
+    - no client is connected).
+    - Added client identification for TCP and UNIX output interfaces
+    - and computation of statistics. For UNIX IFC type, ID is set to PID of the connected client.
+    - For TCP or TLS IFC types, ID is set to a remote TCP port of the connected
+    - client (which can be looked up using `netstat(8)` or `ss(8)`).
+  * Changes in 0.12.0
+    - Refactoring, improved throughput.
+    - Fixed problems with not setting trap last error.
+    - Most of the context functions are now thread safe.
+    - Autoflush is no longer called in situations when send procedure keeps failing repeatedly.
+    - Added periodical interface statistics printings when run in verbose mode.
+    - Improved documentation.
+  * Changes in 0.11.8
+    - Fix non-blocking recv in libtrap.
+    - Fix possible write to uninitialized address.
+    - Improved VERBOSE CPP macro to print file&line in debug.
+  * Changes in 0.11.7
+    - Bugfixes and performance improvement (locks rework)
+    - trap_stats: Improved trap_stats argument to allow passing just PID
+  * Changes in 0.11.6
+    - bugfixes of TLS IFC
+    - fixed bad error message (no error)
+    - doc update
+  * Changes in 0.11.5
+    - bugfixes in file and TLS interfaces
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Mon, 30 Oct 2023 20:12:09 +0000
+
 libtrap (0.11.0-1) stable; urgency=low
 
   * added TLS communication IFC

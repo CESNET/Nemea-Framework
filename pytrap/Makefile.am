@@ -1,7 +1,6 @@
+EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py src/pytrapmodule.c src/unirecmodule.c src/fields.c src/fields.h docs/Makefile docs/conf.py docs/helpers.rst docs/index.rst docs/make.bat docs/pytrap.rst docs/recvbulk.rst
+
 .PHONY: rpm
-
-EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py src/pytrapmodule.c src/unirecmodule.c src/fields.c src/fields.h
-
 rpm:
 	mkdir -p RPMBUILD/SOURCES
 	python3 setup.py sdist
@@ -12,7 +11,7 @@ rpm:
 clean-local:
 	rm -rf RPMBUILD dist build *.trs test.sh.log test-suite.log *.so *.egg-info coverage.info out/
 
-TESTS = test.sh
+# TESTS = test.sh
 
 .PHONY: coverage
 coverage:

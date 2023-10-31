@@ -1,5 +1,5 @@
 Source: unirec
-Section: unknown
+Section: net
 Priority: extra
 Maintainer: CESNET <nemea@cesnet.cz>
 Build-Depends: autotools-dev,

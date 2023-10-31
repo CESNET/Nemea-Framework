@@ -48,6 +48,10 @@ rpm-clean:
 	rm -rf $(RPMDIR)
 
 if MAKE_DEB
+.PHONY: deb-source
+deb-source:
+	make dist && make distdir && ln -fs libtrap-@VERSION@.tar.gz libtrap_@VERSION@ubuntu@RELEASE@.orig.tar.gz && cd libtrap-@VERSION@ && debuild -S
+
 .PHONY: deb
 deb:
 	make distdir && cd libtrap-@VERSION@ && debuild -i -us -uc -b
@@ -55,7 +59,7 @@ else
 endif
 
 deb-clean:
-	rm -rf libtrap_*.build libtrap_*.changes libtrap_*.deb libtrap-dev_*.deb libtrap_*.orig.tar.gz libtrap-*.tar.gz libtrap-@VERSION@
+	rm -rf libtrap_*.build libtrap_*.changes libtrap_*.deb libtrap-dev_*.deb libtrap_*.orig.tar.gz libtrap-*.tar.gz libtrap-@VERSION@ *.dsc *.buildinfo *.ppa.upload *.ddeb
 
 install-exec-hook:
 	mkdir -p $(DESTDIR)/$(DEFAULTSOCKETDIR) && chmod 1777 $(DESTDIR)/$(DEFAULTSOCKETDIR) || true

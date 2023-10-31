@@ -9,7 +9,7 @@ AM_INIT_AUTOMAKE([subdir-objects no-dependencies])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes]]))
 AC_CONFIG_SRCDIR([libtrap.spec.in])
 AC_CONFIG_HEADERS([config.h])
-RELEASE=1
+RELEASE=2
 AC_SUBST(RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
