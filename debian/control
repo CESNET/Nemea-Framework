@@ -1,0 +1,31 @@
+Source: nemea-framework
+Section: net
+Priority: extra
+Maintainer: CESNET <nemea@cesnet.cz> 
+Build-Depends: autotools-dev,
+	debhelper (>=9),
+	libxml2-dev,
+	python3-sphinx,
+	python3-setuptools,
+	doxygen
+Standards-Version: 3.9.5
+Homepage: https://github.com/CESNET/Nemea-Framework
+Vcs-Git: https://github.com/CESNET/Nemea-Framework
+Vcs-Browser: https://github.com/CESNET/Nemea-Framework/tree/master/
+
+Package: nemea-framework
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: Framework for NEMEA project
+ This package contains several libraries such as libtrap, unirec, common.
+
+Package: nemea-framework-dev
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends}
+Description: Framework for NEMEA project
+ This package contains several libraries such as libtrap, unirec, common.
+ Development files only.

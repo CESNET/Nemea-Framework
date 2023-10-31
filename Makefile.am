@@ -22,7 +22,7 @@ if ENABLE_EXAMPLES
 SUBDIRS+=examples
 endif
 
-EXTRA_DIST=README.md
+EXTRA_DIST=README.md debian/source/local-options debian/source/format debian/patches debian/patches/series debian/watch debian/copyright debian/changelog debian/control debian/rules debian/compat debian/README.Debian debian/nemea-framework.install debian/nemea-framework-dev.install
 
 bin_SCRIPTS=create_module.sh
 
@@ -53,4 +53,18 @@ rpm-clean:
 	rm -rf $(RPMDIR)
 else
 endif
+
+if MAKE_DEB
+.PHONY: deb-source
+deb-source:
+	make dist && make distdir && ln -fs nemea-framework-@VERSION@.tar.gz nemea-framework_@VERSION@ubuntu@RPM_RELEASE@.orig.tar.gz && cd nemea-framework-@VERSION@ && debuild -S
+
+.PHONY: deb
+deb:
+	make distdir && cd nemea-framework-@VERSION@ && debuild -i -us -uc -b
+else
+endif
+
+deb-clean:
+	rm -rf nemea-framework_*.build nemea-framework_*.changes nemea-framework_*.deb nemea-framework-dev_*.deb nemea-framework_*.orig.tar.gz nemea-framework-*.tar.gz nemea-framework-@VERSION@ *.dsc *.buildinfo *.ppa.upload *.ddeb
 

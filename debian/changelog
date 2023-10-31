@@ -1,0 +1,8 @@
+nemea-framework (2.1.5ubuntu2) focal; urgency=high
+
+  Initial version of NEMEA framework DEB package with:
+    - libtrap 1.17.1
+    - unirec 3.0.0
+    - nemea-common 1.6.3
+
+ -- Tomas Cejka <cejkat@cesnet.cz>  Sun, 24 Jul 2016 23:24:56 +0000

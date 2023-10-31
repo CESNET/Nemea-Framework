@@ -2,13 +2,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([nemea-framework], [2.1.4], [traffic-analysis@cesnet.cz])
+AC_INIT([nemea-framework], [2.1.5], [nemea@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec/unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects])
 AM_SILENT_RULES([yes])
-RPM_RELEASE=1
+RPM_RELEASE=2
 AC_SUBST(RPM_RELEASE)
 USERNAME=`git config --get user.name`
 USERMAIL=`git config --get user.email`
@@ -19,8 +19,11 @@ AC_PROG_CC
 
 # Check for rpmbuild
 AC_CHECK_PROG(RPMBUILD, rpmbuild, rpmbuild, [""])
+AC_CHECK_PROG(DEBUILD, debuild, debuild, [""])
 AC_CHECK_PROG(PYTHON, python3, python3, [""])
 AC_SUBST(PYTHON)
+
+AM_EXTRA_RECURSIVE_TARGETS([doc])
 
 # Checks for header files.
 
@@ -55,6 +58,7 @@ if test -z "$RPMBUILD"; then
 fi
 
 AM_CONDITIONAL(MAKE_RPMS, test x$RPMBUILD != x)
+AM_CONDITIONAL(MAKE_DEB, test x$DEBUILD != x)
 
 AC_ARG_ENABLE([libtrap], AC_HELP_STRING([--disable-libtrap], [Disable libtrap.]),
         [AM_CONDITIONAL([ENABLE_LIBTRAP], [test "x$enableval" = xyes])],
