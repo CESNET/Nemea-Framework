@@ -203,7 +203,7 @@ enum trap_ifcctl_request {
 /**@}*/
 
 #ifndef TRAP_IFC_MESSAGEQ_SIZE
-#define TRAP_IFC_MESSAGEQ_SIZE 100000 ///< size of message queue used for buffering
+#define TRAP_IFC_MESSAGEQ_SIZE 2000000 ///< size of message queue used for buffering
 #endif
 
 /** Structure with specification of interface types and their parameters.
