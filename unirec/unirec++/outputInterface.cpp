@@ -11,7 +11,7 @@
 
 #include <memory>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 UnirecOutputInterface::UnirecOutputInterface(uint8_t interfaceID)
 	: m_template(nullptr)
@@ -123,4 +123,4 @@ UnirecRecord UnirecOutputInterface::createUnirecRecord(size_t maxVariableFieldsS
 	return UnirecRecord(m_template, maxVariableFieldsSize);
 }
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

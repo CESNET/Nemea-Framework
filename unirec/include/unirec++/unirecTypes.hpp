@@ -18,7 +18,7 @@
 #include <string_view>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief Determines the expected UniRec field type for a given C++ type T.
@@ -215,4 +215,4 @@ constexpr ur_field_type_t getExpectedUnirecType<UrTime*>()
 	return UR_TYPE_A_TIME;
 }
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

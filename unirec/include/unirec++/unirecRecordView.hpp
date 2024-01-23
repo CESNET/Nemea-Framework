@@ -24,7 +24,7 @@
 #include <type_traits>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 class UnirecRecord;
 
@@ -157,4 +157,4 @@ private:
 	friend class UnirecRecord;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

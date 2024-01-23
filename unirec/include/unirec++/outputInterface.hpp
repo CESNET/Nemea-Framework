@@ -17,7 +17,7 @@
 #include <string>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 /**
  * @brief A class for sending UniRec records through a Trap interface.
  */
@@ -142,4 +142,4 @@ private:
 	friend class Unirec;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

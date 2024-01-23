@@ -11,7 +11,7 @@
 
 #include <libtrap/trap.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 UnirecBidirectionalInterface::~UnirecBidirectionalInterface()
 {
@@ -215,4 +215,4 @@ void UnirecBidirectionalInterface::sendEoF() const
 	trap_send(m_outputInterfaceID, dummy, sizeof(dummy));
 }
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

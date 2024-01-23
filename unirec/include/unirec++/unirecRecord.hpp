@@ -22,7 +22,7 @@
 #include <unirec/unirec.h>
 #include <vector>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief A class for working with UniRec records and their fields.
@@ -393,4 +393,4 @@ private:
 	ur_template_t* m_unirecTemplate;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

@@ -15,7 +15,7 @@
 #include <string>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief A class that provides an interface for receiving data in the Unirec format using the TRAP
@@ -101,4 +101,4 @@ private:
 	friend class Unirec;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

@@ -12,7 +12,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 // NOLINTBEGIN
 
@@ -61,4 +61,4 @@ using add_const_t = typename add_const<T>::type;
 
 // NOLINTEND
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

@@ -1,7 +1,7 @@
 #include <unirec++/unirec.hpp>
 #include <unirec++/unirecException.hpp>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 Unirec::Unirec(const TrapModuleInfo& trapModuleInfo)
 	: m_availableInputInterfaces(0)
@@ -88,4 +88,4 @@ Unirec::~Unirec()
 	ur_finalize();
 }
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

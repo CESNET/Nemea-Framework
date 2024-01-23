@@ -2,7 +2,7 @@
 
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 struct MacAddress {
 	mac_addr_t mac;
@@ -10,4 +10,4 @@ struct MacAddress {
 
 static_assert(sizeof(MacAddress) == sizeof(mac_addr_t), "Invalid header definition");
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

@@ -21,7 +21,7 @@
 #include <string>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief A class that provides a bidirectional interface for sending and receiving unirec records.
@@ -196,4 +196,4 @@ private:
 	friend class Unirec;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

@@ -9,7 +9,7 @@
 #include <string>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 class Unirec {
 public:
@@ -50,4 +50,4 @@ private:
 	TrapModuleInfo m_trapModuleInfo;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

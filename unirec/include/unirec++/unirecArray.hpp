@@ -15,7 +15,7 @@
 #include <iterator>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief A wrapper class for a contiguous array of values with the same unirec fieldID.
@@ -137,4 +137,4 @@ private:
 	T* m_data;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea
