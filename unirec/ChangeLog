@@ -1,3 +1,7 @@
+2024-01-23 unirec-3.1.0
+	* unirec++ - change namespace to Nemea
+	* unirec++ - refactor IpAddress class
+
 2023-10-22 unirec-3.0.0
 	* add nemea++ API for C++ to support development of NEMEA modules
 
