@@ -11,7 +11,7 @@
 #include <libtrap/trap.h>
 #include <string>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief Class representing information about a trap module.
@@ -49,4 +49,4 @@ private:
 	friend class Unirec;
 };
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

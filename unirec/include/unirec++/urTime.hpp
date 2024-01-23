@@ -3,7 +3,7 @@
 #include <sys/time.h>
 #include <unirec/unirec.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 struct UrTime {
 	ur_time_t time;
@@ -18,4 +18,4 @@ struct UrTime {
 
 static_assert(sizeof(UrTime) == sizeof(ur_time_t), "Invalid header definition");
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

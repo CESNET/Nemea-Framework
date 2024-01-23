@@ -10,7 +10,7 @@
 
 #include <libtrap/trap.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 UnirecInputInterface::~UnirecInputInterface()
 {
@@ -124,4 +124,4 @@ void UnirecInputInterface::changeTemplate()
 	}
 }
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

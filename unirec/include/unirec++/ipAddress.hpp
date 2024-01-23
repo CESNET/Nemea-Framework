@@ -13,7 +13,7 @@
 
 #include <unirec/ipaddr.h>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief Define a constant for an empty IP address
@@ -78,4 +78,4 @@ struct IpAddress {
 
 static_assert(sizeof(IpAddress) == sizeof(ip_addr_t), "Invalid header definition");
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

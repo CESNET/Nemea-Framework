@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 /**
  * @brief An exception that is thrown when the end of the input stream is reached.
@@ -27,4 +27,4 @@ class FormatChangeException : public std::exception {};
  */
 class HelpException : public std::exception {};
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea

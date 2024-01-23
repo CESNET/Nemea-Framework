@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace NemeaPlusPlus {
+namespace Nemea {
 
 IpAddress::IpAddress(ip_addr_t ip)
     : ip(ip)
@@ -50,4 +50,4 @@ std::ostream& IpAddress::operator<<(std::ostream& os)
     return os;
 }
 
-} // namespace NemeaPlusPlus
+} // namespace Nemea
