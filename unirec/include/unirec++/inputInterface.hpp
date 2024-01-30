@@ -105,6 +105,7 @@ private:
 
 	ur_template_t* m_template = nullptr;
 	uint8_t m_interfaceID;
+	uint64_t m_sequenceNumber;
 	const void* m_prioritizedDataPointer;
 
 	friend class Unirec;

@@ -19,6 +19,7 @@ UnirecInputInterface::~UnirecInputInterface()
 
 UnirecInputInterface::UnirecInputInterface(uint8_t interfaceID)
 	: m_interfaceID(interfaceID)
+	, m_sequenceNumber(0)
 	, m_prioritizedDataPointer(nullptr)
 {
 	setRequieredFormat("");
@@ -32,10 +33,10 @@ std::optional<UnirecRecordView> UnirecInputInterface::receive()
 	if (m_prioritizedDataPointer) {
 		receivedData = m_prioritizedDataPointer;
 		m_prioritizedDataPointer = nullptr;
-		return UnirecRecordView(receivedData, m_template);
+		return UnirecRecordView(receivedData, m_template, m_sequenceNumber);
 	}
 
-	int errorCode = trap_recv(m_interfaceID, &receivedData, &dataSize);
+	int errorCode = trap_recv_with_seq_number(m_interfaceID, &receivedData, &dataSize, &m_sequenceNumber);
 	if (errorCode == TRAP_E_TIMEOUT) {
 		return std::nullopt;
 	}
@@ -49,7 +50,7 @@ std::optional<UnirecRecordView> UnirecInputInterface::receive()
 		throw EoFException();
 	}
 
-	return UnirecRecordView(receivedData, m_template);
+	return UnirecRecordView(receivedData, m_template, m_sequenceNumber);
 }
 
 void UnirecInputInterface::handleReceiveErrorCodes(int errorCode) const
