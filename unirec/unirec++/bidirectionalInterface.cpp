@@ -28,6 +28,7 @@ UnirecBidirectionalInterface::UnirecBidirectionalInterface(
 	: m_template(nullptr)
 	, m_inputInterfaceID(inputInterfaceID)
 	, m_outputInterfaceID(outputInterfaceID)
+	, m_sequenceNumber(0)
 	, m_prioritizedDataPointer(nullptr)
 	, m_sendEoFonExit(true)
 {
@@ -42,10 +43,10 @@ std::optional<UnirecRecordView> UnirecBidirectionalInterface::receive()
 	if (m_prioritizedDataPointer) {
 		receivedData = m_prioritizedDataPointer;
 		m_prioritizedDataPointer = nullptr;
-		return UnirecRecordView(receivedData, m_template);
+		return UnirecRecordView(receivedData, m_template, m_sequenceNumber);
 	}
 
-	int errorCode = trap_recv(m_inputInterfaceID, &receivedData, &dataSize);
+	int errorCode = trap_recv_with_seq_number(m_inputInterfaceID, &receivedData, &dataSize, &m_sequenceNumber);
 	if (errorCode == TRAP_E_TIMEOUT) {
 		return std::nullopt;
 	}
@@ -59,7 +60,7 @@ std::optional<UnirecRecordView> UnirecBidirectionalInterface::receive()
 		throw EoFException();
 	}
 
-	return UnirecRecordView(receivedData, m_template);
+	return UnirecRecordView(receivedData, m_template, m_sequenceNumber);
 }
 
 void UnirecBidirectionalInterface::handleReceiveErrorCodes(int errorCode) const

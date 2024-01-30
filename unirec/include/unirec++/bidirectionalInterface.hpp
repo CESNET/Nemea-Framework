@@ -199,6 +199,7 @@ private:
 	ur_template_t* m_template;
 	uint8_t m_inputInterfaceID;
 	uint8_t m_outputInterfaceID;
+	uint64_t m_sequenceNumber;
 	const void* m_prioritizedDataPointer;
 	bool m_sendEoFonExit;
 	UnirecRecord m_unirecRecord;
