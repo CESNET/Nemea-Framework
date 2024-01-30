@@ -182,6 +182,7 @@ private:
 	UnirecBidirectionalInterface(uint8_t inputInterfaceID, uint8_t outputInterfaceID);
 	void handleReceiveErrorCodes(int errorCode) const;
 	bool handleSendErrorCodes(int errorCode) const;
+	void changeInternalTemplate(const std::string& templateSpecification);
 	bool isEoFReceived() const noexcept;
 	void sendEoF() const;
 
@@ -190,7 +191,6 @@ private:
 	uint8_t m_outputInterfaceID;
 	const void* m_prioritizedDataPointer;
 	bool m_sendEoFonExit;
-	bool m_EoFOnNextReceive;
 	UnirecRecord m_unirecRecord;
 
 	friend class Unirec;

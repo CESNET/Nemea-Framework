@@ -30,7 +30,6 @@ UnirecBidirectionalInterface::UnirecBidirectionalInterface(
 	, m_outputInterfaceID(outputInterfaceID)
 	, m_prioritizedDataPointer(nullptr)
 	, m_sendEoFonExit(true)
-	, m_EoFOnNextReceive(false)
 {
 	setRequieredFormat("");
 }
@@ -39,10 +38,6 @@ std::optional<UnirecRecordView> UnirecBidirectionalInterface::receive()
 {
 	const void* receivedData;
 	uint16_t dataSize = 0;
-
-	if (isEoFReceived()) {
-		throw EoFException();
-	}
 
 	if (m_prioritizedDataPointer) {
 		receivedData = m_prioritizedDataPointer;
@@ -61,15 +56,10 @@ std::optional<UnirecRecordView> UnirecBidirectionalInterface::receive()
 	handleReceiveErrorCodes(errorCode);
 
 	if (dataSize <= 1) {
-		m_EoFOnNextReceive = true;
+		throw EoFException();
 	}
 
 	return UnirecRecordView(receivedData, m_template);
-}
-
-bool UnirecBidirectionalInterface::isEoFReceived() const noexcept
-{
-	return m_EoFOnNextReceive;
 }
 
 void UnirecBidirectionalInterface::handleReceiveErrorCodes(int errorCode) const
@@ -97,18 +87,38 @@ void UnirecBidirectionalInterface::handleReceiveErrorCodes(int errorCode) const
 
 void UnirecBidirectionalInterface::setRequieredFormat(const std::string& templateSpecification)
 {
-	int ret
-		= trap_set_required_fmt(m_inputInterfaceID, TRAP_FMT_UNIREC, templateSpecification.c_str());
+	int ret = trap_set_required_fmt(m_inputInterfaceID, TRAP_FMT_UNIREC, templateSpecification.c_str());
 	if (ret != TRAP_E_OK) {
 		throw std::runtime_error(
 			"UnirecBidirectionalInterface::setRequieredFormat() has failed. Unable to set required "
 			"format.");
 	}
+
+	changeInternalTemplate(templateSpecification);
 }
 
-void UnirecBidirectionalInterface::setReceiveTimeout(int timeout)
+void UnirecBidirectionalInterface::changeInternalTemplate(const std::string& templateSpecification)
 {
-	trap_ifcctl(TRAPIFC_INPUT, m_inputInterfaceID, TRAPCTL_SETTIMEOUT, timeout);
+	m_template = ur_define_fields_and_update_template(templateSpecification.c_str(), m_template);
+	if (m_template == nullptr) {
+		throw std::runtime_error(
+			"UnirecBidirectionalInterface::changeTemplate() has failed. Template could not be "
+			"edited.");
+	}
+
+	trap_set_data_fmt(m_outputInterfaceID, TRAP_FMT_UNIREC, templateSpecification.c_str());
+
+	int ret = ur_set_input_template(m_inputInterfaceID, m_template);
+	if (ret != TRAP_E_OK) {
+		throw std::runtime_error("UnirecBidirectionalInterface::changeTemplate() has failed.");
+	}
+
+	ret = ur_set_output_template(m_outputInterfaceID, m_template);
+	if (ret != TRAP_E_OK) {
+		throw std::runtime_error("UnirecBidirectionalInterface::changeTemplate() has failed.");
+	}
+
+	m_unirecRecord = createUnirecRecord();
 }
 
 void UnirecBidirectionalInterface::changeTemplate()
@@ -123,27 +133,12 @@ void UnirecBidirectionalInterface::changeTemplate()
 			"loaded.");
 	}
 
-	m_template = ur_define_fields_and_update_template(spec, m_template);
-	if (m_template == nullptr) {
-		throw std::runtime_error(
-			"UnirecBidirectionalInterface::changeTemplate() has failed. Template could not be "
-			"edited.");
-	}
+	changeInternalTemplate(spec);
+}
 
-	std::string specCopy = spec;
-	trap_set_data_fmt(m_outputInterfaceID, TRAP_FMT_UNIREC, specCopy.c_str());
-
-	ret = ur_set_input_template(m_inputInterfaceID, m_template);
-	if (ret != TRAP_E_OK) {
-		throw std::runtime_error("UnirecBidirectionalInterface::changeTemplate() has failed.");
-	}
-
-	ret = ur_set_output_template(m_outputInterfaceID, m_template);
-	if (ret != TRAP_E_OK) {
-		throw std::runtime_error("UnirecBidirectionalInterface::changeTemplate() has failed.");
-	}
-
-	m_unirecRecord = createUnirecRecord();
+void UnirecBidirectionalInterface::setReceiveTimeout(int timeout)
+{
+	trap_ifcctl(TRAPIFC_INPUT, m_inputInterfaceID, TRAPCTL_SETTIMEOUT, timeout);
 }
 
 UnirecRecord UnirecBidirectionalInterface::createUnirecRecord(size_t maxVariableFieldsSize)
@@ -211,7 +206,7 @@ void UnirecBidirectionalInterface::setSendAutoflushTimeout(int timeout)
 
 void UnirecBidirectionalInterface::sendEoF() const
 {
-	char dummy[1] = {0};
+	char dummy[1] = { 0 };
 	trap_send(m_outputInterfaceID, dummy, sizeof(dummy));
 }
 
