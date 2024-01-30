@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "interfaceStats.hpp"
 #include "unirecException.hpp"
 #include "unirecRecordView.hpp"
 
@@ -87,6 +88,15 @@ public:
 	 * @return A pointer to the Unirec template used by the input interface.
 	 */
 	ur_template_t* getTemplate() const noexcept { return m_template; }
+
+	/**
+	 * @brief Gets the statistics for the input interface.
+	 *
+	 * This method returns the actual statistics for the input interface.
+	 *
+	 * @return The statistics for the input interface.
+	 */
+	InputInteraceStats getInputInterfaceStats() const;
 
 private:
 	UnirecInputInterface(uint8_t interfaceID);

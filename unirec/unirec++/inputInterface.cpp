@@ -86,11 +86,6 @@ void UnirecInputInterface::setRequieredFormat(const std::string& templateSpecifi
 	changeInternalTemplate(templateSpecification);
 }
 
-void UnirecInputInterface::setTimeout(int timeout)
-{
-	trap_ifcctl(TRAPIFC_INPUT, m_interfaceID, TRAPCTL_SETTIMEOUT, timeout);
-}
-
 void UnirecInputInterface::changeTemplate()
 {
 	uint8_t dataType;
@@ -119,6 +114,24 @@ void UnirecInputInterface::changeInternalTemplate(const std::string& templateSpe
 	if (ret != TRAP_E_OK) {
 		throw std::runtime_error("UnirecInputInterface::changeTemplate() has failed.");
 	}
+}
+
+void UnirecInputInterface::setTimeout(int timeout)
+{
+	trap_ifcctl(TRAPIFC_INPUT, m_interfaceID, TRAPCTL_SETTIMEOUT, timeout);
+}
+
+InputInteraceStats UnirecInputInterface::getInputInterfaceStats() const
+{
+	InputInteraceStats inputStats;
+
+	struct input_ifc_stats ifcStats = {};
+	trap_get_input_ifc_stats(m_interfaceID, &ifcStats);
+
+	inputStats.receivedBytes = ifcStats.received_bytes;
+	inputStats.receivedRecords = ifcStats.received_records;
+	inputStats.missedRecords = ifcStats.missed_records;
+	return inputStats;
 }
 
 } // namespace Nemea
