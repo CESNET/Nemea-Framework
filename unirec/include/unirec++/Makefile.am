@@ -1,6 +1,7 @@
 unirecppincludedir=$(includedir)/unirec++
 unirecppinclude_HEADERS=bidirectionalInterface.hpp \
 	inputInterface.hpp \
+	interfaceStats.hpp \
 	ipAddress.hpp \
 	macAddress.hpp \
 	outputInterface.hpp \
