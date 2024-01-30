@@ -210,4 +210,17 @@ void UnirecBidirectionalInterface::sendEoF() const
 	trap_send(m_outputInterfaceID, dummy, sizeof(dummy));
 }
 
+InputInteraceStats UnirecBidirectionalInterface::getInputInterfaceStats() const
+{
+	InputInteraceStats inputStats;
+
+	struct input_ifc_stats ifcStats = {};
+	trap_get_input_ifc_stats(m_inputInterfaceID, &ifcStats);
+
+	inputStats.receivedBytes = ifcStats.received_bytes;
+	inputStats.receivedRecords = ifcStats.received_records;
+	inputStats.missedRecords = ifcStats.missed_records;
+	return inputStats;
+}
+
 } // namespace Nemea
