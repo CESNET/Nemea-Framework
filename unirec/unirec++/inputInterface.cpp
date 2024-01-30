@@ -20,7 +20,6 @@ UnirecInputInterface::~UnirecInputInterface()
 UnirecInputInterface::UnirecInputInterface(uint8_t interfaceID)
 	: m_interfaceID(interfaceID)
 	, m_prioritizedDataPointer(nullptr)
-	, m_EoFOnNextReceive(false)
 {
 	setRequieredFormat("");
 }
@@ -29,10 +28,6 @@ std::optional<UnirecRecordView> UnirecInputInterface::receive()
 {
 	const void* receivedData;
 	uint16_t dataSize = 0;
-
-	if (isEoFReceived()) {
-		throw EoFException();
-	}
 
 	if (m_prioritizedDataPointer) {
 		receivedData = m_prioritizedDataPointer;
@@ -51,15 +46,10 @@ std::optional<UnirecRecordView> UnirecInputInterface::receive()
 	handleReceiveErrorCodes(errorCode);
 
 	if (dataSize <= 1) {
-		m_EoFOnNextReceive = true;
+		throw EoFException();
 	}
 
 	return UnirecRecordView(receivedData, m_template);
-}
-
-bool UnirecInputInterface::isEoFReceived() const noexcept
-{
-	return m_EoFOnNextReceive;
 }
 
 void UnirecInputInterface::handleReceiveErrorCodes(int errorCode) const
@@ -92,6 +82,8 @@ void UnirecInputInterface::setRequieredFormat(const std::string& templateSpecifi
 			"UnirecInputInterface::setRequieredFormat() has failed. Unable to set required "
 			"format.");
 	}
+
+	changeInternalTemplate(templateSpecification);
 }
 
 void UnirecInputInterface::setTimeout(int timeout)
@@ -111,14 +103,19 @@ void UnirecInputInterface::changeTemplate()
 			"loaded.");
 	}
 
-	m_template = ur_define_fields_and_update_template(spec, m_template);
+	changeInternalTemplate(spec);
+}
+
+void UnirecInputInterface::changeInternalTemplate(const std::string& templateSpecification)
+{
+	m_template = ur_define_fields_and_update_template(templateSpecification.c_str(), m_template);
 	if (m_template == nullptr) {
 		throw std::runtime_error(
 			"UnirecInputInterface::changeTemplate() has failed. Template could not be "
 			"edited.");
 	}
 
-	ret = ur_set_input_template(m_interfaceID, m_template);
+	int ret = ur_set_input_template(m_interfaceID, m_template);
 	if (ret != TRAP_E_OK) {
 		throw std::runtime_error("UnirecInputInterface::changeTemplate() has failed.");
 	}

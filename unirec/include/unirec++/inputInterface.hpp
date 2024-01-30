@@ -91,12 +91,11 @@ public:
 private:
 	UnirecInputInterface(uint8_t interfaceID);
 	void handleReceiveErrorCodes(int errorCode) const;
-	bool isEoFReceived() const noexcept;
+	void changeInternalTemplate(const std::string& templateSpecification);
 
 	ur_template_t* m_template = nullptr;
 	uint8_t m_interfaceID;
 	const void* m_prioritizedDataPointer;
-	bool m_EoFOnNextReceive;
 
 	friend class Unirec;
 };
