@@ -255,8 +255,9 @@ int trap_check_buffer_content(void *buffer, uint32_t buffer_size)
  * \param[out] data     pointer to received message
  * \param[out] size     size of message
  * \param[in] timeout   TRAP_WAIT | TRAP_NO_WAIT | timeout
+ * \param[out] seq_number   sequence number of received message
  */
-static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, const void **data, uint16_t *size, int timeout)
+static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, const void **data, uint16_t *size, int timeout, uint64_t *seq_number)
 {
    int result = TRAP_E_TIMEOUT;
    trap_input_ifc_t *ifc = &ctx->in_ifc_list[ifc_idx];
@@ -267,7 +268,15 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
       uint32_t buffer_size_tmp = 0;
 
       ifc->buffer_pointer = ifc->buffer;
-      result = ifc->recv(ifc->priv, ifc->buffer, &buffer_size_tmp, timeout);
+      if (!ifc->recv_with_seq_number || !seq_number) {
+         if (seq_number != NULL) {
+            *seq_number = 0;
+         }
+         result = ifc->recv(ifc->priv, ifc->buffer, &buffer_size_tmp, timeout);
+      } else {
+         result = ifc->recv_with_seq_number(ifc->priv, ifc->buffer, &buffer_size_tmp, timeout, seq_number);
+         ifc->sequence_number = *seq_number;
+      }
       DEBUG_BUF(VERBOSE(CL_VERBOSE_LIBRARY, "Received new buffer with size: %" PRIu32 ".", buffer_size_tmp));
       if (result == TRAP_E_OK) {
          ifc->buffer_unread_bytes = buffer_size_tmp;
@@ -300,6 +309,11 @@ static inline int trap_read_from_buffer(trap_ctx_priv_t *ctx, uint32_t ifc_idx, 
          /* Move to the next message. */
          ifc->buffer_unread_bytes -= msg_size;
          ifc->buffer_pointer += msg_size;
+      }
+
+      if (seq_number) {
+         *seq_number = ifc->sequence_number;
+         ifc->sequence_number++;
       }
 
       result = TRAP_E_OK;
@@ -597,6 +611,22 @@ int trap_finalize()
    return ret;
 }
 
+void trap_get_input_ifc_stats(uint32_t ifcidx,  struct input_ifc_stats* stats)
+{
+   if (stats == NULL) {
+      return;
+   }
+
+   trap_ctx_priv_t *ctx = (trap_ctx_priv_t *) trap_glob_ctx;
+
+   trap_input_ifc_t *ifc = &ctx->in_ifc_list[ifcidx];
+   if (ifc->get_input_stats) {
+      ifc->get_input_stats(ifc->priv, stats);
+   } else {
+      memset(stats, 0, sizeof(struct input_ifc_stats));
+   }
+}
+
 
 /**
  * \brief Get pointer to data stored in buffer (with headers) and mark buffer as clean.
@@ -636,8 +666,14 @@ int trap_send(uint32_t ifcidx, const void *data, uint16_t size)
 
 int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size)
 {
+   return trap_recv_with_seq_number(ifcidx, data, size, NULL);
+
+}
+
+int trap_recv_with_seq_number(uint32_t ifcidx, const void **data, uint16_t *size, uint64_t *seq_number)
+{
    int res;
-   res = trap_ctx_recv((trap_ctx_t *) trap_glob_ctx, ifcidx, data, size);
+   res = trap_ctx_recv_with_seq_number((trap_ctx_t *) trap_glob_ctx, ifcidx, data, size, seq_number);
    if (res != TRAP_E_NOT_INITIALIZED) {
       trap_last_error_msg = trap_glob_ctx->trap_last_error_msg;
       trap_last_error = trap_glob_ctx->trap_last_error;
@@ -1384,6 +1420,11 @@ static inline uint64_t get_cur_timestamp()
 
 int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t *size)
 {
+   return trap_ctx_recv_with_seq_number(ctx, ifcidx, data, size, NULL);
+}
+
+int trap_ctx_recv_with_seq_number(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t *size, uint64_t *seq_number)
+{
    int ret_val = 0;
    trap_ctx_priv_t *c = (trap_ctx_priv_t *) ctx;
    if (c == NULL || c->initialized == 0) {
@@ -1402,7 +1443,7 @@ int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifcidx, const void **data, uint16_t 
       return trap_errorf(c, TRAP_E_NOT_SELECTED, "No input ifc to get data from...");
    }
 
-   ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout);
+   ret_val = trap_read_from_buffer(c, ifcidx, data, size, c->in_ifc_list[ifcidx].datatimeout, seq_number);
 
    c->recv_delay_timestamp[ifcidx] = get_cur_timestamp();
    return trap_error(ctx, ret_val);

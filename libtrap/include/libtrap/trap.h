@@ -216,6 +216,18 @@ typedef struct trap_ifc_spec_s {
 } trap_ifc_spec_t;
 
 /**
+ * @brief Input interface statistics
+ * 
+ * This structure is used to store statistics about input interface.
+ * Supported only by some input interfaces.
+ */
+struct input_ifc_stats {
+   uint64_t received_bytes;  ///< Number of received bytes
+   uint64_t received_records; ///< Number of received records
+   uint64_t missed_records;  ///< Number of missed records
+};
+
+/**
  * \defgroup trap_mess_fmt Message format
  * @{
  */
@@ -530,6 +542,37 @@ int trap_send_data(unsigned int ifcidx, const void *data, uint16_t size, int tim
 int trap_recv(uint32_t ifcidx, const void **data, uint16_t *size);
 
 /**
+ * \brief Receive data from input interface with sequence number.
+ *
+ * Receive a message from interface specified by `ifcidx` and set
+ * pointer to the `data`.
+ * When function returns due to timeout, contents of `data` and `size` are undefined.
+ * 
+ * Sequence number is used to identify messages. Starts from 1 and is incremented by 1 for every message.
+ * If there is a gap in sequence numbers, it means that some messages were lost due to buffer overflow.
+ *
+ * @param[in] ifcidx      Index of input IFC.
+ * @param[out] data       Pointer to received data.
+ * @param[out] size       Size of received data in bytes of data.
+ * @param[out] seq_number Sequence number of received message.
+ * @return Error code - #TRAP_E_OK on success, #TRAP_E_TIMEOUT if timeout elapses.
+ *
+ * \note Data must not be freed! Library stores incomming data into static array and rewrites it during every trap_recv() call.
+ * \note This function is optional. If not implemented, the default trap_recv is used and zero seq_number is returned.
+ * \see trap_ifcctl() to set timeout (#TRAPCTL_SETTIMEOUT)
+ */
+int trap_recv_with_seq_number(uint32_t ifcidx, const void **data, uint16_t *size, uint64_t *seq_number);
+
+/**
+ * @brief Get statistics about input interface.
+ * 
+ * @param[out] stats   Pointer to structure where statistics will be stored.
+ * 
+ * @note This function is optional. If not implemented, the zeroed stats are returned.
+ */
+void trap_get_input_ifc_stats(uint32_t ifcidx, struct input_ifc_stats* stats);
+
+/**
  * \brief Send data via output interface.
  *
  * Send a message given by `data` pointer of `size` message size via interface specified by `ifcidx`
@@ -707,6 +750,22 @@ int trap_ctx_terminate(trap_ctx_t *ctx);
  * \see #trap_ctx_ifcctl
  */
 int trap_ctx_recv(trap_ctx_t *ctx, uint32_t ifc, const void **data, uint16_t *size);
+
+/**
+ * \brief Read data from input interface with sequence number.
+ *
+ * This function is thread safe.
+ *
+ * \param[in] ctx    Pointer to the private libtrap context data (#trap_ctx_init()).
+ * \param[in] ifc    Index of input interface (counted from 0).
+ * \param[out] data  Pointer to received data.
+ * \param[out] size  Size of received data in bytes.
+ * \param[out] seq_number Sequence number of received message or NULL if not needed.
+ *
+ * \return Error code - TRAP_E_OK on success, TRAP_E_TIMEOUT if timeout elapses.
+ * \see #trap_ctx_ifcctl
+ */
+int trap_ctx_recv_with_seq_number(trap_ctx_t *ctx, uint32_t ifc, const void **data, uint16_t *size, uint64_t *seq_number);
 
 /**
  * \brief Send data via output interface.
