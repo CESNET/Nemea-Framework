@@ -85,6 +85,40 @@
 typedef int (*ifc_recv_func_t)(void *p, void *d, uint32_t *s, int t);
 
 /**
+ * Receive one message via this IFC with sequence number.
+ *
+ * This function is called from trap_read_from_buffer() when there is a
+ * need to get new data.
+ *
+ * \param[in] p   pointer to IFC's private memory allocated by constructor
+ * \param[out] d  pointer to memory where this IFC can write received message
+ * \param[out] s  size (in bytes) of received message (must be set by this IFC)
+ * \param[in] t   timeout, see \ref trap_timeout
+ * \param[out] seq_number   sequence number of received message
+ * \returns TRAP_E_OK on success
+ * 
+ * \note This function is optional. If not implemented, the default ifc_recv_func_t 
+ *       is used and zero seq_number is returned.
+ */
+typedef int (*ifc_recv_with_seq_number_func_t)(void* p, void* d, uint32_t* s, int t, uint64_t *seq_number);
+
+
+struct input_ifc_stats; // forward declaration
+
+/**
+ * Get statistics about receive interface.
+ *
+ * This function is called from trap_get_input_ifc_stats() when there is a
+ * need to get statistics about received messages.
+ *
+ * \param[in] p   pointer to IFC's private memory allocated by constructor
+ * \param[out] stats  pointer to memory where this IFC can write statistics
+ * 
+ * \note This function is optional. If not implemented, the zeroed stats are returned.
+ */
+typedef void (*ifc_get_input_stats_func_t)(void* p, struct input_ifc_stats* stats);
+
+/**
  * Send one message via this IFC.
  *
  * This function is called from trap_store_into_buffer() when there is a
@@ -181,6 +215,8 @@ typedef struct trap_input_ifc_s {
    ifc_is_conn_func_t is_conn;             ///< Pointer to is_connected function
    ifc_get_id_func_t get_id;               ///< Pointer to get_id function
    ifc_recv_func_t recv;                   ///< Pointer to receive function
+   ifc_recv_with_seq_number_func_t recv_with_seq_number; ///< Pointer to receive function
+   ifc_get_input_stats_func_t get_input_stats; ///< Pointer to stats function
    ifc_terminate_func_t terminate;         ///< Pointer to terminate function
    ifc_destroy_func_t destroy;             ///< Pointer to destructor function
    ifc_create_dump_func_t create_dump;     ///< Pointer to function for generating of dump
@@ -188,6 +224,7 @@ typedef struct trap_input_ifc_s {
    char *buffer;                           ///< Internal pointer to buffer for messages
    char *buffer_pointer;                   ///< Internal pointer to current message in buffer
    uint32_t buffer_unread_bytes;           ///< Number of unread bytes in buffer.
+   uint64_t sequence_number;               ///< Record sequence number
    int32_t datatimeout;                    ///< Timeout for *_recv() calls
    char ifc_type;                          ///< Type of interface
    pthread_mutex_t ifc_mtx;                ///< Locking mutex for interface.
