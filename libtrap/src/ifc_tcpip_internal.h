@@ -78,7 +78,8 @@ typedef struct client_s {
     uint64_t sent_messages; /**< Sent messages counter */
     uint64_t skipped_messages; /**< Skipped messages counter */
     uint64_t container_id; /**< ID of current container. */
-    LIST_ENTRY(client_s) entries;
+    LIST_ENTRY(client_s)
+    entries;
 } client_t __attribute__((aligned(64)));
 
 struct client_container_s {
@@ -142,10 +143,19 @@ typedef struct tcpip_receiver_private_s {
     char connected;
     char is_terminated;
 
-    uint64_t total_msg; /**< Total messages seen on interface. */
-    uint64_t total_missed; /**< Total messages missed on interface. */
-    uint64_t seq; /**< Sequence number. */
-    uint16_t cur_size; /**< received size */
+    uint64_t session_sequence_number;
+    uint64_t session_missed_records;
+    uint64_t session_received_records;
+    uint64_t session_received_bytes;
+    uint16_t session_last_record_size;
+    uint64_t session_sequence_number_offset;
+
+    bool is_session_reset;
+
+    uint64_t total_sequence_number;
+    uint64_t total_missed_records;
+    uint64_t total_received_records;
+    uint64_t total_received_bytes;
 
     int sd;
     enum tcpip_ifc_sockettype socket_type;
