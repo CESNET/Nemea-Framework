@@ -1,3 +1,8 @@
+2024-02-07 unirec-3.2.0
+	* unirec++ - fix template reload
+	* unirec++ - add support for receiving sequential numbers
+	* unirec++ - add getInputInterfaceStats function
+
 2024-01-23 unirec-3.1.0
 	* unirec++ - change namespace to Nemea
 	* unirec++ - refactor IpAddress class
