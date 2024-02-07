@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "interfaceStats.hpp"
 #include "unirecException.hpp"
 #include "unirecRecord.hpp"
 #include "unirecRecordView.hpp"
@@ -140,6 +141,15 @@ public:
 	ur_template_t* getTemplate() const noexcept { return m_template; }
 
 	/**
+	 * @brief Gets the statistics for the input interface.
+	 *
+	 * This method returns the actual statistics for the input interface.
+	 *
+	 * @return The statistics for the input interface.
+	 */
+	InputInteraceStats getInputInterfaceStats() const;
+
+	/**
 	 * @brief Destructor for the UnirecBidirectionalInterface class.
 	 *
 	 * Sends an end-of-file marker if m_sendEoFonExit is true, then frees the memory allocated
@@ -182,15 +192,16 @@ private:
 	UnirecBidirectionalInterface(uint8_t inputInterfaceID, uint8_t outputInterfaceID);
 	void handleReceiveErrorCodes(int errorCode) const;
 	bool handleSendErrorCodes(int errorCode) const;
+	void changeInternalTemplate(const std::string& templateSpecification);
 	bool isEoFReceived() const noexcept;
 	void sendEoF() const;
 
 	ur_template_t* m_template;
 	uint8_t m_inputInterfaceID;
 	uint8_t m_outputInterfaceID;
+	uint64_t m_sequenceNumber;
 	const void* m_prioritizedDataPointer;
 	bool m_sendEoFonExit;
-	bool m_EoFOnNextReceive;
 	UnirecRecord m_unirecRecord;
 
 	friend class Unirec;

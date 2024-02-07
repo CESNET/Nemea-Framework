@@ -19,8 +19,8 @@ UnirecInputInterface::~UnirecInputInterface()
 
 UnirecInputInterface::UnirecInputInterface(uint8_t interfaceID)
 	: m_interfaceID(interfaceID)
+	, m_sequenceNumber(0)
 	, m_prioritizedDataPointer(nullptr)
-	, m_EoFOnNextReceive(false)
 {
 	setRequieredFormat("");
 }
@@ -30,17 +30,13 @@ std::optional<UnirecRecordView> UnirecInputInterface::receive()
 	const void* receivedData;
 	uint16_t dataSize = 0;
 
-	if (isEoFReceived()) {
-		throw EoFException();
-	}
-
 	if (m_prioritizedDataPointer) {
 		receivedData = m_prioritizedDataPointer;
 		m_prioritizedDataPointer = nullptr;
-		return UnirecRecordView(receivedData, m_template);
+		return UnirecRecordView(receivedData, m_template, m_sequenceNumber);
 	}
 
-	int errorCode = trap_recv(m_interfaceID, &receivedData, &dataSize);
+	int errorCode = trap_recv_with_seq_number(m_interfaceID, &receivedData, &dataSize, &m_sequenceNumber);
 	if (errorCode == TRAP_E_TIMEOUT) {
 		return std::nullopt;
 	}
@@ -51,15 +47,10 @@ std::optional<UnirecRecordView> UnirecInputInterface::receive()
 	handleReceiveErrorCodes(errorCode);
 
 	if (dataSize <= 1) {
-		m_EoFOnNextReceive = true;
+		throw EoFException();
 	}
 
-	return UnirecRecordView(receivedData, m_template);
-}
-
-bool UnirecInputInterface::isEoFReceived() const noexcept
-{
-	return m_EoFOnNextReceive;
+	return UnirecRecordView(receivedData, m_template, m_sequenceNumber);
 }
 
 void UnirecInputInterface::handleReceiveErrorCodes(int errorCode) const
@@ -92,11 +83,8 @@ void UnirecInputInterface::setRequieredFormat(const std::string& templateSpecifi
 			"UnirecInputInterface::setRequieredFormat() has failed. Unable to set required "
 			"format.");
 	}
-}
 
-void UnirecInputInterface::setTimeout(int timeout)
-{
-	trap_ifcctl(TRAPIFC_INPUT, m_interfaceID, TRAPCTL_SETTIMEOUT, timeout);
+	changeInternalTemplate(templateSpecification);
 }
 
 void UnirecInputInterface::changeTemplate()
@@ -111,17 +99,40 @@ void UnirecInputInterface::changeTemplate()
 			"loaded.");
 	}
 
-	m_template = ur_define_fields_and_update_template(spec, m_template);
+	changeInternalTemplate(spec);
+}
+
+void UnirecInputInterface::changeInternalTemplate(const std::string& templateSpecification)
+{
+	m_template = ur_define_fields_and_update_template(templateSpecification.c_str(), m_template);
 	if (m_template == nullptr) {
 		throw std::runtime_error(
 			"UnirecInputInterface::changeTemplate() has failed. Template could not be "
 			"edited.");
 	}
 
-	ret = ur_set_input_template(m_interfaceID, m_template);
+	int ret = ur_set_input_template(m_interfaceID, m_template);
 	if (ret != TRAP_E_OK) {
 		throw std::runtime_error("UnirecInputInterface::changeTemplate() has failed.");
 	}
+}
+
+void UnirecInputInterface::setTimeout(int timeout)
+{
+	trap_ifcctl(TRAPIFC_INPUT, m_interfaceID, TRAPCTL_SETTIMEOUT, timeout);
+}
+
+InputInteraceStats UnirecInputInterface::getInputInterfaceStats() const
+{
+	InputInteraceStats inputStats;
+
+	struct input_ifc_stats ifcStats = {};
+	trap_get_input_ifc_stats(m_interfaceID, &ifcStats);
+
+	inputStats.receivedBytes = ifcStats.received_bytes;
+	inputStats.receivedRecords = ifcStats.received_records;
+	inputStats.missedRecords = ifcStats.missed_records;
+	return inputStats;
 }
 
 } // namespace Nemea

@@ -43,10 +43,12 @@ public:
 	 * @brief Constructs a UnirecRecordView object.
 	 * @param unirecRecordData Pointer to the UniRec record data.
 	 * @param unirecTemplate Pointer to the UniRec template for the record.
+	 * @param sequenceNumber The sequence number of the record.
 	 */
-	UnirecRecordView(const void* unirecRecordData, ur_template_t* unirecTemplate)
+	UnirecRecordView(const void* unirecRecordData, ur_template_t* unirecTemplate, uint64_t sequenceNumber = 0)
 		: m_recordData(unirecRecordData)
 		, m_unirecTemplate(unirecTemplate)
+		, m_sequenceNumber(sequenceNumber)
 	{
 	}
 
@@ -63,6 +65,25 @@ public:
 	 * @return The size of the UniRec record.
 	 */
 	size_t size() const noexcept { return ur_rec_size(m_unirecTemplate, m_recordData); }
+
+	/**
+	 * @brief Gets the sequence number of the record.
+	 *
+	 * The sequence number represents the order of UniRec records when they are processed.
+	 * Sequential numbers are currently supported by libtrap only for the Unix socket interface.
+	 * If there is a gap between sequential numbers, it indicates data loss, which can occur
+	 * when the internal buffers overflow due to the data not being retrieved in a timely manner.
+	 * A sequential number of 0 signifies that sequential numbering is not supported.
+	 * Sequential numbers start from 1 and increase for each new record.
+	 *
+	 * @return The sequence number of the record.
+	 *
+	 * @note 0 signifies that sequential numbering is not supported by the interface.
+	 */
+	uint64_t getSequenceNumber() const noexcept
+	{
+		return m_sequenceNumber;
+	}
 
 	/**
 	 * @brief Gets the value of a field as a type T.
@@ -92,7 +113,7 @@ public:
 	 * int intValue = urRecordView.getFieldAsType<int>(fieldID);
 	 * @endcode
 	 */
-	template<typename T>
+	template <typename T>
 	add_const_t<T> getFieldAsType(ur_field_id_t fieldID) const
 	{
 		using BaseType = typename std::remove_cv_t<
@@ -107,7 +128,8 @@ public:
 		if constexpr (is_string_v<T>) {
 			return {
 				static_cast<const char*>(ur_get_ptr_by_id(m_unirecTemplate, m_recordData, fieldID)),
-				ur_get_var_len(m_unirecTemplate, m_recordData, fieldID)};
+				ur_get_var_len(m_unirecTemplate, m_recordData, fieldID)
+			};
 		} else if constexpr (std::is_pointer_v<T>) {
 			return static_cast<T>(ur_get_ptr_by_id(m_unirecTemplate, m_recordData, fieldID));
 		} else if constexpr (std::is_reference_v<T>) {
@@ -133,7 +155,7 @@ public:
 	 * UnirecArray<int> array = urRecordView.getFieldAsUnirecArray<int>(fieldID);
 	 * @endcode
 	 */
-	template<typename T>
+	template <typename T>
 	add_const_t<UnirecArray<T>> getFieldAsUnirecArray(ur_field_id_t fieldID) const
 	{
 		return UnirecArray<T>(
@@ -143,7 +165,7 @@ public:
 	}
 
 private:
-	template<typename T>
+	template <typename T>
 	add_const_t<T> getFieldAsStringType(ur_field_id_t fieldID) const
 	{
 		return T(
@@ -153,6 +175,7 @@ private:
 
 	const void* m_recordData;
 	ur_template_t* m_unirecTemplate;
+	uint64_t m_sequenceNumber;
 
 	friend class UnirecRecord;
 };

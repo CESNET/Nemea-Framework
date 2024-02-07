@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "interfaceStats.hpp"
 #include "unirecException.hpp"
 #include "unirecRecordView.hpp"
 
@@ -88,15 +89,24 @@ public:
 	 */
 	ur_template_t* getTemplate() const noexcept { return m_template; }
 
+	/**
+	 * @brief Gets the statistics for the input interface.
+	 *
+	 * This method returns the actual statistics for the input interface.
+	 *
+	 * @return The statistics for the input interface.
+	 */
+	InputInteraceStats getInputInterfaceStats() const;
+
 private:
 	UnirecInputInterface(uint8_t interfaceID);
 	void handleReceiveErrorCodes(int errorCode) const;
-	bool isEoFReceived() const noexcept;
+	void changeInternalTemplate(const std::string& templateSpecification);
 
 	ur_template_t* m_template = nullptr;
 	uint8_t m_interfaceID;
+	uint64_t m_sequenceNumber;
 	const void* m_prioritizedDataPointer;
-	bool m_EoFOnNextReceive;
 
 	friend class Unirec;
 };
