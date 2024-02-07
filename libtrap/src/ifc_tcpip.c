@@ -368,7 +368,19 @@ discard:
       config->data_pointer = NULL;
       goto reset;
 reset:
-      config->seq = -1;
+      config->total_sequence_number += (config->session_sequence_number + config->session_last_record_size - config->session_sequence_number_offset);
+      config->total_received_records += config->session_received_records;
+      config->total_received_bytes += config->session_received_bytes;
+      config->total_missed_records += config->session_missed_records;
+
+      config->is_session_reset = true;
+      config->session_sequence_number = 0;
+      config->session_missed_records = 0;
+      config->session_received_records = 0;
+      config->session_received_bytes = 0;
+      config->session_last_record_size = 0;
+      config->session_sequence_number_offset = 0;
+
       if (config->is_terminated != 0) {
          /* TRAP_E_TERMINATED is returned outside the loop */
          break;
@@ -477,23 +489,28 @@ head_wait:
          /* we expect to receive data */
          messageframe.data_length = ntohl(messageframe.data_length);
 
-         config->total_msg += messageframe.size;
-         if (config->seq != -1 && config->seq + config->cur_size != messageframe.seq_num) {
-         	config->total_missed += (messageframe.seq_num - config->seq + config->cur_size);
-         	VERBOSE(CL_VERBOSE_BASIC, "Recv: missed %" PRIu64 " messages. %.1f%% of total seen messages %" 
+         if (!config->is_session_reset && config->session_sequence_number + config->session_last_record_size != messageframe.seq_num) {
+            config->session_missed_records += (messageframe.seq_num - (config->session_sequence_number + config->session_last_record_size));
+            VERBOSE(CL_VERBOSE_BASIC, "Recv: missed %" PRIu64 " messages. %.1f%% of total seen messages %" 
                PRIu64 " has been missed", 
-         		messageframe.seq_num - config->seq + config->cur_size,
-         		(100.0 / (config->total_msg + config->total_missed)) * (config->total_missed), 
-         		config->total_missed + config->total_msg);
+               messageframe.seq_num - config->session_sequence_number + config->session_last_record_size,
+               (100.0 / (config->session_received_records + config->session_missed_records)) * (config->session_missed_records), 
+               config->session_missed_records + config->session_received_records);
          }
+
+         if (config->is_session_reset) {
+            config->session_sequence_number_offset = messageframe.seq_num;
+            config->is_session_reset = false;
+         }
+
+         config->session_received_records += messageframe.size;
+         config->session_received_bytes += messageframe.data_length;
+         config->session_sequence_number = messageframe.seq_num;
+         config->session_last_record_size = messageframe.size;
+
          tcp_trap_stats.total_containers++;
-         tcp_trap_stats.total_missed = config->total_missed;
-         tcp_trap_stats.total_msg = config->total_msg;
-         tcp_trap_stats.percentage_missed = (100.0 / (config->total_msg + config->total_missed)) * (config->total_missed);
-
-         config->seq = messageframe.seq_num;
-         config->cur_size = messageframe.size;
-
+         tcp_trap_stats.total_missed = config->total_missed_records + config->session_missed_records;
+         tcp_trap_stats.total_msg = config->total_received_records + config->session_received_records;
 
          config->data_wait_size = messageframe.data_length;
          config->ext_buffer_size = messageframe.data_length;
@@ -530,6 +547,27 @@ mess_wait:
       }
    }
    return TRAP_E_TERMINATED;
+}
+
+int tcpip_receiver_recv_seq_number(void *priv, void *data, uint32_t *size, int timeout, uint64_t *seq_number)
+{
+   int retval = tcpip_receiver_recv(priv, data, size, timeout);
+   if (retval != TRAP_E_OK) {
+      return retval;
+   }
+   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
+   *seq_number = config->total_sequence_number + (config->session_sequence_number - config->session_sequence_number_offset) + 1;
+
+   return retval;
+}
+
+void tcpip_receiver_get_stats(void *priv, struct input_ifc_stats* stats)
+{
+   tcpip_receiver_private_t *config = (tcpip_receiver_private_t *) priv;
+
+   stats->received_bytes = config->total_received_bytes + config->session_received_bytes;
+   stats->received_records = config->total_received_records + config->session_received_records;
+   stats->missed_records = config->total_missed_records + config->session_missed_records;
 }
 
 /**
@@ -694,10 +732,19 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
    config->is_terminated = 0;
    config->socket_type = type;
    config->ifc_idx = idx;
-   config->seq = -1;
-   config->cur_size = 0;
-   config->total_missed = 0;
-   config->total_msg = 0;
+
+   config->is_session_reset = true;
+   config->session_sequence_number = 0;
+   config->session_missed_records = 0;
+   config->session_received_records = 0;
+   config->session_received_bytes = 0;
+   config->session_last_record_size = 0;
+   config->session_sequence_number_offset = 0;
+
+   config->total_sequence_number = 0;
+   config->total_missed_records = 0;
+   config->total_received_records = 0;
+   config->total_received_bytes = 0;
 
    /* Parsing params */
    param_iterator = trap_get_param_by_delimiter(params, &dest_addr, TRAP_IFC_PARAM_DELIMITER);
@@ -758,6 +805,8 @@ int create_tcpip_receiver_ifc(trap_ctx_priv_t *ctx, char *params, trap_input_ifc
 
    /* hook functions and store priv */
    ifc->recv = tcpip_receiver_recv;
+   ifc->recv_with_seq_number = tcpip_receiver_recv_seq_number;
+   ifc->get_input_stats = tcpip_receiver_get_stats;
    ifc->destroy = tcpip_receiver_destroy;
    ifc->terminate = tcpip_receiver_terminate;
    ifc->create_dump = tcpip_receiver_create_dump;
