@@ -1,3 +1,12 @@
+2024-02-07 (Pavel Siska): unirec++ - bidirectionalInterface - add support for receiving sequential numbers
+2024-02-07 (Pavel Siska): unirec++ - bidirectionalInterface - add getInputInterfaceStats function     Function reads stats from input trap interace     Reads:        receivedBytes, receivedRecords, missedRecord
+2024-02-07 (Pavel Siska): unirec++ - inputInterface - add support for receiving sequential numbers
+2024-02-07 (Pavel Siska): unirec++ - unirecRecordView - Add getSequenceNumber function to retrieve the UniRec record's sequential number Sequence number indicates order of processing and potential data loss due to libtrap buffer overflow.
+2024-02-07 (Pavel Siska): unirec++ - inputInterface - add getInputInterfaceStats function Function reads stats from input trap interace Reads:    receivedBytes, receivedRecords, missedRecords
+2024-02-07 (Pavel Siska): unirec++ - introduce interfaceStats structures
+2024-02-07 (Pavel Siska): unirec++ - inputInterface - improve template reload, fix bug in receive
+2024-02-07 (Pavel Siska): unirec++ - bidirectionalInterface - improve template reload, fix bug in receive
+
 2024-01-23 (Pavel Siska): unirec++ - rename namespace to Nemea
 2024-01-23 (Pavel Siska): unirec++ - refactor IpAddress class
 
