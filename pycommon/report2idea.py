@@ -212,7 +212,7 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
     arg_parser.add_argument('-a', '--autoreload', metavar="SECONDS", default="0", type=int,
             help='Set interval of automatic checking of configuration file and reload. Set 0 to disable (default behavior)')
     arg_parser.add_argument('-c', '--config', metavar="FILE", default="./config.yaml", type=str,
-            help='Specify YAML config file path which to load.')
+            help='Specify YAML config file path which to load (default: config.yaml).')
     arg_parser.add_argument('-d', '--dry',  action='store_true',
             help="""Do not run, just print loaded config.""")
     # Warden3 output
@@ -286,8 +286,8 @@ def Run(module_name, module_desc, req_type, req_format, conv_func, arg_parser = 
 
         trap.ifcctl(0, True, pytrap.CTL_TIMEOUT, 3000000)
         stop = False
+        logger.info("Starting receiving")
         while not stop:
-            logger.info("Starting receiving")
             # *** Read data from input interface ***
             try:
                 data = trap.recv()

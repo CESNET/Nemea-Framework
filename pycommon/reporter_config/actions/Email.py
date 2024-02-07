@@ -103,6 +103,7 @@ class EmailAction(Action):
         tgt_ips = [ip for tgt in record.get('Target', []) for ip in tgt.get('IP4',[]) + tgt.get('IP6', [])]
         tgt_ip = tgt_ips[0] + (' (...)' if len(tgt_ips) > 1 else '') if tgt_ips else 'N/A'
         # Get duration of attack (for rate computation below)
+        duration = None
         starttime = record.get('EventTime') or record.get('WinStartTime')
         endtime = record.get('CeaseTime') or record.get('WinEndTime')
         if starttime and endtime:

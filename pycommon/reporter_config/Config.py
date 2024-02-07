@@ -70,7 +70,7 @@ class Config():
         try:
             self.loadConfig()
         except (SyntaxError, LookupError) as e:
-            logger.error("Error: Loading configuration file failed: %s " % e.msg)
+            logger.error("Error: Loading configuration file failed: %s " % str(e))
 
         if not self.conf:
             raise ImportError("Loading YAML file (%s) failed. Isn't it empty?" % path)
