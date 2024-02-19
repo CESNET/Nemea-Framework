@@ -45,6 +45,7 @@ ldconfig
 %{_includedir}/unirec/*
 %{_includedir}/unirec++/bidirectionalInterface.hpp
 %{_includedir}/unirec++/inputInterface.hpp
+%{_includedir}/unirec++/interfaceStats.hpp
 %{_includedir}/unirec++/ipAddress.hpp
 %{_includedir}/unirec++/macAddress.hpp
 %{_includedir}/unirec++/outputInterface.hpp
