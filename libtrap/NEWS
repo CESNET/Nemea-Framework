@@ -1,3 +1,6 @@
+2024-06-06 (Karel Hynek): Add sticky bit to tmpfiles directory
+2024-06-06 (Karel Hynek): FIX libtrap tmpfiles configuration
+
 2024-02-07 (Pavel Siska): libtrap - implement tcpip_receiver_recv_seq_number() and tcpip_receiver_get_stats() to tcpip interface
 2024-02-07 (Pavel Siska): libtrap - add trap_recv_with_seq_number() and trap_get_input_ifc_stats() functions
 2024-02-06 (Pavel Siska): libtrap - add functions declaration recv_with_seq_number() and get_input_stats()
