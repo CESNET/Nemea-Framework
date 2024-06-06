@@ -1,3 +1,6 @@
+2024-06-06 libtrap-1.18.1
+	* update path and attributes of the defaultsocketdir
+
 2024-02-07 libtrap-1.18.0
 	* libtrap: add trap_recv_with_seq_number() and trap_get_input_ifc_stats() functions
 
