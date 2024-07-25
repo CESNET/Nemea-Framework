@@ -202,6 +202,8 @@ private:
 	uint64_t m_sequenceNumber;
 	const void* m_prioritizedDataPointer;
 	bool m_sendEoFonExit;
+	bool m_isInitialized;
+
 	UnirecRecord m_unirecRecord;
 
 	friend class Unirec;
