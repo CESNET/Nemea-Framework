@@ -1,3 +1,7 @@
+2024-07-25 unirec-3.3.0
+	* unirec++ - outputInterface - improvements
+	* unirec++ - bidirectionalInterface - improvements
+
 2024-02-07 unirec-3.2.0
 	* unirec++ - fix template reload
 	* unirec++ - add support for receiving sequential numbers
