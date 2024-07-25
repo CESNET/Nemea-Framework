@@ -877,3 +877,23 @@ class ArrayFromDict(unittest.TestCase):
         # compare it
         self.assertEqual(stored, data)
 
+class IPAddrFromPython(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import ipaddress
+        a = ipaddress.ip_address("1.0.1.1")
+        i = pytrap.UnirecIPAddr.from_ipaddress(a)
+        self.assertEqual(i, pytrap.UnirecIPAddr("1.0.1.1"))
+        a = ipaddress.ip_address("2001:1558::1")
+        i = pytrap.UnirecIPAddr.from_ipaddress(a)
+        self.assertEqual(i, pytrap.UnirecIPAddr("2001:1558::1"))
+
+        with self.assertRaises(TypeError):
+            i = pytrap.UnirecIPAddr.from_ipaddress(1234)
+
+        with self.assertRaises(TypeError):
+            i = pytrap.UnirecIPAddr.from_ipaddress(pytrap.UnirecIPAddr("1.0.0.0"))
+
+        with self.assertRaises(TypeError):
+            i = pytrap.UnirecIPAddr.from_ipaddress("1.0.0.0")
+

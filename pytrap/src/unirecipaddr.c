@@ -10,6 +10,8 @@
 /*    UnirecIPAddr   */
 /*********************/
 
+static PyObject *python_ipaddress_base = NULL;
+
 static PyObject *
 UnirecIPAddr_compare(PyObject *a, PyObject *b, int op)
 {
@@ -147,6 +149,50 @@ UnirecIPAddr_dec(pytrap_unirecipaddr *self)
     return (PyObject *) ip_dec;
 }
 
+static PyObject *
+UnirecIPAddr_from_ipaddress(PyObject *class, PyObject *arg)
+{
+    // load ipaddress._BaseAddress if needed
+    if (python_ipaddress_base == NULL) {
+        PyObject *im = PyImport_ImportModule("ipaddress");
+        PyObject *im_dict = PyModule_GetDict(im);
+        PyObject *ba = PyDict_GetItemString(im_dict, "_BaseAddress");
+        python_ipaddress_base = ba;
+        Py_INCREF(python_ipaddress_base);
+        Py_DECREF(im);
+    }
+    PyTypeObject *t = Py_TYPE(arg);
+    int res = PyObject_IsSubclass((PyObject *) t, python_ipaddress_base);
+    if (res != 1) {
+        PyErr_SetString(PyExc_TypeError, "Unsupported type, expected a subclass of ipaddress._BaseAddress.");
+        return NULL;
+    }
+
+    PyObject *pybytes = PyObject_GetAttrString(arg, "packed");
+    char *cbytes;
+    Py_ssize_t ver;
+    if (PyBytes_AsStringAndSize(pybytes, &cbytes, &ver) == -1) {
+        PyErr_SetString(PyExc_TypeError, "Could not retrieve value of IP address.");
+        Py_DECREF(pybytes);
+        return NULL;
+    }
+
+    pytrap_unirecipaddr *obj = (pytrap_unirecipaddr *) pytrap_UnirecIPAddr.tp_alloc(&pytrap_UnirecIPAddr, 0);
+    if (ver == 4) {
+        obj->ip = ip_from_4_bytes_be(cbytes);
+    } else if (ver == 16) {
+        obj->ip = ip_from_16_bytes_be(cbytes);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "Unsupported version of IP.");
+        Py_DECREF(obj);
+        Py_DECREF(pybytes);
+        return NULL;
+    }
+
+    Py_DECREF(pybytes);
+    return (PyObject *) obj;
+}
+
 static int
 UnirecIPAddr_contains(PyObject *o, PyObject *v)
 {
@@ -196,6 +242,13 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         "Decrement IP address.\n\n"
         "Returns:\n"
         "    UnirecIPAddr: New decremented IPAddress.\n"
+        },
+    {"from_ipaddress", (PyCFunction) UnirecIPAddr_from_ipaddress, METH_CLASS | METH_O,
+        "Create a new UnirecIPAddr from python ipaddress object.\n\n"
+        "Args:\n"
+        "    ip (ipaddress): ipaddress.IPv4Address or ipaddress.IPv6Address"
+        "Returns:\n"
+        "    UnirecIPAddr: New instance of IP Address object.\n"
         },
     {NULL, NULL, 0, NULL}
 };
@@ -275,12 +328,18 @@ UnirecIPAddr_hash(pytrap_unirecipaddr *o)
     }
 }
 
+static void UnirecIPAddr_dealloc(pytrap_unirecipaddr *self)
+{
+    Py_XDECREF(python_ipaddress_base);
+    Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
 PyTypeObject pytrap_UnirecIPAddr = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "pytrap.UnirecIPAddr",          /* tp_name */
     sizeof(pytrap_unirecipaddr),    /* tp_basicsize */
     0,                         /* tp_itemsize */
-    0,                         /* tp_dealloc */
+    (destructor) UnirecIPAddr_dealloc,   /* tp_dealloc */
     0,                         /* tp_print */
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
