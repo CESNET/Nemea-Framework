@@ -11,7 +11,8 @@
 /*    UnirecIPList   */
 /*********************/
 
-ipps_network_list_t *load_networks(PyDictObject *d)
+static ipps_network_list_t *
+load_networks(PyDictObject *d)
 {
     uint32_t i = 0;
     uint32_t struct_count = 50; // Starting v4_count of structs to alloc
@@ -32,12 +33,10 @@ ipps_network_list_t *load_networks(PyDictObject *d)
         return NULL;
     }
 
-    PyObject *sys = PyImport_ImportModule("sys");
-
     PyObject *key, *value;
     Py_ssize_t pos = 0;
 
-    while (PyDict_Next((PyObject *) d, &pos, &key, &value)) {
+    while (PyDict_Next((PyObject *) d, &pos, &key, NULL)) {
         ipps_network_t *network = &networks[i];
         if (PyObject_IsInstance(key, (PyObject *) &pytrap_UnirecIPAddrRange)) {
             pytrap_unirecipaddrrange *r = (pytrap_unirecipaddrrange *) key;
@@ -56,24 +55,21 @@ ipps_network_list_t *load_networks(PyDictObject *d)
             PyErr_SetString(PyExc_TypeError, "Unsupported type.");
             return NULL;
         }
-        // store data
-        PyObject *getsizeof = PyObject_CallMethod(sys, "getsizeof", "O", value);
-        network->data_len = PyLong_AsLong(getsizeof);
-        Py_DECREF(getsizeof);
 
-        network->data = malloc(network->data_len * sizeof(char));
+        // store data - address of a pointer to value
+        network->data_len = sizeof(PyObject **);
+        network->data = malloc(network->data_len);
         if (network->data == NULL) {
             PyErr_SetString(PyExc_MemoryError, "Failed allocating memory for user data.");
             return NULL;
         }
-        memcpy(network->data, value, network->data_len);
-        PyObject *p = network->data;
-        /* potentially dangerous since we copy the object and reset its refcounter */
-        p->ob_refcnt = 0;
-        Py_INCREF(p);
+        value = PyDict_GetItem((PyObject *) d, key);
+        Py_INCREF(value);
+        PyObject **pv = &value;
+        *((PyObject **) network->data) = *pv;
+
         i++;
     }
-    Py_DECREF(sys);
 
     networks_list->net_count = i;
     networks_list->networks = networks;
@@ -96,29 +92,42 @@ UnirecIPList_find(PyObject *o, PyObject *args)
     search_result = ipps_search(&ip->ip, self->ipps_ctx, (void ***) &data);
     if (search_result > 0) {
 
-        PyObject *o = data[0];
-    //    const char *cstr = PyUnicode_AsUTF8(o);
-    //    fprintf(stderr, "loaded: %s\n", cstr);
+        // The stored value is an address of a pointer, we set *res that
+        // represents the target PyObject *
+        // The value was stored in load_networks()
+        PyObject **o = (PyObject **) data[0];
+        PyObject *res = (*o);
 
-        Py_INCREF(o);
-        return o;
+        // For debug:
+        //    PyObject *v_str = PyObject_CallMethod(res, "__str__", "");
+        //    const char *cstr = PyUnicode_AsUTF8(v_str);
+        //    fprintf(stderr, "loaded: %s\n", cstr);
+        //    Py_DECREF(v_str);
+
+        Py_INCREF(res);
+        return res;
     } else {
         Py_RETURN_NONE;
     }
 }
 
 static int
-UnirecIPList_contains(PyObject *o, PyObject *args)
+UnirecIPList_contains(PyObject *o, PyObject *value)
 {
-    pytrap_unirecipaddr *ip;
-    if (!PyArg_ParseTuple(args, "O!", &pytrap_UnirecIPAddr, &ip)) {
-        return NULL;
-    }
+    pytrap_unireciplist *self = (pytrap_unireciplist *) o;
 
-    /* found */
-    return 1;
-    /* not found */
-    return 0;
+    if (!PyObject_IsInstance(value, (PyObject *) &pytrap_UnirecIPAddr)) {
+        PyErr_SetString(PyExc_TypeError, "UnirecIPList.__contains__() expects UnirecIPAddr only.");
+        return -1;
+    }
+    pytrap_unirecipaddr *ip = (pytrap_unirecipaddr *) value;
+
+    // we don't need output here
+    void **data;
+
+    int search_result = ipps_search(&ip->ip, self->ipps_ctx, (void ***) &data);
+
+    return (search_result > 0);
 }
 
 static PyMethodDef pytrap_unireciplist_methods[] = {
@@ -129,10 +138,6 @@ static PyMethodDef pytrap_unireciplist_methods[] = {
         },
 
     {NULL, NULL, 0, NULL}
-};
-
-static PyNumberMethods UnirecIPList_numbermethods = {
-    .nb_bool = 0, //(inquiry) UnirecIPList_bool,
 };
 
 static PySequenceMethods UnirecIPList_seqmethods = {
@@ -148,12 +153,11 @@ static PySequenceMethods UnirecIPList_seqmethods = {
     0 /* ssizeargfunc sq_inplace_repeat; */
 };
 
-void destroy_networks(ipps_network_list_t *network_list) {
-    int index;
+static void
+destroy_networks(ipps_network_list_t *network_list) {
+    uint32_t index;
     for (index = 0; index < network_list->net_count; index++) {
-        PyObject *p = (PyObject *) network_list->networks[index].data;
-        // we have just one temporary copy, which is duplicated into internal structures of ipps
-        free(p);
+        free(network_list->networks[index].data);
     }
 
     free(network_list->networks);
@@ -200,100 +204,110 @@ static PyObject *
 UnirecIPList_str(pytrap_unireciplist *self)
 {
     /* Print all ip intervals and data */
-    printf("----------------------------IPv4----------------------------\n");
-    int index = 0;
-    int j = 0;
-    char ip_string[INET6_ADDRSTRLEN];
+    uint32_t index = 0;
+    char ip_string_start[INET6_ADDRSTRLEN];
+    char ip_string_end[INET6_ADDRSTRLEN];
 
-    printf("\t%-16s \t%-16s\t%s\n", "Low IP", "High IP", "Data");
+    PyObject *list = PyList_New(0);
 
-    /* Check print IPv4 */
-    for (index = 0; index < self->ipps_ctx->v4_count; ++index) {
-        ip_to_str(&self->ipps_ctx->v4_prefix_intervals[index].low_ip, &ip_string[0]);
-        printf("\t%-16s", ip_string);
-        ip_to_str(&self->ipps_ctx->v4_prefix_intervals[index].high_ip, &ip_string[0]);
-        printf("\t%-15s", ip_string);
-        printf("\t");
-        if (self->ipps_ctx->v4_prefix_intervals[index].data_array) {
-            PyObject *v = (PyObject *) self->ipps_ctx->v4_prefix_intervals[index].data_array[0];
-            PyObject *v_str = PyObject_CallMethod(v, "__str__", "");
-            const char *cstr = PyUnicode_AsUTF8(v_str);
-            printf("\t%s\n", cstr);
-            Py_DECREF(v_str);
-        } else {
-            printf("\n");
+    PyObject *str = PyUnicode_FromFormat("IPv4:\n%16s\t%16s\t%s\n", "Low IP", "High IP", "Data");
+    PyList_Append(list, str);
+    Py_DECREF(str);
+
+    /* IPv4 */
+    if (self->ipps_ctx->v4_count > 0) {
+        for (index = 0; index < self->ipps_ctx->v4_count; ++index) {
+            ip_to_str(&self->ipps_ctx->v4_prefix_intervals[index].low_ip, ip_string_start);
+            ip_to_str(&self->ipps_ctx->v4_prefix_intervals[index].high_ip, ip_string_end);
+            str = PyUnicode_FromFormat("%16s\t%15s\t", ip_string_start, ip_string_end);
+            PyList_Append(list, str);
+            Py_DECREF(str);
+            if (self->ipps_ctx->v4_prefix_intervals[index].data_array) {
+                PyObject *v = *((PyObject **) self->ipps_ctx->v4_prefix_intervals[index].data_array[0]);
+                PyObject *v_str = PyObject_CallMethod(v, "__str__", "");
+                PyList_Append(list, v_str);
+                Py_DECREF(v_str);
+            }
+            str = PyUnicode_FromString("\n");
+            PyList_Append(list, str);
+            Py_DECREF(str);
         }
     }
 
-    printf("------------------------------------------------------------\n");
-
-    printf("\n-------------------------IPv6-------------------------------\n");
-    printf("\t%-46s \t%-46s\t\t%s\n", "Low IP", "High IP", "Data");
-    /* Check print IPv6 */
-    for(index = 0; index < self->ipps_ctx->v6_count; ++index) {
-        ip_to_str(&self->ipps_ctx->v6_prefix_intervals[index].low_ip, &ip_string[0]);
-        printf("\t%-46s", ip_string);
-        ip_to_str(&self->ipps_ctx->v6_prefix_intervals[index].high_ip, &ip_string[0]);
-        printf("\t%-46s", ip_string);
-        printf("\t");
-        if (self->ipps_ctx->v6_prefix_intervals[index].data_array) {
-            PyObject *v = (PyObject *) self->ipps_ctx->v6_prefix_intervals[index].data_array[0];
-            PyObject *v_str = PyObject_CallMethod(v, "__str__", "");
-            const char *cstr = PyUnicode_AsUTF8(v_str);
-            printf("\t%s\n", cstr);
-            Py_DECREF(v_str);
-        } else {
-            printf("\n");
+    str = PyUnicode_FromFormat("IPv6:\n%46s\t%46s\t\t%s\n", "Low IP", "High IP", "Data");
+    PyList_Append(list, str);
+    Py_DECREF(str);
+    /* IPv6 */
+    if (self->ipps_ctx->v6_count > 0) {
+        for (index = 0; index < self->ipps_ctx->v6_count; ++index) {
+            ip_to_str(&self->ipps_ctx->v6_prefix_intervals[index].low_ip, &ip_string_start[0]);
+            ip_to_str(&self->ipps_ctx->v6_prefix_intervals[index].high_ip, &ip_string_end[0]);
+            str = PyUnicode_FromFormat("\t%46s\t%46s\t", ip_string_start, ip_string_end);
+            PyList_Append(list, str);
+            Py_DECREF(str);
+            if (self->ipps_ctx->v6_prefix_intervals[index].data_array) {
+                PyObject *v = *((PyObject **) self->ipps_ctx->v6_prefix_intervals[index].data_array[0]);
+                PyObject *v_str = PyObject_CallMethod(v, "__str__", "");
+                PyList_Append(list, v_str);
+                Py_DECREF(v_str);
+            }
         }
     }
-    printf("------------------------------------------------------------\n\n");
-    return PyUnicode_FromString("<UnirecIPList>");
-}
-
-long
-UnirecIPList_hash(pytrap_unireciplist *o)
-{
-    /* TODO */
-    return (long) 0;
+    str = PyUnicode_FromString("\n");
+    PyList_Append(list, str);
+    Py_DECREF(str);
+    PyObject *resultstr = PyUnicode_Join(PyUnicode_FromString(""), list);
+    Py_DECREF(list);
+    return resultstr;
 }
 
 static void UnirecIPList_dealloc(pytrap_unireciplist *self)
 {
-    int index;
-    // TODO - memory leaks... but we cannot simply free values - Py_DECREF leads to error
-    // free() is not possible due to returned values by the _find()...
-    //
-    //// Decrement refcounters of the stored python objects - user data
-    ///* Check print IPv4 */
-    //for (index = 0; index < self->ipps_ctx->v4_count; ++index)
-    //{
-    //    if (self->ipps_ctx->v4_prefix_intervals && self->ipps_ctx->v4_prefix_intervals[index].data_array) {
-    //        PyObject *p = (PyObject *) self->ipps_ctx->v4_prefix_intervals[index].data_array[0];
-    //        fprintf(stderr, "deletion of object with refcnt %d\n", p->ob_refcnt);
-    //        //Py_XDECREF(p);
-    //        free(self->ipps_ctx->v4_prefix_intervals[index].data_array);
-    //    }
-    //}
-
-    ////fprintf(stderr, "Freeing IPv6 user data.");
-    /////* Check print IPv6 */
-    ////for(index = 0; index < self->ipps_ctx->v6_count; ++index)
-    ////{
-    ////    if (self->ipps_ctx->v6_prefix_intervals && self->ipps_ctx->v6_prefix_intervals[index].data_array) {
-    ////        PyObject *p = (PyObject *) self->ipps_ctx->v6_prefix_intervals[index].data_array[0];
-    ////        fprintf(stderr, "deletion of object with refcnt %d\n", p->ob_refcnt);
-    ////        Py_XDECREF(p);
-    ////    }
-    ////}
-    //fprintf(stderr, "Destroying the rest.");
-    // Take from ipps_destroy(self->ipps_ctx), data - python objects must
-    // remain in memory for the case there are some values still in use:
-    free(self->ipps_ctx->v4_prefix_intervals);
-    free(self->ipps_ctx->v6_prefix_intervals);
-    free(self->ipps_ctx);
+    uint32_t index;
+    /* Remove IPv4 user data */
+    for (index = 0; index < self->ipps_ctx->v4_count; ++index)
+    {
+        if (self->ipps_ctx->v4_prefix_intervals && self->ipps_ctx->v4_prefix_intervals[index].data_array) {
+            PyObject **p = (PyObject **) self->ipps_ctx->v4_prefix_intervals[index].data_array[0];
+            Py_XDECREF(*p);
+        }
+    }
+    /* Remove IPv6 user data */
+    for (index = 0; index < self->ipps_ctx->v6_count; ++index)
+    {
+        if (self->ipps_ctx->v6_prefix_intervals && self->ipps_ctx->v6_prefix_intervals[index].data_array) {
+            PyObject **p = (PyObject **) self->ipps_ctx->v6_prefix_intervals[index].data_array[0];
+            Py_XDECREF(*p);
+        }
+    }
+    ipps_destroy(self->ipps_ctx);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
+static PyObject *
+UnirecIPList_compare(PyObject *a, PyObject *b, int op)
+{
+    PyObject *result;
+    int res;
+
+    if (!PyObject_IsInstance(a, (PyObject *) &pytrap_UnirecIPList) ||
+             !PyObject_IsInstance(b, (PyObject *) &pytrap_UnirecIPAddr)) {
+        result = Py_NotImplemented;
+        Py_INCREF(result);
+    }
+
+    res = UnirecIPList_contains(a, b);
+    if (res == -1) {
+        PyErr_SetString(PyExc_TypeError, "Error during searching.");
+        return NULL;
+    } else if (result > 0) {
+        result = Py_True;
+    } else {
+        result = Py_False;
+    }
+    Py_INCREF(result);
+    return result;
+}
 
 PyTypeObject pytrap_UnirecIPList = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -306,10 +320,10 @@ PyTypeObject pytrap_UnirecIPList = {
     0,                         /* tp_setattr */
     0,                         /* tp_reserved */
     (reprfunc) UnirecIPList_repr, /* tp_repr */
-    &UnirecIPList_numbermethods, /* tp_as_number */
+    0,                         /* tp_as_number */
     &UnirecIPList_seqmethods,  /* tp_as_sequence */
     0,                         /* tp_as_mapping */
-    (hashfunc) UnirecIPList_hash,
+    0,
     0,                         /* tp_call */
     (reprfunc) UnirecIPList_str,                         /* tp_str */
     0,                         /* tp_getattro */
@@ -323,7 +337,7 @@ PyTypeObject pytrap_UnirecIPList = {
     "        ip (str): text represented IPv4 or IPv6 address\n", /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
-    0, /* tp_richcompare */ //(richcmpfunc) UnirecIPList_compare,
+    (richcmpfunc) UnirecIPList_compare, /* tp_richcompare */
     0,                         /* tp_weaklistoffset */
     0,                         /* tp_iter */
     0,                         /* tp_iternext */

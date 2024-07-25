@@ -43,4 +43,21 @@ class BasicList(unittest.TestCase):
         del(res)
         del(res2)
 
+class ListContains(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        iplist = pytrap.UnirecIPList({
+            pytrap.UnirecIPAddrRange("192.168.1.0/24"): "ip4",
+            pytrap.UnirecIPAddrRange("2001::1/48"): "ipv6",
+            pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("10.0.0.1"),pytrap.UnirecIPAddr("10.0.0.1")): "host" })
+
+        self.assertTrue(pytrap.UnirecIPAddr("192.168.1.255") in iplist)
+        self.assertTrue(pytrap.UnirecIPAddr("2001::123") in iplist)
+        self.assertTrue(pytrap.UnirecIPAddr("10.0.0.1") in iplist)
+        self.assertFalse(pytrap.UnirecIPAddr("10.0.0.0") in iplist)
+        self.assertFalse(pytrap.UnirecIPAddr("10.0.0.2") in iplist)
+        self.assertFalse(pytrap.UnirecIPAddr("::1") in iplist)
+        self.assertFalse(pytrap.UnirecIPAddr("192.168.0.0") in iplist)
+
+
 
