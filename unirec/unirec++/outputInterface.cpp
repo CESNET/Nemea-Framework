@@ -17,12 +17,13 @@ UnirecOutputInterface::UnirecOutputInterface(uint8_t interfaceID)
 	: m_template(nullptr)
 	, m_interfaceID(interfaceID)
 	, m_sendEoFonExit(true)
+	, m_isInitialized(false)
 {
 }
 
 UnirecOutputInterface::~UnirecOutputInterface()
 {
-	if (m_sendEoFonExit) {
+	if (m_sendEoFonExit && m_isInitialized) {
 		sendEoF();
 	}
 
@@ -88,7 +89,7 @@ void UnirecOutputInterface::setAutoflushTimeout(int timeout)
 
 void UnirecOutputInterface::sendEoF() const
 {
-	char dummy[1] = {0};
+	char dummy[1] = { 0 };
 	trap_send(m_interfaceID, dummy, sizeof(dummy));
 }
 
@@ -116,6 +117,8 @@ void UnirecOutputInterface::changeTemplate(const std::string& templateFields)
 			"created.");
 	}
 	m_unirecRecord = createUnirecRecord();
+
+	m_isInitialized = true;
 }
 
 UnirecRecord UnirecOutputInterface::createUnirecRecord(size_t maxVariableFieldsSize)

@@ -13,15 +13,6 @@
 
 namespace Nemea {
 
-UnirecBidirectionalInterface::~UnirecBidirectionalInterface()
-{
-	if (m_sendEoFonExit) {
-		sendEoF();
-	}
-
-	ur_free_template(m_template);
-}
-
 UnirecBidirectionalInterface::UnirecBidirectionalInterface(
 	uint8_t inputInterfaceID,
 	uint8_t outputInterfaceID)
@@ -31,8 +22,18 @@ UnirecBidirectionalInterface::UnirecBidirectionalInterface(
 	, m_sequenceNumber(0)
 	, m_prioritizedDataPointer(nullptr)
 	, m_sendEoFonExit(true)
+	, m_isInitialized(false)
 {
 	setRequieredFormat("");
+}
+
+UnirecBidirectionalInterface::~UnirecBidirectionalInterface()
+{
+	if (m_sendEoFonExit && m_isInitialized) {
+		sendEoF();
+	}
+
+	ur_free_template(m_template);
 }
 
 std::optional<UnirecRecordView> UnirecBidirectionalInterface::receive()
@@ -95,6 +96,10 @@ void UnirecBidirectionalInterface::setRequieredFormat(const std::string& templat
 			"format.");
 	}
 
+	if (templateSpecification.empty()) {
+		return;
+	}
+
 	changeInternalTemplate(templateSpecification);
 }
 
@@ -120,6 +125,8 @@ void UnirecBidirectionalInterface::changeInternalTemplate(const std::string& tem
 	}
 
 	m_unirecRecord = createUnirecRecord();
+
+	m_isInitialized = true;
 }
 
 void UnirecBidirectionalInterface::changeTemplate()

@@ -137,6 +137,7 @@ private:
 	ur_template_t* m_template = nullptr;
 	uint8_t m_interfaceID;
 	bool m_sendEoFonExit;
+	bool m_isInitialized;
 	UnirecRecord m_unirecRecord;
 
 	friend class Unirec;
