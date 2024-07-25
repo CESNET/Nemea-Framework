@@ -15,6 +15,7 @@
 #include "unirectemplate.h"
 #include "unirecipaddr.h"
 #include "unirecmacaddr.h"
+#include "ipblacklist.h"
 #include "pytrapexceptions.h"
 
 UR_FIELDS()
@@ -2252,6 +2253,13 @@ init_unirectemplate(PyObject *m)
     }
     Py_INCREF(&pytrap_UnirecIPAddrRange);
     PyModule_AddObject(m, "UnirecIPAddrRange", (PyObject *) &pytrap_UnirecIPAddrRange);
+
+    /* Add IPList */
+    if (PyType_Ready(&pytrap_UnirecIPList) < 0) {
+        return EXIT_FAILURE;
+    }
+    Py_INCREF(&pytrap_UnirecIPList);
+    PyModule_AddObject(m, "UnirecIPList", (PyObject *) &pytrap_UnirecIPList);
 
     /* Add MACAddr */
     if (PyType_Ready(&pytrap_UnirecMACAddr) < 0) {

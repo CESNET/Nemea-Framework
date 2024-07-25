@@ -16,6 +16,7 @@ typedef struct {
     PyObject_HEAD
     pytrap_unirecipaddr *start; /* low ip */
     pytrap_unirecipaddr *end;   /* high ip*/
+    uint8_t mask;
 } pytrap_unirecipaddrrange;
 
 PyAPI_DATA(PyTypeObject) pytrap_UnirecIPAddrRange;

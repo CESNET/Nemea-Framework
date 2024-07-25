@@ -14,7 +14,9 @@ maintainer = 'Tomas Cejka'
 maintainer_email = 'cejkat@cesnet.cz'
 
 pytrapmodule = Extension('pytrap.pytrap',
-                    sources = ['src/pytrapmodule.c', 'src/unirecmodule.c', 'src/unirecipaddr.c', 'src/unirecmacaddr.c', 'src/fields.c'],
+                    sources = ['src/pytrapmodule.c', 'src/unirecmodule.c',
+                        'src/unirecipaddr.c', 'src/unirecmacaddr.c',
+                        'src/ipblacklist.c', 'src/fields.c'],
                     libraries = ['trap', 'unirec'])
 
 try:

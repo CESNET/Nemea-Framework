@@ -511,6 +511,11 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
             /* set start IP and continue with end */
             COPY_IPADD(str, self->start->ip, tmp_ip);
             FREE_CLEAR(str);
+            if (ip_is4(&self->start->ip)) {
+                self->mask = 32;
+            } else {
+                self->mask = 128;
+            }
         } else {
             if (end) {
                 PyErr_SetString(PyExc_TypeError, "Start argument is in <ip>/<mask> format - end argument must be ommited.");
@@ -524,6 +529,7 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                 PyErr_Format(PyExc_TypeError, "Malformed netmask %s.", netmask);
                 goto exit_failure;
             }
+            self->mask = mask;
 
             /* replace '/' with '\0' in order to convert string IP into ip_addr_t */
             if (ip_from_str(str, &tmp_ip) != 1) {
@@ -685,6 +691,8 @@ static PyMemberDef UnirecIPAddrRange_members[] = {
      "Low IP address of range"},
     {"end", T_OBJECT_EX, offsetof(pytrap_unirecipaddrrange, end), 0,
      "High IP address of range"},
+    {"mask", T_BYTE, offsetof(pytrap_unirecipaddrrange, mask), 0,
+     "Netmask"},
     {NULL}  /* Sentinel */
 };
 
