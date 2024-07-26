@@ -771,6 +771,58 @@ class DataTypesIPAddrRange(unittest.TestCase):
             s += rangemap[key]
         self.assertEqual(s, 3)
 
+class IPAddrRangeBadInputs(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        # if start is subnet, end must be ommited
+        with self.assertRaises(TypeError):
+            ipr = pytrap.UnirecIPAddrRange("192.168.2.0/24", "192.168.2.128")
+            print(ipr)
+
+        # if start is subnet, end must be ommited
+        with self.assertRaises(TypeError):
+            ipr = pytrap.UnirecIPAddrRange("192.168.2.0/24", pytrap.UnirecIPAddr("192.168.2.128"))
+            print(ipr)
+
+        # failing UnirecIPAddr due to the netmask in string
+        with self.assertRaises(pytrap.TrapError):
+            ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("192.168.2.0/24"), pytrap.UnirecIPAddr("192.168.2.128"))
+            print(ipr)
+
+        with self.assertRaises(ValueError):
+            ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("192.168.2.0"), pytrap.UnirecIPAddr("192.168.1.0"))
+            print(ipr)
+
+        ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("192.168.0.5"), pytrap.UnirecIPAddr("192.168.0.6"))
+        print(ipr)
+        self.assertEqual(ipr.mask, 30)
+
+        # if start is subnet, end must be ommited
+        with self.assertRaises(TypeError):
+            ipr = pytrap.UnirecIPAddrRange("fd04::1/24", "192.168.2.128")
+            print(ipr)
+
+        with self.assertRaises(ValueError):
+            ipr = pytrap.UnirecIPAddrRange("fe80::1", "127.0.0.1")
+            print(ipr)
+
+        # failing UnirecIPAddr due to the netmask in string
+        with self.assertRaises(pytrap.TrapError):
+            ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("2001::/16"), pytrap.UnirecIPAddr("192.168.2.128"))
+            print(ipr)
+
+        with self.assertRaises(ValueError):
+            ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("2001::1234"), pytrap.UnirecIPAddr("2000::"))
+            print(ipr)
+
+        ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("fe80::225:90ff:febd:b722"), pytrap.UnirecIPAddr("fe80::225:90ff:febd:b722"))
+        print(ipr)
+        self.assertEqual(ipr.mask, 128)
+
+        ipr = pytrap.UnirecIPAddrRange(pytrap.UnirecIPAddr("fe80::225:90ff:febd:b722"), pytrap.UnirecIPAddr("fe80::225:90ff:ffff:0000"))
+        print(ipr)
+        self.assertEqual(ipr.mask, 128-25)
+
 class SignedUnsignedArrayFieldTest(unittest.TestCase):
     def runTest(self):
         import pytrap

@@ -658,7 +658,7 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
             }
 
             if (ip_is4(&tmp_ip)) {
-                net_mask_array[0] = 0xFFFFFFFF >> (mask > 31 ? 0 : 32 - mask);
+                net_mask_array[0] = (mask == 0 ? 0 : (0xFFFFFFFFu >> (32 - mask)));
                 net_mask_array[0] = (bit_endian_swap((net_mask_array[0] & 0x000000FF)>>  0) <<  0) |
                     (bit_endian_swap((net_mask_array[0] & 0x0000FF00)>>  8) <<  8) |
                     (bit_endian_swap((net_mask_array[0] & 0x00FF0000)>> 16) << 16) |
@@ -671,10 +671,14 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
                 memcpy(&self->end->ip, &tmp_ip, 16);
             } else {
                 // Fill every word of IPv6 address
-                net_mask_array[0] = 0xFFFFFFFF>>(mask > 31 ? 0 : 32 - mask);
-                net_mask_array[1] = 0xFFFFFFFF>>(mask > 63 ? 0 : (mask > 32 ? 64 - mask: 32));
-                net_mask_array[2] = 0xFFFFFFFF>>(mask > 95 ? 0 : (mask > 64 ? 96 - mask: 32));
-                net_mask_array[3] = 0xFFFFFFFF>>(mask > 127 ? 0 :(mask > 96 ? 128 - mask : 32));
+                if (mask == 0) {
+                    memset(net_mask_array, 0, 4 * sizeof(*net_mask_array));
+                } else {
+                    net_mask_array[0] = 0xFFFFFFFFu>>(mask > 31 ? 0 : 32 - mask);
+                    net_mask_array[1] = 0xFFFFFFFFu>>(mask > 63 ? 0 : (mask > 32 ? 64 - mask: 32));
+                    net_mask_array[2] = 0xFFFFFFFFu>>(mask > 95 ? 0 : (mask > 64 ? 96 - mask: 32));
+                    net_mask_array[3] = 0xFFFFFFFFu>>(mask > 127 ? 0 :(mask > 96 ? 128 - mask : 32));
+                }
 
                 int i;
 
@@ -704,6 +708,39 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
         str = strdup(argstr);
         COPY_IPADD(str, self->end->ip, tmp_ip);
         FREE_CLEAR(str);
+    }
+    /* if (start, end) is given, compute mask */
+    int res = ip_cmp(&self->end->ip, &self->start->ip);
+    if (res == 0) {
+        // same address was given for start and end -> host address
+        self->mask = (ip_is4(&self->start->ip) ? 32 : 128);
+    } else if (res < 0) {
+        if (ip_is4(&self->start->ip) == ip_is4(&self->end->ip)) {
+            PyErr_SetString(PyExc_ValueError, "End IP is bigger than Start IP - this is unexpected.");
+        } else {
+            PyErr_SetString(PyExc_ValueError, "Incompatible versions of IP - mixing IPv4 and IPv6 is unexpected.");
+        }
+        return -1;
+    } else {
+        uint8_t comp_mask = 0, si = 8, ei = 12;
+        if (!ip_is4(&self->start->ip)) {
+            si = 0; ei = 16;
+        }
+        for (uint32_t i = si; i < ei; i++) {
+            if (&self->start->ip.ui8[i] == &self->end->ip.ui8[i]) {
+                comp_mask += 8;
+            } else {
+                if ((self->start->ip.ui8[i] & 0x80) == (self->end->ip.ui8[i] & 0x80)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x40) == (self->end->ip.ui8[i] & 0x40)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x20) == (self->end->ip.ui8[i] & 0x20)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x10) == (self->end->ip.ui8[i] & 0x10)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x08) == (self->end->ip.ui8[i] & 0x08)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x04) == (self->end->ip.ui8[i] & 0x04)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x02) == (self->end->ip.ui8[i] & 0x02)) { comp_mask++; } else { break; }
+                if ((self->start->ip.ui8[i] & 0x01) == (self->end->ip.ui8[i] & 0x01)) { comp_mask++; } else { break; }
+            }
+        }
+        self->mask = comp_mask;
     }
 exit_success:
     return 0;
@@ -830,7 +867,7 @@ static PyMemberDef UnirecIPAddrRange_members[] = {
      "Low IP address of range"},
     {"end", T_OBJECT_EX, offsetof(pytrap_unirecipaddrrange, end), 0,
      "High IP address of range"},
-    {"mask", T_BYTE, offsetof(pytrap_unirecipaddrrange, mask), 0,
+    {"mask", T_UBYTE, offsetof(pytrap_unirecipaddrrange, mask), 0,
      "Netmask"},
     {NULL}  /* Sentinel */
 };
