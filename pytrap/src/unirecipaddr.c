@@ -11,6 +11,9 @@
 /*********************/
 
 static PyObject *python_ipaddress_base = NULL;
+static PyObject *python_ipaddress_ip_address = NULL;
+static PyObject *python_ipaddress_ipv4network = NULL;
+static PyObject *python_ipaddress_ipv6network = NULL;
 
 static PyObject *
 UnirecIPAddr_compare(PyObject *a, PyObject *b, int op)
@@ -149,22 +152,48 @@ UnirecIPAddr_dec(pytrap_unirecipaddr *self)
     return (PyObject *) ip_dec;
 }
 
-static PyObject *
-UnirecIPAddr_from_ipaddress(PyObject *class, PyObject *arg)
+static void
+init_python_ipaddress()
 {
-    // load ipaddress._BaseAddress if needed
     if (python_ipaddress_base == NULL) {
         PyObject *im = PyImport_ImportModule("ipaddress");
         PyObject *im_dict = PyModule_GetDict(im);
-        PyObject *ba = PyDict_GetItemString(im_dict, "_BaseAddress");
-        python_ipaddress_base = ba;
-        Py_INCREF(python_ipaddress_base);
+        python_ipaddress_base = PyDict_GetItemString(im_dict, "_BaseAddress");
+        python_ipaddress_ip_address = PyDict_GetItemString(im_dict, "ip_address");
+        python_ipaddress_ipv4network = PyDict_GetItemString(im_dict, "IPv4Network");
+        python_ipaddress_ipv6network = PyDict_GetItemString(im_dict, "IPv6Network");
         Py_DECREF(im);
     }
+    Py_INCREF(python_ipaddress_base);
+    Py_INCREF(python_ipaddress_ip_address);
+    Py_INCREF(python_ipaddress_ipv4network);
+    Py_INCREF(python_ipaddress_ipv6network);
+}
+
+static void
+release_python_ipaddress()
+{
+    if (python_ipaddress_base != NULL) {
+        if (python_ipaddress_base->ob_refcnt == 1) {
+            Py_CLEAR(python_ipaddress_base);
+            Py_CLEAR(python_ipaddress_ip_address);
+            Py_CLEAR(python_ipaddress_ipv4network);
+            Py_CLEAR(python_ipaddress_ipv6network);
+        }
+    }
+}
+
+static PyObject *
+UnirecIPAddr_from_ipaddress(PyObject *class, PyObject *arg)
+{
+    // load ipaddress objects if needed
+    init_python_ipaddress();
     PyTypeObject *t = Py_TYPE(arg);
     int res = PyObject_IsSubclass((PyObject *) t, python_ipaddress_base);
     if (res != 1) {
         PyErr_SetString(PyExc_TypeError, "Unsupported type, expected a subclass of ipaddress._BaseAddress.");
+        // new UnirecIPAddr object won't be created so release objects:
+        release_python_ipaddress();
         return NULL;
     }
 
@@ -174,6 +203,8 @@ UnirecIPAddr_from_ipaddress(PyObject *class, PyObject *arg)
     if (PyBytes_AsStringAndSize(pybytes, &cbytes, &ver) == -1) {
         PyErr_SetString(PyExc_TypeError, "Could not retrieve value of IP address.");
         Py_DECREF(pybytes);
+        // new UnirecIPAddr object won't be created so release objects:
+        release_python_ipaddress();
         return NULL;
     }
 
@@ -186,11 +217,28 @@ UnirecIPAddr_from_ipaddress(PyObject *class, PyObject *arg)
         PyErr_SetString(PyExc_TypeError, "Unsupported version of IP.");
         Py_DECREF(obj);
         Py_DECREF(pybytes);
+        // new UnirecIPAddr object won't be created so release objects:
+        release_python_ipaddress();
         return NULL;
     }
 
     Py_DECREF(pybytes);
     return (PyObject *) obj;
+}
+
+static PyObject *
+UnirecIPAddr_to_ipaddress(pytrap_unirecipaddr *self)
+{
+    PyObject *out;
+
+    if (ip_is4(&self->ip)) {
+        out = PyObject_CallFunction(python_ipaddress_ip_address, "i", htonl(self->ip.ui32[2]));
+    } else {
+        PyObject *bytes = PyBytes_FromStringAndSize((const char *) self->ip.ui8, 16);
+        out = PyObject_CallFunctionObjArgs(python_ipaddress_ip_address, bytes, NULL);
+        Py_DECREF(bytes);
+    }
+    return out;
 }
 
 static int
@@ -250,6 +298,11 @@ static PyMethodDef pytrap_unirecipaddr_methods[] = {
         "Returns:\n"
         "    UnirecIPAddr: New instance of IP Address object.\n"
         },
+    {"to_ipaddress", (PyCFunction) UnirecIPAddr_to_ipaddress, METH_NOARGS,
+        "Create a new python ipaddress object.\n\n"
+        "Returns:\n"
+        "    ipaddress: New instance of IPv4Address or IPv6Address object.\n"
+        },
     {NULL, NULL, 0, NULL}
 };
 
@@ -278,6 +331,8 @@ int
 UnirecIPAddr_init(pytrap_unirecipaddr *s, PyObject *args, PyObject *kwds)
 {
     char *ip_str;
+    // load ipaddress objects if needed
+    init_python_ipaddress();
 
     if (s != NULL) {
         if (!PyArg_ParseTuple(args, "s", &ip_str)) {
@@ -330,7 +385,7 @@ UnirecIPAddr_hash(pytrap_unirecipaddr *o)
 
 static void UnirecIPAddr_dealloc(pytrap_unirecipaddr *self)
 {
-    Py_XDECREF(python_ipaddress_base);
+    release_python_ipaddress();
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -388,7 +443,8 @@ UnirecIPAddrRange_dealloc(pytrap_unirecipaddrrange *self)
 {
     Py_XDECREF(self->start);
     Py_XDECREF(self->end);
-    Py_TYPE(self)->tp_free((PyObject*)self);
+    release_python_ipaddress();
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 static PyObject *
@@ -547,6 +603,11 @@ UnirecIPAddrRange_init(pytrap_unirecipaddrrange *self, PyObject *args, PyObject 
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist, &start, &end)) {
         goto exit_failure;
+    }
+
+    // load ipaddress._BaseAddress if needed
+    if (python_ipaddress_base == NULL) {
+        init_python_ipaddress();
     }
 
     /* start argument */
@@ -745,6 +806,25 @@ UnirecIPAddrRange_hash(pytrap_unirecipaddrrange *o)
     return hash;
 }
 
+static PyObject *
+UnirecIPAddrRange_to_ipaddress(pytrap_unirecipaddrrange *self)
+{
+    PyObject *out, *val;
+
+    if (ip_is4(&self->start->ip)) {
+        val = Py_BuildValue("((i,i))", htonl(self->start->ip.ui32[2]), (uint32_t) self->mask);
+        out = PyObject_CallObject(python_ipaddress_ipv4network, val);
+        Py_DECREF(val);
+    } else {
+        PyObject *bytes = PyBytes_FromStringAndSize((const char *) self->start->ip.ui8, 16);
+        val = Py_BuildValue("((O,i))", bytes, (uint32_t) self->mask);
+        out = PyObject_CallObject(python_ipaddress_ipv6network, val);
+        Py_DECREF(bytes);
+        Py_DECREF(val);
+    }
+    return out;
+}
+
 static PyMemberDef UnirecIPAddrRange_members[] = {
     {"start", T_OBJECT_EX, offsetof(pytrap_unirecipaddrrange, start), 0,
      "Low IP address of range"},
@@ -771,6 +851,11 @@ static PyMethodDef UnirecIPAddrRange_methods[] = {
         "    other: UnirecIPAddrRange, second interval to compare"
         "Returns:\n"
         "    bool: True if ranges are overlaps.\n"
+        },
+    {"to_ipaddress", (PyCFunction) UnirecIPAddrRange_to_ipaddress, METH_NOARGS,
+        "Create a new python ipaddress object.\n\n"
+        "Returns:\n"
+        "    ipaddress: New instance of IPv4Network or IPv6Network object.\n"
         },
     {NULL}  /* Sentinel */
 };

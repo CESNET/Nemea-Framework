@@ -897,3 +897,28 @@ class IPAddrFromPython(unittest.TestCase):
         with self.assertRaises(TypeError):
             i = pytrap.UnirecIPAddr.from_ipaddress("1.0.0.0")
 
+class IPAddrToPython(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import ipaddress
+        ip = pytrap.UnirecIPAddr("1.0.1.1")
+        out = ip.to_ipaddress()
+        print(out)
+        self.assertEqual(out, ipaddress.ip_address("1.0.1.1"))
+        ip = pytrap.UnirecIPAddr("2001::3:1002")
+        out = ip.to_ipaddress()
+        print(out)
+        self.assertEqual(out, ipaddress.ip_address("2001::3:1002"))
+
+class IPAddrRangeToPython(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        import ipaddress
+        ip = pytrap.UnirecIPAddrRange("2.0.1.1/8")
+        out = ip.to_ipaddress()
+        self.assertEqual(out, ipaddress.ip_network("2.0.0.0/8"))
+
+        ip = pytrap.UnirecIPAddrRange("2001::3:1002/48")
+        out = ip.to_ipaddress()
+        self.assertEqual(out, ipaddress.ip_network("2001::/48"))
+
