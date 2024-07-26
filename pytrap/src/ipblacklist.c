@@ -175,6 +175,12 @@ UnirecIPList_init(pytrap_unireciplist *s, PyObject *args, PyObject *kwds)
         return -1;
     }
 
+    Py_ssize_t len = PyDict_Size((PyObject *) dict);
+    if (len == 0) {
+        PyErr_SetString(PyExc_ValueError, "Empty dictionary is not supported.");
+        return -1;
+    }
+
     ipps_network_list_t *network_list = load_networks(dict);
     if (network_list == NULL) {
         // Exception was set by load_networks
@@ -264,23 +270,25 @@ UnirecIPList_str(pytrap_unireciplist *self)
 static void UnirecIPList_dealloc(pytrap_unireciplist *self)
 {
     uint32_t index;
-    /* Remove IPv4 user data */
-    for (index = 0; index < self->ipps_ctx->v4_count; ++index)
-    {
-        if (self->ipps_ctx->v4_prefix_intervals && self->ipps_ctx->v4_prefix_intervals[index].data_array) {
-            PyObject **p = (PyObject **) self->ipps_ctx->v4_prefix_intervals[index].data_array[0];
-            Py_XDECREF(*p);
+    if (self->ipps_ctx) {
+        /* Remove IPv4 user data */
+        for (index = 0; index < self->ipps_ctx->v4_count; ++index)
+        {
+            if (self->ipps_ctx->v4_prefix_intervals && self->ipps_ctx->v4_prefix_intervals[index].data_array) {
+                PyObject **p = (PyObject **) self->ipps_ctx->v4_prefix_intervals[index].data_array[0];
+                Py_XDECREF(*p);
+            }
         }
-    }
-    /* Remove IPv6 user data */
-    for (index = 0; index < self->ipps_ctx->v6_count; ++index)
-    {
-        if (self->ipps_ctx->v6_prefix_intervals && self->ipps_ctx->v6_prefix_intervals[index].data_array) {
-            PyObject **p = (PyObject **) self->ipps_ctx->v6_prefix_intervals[index].data_array[0];
-            Py_XDECREF(*p);
+        /* Remove IPv6 user data */
+        for (index = 0; index < self->ipps_ctx->v6_count; ++index)
+        {
+            if (self->ipps_ctx->v6_prefix_intervals && self->ipps_ctx->v6_prefix_intervals[index].data_array) {
+                PyObject **p = (PyObject **) self->ipps_ctx->v6_prefix_intervals[index].data_array[0];
+                Py_XDECREF(*p);
+            }
         }
+        ipps_destroy(self->ipps_ctx);
     }
-    ipps_destroy(self->ipps_ctx);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 

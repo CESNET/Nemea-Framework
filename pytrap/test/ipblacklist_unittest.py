@@ -59,5 +59,24 @@ class ListContains(unittest.TestCase):
         self.assertFalse(pytrap.UnirecIPAddr("::1") in iplist)
         self.assertFalse(pytrap.UnirecIPAddr("192.168.0.0") in iplist)
 
+class EdgeCase(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        with self.assertRaises(TypeError):
+            iplist = pytrap.UnirecIPList()
 
+        with self.assertRaises(ValueError):
+            iplist = pytrap.UnirecIPList({})
+
+        iplist = pytrap.UnirecIPList({pytrap.UnirecIPAddrRange("0.0.0.0/0"): None})
+        res = iplist.find(pytrap.UnirecIPAddr("1.0.0.1"))
+        self.assertEqual(res, None)
+        del(iplist)
+
+        with self.assertRaises(UnboundLocalError):
+            res = iplist.find(pytrap.UnirecIPAddr("1.0.0.1"))
+
+        iplist = pytrap.UnirecIPList({pytrap.UnirecIPAddrRange("0.0.0.0/0"): "abc"})
+        res = iplist.find(pytrap.UnirecIPAddr("1.0.0.1"))
+        self.assertEqual(res, "abc")
 
