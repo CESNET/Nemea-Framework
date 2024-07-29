@@ -1,6 +1,17 @@
 .PHONY: rpm
 
-EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py src/pytrapmodule.c src/unirecmodule.c src/fields.c src/fields.h
+EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py \
+	   src/pytrapmodule.c \
+	   src/unirecmodule.c \
+	   src/unirecipaddr.c \
+	   src/unirecipaddr.h \
+	   src/unirecmacaddr.c \
+	   src/unirecmacaddr.h \
+	   src/unirectemplate.h \
+	   src/pytrapexceptions.h \
+	   src/iplist.c \
+	   src/iplist.h \
+	   src/fields.c src/fields.h
 
 rpm:
 	mkdir -p RPMBUILD/SOURCES

@@ -6,8 +6,8 @@
 %endif
 
 Name:           %{pypi_name}
-Version:        0.16.0
-Release:        1%{?dist}
+Version:        0.17.0
+Release:        2%{?dist}
 Summary:        Python extension of the NEMEA project
 
 License:        BSD
@@ -55,5 +55,12 @@ TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test
 %{python3_sitearch}/*
 
 %changelog
+* Fri Jul 26 2024 Tomas Cejka <cejkat@cesnet.cz> - 0.17.0
+- Add UnirecIPList() for lookup IPs in the list of IP prefixes
+- Add UnirecIPAddr.from_ipaddress() to load from python ipaddress
+- Add UnirecIPAddrRange.from_ipaddress() to load from python ipaddress
+- Add UnirecIPAddr.to_ipaddress() for convertion to python ipaddress
+- Add UnirecIPAddrRange.to_ipaddress() for convertion to python ipaddress
 * Thu Jul 21 2016 root - 0.9.6-1
 - Initial package.
+

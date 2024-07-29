@@ -4,7 +4,7 @@ import os
 SRC_PATH = os.path.relpath(os.path.join(os.path.dirname(__file__), ".", "src"))
 
 name = 'nemea-pytrap'
-version = '0.16.0'
+version = '0.17.0'
 release = version
 description = 'Python extension of the NEMEA project.'
 long_description = 'The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.'
@@ -14,7 +14,9 @@ maintainer = 'Tomas Cejka'
 maintainer_email = 'cejkat@cesnet.cz'
 
 pytrapmodule = Extension('pytrap.pytrap',
-                    sources = ['src/pytrapmodule.c', 'src/unirecmodule.c', 'src/unirecipaddr.c', 'src/unirecmacaddr.c', 'src/fields.c'],
+                    sources = ['src/pytrapmodule.c', 'src/unirecmodule.c',
+                        'src/unirecipaddr.c', 'src/unirecmacaddr.c',
+                        'src/iplist.c', 'src/fields.c'],
                     libraries = ['trap', 'unirec'])
 
 try:
