@@ -4,7 +4,7 @@
 
 #include <unirec/unirec.h>
 #include "unirecipaddr.h"
-#include "ipblacklist.h"
+#include "iplist.h"
 #include "pytrapexceptions.h"
 
 /*********************/

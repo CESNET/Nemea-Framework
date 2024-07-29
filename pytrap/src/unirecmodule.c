@@ -15,7 +15,7 @@
 #include "unirectemplate.h"
 #include "unirecipaddr.h"
 #include "unirecmacaddr.h"
-#include "ipblacklist.h"
+#include "iplist.h"
 #include "pytrapexceptions.h"
 
 UR_FIELDS()

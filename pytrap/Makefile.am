@@ -9,8 +9,8 @@ EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py \
 	   src/unirecmacaddr.h \
 	   src/unirectemplate.h \
 	   src/pytrapexceptions.h \
-	   src/ipblacklist.c \
-	   src/ipblacklist.h \
+	   src/iplist.c \
+	   src/iplist.h \
 	   src/fields.c src/fields.h
 
 rpm:
