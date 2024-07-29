@@ -1,3 +1,5 @@
+2024-07-26 (Tomas Cejka): pytrap: IPList & IPAddrRange bugfixes and extending tests
+
 2024-07-25 (Pavel Siska): unirec++ - outputInterface - dont send EoF if interface is not initialized
 2024-07-25 (Pavel Siska): unirec++ - bidirectionalInterface - dont send EoF if interface is not initialized, dont set empty template
 2024-02-07 (Pavel Siska): unirec - add inputInterface.hpp file to spec file
