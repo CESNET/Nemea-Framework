@@ -339,10 +339,23 @@ PyTypeObject pytrap_UnirecIPList = {
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT |
         Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "UnirecIPAddr(ip)\n"
-    "    Class for UniRec IP Address storage and base data access.\n\n"
+    "UnirecIPList(dict)\n"
+    "    Class for list of UniRec IP Address Ranges that allows look-up.\n"
+    "    The list is created from a dictionary with UnirecIPAddrRange as key and any object as value.\n"
+    "    After initialization, find() or __contains__() can be used to find UnirecIPAddr in the list.\n\n"
+    "    Example:\n"
+    "    >>> import pytrap\n"
+    "    >>> iplist = pytrap.UnirecIPList({\n"
+    "    ...     pytrap.UnirecIPAddrRange(\"192.168.1.0/24\"): \"ip4\",\n"
+    "    ...     pytrap.UnirecIPAddrRange(\"2001::1/48\"): \"ipv6\"})\n"
+    "    >>> pytrap.UnirecIPAddr(\"192.168.1.255\") in iplist\n"
+    "    True\n"
+    "    >>> print(iplist.find(pytrap.UnirecIPAddr(\"192.168.1.255\")))\n"
+    "    ip4\n"
+    "    >>> print(iplist.find(pytrap.UnirecIPAddr(\"10.0.0.1\")))\n"
+    "    None\n\n"
     "    Args:\n"
-    "        ip (str): text represented IPv4 or IPv6 address\n", /* tp_doc */
+    "        dict(UnirecIPAddrRange: object): dictionary with IP range as key and any object as value\n", /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     (richcmpfunc) UnirecIPList_compare, /* tp_richcompare */
