@@ -858,6 +858,39 @@ class CopyTemplateTest(unittest.TestCase):
         self.assertEqual(astr, bstr)
         self.assertEqual(astr, '(ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,uint32 BCD,bytes STREAMBYTES,string TEXT)')
 
+class CopyMessageTest(unittest.TestCase):
+    def runTest(self):
+        import pytrap
+        a = pytrap.UnirecTemplate("ipaddr DST_IP,ipaddr SRC_IP,time TIME_FIRST,time TIME_LAST,uint32 ABC,uint32 BCD,string TEXT,string TEXT2,bytes STREAMBYTES,bytes STREAMBYTES2")
+        a.createMessage(100)
+        a.setFromDict({ "SRC_IP": pytrap.UnirecIPAddr("10.0.0.1"), "DST_IP": pytrap.UnirecIPAddr("10.0.0.1"),
+                  "TIME_FIRST": pytrap.UnirecTime(1669885132, 853),
+                  "TIME_LAST": pytrap.UnirecTime(1669885132, 853),
+                  "ABC": 123, "BCD": 321, "TEXT": "some_text", "TEXT2": "some_text2",
+                  "STREAMBYTES": b"abc\x01\x02\x00\x03", "STREAMBYTES2": b"abc\x02\x03\x00\x04"})
+        astr = str(a)
+        b = pytrap.UnirecTemplate("ipaddr SRC_IP,time TIME_FIRST,uint32 ABC,string TEXT2,bytes STREAMBYTES2,string UNKNOWN")
+        b.createMessage(100)
+        b.copyMessage(a)
+        # print(str(b), b.strRecord())
+        # print(b.getData())
+        self.assertEqual(b.getDict(), {"SRC_IP":
+            pytrap.UnirecIPAddr("10.0.0.1"), "TIME_FIRST": pytrap.UnirecTime(1669885132, 853),
+            "ABC": 123, "TEXT2": "some_text2", "STREAMBYTES2": b"abc\x02\x03\x00\x04", "UNKNOWN": ""})
+        a.STREAMBYTES2 = b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        a.TEXT2 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        b.UNKNOWN = "unknown text"
+        b.copyMessage(a)
+        self.assertEqual(b.STREAMBYTES2, a.STREAMBYTES2)
+        self.assertEqual(b.TEXT2, a.TEXT2)
+        del(a)
+        # print(str(b), b.strRecord())
+        # print(b.getData())
+        self.assertEqual(b.getDict(), {"SRC_IP":
+            pytrap.UnirecIPAddr("10.0.0.1"), "TIME_FIRST": pytrap.UnirecTime(1669885132, 853),
+            "ABC": 123, "TEXT2": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "STREAMBYTES2": b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "UNKNOWN": "unknown text"})
+
+
 class AllocateBigMessage(unittest.TestCase):
     def runTest(self):
         import pytrap
