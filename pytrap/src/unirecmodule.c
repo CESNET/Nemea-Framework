@@ -1688,6 +1688,30 @@ UnirecTemplate_copy(pytrap_unirectemplate *self)
 }
 
 static PyObject *
+UnirecTemplate_copyMessage(pytrap_unirectemplate *self, PyObject *args, PyObject *keywds)
+{
+    pytrap_unirectemplate *src = NULL;
+
+    static char *kwlist[] = {"src", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "O!", kwlist, &pytrap_UnirecTemplate, &src)) {
+        return NULL;
+    }
+
+    if (self->data_obj == NULL || self->data == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Data not allocated by createMessage(), cannot copy content.");
+        return NULL;
+    }
+    if (src->data_obj == NULL) {
+        PyErr_SetString(PyExc_TypeError, "UnirecTemplate src does not have any data to copy.");
+        return NULL;
+    }
+
+    ur_copy_fields(self->urtmplt, self->data, src->urtmplt, src->data);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 UnirecTemplate_strRecord(pytrap_unirectemplate *self)
 {
     if (self->data == NULL) {
@@ -2006,6 +2030,15 @@ static PyMethodDef pytrap_unirectemplate_methods[] = {
             "Create a new instance with the same format specifier without data.\n\n"
             "Returns:\n"
             "    UnirecTemplate: New copy of object (not just reference).\n"
+        },
+
+        {"copyMessage", (PyCFunction) UnirecTemplate_copyMessage, METH_VARARGS | METH_KEYWORDS,
+            "Set the content of the record using src UnirecTemplate argument.\n\n"
+            "The current object must have enough allocated memory using createMessage()!!!\n\n"
+            "Args:\n"
+            "    src (UnirecTemplate): UniRec message with data (previously set by setData)"
+            "Raises:\n"
+            "    TypeError: self or src has no allocated data.\n"
         },
 
         {"strRecord", (PyCFunction) UnirecTemplate_strRecord, METH_NOARGS,
