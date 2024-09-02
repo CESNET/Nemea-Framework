@@ -1165,7 +1165,7 @@ send_blocking_mode(void *arg)
       // is next container ready
       while (!is_next_container_ready(c, cl)) {
          if (c->is_terminated) {
-            break;
+            goto cleanup;
          }
          sleep_time = calculate_sleep(sleep_time);
          usleep(sleep_time);
@@ -1463,7 +1463,7 @@ refuse_client:
 static void 
 finish_container(tcpip_sender_private_t *c, struct trap_mbuf_s *t_mbuf)
 {
-   t_cond_write_header(t_mbuf->active, t_mbuf->to_send.head_);
+   t_cont_write_header(t_mbuf->active, t_mbuf->to_send.head_);
    uint64_t current_sleep = 1;
     
    if ((c->timeout == TRAP_WAIT || (c->timeout == TRAP_HALFWAIT && c->connected_clients))  
@@ -1531,7 +1531,7 @@ void tcpip_sender_flush(void *priv)
    finish_container(c, t_mbuf);
    c->max_container_id++;
    struct trap_container_s *t_cont = t_mbuf_get_empty_container(t_mbuf);
-   t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
+   t_cont_set_seq_num(t_cont, t_mbuf->processed_messages);
 
    __sync_add_and_fetch(&c->ctx->counter_autoflush[c->ifc_idx], 1);
    pthread_mutex_unlock(&c->ctx->out_ifc_list[c->ifc_idx].ifc_mtx);
@@ -1606,7 +1606,7 @@ repeat:
       finish_container(c, t_mbuf);
       c->max_container_id++;
       t_cont = t_mbuf_get_empty_container(t_mbuf);
-      t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
+      t_cont_set_seq_num(t_cont, t_mbuf->processed_messages);
       t_cont_insert(t_cont, data, size);
    }
 
@@ -1615,7 +1615,7 @@ repeat:
       finish_container(c, t_mbuf);
       c->max_container_id++;
       t_cont = t_mbuf_get_empty_container(t_mbuf);
-      t_cond_set_seq_num(t_cont, t_mbuf->processed_messages);
+      t_cont_set_seq_num(t_cont, t_mbuf->processed_messages);
    }
 
    t_mbuf->processed_messages++;
