@@ -195,7 +195,7 @@ t_cont_has_space(struct trap_container_s* t_cont, size_t size)
  * @param value  Sequence number.
  */
 static inline void
-t_cond_set_seq_num(struct trap_container_s* t_cont, uint64_t value)
+t_cont_set_seq_num(struct trap_container_s* t_cont, uint64_t value)
 {
     t_cont->seq_num = value;
 }
@@ -206,7 +206,7 @@ t_cond_set_seq_num(struct trap_container_s* t_cont, uint64_t value)
  * @param t_cont Container
  */
 static inline void
-t_cond_write_header(struct trap_container_s* t_cont, uint64_t idx)
+t_cont_write_header(struct trap_container_s* t_cont, uint64_t idx)
 {
     uint32_t* buffer = (uint32_t*)t_cont->buffer;
     uint64_t* seq = (uint64_t*)&t_cont->buffer[4];
