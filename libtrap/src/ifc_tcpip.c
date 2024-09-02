@@ -1165,7 +1165,7 @@ send_blocking_mode(void *arg)
       // is next container ready
       while (!is_next_container_ready(c, cl)) {
          if (c->is_terminated) {
-            break;
+            goto cleanup;
          }
          sleep_time = calculate_sleep(sleep_time);
          usleep(sleep_time);
