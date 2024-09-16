@@ -1213,12 +1213,10 @@ again:
       __sync_add_and_fetch(&cl->container_id, 1);
    }
 
-   pthread_exit(NULL);
-
 cleanup:
    disconnect_client(c, cl);
    free(arg);
-   return NULL;
+   pthread_exit(NULL);
 }
 
 static void *
@@ -1314,12 +1312,10 @@ again:
       }
    }
 
-   pthread_exit(NULL);
-
 cleanup:
    disconnect_client(c, cl);
    free(arg);
-   return NULL;
+   pthread_exit(NULL);
 }
 
 /**
