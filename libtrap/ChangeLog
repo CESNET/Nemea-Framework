@@ -1,3 +1,6 @@
+2024-09-16 libtrap-1.18.2
+	* libtrap: [tcpip & tls] fix sending thread cleanup on exit
+	* libtrap: [tcpip & tls] fix container duplication when termination signal was received
 2024-06-06 libtrap-1.18.1
 	* update path and attributes of the defaultsocketdir
 

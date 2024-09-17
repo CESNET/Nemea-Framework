@@ -1,3 +1,7 @@
+2024-09-16 (Pavel Siska): libtrap - fix sending thread cleanup on exit
+2024-09-02 (Pavel Siska): libtrap - trap_container - fixed typo in functions name
+2024-09-02 (Pavel Siska): libtrap - tcpip & tls ifc - fix container duplication when termination signal was received.
+
 2024-06-06 (Karel Hynek): Add sticky bit to tmpfiles directory
 2024-06-06 (Karel Hynek): FIX libtrap tmpfiles configuration
 
