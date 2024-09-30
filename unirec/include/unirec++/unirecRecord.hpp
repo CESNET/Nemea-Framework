@@ -339,7 +339,7 @@ private:
 		if (ur_is_array(fieldID)) {
 			expectedType = getExpectedUnirecType<RequiredType*>();
 		} else {
-			expectedType = getExpectedUnirecType<RequiredType*>();
+			expectedType = getExpectedUnirecType<RequiredType>();
 		}
 
 		if (expectedType != ur_get_type(fieldID)) {
