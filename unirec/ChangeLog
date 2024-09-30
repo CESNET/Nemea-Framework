@@ -1,5 +1,8 @@
+2024-09-30 unirec-3.3.2
+	* BUGFIX - unirec++ - fix checkDataTypeCompatibility for non-array values in UnirecRecord
+
 2024-07-29 unirec-3.3.1
-- BUGFIX parsing and handling /0 netmask for ip_prefix_search
+	* BUGFIX parsing and handling /0 netmask for ip_prefix_search
 
 2024-07-25 unirec-3.3.0
 	* unirec++ - outputInterface - improvements
