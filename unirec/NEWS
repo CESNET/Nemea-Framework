@@ -1,3 +1,5 @@
+2024-09-30 (Pavel Siska): unirec++ - fix checkDataTypeCompatibility for non-array values
+
 2024-07-26 (Tomas Cejka): pytrap: IPList & IPAddrRange bugfixes and extending tests
 
 2024-07-25 (Pavel Siska): unirec++ - outputInterface - dont send EoF if interface is not initialized
