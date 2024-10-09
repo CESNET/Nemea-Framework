@@ -2100,7 +2100,7 @@ UnirecTemplate_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                PyErr_SetString(TrapError, "ur_define_set_of_fields() failed due to bad name of some field in the template. The name must start with letter [a-zA-Z] and can contain only [a-zA-Z0-9_].");
                break;
             case UR_E_TYPE_MISMATCH:
-               PyErr_SetString(TrapError, "ur_define_set_of_fields() failed because some field with the existing name is being redefined with a different type, which is not allowed.");
+               PyErr_SetString(TrapError, "ur_define_set_of_fields() failed because some field with the existing name is being redefined (even in a different NEMEA module due to global context) with a different type, which is not allowed.");
                break;
             case UR_E_MEMORY:
                PyErr_SetString(TrapError, "ur_define_set_of_fields() failed due to memory allocation error.");
