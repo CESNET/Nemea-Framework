@@ -480,7 +480,8 @@ UnirecIPAddrRange_isIn(pytrap_unirecipaddrrange *self, PyObject *args)
     PyObject *result = Py_False;
 
     if (!PyObject_IsInstance(args, (PyObject *) &pytrap_UnirecIPAddr)) {
-        result = Py_NotImplemented;
+        PyErr_Format(PyExc_TypeError, "UnirecIPAddr object expected, got '%s'.", Py_TYPE(args)->tp_name);
+        return NULL;
     }
 
     int cmp_result;
@@ -520,7 +521,8 @@ UnirecIPAddrRange_isOverlap(pytrap_unirecipaddrrange *self, PyObject *args)
         return NULL;
 
     if (!PyObject_IsInstance((PyObject*)other, (PyObject *) &pytrap_UnirecIPAddrRange)) {
-        return Py_NotImplemented;
+        PyErr_Format(PyExc_TypeError, "UnirecIPAddrRange object expected, got '%s'.", Py_TYPE(other)->tp_name);
+        return NULL;
     }
 
     tmp = UnirecIPAddrRange_isIn(self, (PyObject *) other->start);
@@ -537,6 +539,11 @@ UnirecIPAddrRange_isOverlap(pytrap_unirecipaddrrange *self, PyObject *args)
 static int
 UnirecIPAddrRange_contains(pytrap_unirecipaddrrange *o, pytrap_unirecipaddr *ip)
 {
+    if (!PyObject_IsInstance((PyObject *) ip, (PyObject *) &pytrap_UnirecIPAddr)) {
+        PyErr_Format(PyExc_TypeError, "UnirecIPAddr object expected, got '%s'.", Py_TYPE(ip)->tp_name);
+        return -1;
+    }
+
     PyObject * tmp = UnirecIPAddrRange_isIn(o, (PyObject *) ip);
     int cmp_result = PyLong_AsLong(tmp);
     Py_DECREF(tmp);
