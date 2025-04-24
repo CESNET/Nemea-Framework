@@ -3,8 +3,7 @@ import os
 import copy
 import logging
 
-from pynspect.compilers import IDEAFilterCompiler
-from pynspect.gparser import PynspectFilterParser
+from ransack import Parser as RansackParser
 
 from .actions.Drop import DropAction, DropMsg
 from .actions.Action import Action
@@ -49,9 +48,7 @@ class Config():
                              overrided the name by -n and only the module_name is used.
         """
 
-        self.compiler = IDEAFilterCompiler()
-        self.parser = PynspectFilterParser()
-        self.parser.build()
+        self.parser = RansackParser()
         self.trap = trap
         self.autoreload = autoreload
         self.path = path
@@ -146,6 +143,7 @@ class Config():
             raise SyntaxError("Yaml parsing error: " + str(e))
 
         addrGroups = dict()
+        parser_context = dict()
         smtp_conns = dict()
         actions = dict()
         rules = list()
@@ -157,6 +155,9 @@ class Config():
         if "addressgroups" in conf:
             for i in conf["addressgroups"]:
                 addrGroups[i["id"]] = AddressGroup(i)
+                parser_context[i["id"]] = addrGroups[i["id"]].content
+            # Pass address groups as a context for the parser
+            self.parser = RansackParser(parser_context)
 
 
         # Check if "smtp_connections" exists when there is some "email" action in "custom_actions"
@@ -219,14 +220,12 @@ class Config():
 
         actions["drop"] = DropAction()
 
-        # Parse all rules and match them with actions and address groups
+        # Parse all rules and match them with actions
         # There must be at least one rule (mandatory field)
         if "rules" in conf:
             if conf["rules"]:
                 for i in conf["rules"]:
-                    r = Rule(i, actions, addrGroups,
-                                           parser = self.parser, compiler = self.compiler,
-                                           module_name = self.module_name)
+                    r = Rule(i, actions, parser = self.parser, module_name = self.module_name)
                     rules.append(r)
             if not rules:
                 raise SyntaxError("YAML file should contain at least one `rule` in `rules`.")
