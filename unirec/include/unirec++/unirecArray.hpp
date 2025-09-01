@@ -26,7 +26,7 @@ namespace Nemea {
  *
  * @tparam T The type of the values in the array.
  */
-template<typename T>
+template <typename T>
 class UnirecArray {
 public:
 	/**
@@ -45,25 +45,64 @@ public:
 		{
 		}
 
+		// Dereference
 		reference operator*() const { return *m_ptr; }
-		pointer operator->() { return m_ptr; }
+		pointer operator->() const { return m_ptr; }
+
+		// Increment / Decrement
 		Iterator& operator++()
 		{
-			m_ptr++;
+			++m_ptr;
 			return *this;
 		}
-
 		Iterator operator++(int)
 		{
 			Iterator tmp = *this;
 			++(*this);
 			return tmp;
 		}
+		Iterator& operator--()
+		{
+			--m_ptr;
+			return *this;
+		}
+		Iterator operator--(int)
+		{
+			Iterator tmp = *this;
+			--(*this);
+			return tmp;
+		}
 
-		T* data() { return m_ptr; }
+		// Arithmetic
+		Iterator operator+(difference_type n) const { return Iterator(m_ptr + n); }
+		Iterator operator-(difference_type n) const { return Iterator(m_ptr - n); }
+		difference_type operator-(const Iterator& other) const { return m_ptr - other.m_ptr; }
 
-		bool operator==(const Iterator& other) const { return this->m_ptr == other.m_ptr; };
-		bool operator!=(const Iterator& other) const { return this->m_ptr != other.m_ptr; };
+		Iterator& operator+=(difference_type n)
+		{
+			m_ptr += n;
+			return *this;
+		}
+		Iterator& operator-=(difference_type n)
+		{
+			m_ptr -= n;
+			return *this;
+		}
+
+		// Comparison
+		bool operator==(const Iterator& other) const { return m_ptr == other.m_ptr; }
+		bool operator!=(const Iterator& other) const { return m_ptr != other.m_ptr; }
+		bool operator<(const Iterator& other) const { return m_ptr < other.m_ptr; }
+		bool operator<=(const Iterator& other) const { return m_ptr <= other.m_ptr; }
+		bool operator>(const Iterator& other) const { return m_ptr > other.m_ptr; }
+		bool operator>=(const Iterator& other) const { return m_ptr >= other.m_ptr; }
+
+		// Indexing
+		reference operator[](difference_type n) const { return *(m_ptr + n); }
+
+		// Data pointer access
+		pointer data() { return m_ptr; }
+		pointer data() const { return m_ptr; }
 
 	private:
 		pointer m_ptr;
@@ -108,6 +147,14 @@ public:
 	constexpr T& operator[](size_t pos) { return m_data[pos]; }
 
 	/**
+	 * @brief Returns a const reference to the element at the specified position in the UniRec field
+	 * array.
+	 * @param pos The position of the element to return.
+	 * @return T& The reference to the element at the specified position.
+	 */
+	constexpr const T& operator[](size_t pos) const { return m_data[pos]; }
+
+	/**
 	 * @brief Returns a reference to the element at the specified position in the UniRec field
 	 * array, with bounds checking.
 	 * @tparam pos The position of the element to return.
@@ -115,7 +162,25 @@ public:
 	 * field array.
 	 * @return A reference to the element at the specified position in the UniRec field array.
 	 */
-	constexpr T& at(size_t pos) const
+	constexpr T& at(size_t pos)
+	{
+		if (pos >= m_size)
+			throw std::out_of_range(
+				"UnirecArray::at: pos (which is %zu) "
+				">= m_size (which is %zu)"),
+				pos, m_size;
+		return m_data[pos];
+	}
+
+	/**
+	 * @brief Returns a const reference to the element at the specified position in the UniRec field
+	 * array, with bounds checking.
+	 * @tparam pos The position of the element to return.
+	 * @throw std::out_of_range If pos is out of range of valid element positions in the UniRec
+	 * field array.
+	 * @return A reference to the element at the specified position in the UniRec field array.
+	 */
+	constexpr const T& at(size_t pos) const
 	{
 		if (pos >= m_size)
 			throw std::out_of_range(
