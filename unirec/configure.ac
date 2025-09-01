@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([unirec], [3.3.2], [nemea@cesnet.cz])
+AC_INIT([unirec], [3.4.0], [nemea@cesnet.cz])
 AC_CONFIG_SRCDIR([unirec.c])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([subdir-objects silent-rules])
