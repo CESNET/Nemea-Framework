@@ -30,7 +30,7 @@ ACLOCAL_AMFLAGS=-I m4
 
 install-exec-hook:
 	@echo -e "\n\n"
-	@echo "For installation of Python components run the following commands as root:"
+	@echo "For installation of Python components run the following commands:"
 	@for i in ${PYTHON_SUBDIRS}; do \
 		echo -e "(pip install ./$${i})\n"; \
 	done

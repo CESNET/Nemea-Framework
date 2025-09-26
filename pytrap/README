@@ -1,8 +1,7 @@
 # About pytrap
+The `pytrap` module is a native Python extension that allows writing NEMEA modules in Python.
 
-The pytrap module is a native Python extension that allows for writing NEMEA modules in Python.
-TODO
-This directory contains an implementation of Python extension.  The aim
+This directory contains an implementation of a Python extension. The aim
 is to allow native calls of base TRAP functionality (used by NEMEA modules).
 
 # Installation

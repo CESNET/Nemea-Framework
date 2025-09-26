@@ -44,11 +44,11 @@ Python parts must be installed separately when needed.
 It can be done using:
 
 ```
-cd pytrap; sudo python3 setup.py install
+pip install ./pytrap
 ```
 and
 ```
-cd pycommon; sudo python3 setup.py install
+pip install ./pycommon
 ```
 
 Project status:

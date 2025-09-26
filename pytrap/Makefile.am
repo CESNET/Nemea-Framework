@@ -34,6 +34,6 @@ coverage:
 
 .PHONY: doc
 doc:
-	python3 -m pip install .[doc] --no-cache-dir
+	python3 -m pip install .[docs] --no-cache-dir
 	cd docs
 	make html

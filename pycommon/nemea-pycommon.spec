@@ -60,7 +60,7 @@ rm -rf %{pypi_name}.egg-info
 
 %install
 # Must do the subpackages' install first because the scripts in /usr/bin are
-# overwritten with every install. TODO check
+# overwritten with every install.
 %{__python3} -m pip install . --root %{buildroot} --no-deps --disable-pip-version-check --no-cache-dir --verbose
 
 mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp reporter_config/default.html %{buildroot}/%{_sysconfdir}/nemea/email-templates/default.html
