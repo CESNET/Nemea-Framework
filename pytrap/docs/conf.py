@@ -12,8 +12,11 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+from sphinx_pyproject import SphinxConfig
 
+config = SphinxConfig("../pyproject.toml", globalns=globals())
+release = version
+project = name
 
 # -- Project information -----------------------------------------------------
 

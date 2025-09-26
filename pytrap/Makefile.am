@@ -1,6 +1,6 @@
 .PHONY: rpm
 
-EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py \
+EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec pyproject.toml \
 	   src/pytrapmodule.c \
 	   src/unirecmodule.c \
 	   src/unirecipaddr.c \
@@ -15,7 +15,7 @@ EXTRA_DIST=MANIFEST.in README README.md test.sh nemea-pytrap.spec setup.py \
 
 rpm:
 	mkdir -p RPMBUILD/SOURCES
-	python3 setup.py sdist
+	python3 -m build --sdist
 	cp dist/*.tar.gz RPMBUILD/SOURCES
 	rpmbuild  -ba nemea-pytrap.spec --define "_topdir `pwd`/RPMBUILD"
 	mv RPMBUILD/RPMS/*/*.rpm RPMBUILD/SRPMS/*.rpm dist/
@@ -27,13 +27,13 @@ TESTS = test.sh
 
 .PHONY: coverage
 coverage:
-	CFLAGS=-coverage python setup.py build_ext --inplace
-	CFLAGS=-coverage python3 setup.py build_ext --inplace
-	python3 setup.py test || echo "Skipped python3 tests"
+	CFLAGS=-coverage python3 -m pip install .[test] --no-deps --disable-pip-version-check --no-cache-dir
+	CFLAGS=-coverage python3 -m pytest --cov=pycommon || echo "Skipped python3 tests"
 	@lcov --capture --directory . --output-file coverage.info 2>/dev/null && \
 	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"
 
 .PHONY: doc
 doc:
-	python3 setup.py build_sphinx
-
+	python3 -m pip install .[doc] --no-cache-dir
+	cd docs
+	make html

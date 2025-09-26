@@ -32,7 +32,7 @@ install-exec-hook:
 	@echo -e "\n\n"
 	@echo "For installation of Python components run the following commands as root:"
 	@for i in ${PYTHON_SUBDIRS}; do \
-		echo -e "(cd $${i}; ${PYTHON} setup.py install --record=installed-files.txt;)\n"; \
+		echo -e "(pip install ./$${i})\n"; \
 	done
 	@echo -e "\n\n"
 
