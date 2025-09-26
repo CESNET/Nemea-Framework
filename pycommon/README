@@ -1,16 +1,21 @@
-# About pycommon
+# pycommon
 
-The pycommon module contains functionality for NEMEA modules written in python.
-Currently, it is used by reporter modules.
+**pycommon** provides shared functionality for [NEMEA](https://github.com/CESNET/Nemea) modules written in Python.  
+It is primarily used by reporter modules, but can be reused in other NEMEA-related Python projects.
 
-# Installation
+---
 
-Run as root:
+## Installation
 
+It is recommended to install using `pip`:
+
+```bash
+pip install .
 ```
-python3 setup.py install
+If you need to install for a specific Python interpreter (e.g., Python 3.9 vs. 3.11), run the above command with the corresponding interpreter:
+```bash
+python3.11 -m pip install .
 ```
 
-Note: for different versions of python, it is needed to perform this command
-separately for each of them.
 
+---
