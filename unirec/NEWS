@@ -1,3 +1,5 @@
+2025-11-04 (Pavel Siska): unirec++: skip type check for std::byte fields in UnirecRecord
+
 2025-09-01 (Pavel Siska): unirec++ - Add missing operators to UnirecArray::Iterator for random access support
 
 2024-09-30 (Pavel Siska): unirec++ - fix checkDataTypeCompatibility for non-array values
