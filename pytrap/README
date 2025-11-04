@@ -1,29 +1,43 @@
 # About pytrap
+The `pytrap` module is a native Python extension that allows writing NEMEA modules in Python.
 
-This directory contains an implementation of Python extension.  The aim
+This directory contains an implementation of a Python extension. The aim
 is to allow native calls of base TRAP functionality (used by NEMEA modules).
 
 # Installation
 
+## Prerequisites
+
 Development package of Python is required (python3-devel etc.
 according to your OS distribution).  It contains needed header files.
 
-Since this module uses libtrap and libunirec, https:/github.com/CESNET/Nemea-framework
+Since this module uses libtrap and libunirec, https://github.com/CESNET/Nemea-framework
 must be installed in the system.
+
+### Installing Python development headers
+
+**For Debian/Ubuntu:**
+```bash
+sudo apt install python3-dev
+```
+
+**For Red Hat/Fedora/CentOS:**
+```bash
+sudo dnf install python3-devel
+```
+## Installing pytrap
 
 When all requirements are met, run as root:
 
-```
-python3 setup.py install
+```bash
+pip install .
 ```
 
-Note: for different versions of python, it is needed to perform this command
-separately for each of them.
 
-# Help
+## Viewing help
 
 Help is contained in the python module.  After successful installation run in
-a python interactive interpret:
+a python interactive interpreter:
 
 ```python
 import pytrap
@@ -31,7 +45,44 @@ help(pytrap)
 help(pytrap.pytrap)
 ```
 
+
+# Documentation
+
+## Building documentation
+
+The project uses Sphinx for documentation generation. First install documentation dependencies:
+
+```bash
+pip install .[docs]
+```
+
+Then build the documentation:
+
+```bash
+cd docs
+
+make html
+```
+
+The generated documentation will be available in the `dist/doc/` directory.
+
+# Testing
+
+The project uses pytest for testing. First install documentation dependencies:
+
+```bash
+pip install .[test]
+```
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test files (following the project's naming convention)
+pytest test/*_unittest.py
+```
+
+
 # Examples
 
 See https://github.com/CESNET/Nemea-Framework/tree/master/examples/python
-

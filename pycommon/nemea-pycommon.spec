@@ -68,13 +68,16 @@ rm -rf %{pypi_name}.egg-info
 
 %install
 # Must do the subpackages' install first because the scripts in /usr/bin are
-# overwritten with every setup.py install.
-%{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
+# overwritten with every install.
+%{__python3} -m pip install . --root %{buildroot} --no-deps --disable-pip-version-check --no-cache-dir --verbose
+
 mkdir -p %{buildroot}/%{_sysconfdir}/nemea/email-templates/; cp reporter_config/default.html %{buildroot}/%{_sysconfdir}/nemea/email-templates/default.html
 
 
 %check
-%{__python3} setup.py test
+%{__python3} -m pip install .[test]
+%{__python3} -m pytest
+
 
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README

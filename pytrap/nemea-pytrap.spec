@@ -22,6 +22,9 @@ NEMEA modules in Python.
 Summary:        Python extension of the NEMEA project
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{pypi_name}}
 Requires: libtrap
+BuildRequires:  python%{python3_pkgversion}-build
+BuildRequires:  python%{python3_pkgversion}-pip
+BuildRequires:  python%{python3_pkgversion}-wheel
 BuildRequires:  python%{python3_pkgversion}-setuptools
 BuildRequires:  python%{python3_pkgversion}-devel
 BuildRequires:  gcc
@@ -44,12 +47,15 @@ rm -rf %{pypi_name}.egg-info
 
 %install
 # Must do the subpackages' install first because the scripts in /usr/bin are
-# overwritten with every setup.py install.
-%{__python3} setup.py install --skip-build --single-version-externally-managed --root %{buildroot}
+# Install into the build root using pip (PEP 517 compatible)
+%{__python3} -m pip install . \
+    --root %{buildroot} \
+    --no-deps --disable-pip-version-check --no-cache-dir --verbose
 
 %check
-TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} setup.py test
-
+# Install test dependencies and run tests
+%{__python3} -m pip install .[test] --no-deps --disable-pip-version-check --no-cache-dir
+TRAP_SOCKET_DIR=/tmp PAGER="" %{__python3} -m pytest -v
 %files -n python%{python3_pkgversion}-%{pypi_name}
 %doc README
 %{python3_sitearch}/*

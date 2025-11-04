@@ -1,22 +1,26 @@
-# How to release new version of RPM?
+# How to release a new version of the RPM?
+1. Bump the version in `pyproject.toml` and `*.spec`.
 
-1. bump version in `setup.py` and `*.spec`
-2. don't forget to commit and push with commit message
+2. Don't forget to commit and push with a commit message:
 
    ```
    pycommon: increased version, released package
    ```
 
-3. create python src package using `python setup.py sdist`
+3. Create a Python source distribution:
+   ```bash
+   python3 -m pip install build
+   python3 -m build --sdist
+   ```
 
-4. upload files in `dist/` using `twine`:
+4. Upload files in `dist/` using `twine`:
 
    ```
    twine upload ./*
    ```
 
-5. run `make rpm`
-6. your packages are in `RPMBUILD/`, build for other RPM-based systems can be done using:
+5. Run `make rpm`
+6. Your packages are in `RPMBUILD/`, build for other RPM-based systems can be done using:
 
    ```
    copr build @CESNET/NEMEA RPMBUILD/SRPMS/<package.src.rpm>

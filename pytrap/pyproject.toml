@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nemea-pytrap"
+version = "0.17.0"
+description = "Python extension of the NEMEA project."
+readme = {file = "README.md", content-type = "text/markdown"}
+authors = [
+  { name = "Tomas Cejka", email = "cejkat@cesnet.cz" },
+]
+maintainers = [
+  { name = "Tomas Cejka", email = "cejkat@cesnet.cz" },
+]
+license = { text = "BSD" }
+requires-python = ">=3.8"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: C",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: System :: Networking :: Monitoring"
+]
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-forked",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-pyproject"
+]
+
+[project.urls]
+Homepage = "https://github.com/CESNET/Nemea-Framework"
+
+# Configure setuptools to find packages and handle C extensions
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[[tool.setuptools.ext-modules]]
+name = "pytrap.pytrap"
+sources = [
+  "src/pytrapmodule.c",
+  "src/unirecmodule.c",
+  "src/unirecipaddr.c",
+  "src/unirecmacaddr.c",
+  "src/iplist.c",
+  "src/fields.c"
+]
+libraries = ["trap", "unirec"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["*_unittest.py"]
+addopts = "--forked"

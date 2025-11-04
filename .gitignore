@@ -76,3 +76,4 @@ unirec/tests/test_speed_ur
 unirec/tests/test_speed_uro
 unirec/tests/test_template_cmp
 unirec/tests/test_time
+__pycache__
