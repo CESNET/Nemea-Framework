@@ -339,7 +339,9 @@ private:
 		if (ur_is_array(fieldID)) {
 			expectedType = getExpectedUnirecType<RequiredType*>();
 		} else {
-			expectedType = getExpectedUnirecType<RequiredType>();
+			if constexpr (!std::is_same_v<RequiredType, std::byte>) {
+				expectedType = getExpectedUnirecType<RequiredType>();
+			}
 		}
 
 		if (expectedType != ur_get_type(fieldID)) {
