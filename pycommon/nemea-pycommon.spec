@@ -35,7 +35,11 @@ Requires:	python%{python3_pkgversion}-jinja2
 Requires:	python%{python3_pkgversion}-ply
 Requires:	python%{python3_pkgversion}-yaml
 Requires:	python%{python3_pkgversion}-redis
+%if 0%{?rhel} <= 9
 Requires:	redis
+%else
+Requires:	valkey
+%endif
 BuildRequires:	python%{python3_pkgversion}-ply
 BuildRequires:	python%{python3_pkgversion}-jinja2
 BuildRequires:	python%{python3_pkgversion}-yaml
@@ -44,7 +48,11 @@ BuildRequires:	python%{python3_pkgversion}-devel
 BuildRequires:	python%{python3_pkgversion}-nemea-pytrap
 BuildRequires:	python%{python3_pkgversion}-pynspect
 BuildRequires:	python%{python3_pkgversion}-redis
+%if 0%{?rhel} <= 9
 BuildRequires:	redis
+%else
+BuildRequires:	valkey
+%endif
 
 %description -n python%{python3_pkgversion}-%{pypi_name}
 The module contains methods for creation and submission of incident reports in IDEA format.
