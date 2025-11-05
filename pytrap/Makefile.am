@@ -27,10 +27,15 @@ TESTS = test.sh
 
 .PHONY: coverage
 coverage:
-	CFLAGS=-coverage python3 -m pip install .[test] --no-deps --disable-pip-version-check --no-cache-dir
-	CFLAGS=-coverage python3 -m pytest --cov=pycommon || echo "Skipped python3 tests"
+	CFLAGS=-coverage python3 -m pip install .[test] --disable-pip-version-check --no-cache-dir
+	CFLAGS=-coverage python3 -m pytest --cov=pytrap || echo "Skipped python3 tests"
 	@lcov --capture --directory . --output-file coverage.info 2>/dev/null && \
 	genhtml coverage.info --output-directory out 2>/dev/null || echo "Skipped coverage analysis"
+
+.PHONY: test
+test:
+	python3 -m pip  install .[test] --no-cache-dir
+	python3 -m pytest
 
 .PHONY: doc
 doc:

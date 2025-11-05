@@ -46,7 +46,7 @@ fi
 
 python3 -c 'import pytrap' 2>/dev/null || exit 77
 
-python3 $srcdir/setup.py test || exit $?
+python3 -m pytest $srcdir/test || exit $?
 
 path_to_logger="$srcdir"/../../modules/logger/logger
 
