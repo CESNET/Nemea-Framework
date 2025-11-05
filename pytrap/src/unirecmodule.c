@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "fields.h"
 #include "unirectemplate.h"
