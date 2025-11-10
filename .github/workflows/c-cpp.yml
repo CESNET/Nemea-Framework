@@ -26,7 +26,9 @@ jobs:
     - name: install
       run: sudo make install
     - name: install pytrap
-      run: (cd pytrap && make coverage; sudo python3 setup.py install;)
+      run: (cd pytrap && make test; sudo pip install . ;)
+    - name: tests pycommon
+      run: (cd pycommon && pip install .[test] && python3 -m pytest;)
     - name: make check
       run: make check
     - name: make distcheck
