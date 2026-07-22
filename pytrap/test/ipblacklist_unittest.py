@@ -125,3 +125,51 @@ class AnyIPCase(unittest.TestCase):
         res = iplist.find(pytrap.UnirecIPAddr("1::1"))
         self.assertEqual(res, "abc")
 
+class DictionaryInitTest(unittest.TestCase):
+    def runTest(self):
+        import itertools
+        import ipaddress
+        import pytrap
+
+        # An empty dictionary must be rejected.
+        with self.assertRaises(ValueError):
+            pytrap.UnirecIPList({})
+
+        # Generate ip addresses
+        ipv4_count = 1000
+        ipv6_count = 1000
+        ipv4_networks = itertools.islice(
+            ipaddress.IPv4Network("10.0.0.0/8").subnets(new_prefix=24),
+            ipv4_count,
+        )
+        ipv6_networks = itertools.islice(
+            ipaddress.IPv6Network("2001:db8::/32").subnets(new_prefix=48),
+            ipv6_count,
+        )
+
+        networks = list(ipv4_networks) + list(ipv6_networks)
+
+        ranges = {
+            pytrap.UnirecIPAddrRange(str(network)): f"network-{index}"
+            for index, network in enumerate(networks)
+        }
+
+        self.assertEqual(len(ranges), (ipv4_count+ipv6_count))
+
+        ip_list = pytrap.UnirecIPList(ranges)
+
+        for index, network in enumerate(networks):
+            with self.subTest(network=str(network)):
+                address = pytrap.UnirecIPAddr(
+                    str(network.network_address + 42)
+                )
+
+                self.assertIn(address, ip_list)
+                self.assertEqual(
+                    ip_list.find(address),
+                    f"network-{index}",
+                )
+
+        missing = pytrap.UnirecIPAddr("192.0.2.1")
+        self.assertNotIn(missing, ip_list)
+        self.assertIsNone(ip_list.find(missing))
