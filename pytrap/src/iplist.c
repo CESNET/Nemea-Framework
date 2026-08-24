@@ -14,13 +14,19 @@
 static ipps_network_list_t *
 load_networks(PyDictObject *d)
 {
-    uint32_t i = 0;
-    uint32_t struct_count = 50; // Starting v4_count of structs to alloc
+    uint64_t i = 0;
 
     // ************* LOAD NETWORKS ********************** //
 
+    // Get size of passed dictionary
+    Py_ssize_t dict_size = PyDict_Size((PyObject *) d);
+    if (dict_size < 0) {
+        /* PyDict_Size already set an exception. */
+        return NULL;
+    }
+
     // Alloc memory for networks structs, if malloc fails return NULL
-    ipps_network_t *networks = malloc(struct_count * sizeof(ipps_network_t));
+    ipps_network_t *networks = malloc((size_t) dict_size * sizeof(ipps_network_t));
     if (networks == NULL) {
         PyErr_SetString(PyExc_MemoryError, "Failed allocating memory for IP prefix search structures.");
         return NULL;
@@ -42,15 +48,6 @@ load_networks(PyDictObject *d)
             pytrap_unirecipaddrrange *r = (pytrap_unirecipaddrrange *) key;
             network->mask = r->mask;
             memcpy(&network->addr, &r->start->ip, sizeof(ip_addr_t));
-            // If limit is reached alloc new memory
-            if (i >= struct_count) {
-                struct_count += 10;
-                // If realloc fails return NULL
-                if ((networks = realloc(networks, struct_count * sizeof(ipps_network_t))) == NULL) {
-                    PyErr_SetString(PyExc_MemoryError, "Failed in reallocating network structure.");
-                    return NULL;
-                }
-            }
         } else {
             PyErr_SetString(PyExc_TypeError, "Unsupported type.");
             return NULL;
