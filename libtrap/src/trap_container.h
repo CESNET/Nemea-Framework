@@ -113,7 +113,7 @@ static inline int
 t_cont_init(struct trap_container_s* t_cont)
 {
     t_cont_clear(t_cont);
-    t_cont->buffer = malloc(container_buff_len * sizeof t_cont->buffer);
+    t_cont->buffer = malloc(container_buff_len);
     return t_cont->buffer ? 0 : 1;
 }
 
